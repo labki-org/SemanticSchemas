@@ -176,10 +176,10 @@ class FormGenerator {
 
         $lines = [];
 
-        // Normalize chain: ensure it includes this category name
+        // Normalize chain: ensure it includes this category name (should be first)
         $selfName = $category->getName();
-        if ( empty( $ancestorChain ) || end( $ancestorChain ) !== $selfName ) {
-            $ancestorChain[] = $selfName;
+        if ( empty( $ancestorChain ) || reset( $ancestorChain ) !== $selfName ) {
+            array_unshift( $ancestorChain, $selfName );
         }
 
         // 1) Main section for this category

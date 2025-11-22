@@ -57,8 +57,9 @@ class PropertyModel {
         $this->label         = $data['label'] ?? $this->name;
         $this->description   = $data['description'] ?? '';
 
-        $this->allowedValues = is_array( $data['allowedValues'] ?? [] )
-            ? array_values( array_filter( array_map( 'trim', $data['allowedValues'] ) ) )
+        $allowedValues = $data['allowedValues'] ?? [];
+        $this->allowedValues = is_array( $allowedValues )
+            ? array_values( array_filter( array_map( 'trim', $allowedValues ) ) )
             : [];
 
         $this->rangeCategory = isset( $data['rangeCategory'] )

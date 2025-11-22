@@ -59,6 +59,12 @@
 	"structuresync-error-circular-dependency": "Circular dependency detected in category: $1",
 	"structuresync-error-missing-category": "Referenced category does not exist: $1",
 	"structuresync-error-missing-property": "Referenced property does not exist: $1",
-	"structuresync-permission-denied": "You do not have permission to perform this action"
+	"structuresync-permission-denied": "You do not have permission to perform this action",
+	"structuresync-status-in-sync": "Schema and Wiki are in sync.",
+	"structuresync-status-out-of-sync": "Out of sync. Generate artifacts to resolve.",
+	"structuresync-status-modified-outside": "Modified outside StructureSync",
+	"structuresync-status-generate-link": "Generate artifacts",
+	"structuresync-status-schema-changed": "Schema file has changed since last import",
+	"structuresync-validate-modified-pages": "Pages modified outside StructureSync: $1"
 }
 

@@ -4,6 +4,10 @@ namespace MediaWiki\Extension\StructureSync\Schema;
 
 use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
 use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Store\StateManager;
+use MediaWiki\Extension\StructureSync\Store\PageHashComputer;
+use MediaWiki\Extension\StructureSync\Store\PageCreator;
+use MediaWiki\Title\Title;
 
 /**
  * SchemaExporter
@@ -27,17 +31,32 @@ class SchemaExporter {
     /** @var InheritanceResolver|null */
     private $inheritanceResolver;
 
+    /** @var StateManager */
+    private $stateManager;
+
+    /** @var PageHashComputer */
+    private $hashComputer;
+
+    /** @var PageCreator */
+    private $pageCreator;
+
     /** @var string */
     private const SCHEMA_VERSION = '1.0';
 
     public function __construct(
         WikiCategoryStore $categoryStore = null,
         WikiPropertyStore $propertyStore = null,
-        InheritanceResolver $inheritanceResolver = null
+        InheritanceResolver $inheritanceResolver = null,
+        StateManager $stateManager = null,
+        PageHashComputer $hashComputer = null,
+        PageCreator $pageCreator = null
     ) {
         $this->categoryStore = $categoryStore ?? new WikiCategoryStore();
         $this->propertyStore = $propertyStore ?? new WikiPropertyStore();
         $this->inheritanceResolver = $inheritanceResolver; // Optional injection
+        $this->stateManager = $stateManager ?? new StateManager();
+        $this->hashComputer = $hashComputer ?? new PageHashComputer();
+        $this->pageCreator = $pageCreator ?? new PageCreator();
     }
 
     /**
@@ -174,16 +193,103 @@ class SchemaExporter {
 
     /**
      * Validate the current wiki ontology using SchemaValidator.
+     * Also checks for pages modified outside StructureSync.
      *
-     * @return array ['errors' => [...], 'warnings' => [...]]
+     * @return array ['errors' => [...], 'warnings' => [...], 'modifiedPages' => [...]]
      */
     public function validateWikiState(): array {
         $schema = $this->exportToArray( false );
         $validator = new SchemaValidator();
 
+        $errors = $validator->validateSchema( $schema );
+        $warnings = $validator->generateWarnings( $schema );
+        $modifiedPages = [];
+
+        // Check for pages modified outside StructureSync
+        $storedHashes = $this->stateManager->getPageHashes();
+        if ( !empty( $storedHashes ) ) {
+            $currentHashes = [];
+            $pagesToCheck = [];
+
+            // Use revision timestamps as quick filter
+            foreach ( $storedHashes as $pageName => $hashes ) {
+                $storedGenerated = $hashes['generated'] ?? '';
+                if ( $storedGenerated === '' ) {
+                    continue;
+                }
+
+                // Parse page name to get namespace and title
+               	if ( strpos( $pageName, 'Category:' ) === 0 ) {
+                    $titleText = substr( $pageName, 9 );
+                    $namespace = NS_CATEGORY;
+                } elseif ( strpos( $pageName, 'Property:' ) === 0 ) {
+                    $titleText = substr( $pageName, 9 );
+                    $namespace = \SMW_NS_PROPERTY;
+                } else {
+                    continue;
+                }
+
+                $title = $this->pageCreator->makeTitle( $titleText, $namespace );
+                if ( !$title || !$title->exists() ) {
+                    // Page was deleted
+                    $modifiedPages[] = $pageName;
+                    continue;
+                }
+
+                // Quick check: compare revision info if available
+                $revInfo = $this->hashComputer->getPageRevisionInfo( $title );
+                if ( $revInfo === null ) {
+                    continue;
+                }
+
+                // For now, we'll compute hash for all pages
+                // In a future optimization, we could store last revision ID and skip if unchanged
+                $pagesToCheck[] = [
+                    'pageName' => $pageName,
+                    'title' => $title,
+                    'namespace' => $namespace,
+                ];
+            }
+
+            // Compute current hashes for pages to check
+            foreach ( $pagesToCheck as $pageInfo ) {
+                $title = $pageInfo['title'];
+                $pageName = $pageInfo['pageName'];
+                $namespace = $pageInfo['namespace'];
+
+                $content = $this->pageCreator->getPageContent( $title );
+                if ( $content === null ) {
+                    continue;
+                }
+
+                if ( $namespace === NS_CATEGORY ) {
+                    $hash = $this->hashComputer->computeCategoryHash( $content );
+                } else {
+                    $hash = $this->hashComputer->computePropertyHash( $content );
+                }
+
+                $currentHashes[$pageName] = $hash;
+            }
+
+            // Compare with stored hashes
+            $modifiedPages = $this->stateManager->comparePageHashes( $currentHashes );
+
+            // Update current hashes in state
+            if ( !empty( $currentHashes ) ) {
+                $this->stateManager->updateCurrentHashes( $currentHashes );
+            }
+
+            // Mark as dirty if there are modifications
+            if ( !empty( $modifiedPages ) ) {
+                $this->stateManager->setDirty( true );
+                $warnings[] = 'Pages modified outside StructureSync: ' . implode( ', ', $modifiedPages );
+            }
+        }
+
         return [
-            'errors'   => $validator->validateSchema( $schema ),
-            'warnings' => $validator->generateWarnings( $schema ),
+            'errors' => $errors,
+            'warnings' => $warnings,
+            'modifiedPages' => $modifiedPages,
         ];
     }
 }

@@ -11,9 +11,14 @@ use MediaWiki\Extension\StructureSync\Schema\SchemaExporter;
 use MediaWiki\Extension\StructureSync\Schema\SchemaImporter;
 use MediaWiki\Extension\StructureSync\Schema\SchemaLoader;
 use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
+use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Store\StateManager;
+use MediaWiki\Extension\StructureSync\Store\PageHashComputer;
+use MediaWiki\Extension\StructureSync\Store\PageCreator;
 use MediaWiki\Html\Html;
 use MediaWiki\Request\WebRequest;
 use MediaWiki\SpecialPage\SpecialPage;
+use MediaWiki\Title\Title;
 
 /**
  * SpecialStructureSync
@@ -134,8 +139,36 @@ class SpecialStructureSync extends SpecialPage {
 
 		$exporter = new SchemaExporter();
 		$stats = $exporter->getStatistics();
+		$stateManager = new StateManager();
 
-		$html = Html::element(
+		// Check sync status
+		$isDirty = $stateManager->isDirty();
+		$sourceSchemaHash = $stateManager->getSourceSchemaHash();
+
+		// Status box at top
+		if ( $isDirty ) {
+			$statusMessage = $this->msg( 'structuresync-status-out-of-sync' )->text();
+			$generateUrl = $this->getPageTitle( 'generate' )->getLocalURL();
+			$generateLink = Html::element(
+				'a',
+				[ 'href' => $generateUrl ],
+				$this->msg( 'structuresync-status-generate-link' )->text()
+			);
+			$statusMessage .= ' ' . $generateLink;
+			$html = Html::rawElement(
+				'div',
+				[ 'class' => 'mw-message-box mw-message-box-error' ],
+				$statusMessage
+			);
+		} else {
+			$html = Html::rawElement(
+				'div',
+				[ 'class' => 'mw-message-box mw-message-box-success' ],
+				$this->msg( 'structuresync-status-in-sync' )->text()
+			);
+		}
+
+		$html .= Html::element(
 			'h2',
 			[],
 			$this->msg( 'structuresync-overview-summary' )->text()
@@ -173,15 +206,62 @@ class SpecialStructureSync extends SpecialPage {
 	 */
 	private function getCategoryStatusTable(): string {
 		$categoryStore    = new WikiCategoryStore();
+		$propertyStore    = new WikiPropertyStore();
 		$templateGenerator = new TemplateGenerator();
 		$formGenerator     = new FormGenerator();
 		$displayGenerator  = new DisplayStubGenerator();
+		$stateManager      = new StateManager();
+		$hashComputer      = new PageHashComputer();
+		$pageCreator       = new PageCreator();
 
 		$categories = $categoryStore->getAllCategories();
 
 		if ( empty( $categories ) ) {
 			// Could be localized with a message key if desired.
 			return Html::element( 'p', [], 'No categories found.' );
+		}
+
+		// Get stored hashes for comparison
+		$storedHashes = $stateManager->getPageHashes();
+		$modifiedPages = [];
+
+		// Check each category and its properties
+		foreach ( $categories as $category ) {
+			$categoryName = $category->getName();
+			$pageName = "Category:$categoryName";
+			
+			$title = $pageCreator->makeTitle( $categoryName, NS_CATEGORY );
+			if ( $title && $title->exists() ) {
+				$content = $pageCreator->getPageContent( $title );
+				if ( $content !== null ) {
+					$currentHash = $hashComputer->computeCategoryHash( $content );
+					$storedHash = $storedHashes[$pageName]['generated'] ?? '';
+					if ( $storedHash !== '' && $currentHash !== $storedHash ) {
+						$modifiedPages[$pageName] = true;
+					}
+				}
+			}
+
+			// Check all properties used by this category
+			$allProperties = $category->getAllProperties();
+			foreach ( $allProperties as $propertyName ) {
+				$propPageName = "Property:$propertyName";
+				if ( isset( $modifiedPages[$propPageName] ) ) {
+					continue; // Already checked
+				}
+
+				$propTitle = $pageCreator->makeTitle( $propertyName, \SMW_NS_PROPERTY );
+				if ( $propTitle && $propTitle->exists() ) {
+					$propContent = $pageCreator->getPageContent( $propTitle );
+					if ( $propContent !== null ) {
+						$currentHash = $hashComputer->computePropertyHash( $propContent );
+						$storedHash = $storedHashes[$propPageName]['generated'] ?? '';
+						if ( $storedHash !== '' && $currentHash !== $storedHash ) {
+							$modifiedPages[$propPageName] = true;
+						}
+					}
+				}
+			}
 		}
 
 		$html = Html::openElement(
@@ -197,12 +277,26 @@ class SpecialStructureSync extends SpecialPage {
 		$html .= Html::element( 'th', [], 'Template' );
 		$html .= Html::element( 'th', [], 'Form' );
 		$html .= Html::element( 'th', [], 'Display' );
+		$html .= Html::element( 'th', [], $this->msg( 'structuresync-status-modified-outside' )->text() );
 		$html .= Html::closeElement( 'tr' );
 		$html .= Html::closeElement( 'thead' );
 
 		$html .= Html::openElement( 'tbody' );
 		foreach ( $categories as $category ) {
 			$name = $category->getName();
+			$pageName = "Category:$name";
+
+			// Check if this category or any of its properties are modified
+			$isModified = isset( $modifiedPages["Category:$name"] );
+			if ( !$isModified ) {
+				// Check if any properties are modified
+				foreach ( $category->getAllProperties() as $propName ) {
+					if ( isset( $modifiedPages["Property:$propName"] ) ) {
+						$isModified = true;
+						break;
+					}
+				}
+			}
 
 			$html .= Html::openElement( 'tr' );
 			$html .= Html::element( 'td', [], $name );
@@ -222,6 +316,11 @@ class SpecialStructureSync extends SpecialPage {
 				'td',
 				[],
 				$displayGenerator->displayStubExists( $name ) ? '✓' : '✗'
+			);
+			$html .= Html::element(
+				'td',
+				[],
+				$isModified ? '✗' : '✓'
 			);
 			$html .= Html::closeElement( 'tr' );
 		}
@@ -542,12 +641,20 @@ class SpecialStructureSync extends SpecialPage {
 
 		$exporter = new SchemaExporter();
 		$result   = $exporter->validateWikiState();
+		$stateManager = new StateManager();
 
 		$html = Html::element(
 			'p',
 			[],
 			$this->msg( 'structuresync-validate-description' )->text()
 		);
+
+		// Check for schema changes
+		$sourceSchemaHash = $stateManager->getSourceSchemaHash();
+		if ( $sourceSchemaHash !== null ) {
+			// Schema hash exists, but we can't compare with current import here
+			// This would require storing the current import's hash, which is done in import flow
+		}
 
 		if ( empty( $result['errors'] ) ) {
 			$html .= Html::successBox(
@@ -575,6 +682,23 @@ class SpecialStructureSync extends SpecialPage {
 			$html .= Html::openElement( 'ul' );
 			foreach ( $result['warnings'] as $warning ) {
 				$html .= Html::element( 'li', [], $warning );
+			}
+			$html .= Html::closeElement( 'ul' );
+		}
+
+		// Display modified pages if any
+		$modifiedPages = $result['modifiedPages'] ?? [];
+		if ( !empty( $modifiedPages ) ) {
+			$html .= Html::element(
+				'h3',
+				[],
+				$this->msg( 'structuresync-validate-modified-pages' )
+					->numParams( count( $modifiedPages ) )
+					->text()
+			);
+			$html .= Html::openElement( 'ul' );
+			foreach ( $modifiedPages as $pageName ) {
+				$html .= Html::element( 'li', [], $pageName );
 			}
 			$html .= Html::closeElement( 'ul' );
 		}
@@ -699,6 +823,11 @@ class SpecialStructureSync extends SpecialPage {
 
 			$resolver = new InheritanceResolver( $categoryMap );
 
+			$stateManager = new StateManager();
+			$hashComputer = new PageHashComputer();
+			$pageCreator = new PageCreator();
+			$propertyStore = new WikiPropertyStore();
+
 			foreach ( $categories as $category ) {
 				$name = $category->getName();
 
@@ -710,6 +839,43 @@ class SpecialStructureSync extends SpecialPage {
 				$templateGenerator->generateAllTemplates( $effective );
 				$formGenerator->generateAndSaveForm( $effective, $ancestors );
 				$displayGenerator->generateDisplayStubIfMissing( $effective );
+			}
+
+			// Compute and store hashes for all generated pages
+			$pageHashes = [];
+			
+			// Hash all categories (StructureSync section only)
+			$allCategories = $categoryStore->getAllCategories();
+			foreach ( $allCategories as $category ) {
+				$categoryName = $category->getName();
+				$title = $pageCreator->makeTitle( $categoryName, NS_CATEGORY );
+				if ( $title && $title->exists() ) {
+					$content = $pageCreator->getPageContent( $title );
+					if ( $content !== null ) {
+						$hash = $hashComputer->computeCategoryHash( $content );
+						$pageHashes["Category:$categoryName"] = $hash;
+					}
+				}
+			}
+
+			// Hash all properties (full page)
+			$allProperties = $propertyStore->getAllProperties();
+			foreach ( $allProperties as $property ) {
+				$propertyName = $property->getName();
+				$title = $pageCreator->makeTitle( $propertyName, \SMW_NS_PROPERTY );
+				if ( $title && $title->exists() ) {
+					$content = $pageCreator->getPageContent( $title );
+					if ( $content !== null ) {
+						$hash = $hashComputer->computePropertyHash( $content );
+						$pageHashes["Property:$propertyName"] = $hash;
+					}
+				}
+			}
+
+			// Store hashes and clear dirty flag
+			if ( !empty( $pageHashes ) ) {
+				$stateManager->setPageHashes( $pageHashes );
+				$stateManager->clearDirty();
 			}
 
 			$output->addHTML(

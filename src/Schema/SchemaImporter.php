@@ -4,6 +4,8 @@ namespace MediaWiki\Extension\StructureSync\Schema;
 
 use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
 use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Store\StateManager;
+use MediaWiki\Extension\StructureSync\Store\PageHashComputer;
 use MediaWiki\Extension\StructureSync\Generator\TemplateGenerator;
 use MediaWiki\Extension\StructureSync\Generator\FormGenerator;
 use MediaWiki\Extension\StructureSync\Generator\DisplayStubGenerator;
@@ -44,6 +46,12 @@ class SchemaImporter {
 	/** @var DisplayStubGenerator */
 	private $displayGenerator;
 
+	/** @var StateManager */
+	private $stateManager;
+
+	/** @var PageHashComputer */
+	private $hashComputer;
+
 	/**
 	 * @param WikiCategoryStore|null    $categoryStore
 	 * @param WikiPropertyStore|null    $propertyStore
@@ -51,6 +59,8 @@ class SchemaImporter {
 	 * @param TemplateGenerator|null    $templateGenerator
 	 * @param FormGenerator|null        $formGenerator
 	 * @param DisplayStubGenerator|null $displayGenerator
+	 * @param StateManager|null         $stateManager
+	 * @param PageHashComputer|null     $hashComputer
 	 */
 	public function __construct(
 		WikiCategoryStore $categoryStore = null,
@@ -58,7 +68,9 @@ class SchemaImporter {
 		SchemaValidator $validator = null,
 		TemplateGenerator $templateGenerator = null,
 		FormGenerator $formGenerator = null,
-		DisplayStubGenerator $displayGenerator = null
+		DisplayStubGenerator $displayGenerator = null,
+		StateManager $stateManager = null,
+		PageHashComputer $hashComputer = null
 	) {
 		$this->categoryStore    = $categoryStore    ?? new WikiCategoryStore();
 		$this->propertyStore    = $propertyStore    ?? new WikiPropertyStore();
@@ -66,6 +78,8 @@ class SchemaImporter {
 		$this->templateGenerator = $templateGenerator ?? new TemplateGenerator();
 		$this->formGenerator     = $formGenerator     ?? new FormGenerator();
 		$this->displayGenerator  = $displayGenerator  ?? new DisplayStubGenerator();
+		$this->stateManager      = $stateManager      ?? new StateManager();
+		$this->hashComputer      = $hashComputer      ?? new PageHashComputer();
 	}
 
 	/**
@@ -160,7 +174,17 @@ class SchemaImporter {
 			$result['success'] = false;
 		}
 
-		// 4) Optionally generate artifacts (templates/forms/display) using effective categories
+		// 4) Update state tracking after successful import (non-dry-run)
+		if ( !$dryRun && $result['success'] ) {
+			// Mark system as dirty
+			$this->stateManager->setDirty( true );
+
+			// Compute and store schema hash
+			$schemaHash = $this->hashComputer->computeSchemaHash( $schema );
+			$this->stateManager->setSourceSchemaHash( $schemaHash );
+		}
+
+		// 5) Optionally generate artifacts (templates/forms/display) using effective categories
 		if ( $generateArtifacts && !$dryRun && $result['success'] ) {
 			$artifactResult = $this->generateArtifacts();
 			$result['templatesCreated'] += $artifactResult['templatesCreated'];

@@ -5,282 +5,252 @@ namespace MediaWiki\Extension\StructureSync\Store;
 use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
-use SMW\DIWikiPage;
-use SMW\DIProperty;
 
 /**
  * Handles reading and writing Category pages with schema metadata
  */
 class WikiCategoryStore {
 
-	/** @var PageCreator */
-	private $pageCreator;
+    /** @var PageCreator */
+    private $pageCreator;
 
-	/** Schema content markers */
-	private const MARKER_START = '<!-- StructureSync Schema Start -->';
-	private const MARKER_END = '<!-- StructureSync Schema End -->';
+    /** Schema content markers */
+    private const MARKER_START = '<!-- StructureSync Schema Start -->';
+    private const MARKER_END   = '<!-- StructureSync Schema End -->';
 
-	/**
-	 * @param PageCreator|null $pageCreator
-	 */
-	public function __construct( PageCreator $pageCreator = null ) {
-		$this->pageCreator = $pageCreator ?? new PageCreator();
-	}
+    public function __construct( PageCreator $pageCreator = null ) {
+        $this->pageCreator = $pageCreator ?? new PageCreator();
+    }
 
-	/**
-	 * Read a category from the wiki
-	 *
-	 * @param string $categoryName Category name (without "Category:" prefix)
-	 * @return CategoryModel|null
-	 */
-	public function readCategory( string $categoryName ): ?CategoryModel {
-		$title = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
-		if ( $title === null || !$this->pageCreator->pageExists( $title ) ) {
-			return null;
-		}
+    /**
+     * Read a category from the wiki
+     *
+     * @param string $categoryName Category name (without "Category:" prefix)
+     * @return CategoryModel|null
+     */
+    public function readCategory( string $categoryName ): ?CategoryModel {
+        $title = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
+        if ( $title === null || !$this->pageCreator->pageExists( $title ) ) {
+            return null;
+        }
 
-		$content = $this->pageCreator->getPageContent( $title );
-		if ( $content === null ) {
-			return null;
-		}
+        $content = $this->pageCreator->getPageContent( $title );
+        if ( $content === null ) {
+            return null;
+        }
 
-		// Parse category metadata from page content and SMW
-		$data = $this->parseCategoryContent( $content, $categoryName );
+        // Parse structural metadata inside the markers
+        $data = $this->parseCategoryContent( $content, $categoryName );
 
-		// Also try to read from SMW if available
-		if ( defined( 'SMW_VERSION' ) ) {
-			$data = array_merge( $data, $this->readFromSMW( $categoryName ) );
-		}
+        // Could read from SMW later; for now parsing-only
+        return new CategoryModel( $categoryName, $data );
+    }
 
-		return new CategoryModel( $categoryName, $data );
-	}
+    /**
+     * Parse category metadata from page content
+     *
+     * NOTE: **Corrected behavior**
+     * - DO NOT extract parent categories from [[Category:...]] tags.
+     * - ONLY use [[Has parent category::Category:Foo]].
+     */
+    private function parseCategoryContent( string $content, string $categoryName ): array {
 
-	/**
-	 * Parse category page content to extract metadata
-	 *
-	 * @param string $content
-	 * @param string $categoryName
-	 * @return array
-	 */
-	private function parseCategoryContent( string $content, string $categoryName ): array {
-		$data = [
-			'parents' => [],
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
-			'display' => [],
-			'forms' => [],
-		];
+        $data = [
+            'parents' => [],
+            'properties' => [
+                'required' => [],
+                'optional' => [],
+            ],
+            'display' => [],
+            'forms' => [],
+        ];
 
-		// Extract parent categories from [[Category:Parent]] links
-		preg_match_all( '/\[\[Category:([^\]|]+)(?:\|[^\]]+)?\]\]/', $content, $matches );
-		if ( !empty( $matches[1] ) ) {
-			$data['parents'] = array_map( 'trim', $matches[1] );
-		}
+        // Extract ONLY semantic parent categories
+        preg_match_all(
+            '/\[\[Has parent category::Category:([^\]]+)\]\]/',
+            $content,
+            $matches
+        );
+        if ( !empty( $matches[1] ) ) {
+            $data['parents'] = array_map( 'trim', $matches[1] );
+        }
 
-		// Extract SMW property annotations
-		// Has parent category
-		preg_match_all( '/\[\[Has parent category::Category:([^\]]+)\]\]/', $content, $matches );
-		if ( !empty( $matches[1] ) ) {
-			$data['parents'] = array_unique( array_merge( $data['parents'], array_map( 'trim', $matches[1] ) ) );
-		}
+        // Extract required properties
+        preg_match_all(
+            '/\[\[Has required property::Property:([^\]]+)\]\]/',
+            $content,
+            $matches
+        );
+        if ( !empty( $matches[1] ) ) {
+            $data['properties']['required'] = array_map( 'trim', $matches[1] );
+        }
 
-		// Has required property
-		preg_match_all( '/\[\[Has required property::Property:([^\]]+)\]\]/', $content, $matches );
-		if ( !empty( $matches[1] ) ) {
-			$data['properties']['required'] = array_map( 'trim', $matches[1] );
-		}
+        // Extract optional properties
+        preg_match_all(
+            '/\[\[Has optional property::Property:([^\]]+)\]\]/',
+            $content,
+            $matches
+        );
+        if ( !empty( $matches[1] ) ) {
+            $data['properties']['optional'] = array_map( 'trim', $matches[1] );
+        }
 
-		// Has optional property
-		preg_match_all( '/\[\[Has optional property::Property:([^\]]+)\]\]/', $content, $matches );
-		if ( !empty( $matches[1] ) ) {
-			$data['properties']['optional'] = array_map( 'trim', $matches[1] );
-		}
+        // Description extraction unchanged
+        $data['label'] = $categoryName;
+        $data['description'] = $this->extractDescription( $content );
 
-		$data['label'] = $categoryName;
-		$data['description'] = $this->extractDescription( $content );
+        return $data;
+    }
 
-		return $data;
-	}
+    /**
+     * Extract description from content
+     */
+    private function extractDescription( string $content ): string {
+        $lines = explode( "\n", $content );
+        foreach ( $lines as $line ) {
+            $line = trim( $line );
+            if (
+                $line !== '' &&
+                !str_starts_with( $line, '[[' ) &&
+                !str_starts_with( $line, '{{' ) &&
+                !str_starts_with( $line, '<!--' ) &&
+                !str_starts_with( $line, '=' )
+            ) {
+                return $line;
+            }
+        }
+        return '';
+    }
 
-	/**
-	 * Extract description from content
-	 *
-	 * @param string $content
-	 * @return string
-	 */
-	private function extractDescription( string $content ): string {
-		$lines = explode( "\n", $content );
-		foreach ( $lines as $line ) {
-			$line = trim( $line );
-			// Find first non-empty, non-annotation line
-			if ( !empty( $line ) &&
-				!str_starts_with( $line, '[[' ) &&
-				!str_starts_with( $line, '{{' ) &&
-				!str_starts_with( $line, '<!--' ) &&
-				!str_starts_with( $line, '=' ) ) {
-				return $line;
-			}
-		}
-		return '';
-	}
+    /**
+     * Write a category to the wiki
+     */
+    public function writeCategory( CategoryModel $category ): bool {
 
-	/**
-	 * Read category metadata from SMW store
-	 *
-	 * @param string $categoryName
-	 * @return array
-	 */
-	private function readFromSMW( string $categoryName ): array {
-		$data = [];
+        $title = $this->pageCreator->makeTitle( $category->getName(), NS_CATEGORY );
+        if ( $title === null ) {
+            return false;
+        }
 
-		// This would use SMW's store to query for property values
-		// For now, we rely on parsing the page content
-		// In a full implementation, you would use:
-		// $store = \SMW\StoreFactory::getStore();
-		// $subject = DIWikiPage::newFromTitle( Title::makeTitle( NS_CATEGORY, $categoryName ) );
-		// Then query for property values
+        $existingContent = $this->pageCreator->getPageContent( $title ) ?? '';
 
-		return $data;
-	}
+        $schemaContent = $this->generateSchemaMetadata( $category );
 
-	/**
-	 * Write a category to the wiki
-	 *
-	 * @param CategoryModel $category
-	 * @return bool True on success
-	 */
-	public function writeCategory( CategoryModel $category ): bool {
-		$title = $this->pageCreator->makeTitle( $category->getName(), NS_CATEGORY );
-		if ( $title === null ) {
-			return false;
-		}
+        // Write inside markers
+        $newContent = $this->pageCreator->updateWithinMarkers(
+            $existingContent,
+            $schemaContent,
+            self::MARKER_START,
+            self::MARKER_END
+        );
 
-		// Get existing content or create new
-		$existingContent = $this->pageCreator->getPageContent( $title ) ?? '';
+        // Add tracking category
+        $tracking = '[[Category:StructureSync-managed]]';
+        if ( strpos( $newContent, $tracking ) === false ) {
+            $newContent .= "\n$tracking";
+        }
 
-		// Generate schema metadata
-		$schemaContent = $this->generateSchemaMetadata( $category );
+        $summary = "StructureSync: Update category schema metadata";
 
-		// Update content within markers to preserve non-schema content
-		$newContent = $this->pageCreator->updateWithinMarkers(
-			$existingContent,
-			$schemaContent,
-			self::MARKER_START,
-			self::MARKER_END
-		);
+        return $this->pageCreator->createOrUpdatePage( $title, $newContent, $summary );
+    }
 
-		$summary = "StructureSync: Update category schema metadata";
+    /**
+     * Generate schema metadata
+     *
+     * NOTE: **Corrected behavior**
+     * - DO NOT write `[[Category:Parent]]` into the categories.
+     * - Only emit semantic metadata.
+     */
+    private function generateSchemaMetadata( CategoryModel $category ): string {
 
-		return $this->pageCreator->createOrUpdatePage( $title, $newContent, $summary );
-	}
+        $lines = [];
 
-	/**
-	 * Generate schema metadata for category page
-	 *
-	 * @param CategoryModel $category
-	 * @return string
-	 */
-	private function generateSchemaMetadata( CategoryModel $category ): string {
-		$lines = [];
+        // Description (optional)
+        if ( $category->getDescription() !== '' ) {
+            $lines[] = $category->getDescription();
+            $lines[] = '';
+        }
 
-		// Add description if present
-		if ( !empty( $category->getDescription() ) ) {
-			$lines[] = $category->getDescription();
-			$lines[] = '';
-		}
+        // Parents
+        foreach ( $category->getParents() as $parent ) {
+            $lines[] = "[[Has parent category::Category:$parent]]";
+        }
+        if ( !empty( $category->getParents() ) ) {
+            $lines[] = '';
+        }
 
-		// Add parent category links
-		foreach ( $category->getParents() as $parent ) {
-			$lines[] = "[[Has parent category::Category:$parent]]";
-		}
+        // Required props
+        if ( $req = $category->getRequiredProperties() ) {
+            $lines[] = '=== Required Properties ===';
+            foreach ( $req as $prop ) {
+                $lines[] = "[[Has required property::Property:$prop]]";
+            }
+            $lines[] = '';
+        }
 
-		if ( !empty( $category->getParents() ) ) {
-			$lines[] = '';
-		}
+        // Optional props
+        if ( $opt = $category->getOptionalProperties() ) {
+            $lines[] = '=== Optional Properties ===';
+            foreach ( $opt as $prop ) {
+                $lines[] = "[[Has optional property::Property:$prop]]";
+            }
+            $lines[] = '';
+        }
 
-		// Add required properties
-		if ( !empty( $category->getRequiredProperties() ) ) {
-			$lines[] = '=== Required Properties ===';
-			foreach ( $category->getRequiredProperties() as $prop ) {
-				$lines[] = "[[Has required property::Property:$prop]]";
-			}
-			$lines[] = '';
-		}
+        // Display sections
+        $sections = $category->getDisplaySections();
+        if ( !empty( $sections ) ) {
+            $lines[] = '=== Display Configuration ===';
 
-		// Add optional properties
-		if ( !empty( $category->getOptionalProperties() ) ) {
-			$lines[] = '=== Optional Properties ===';
-			foreach ( $category->getOptionalProperties() as $prop ) {
-				$lines[] = "[[Has optional property::Property:$prop]]";
-			}
-			$lines[] = '';
-		}
+            foreach ( $sections as $idx => $sec ) {
+                $lines[] = "{{#subobject:display_section_$idx";
+                $lines[] = "|Has display section name=" . ( $sec['name'] ?? '' );
 
-		// Add display configuration as subobjects
-		$displaySections = $category->getDisplaySections();
-		if ( !empty( $displaySections ) ) {
-			$lines[] = '=== Display Configuration ===';
-			foreach ( $displaySections as $idx => $section ) {
-				$lines[] = '{{#subobject:display_section_' . $idx;
-				$lines[] = '|Has display section name=' . ( $section['name'] ?? '' );
-				if ( !empty( $section['properties'] ) ) {
-					foreach ( $section['properties'] as $prop ) {
-						$lines[] = '|Has display section property=Property:' . $prop;
-					}
-				}
-				$lines[] = '}}';
-			}
-			$lines[] = '';
-		}
+                if ( !empty( $sec['properties'] ) ) {
+                    foreach ( $sec['properties'] as $p ) {
+                        $lines[] = "|Has display section property=Property:$p";
+                    }
+                }
 
-		// Add actual category membership
-		foreach ( $category->getParents() as $parent ) {
-			$lines[] = "[[Category:$parent]]";
-		}
+                $lines[] = "}}";
+            }
 
-		return implode( "\n", $lines );
-	}
+            $lines[] = '';
+        }
 
-	/**
-	 * Get all categories from the wiki
-	 *
-	 * @return CategoryModel[]
-	 */
-	public function getAllCategories(): array {
-		$categories = [];
+        return implode( "\n", $lines );
+    }
 
-		// Get all pages in the Category namespace
-		$lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
-		$dbr = $lb->getConnection( DB_REPLICA );
-		$res = $dbr->newSelectQueryBuilder()
-			->select( 'page_title' )
-			->from( 'page' )
-			->where( [ 'page_namespace' => NS_CATEGORY ] )
-			->caller( __METHOD__ )
-			->fetchResultSet();
+    /**
+     * Get all Category: pages
+     */
+    public function getAllCategories(): array {
 
-		foreach ( $res as $row ) {
-			$categoryName = str_replace( '_', ' ', $row->page_title );
-			$category = $this->readCategory( $categoryName );
-			if ( $category !== null ) {
-				$categories[$categoryName] = $category;
-			}
-		}
+        $categories = [];
+        $lb  = MediaWikiServices::getInstance()->getDBLoadBalancer();
+        $dbr = $lb->getConnection( DB_REPLICA );
 
-		return $categories;
-	}
+        $res = $dbr->newSelectQueryBuilder()
+            ->select( 'page_title' )
+            ->from( 'page' )
+            ->where( [ 'page_namespace' => NS_CATEGORY ] )
+            ->caller( __METHOD__ )
+            ->fetchResultSet();
 
-	/**
-	 * Check if a category exists
-	 *
-	 * @param string $categoryName
-	 * @return bool
-	 */
-	public function categoryExists( string $categoryName ): bool {
-		$title = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
-		return $title !== null && $this->pageCreator->pageExists( $title );
-	}
+        foreach ( $res as $row ) {
+            $name = str_replace( '_', ' ', $row->page_title );
+            $cat  = $this->readCategory( $name );
+            if ( $cat !== null ) {
+                $categories[$name] = $cat;
+            }
+        }
+
+        return $categories;
+    }
+
+    public function categoryExists( string $categoryName ): bool {
+        $title = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
+        return $title !== null && $this->pageCreator->pageExists( $title );
+    }
 }
-

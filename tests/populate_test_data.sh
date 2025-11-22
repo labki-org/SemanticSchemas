@@ -31,6 +31,10 @@ fi
 
 cd "$MW_DIR"
 
+# Ensure cache directory is writable (fix for LocalisationCache warnings)
+echo "==> Ensuring cache directory permissions..."
+docker compose exec -T mediawiki bash -c "mkdir -p /tmp/my_wiki && chmod 777 /tmp/my_wiki" 2>/dev/null || true
+
 # Helper function to create a property
 create_property() {
     local name="$1"
@@ -69,60 +73,60 @@ echo "==> Creating test properties..."
 # Property Type 1: Text Properties
 # ==========================================
 echo "  - Text properties..."
-create_property "Has_full_name" "The full name of a person." "Text" ""
-create_property "Has_biography" "Biography or description text." "Text" ""
-create_property "Has_research_interests" "Research interests and expertise areas." "Text" ""
-create_property "Has_office_location" "Office or workspace location." "Text" ""
+create_property "Has full name" "The full name of a person." "Text" ""
+create_property "Has biography" "Biography or description text." "Text" ""
+create_property "Has research interests" "Research interests and expertise areas." "Text" ""
+create_property "Has office location" "Office or workspace location." "Text" ""
 
 # ==========================================
 # Property Type 2: Contact Information
 # ==========================================
 echo "  - Contact information properties..."
-create_property "Has_email" "Email address." "Email" ""
-create_property "Has_phone" "Phone number." "Telephone number" ""
-create_property "Has_website" "Personal or lab website URL." "URL" ""
-create_property "Has_orcid" "ORCID identifier (e.g., 0000-0000-0000-0000)." "Text" ""
+create_property "Has email" "Email address." "Email" ""
+create_property "Has phone" "Phone number." "Telephone number" ""
+create_property "Has website" "Personal or lab website URL." "URL" ""
+create_property "Has orcid" "ORCID identifier (e.g., 0000-0000-0000-0000)." "Text" ""
 
 # ==========================================
 # Property Type 3: Date/Time Properties
 # ==========================================
 echo "  - Date/time properties..."
-create_property "Has_birth_date" "Date of birth." "Date" ""
-create_property "Has_start_date" "Start date (employment, enrollment, etc.)." "Date" ""
-create_property "Has_end_date" "End date (graduation, departure, etc.)." "Date" ""
-create_property "Has_publication_date" "Date of publication." "Date" ""
+create_property "Has birth date" "Date of birth." "Date" ""
+create_property "Has start date" "Start date (employment, enrollment, etc.)." "Date" ""
+create_property "Has end date" "End date (graduation, departure, etc.)." "Date" ""
+create_property "Has publication date" "Date of publication." "Date" ""
 
 # ==========================================
 # Property Type 4: Numeric Properties
 # ==========================================
 echo "  - Numeric properties..."
-create_property "Has_cohort_year" "Year of cohort or class." "Number" ""
-create_property "Has_publication_count" "Number of publications." "Number" ""
-create_property "Has_h_index" "H-index metric." "Number" ""
-create_property "Has_room_number" "Office or room number." "Number" ""
+create_property "Has cohort year" "Year of cohort or class." "Number" ""
+create_property "Has publication count" "Number of publications." "Number" ""
+create_property "Has h index" "H-index metric." "Number" ""
+create_property "Has room number" "Office or room number." "Number" ""
 
 # ==========================================
 # Property Type 5: Boolean Properties
 # ==========================================
 echo "  - Boolean properties..."
-create_property "Has_active_status" "Whether the person is currently active." "Boolean" ""
-create_property "Has_public_profile" "Whether profile is publicly visible." "Boolean" ""
+create_property "Has active status" "Whether the person is currently active." "Boolean" ""
+create_property "Has public profile" "Whether profile is publicly visible." "Boolean" ""
 
 # ==========================================
 # Property Type 6: Page/Reference Properties
 # ==========================================
 echo "  - Page/reference properties..."
-create_property "Has_advisor" "Academic advisor or supervisor." "Page" ""
-create_property "Has_lab" "Lab or research group affiliation." "Page" ""
-create_property "Has_institution" "Institutional affiliation." "Page" ""
-create_property "Has_department" "Department affiliation." "Page" ""
-create_property "Has_collaborator" "Research collaborators." "Page" ""
+create_property "Has advisor" "Academic advisor or supervisor." "Page" ""
+create_property "Has lab" "Lab or research group affiliation." "Page" ""
+create_property "Has institution" "Institutional affiliation." "Page" ""
+create_property "Has department" "Department affiliation." "Page" ""
+create_property "Has collaborator" "Research collaborators." "Page" ""
 
 # ==========================================
 # Property Type 7: Properties with Allowed Values
 # ==========================================
 echo "  - Properties with allowed values..."
-create_property "Has_lab_role" "Role in the lab." "Text" "[[Allows value::PI]]
+create_property "Has lab role" "Role in the lab." "Text" "[[Allows value::PI]]
 [[Allows value::Lab Manager]]
 [[Allows value::Postdoc]]
 [[Allows value::Graduate Student]]
@@ -130,13 +134,13 @@ create_property "Has_lab_role" "Role in the lab." "Text" "[[Allows value::PI]]
 [[Allows value::Research Assistant]]
 [[Allows value::Visitor]]"
 
-create_property "Has_academic_level" "Academic level or degree status." "Text" "[[Allows value::Undergraduate]]
+create_property "Has academic level" "Academic level or degree status." "Text" "[[Allows value::Undergraduate]]
 [[Allows value::Masters]]
 [[Allows value::PhD]]
 [[Allows value::Postdoc]]
 [[Allows value::Faculty]]"
 
-create_property "Has_employment_status" "Employment or appointment status." "Text" "[[Allows value::Full-time]]
+create_property "Has employment status" "Employment or appointment status." "Text" "[[Allows value::Full-time]]
 [[Allows value::Part-time]]
 [[Allows value::Contract]]
 [[Allows value::Volunteer]]"
@@ -145,17 +149,17 @@ create_property "Has_employment_status" "Employment or appointment status." "Tex
 # Property Type 8: Specialized Properties
 # ==========================================
 echo "  - Specialized properties..."
-create_property "Has_geographic_location" "Geographic coordinates (lat, lon)." "Geographic coordinate" ""
-create_property "Has_code_repository" "URL to code repository (GitHub, GitLab, etc.)." "URL" ""
+create_property "Has geographic location" "Geographic coordinates (lat, lon)." "Geographic coordinate" ""
+create_property "Has code repository" "URL to code repository (GitHub, GitLab, etc.)." "URL" ""
 
 # ==========================================
 # Property Type 9: Academic/Research Properties
 # ==========================================
 echo "  - Academic/research properties..."
-create_property "Has_degree" "Academic degree obtained." "Text" ""
-create_property "Has_thesis_title" "Title of thesis or dissertation." "Text" ""
-create_property "Has_research_area" "Primary research area." "Text" ""
-create_property "Has_keywords" "Research keywords." "Text" ""
+create_property "Has degree" "Academic degree obtained." "Text" ""
+create_property "Has thesis title" "Title of thesis or dissertation." "Text" ""
+create_property "Has research area" "Primary research area." "Text" ""
+create_property "Has keywords" "Research keywords." "Text" ""
 
 echo ""
 echo "==> Creating test categories with schema..."
@@ -338,11 +342,11 @@ create_category "Undergraduate" "An undergraduate student.
 [[Has parent category::Category:Student]]
 
 === Optional Properties ===
-[[Has optional property::Property:Has employment_status]]
+[[Has optional property::Property:Has employment status]]
 
 {{#subobject:display_section_0
 |Has display section name=Student Information
-|Has display section property=Property:Has employment_status
+|Has display section property=Property:Has employment status
 }}
 <!-- StructureSync Schema End -->
 
@@ -503,6 +507,13 @@ PAGEOF
 "
 }
 
+echo "  - Creating page targets for Page-type properties..."
+
+# Create Biology department page (for Has department property)
+create_page "Biology" "Biology Department.
+
+[[Category:Organization]]"
+
 echo "  - Base category examples..."
 
 # Example Person
@@ -568,6 +579,7 @@ create_page "Jane_Smith" "{{GraduateStudent
 |advisor=Dr. Alice Johnson
 |cohort_year=2023
 |lab_role=Graduate Student
+|start_date=2023-09-01
 |academic_level=PhD
 |thesis_title=Machine Learning Approaches to Protein Structure Prediction
 |research_interests=Machine learning, Protein folding, Deep learning
@@ -602,6 +614,7 @@ create_page "Dr_Alice_Johnson_PI" "{{PI
 |room_number=301
 |lab_role=PI
 |lab=Johnson Lab
+|start_date=2020-01-01
 |research_interests=Computational biology, Systems biology
 |publication_count=47
 |h_index=23
@@ -622,6 +635,7 @@ create_page "David_Chen" "{{PhDStudent
 |academic_level=PhD
 |cohort_year=2021
 |lab_role=Graduate Student
+|start_date=2021-09-01
 |thesis_title=Deep Learning for Biological Sequence Analysis
 |degree=PhD in Computational Biology
 |research_interests=Deep learning, Sequence analysis, Natural language processing for biology
@@ -638,6 +652,7 @@ create_page "Emma_Wilson" "{{MastersStudent
 |academic_level=Masters
 |cohort_year=2024
 |lab_role=Graduate Student
+|start_date=2024-09-01
 |thesis_title=Network Analysis of Protein-Protein Interactions
 |research_interests=Network biology, Graph theory
 |biography=Emma is a masters student working on network biology projects.

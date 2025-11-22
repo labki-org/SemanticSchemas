@@ -39,7 +39,8 @@ class InheritanceResolver {
 
     /**
      * Return a C3-linearized list of ancestors including the category itself.
-     * Example: ["Entity", "Person", "GraduateStudent", "PhDStudent"]
+     * Example: ["PhDStudent", "GraduateStudent", "Person", "Entity"]
+     * Most specific (category itself) is FIRST, root-most ancestor is LAST.
      *
      * @param string $categoryName
      * @return string[]
@@ -63,7 +64,7 @@ class InheritanceResolver {
 
     /**
      * Produce the fully merged effective category model:
-     *   root-most ancestor merged first, then next ancestor, ... then category.
+     *   Start with the most specific category, then merge each ancestor into it.
      *
      * @param string $categoryName
      * @return CategoryModel
@@ -77,19 +78,19 @@ class InheritanceResolver {
 
         $linear = $this->getAncestors( $categoryName );
 
-        // $linear is e.g. ["Person", "LabMember", "GraduateStudent"]
-        // The *last* one is the most specific (the category itself).
-        // Merge in correct order: first root-most parent → final category.
+        // $linear is e.g. ["GraduateStudent", "Person", "LabMember"]
+        // The *first* one is the most specific (the category itself).
+        // Merge in correct order: start with most specific, then merge parents into it.
 
         $effective = null;
         foreach ( $linear as $name ) {
             $current = $this->categoryMap[$name] ?? new CategoryModel( $name );
             if ( $effective === null ) {
-                // First (root-most) ancestor becomes starting point
+                // First (most specific) category becomes starting point
                 $effective = $current;
             } else {
-                // Merge child with parent (parent → child)
-                $effective = $current->mergeWithParent( $effective );
+                // Merge parent into child (parent properties merged into effective/child)
+                $effective = $effective->mergeWithParent( $current );
             }
         }
 
@@ -171,7 +172,7 @@ class InheritanceResolver {
         // Merge parent lists + direct parent list
         $merged = $this->c3Merge( array_merge( $linearizations, [ $parents ] ) );
 
-        // Prepend this category
+        // Prepend this category (most specific at the beginning)
         array_unshift( $merged, $categoryName );
 
         return $merged;
