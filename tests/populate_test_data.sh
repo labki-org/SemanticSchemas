@@ -51,6 +51,29 @@ PROPEOF
 "
 }
 
+# Helper function to create a property with display template
+create_property_with_display() {
+    local name="$1"
+    local description="$2"
+    local type="$3"
+    local display_block="$4"  # Display template/type block
+    
+    docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:$name' <<'PROPEOF'
+$description
+
+[[Has type::$type]]
+
+<!-- StructureSync Display Start -->
+
+$display_block
+
+<!-- StructureSync Display End -->
+
+[[Category:Properties]]
+PROPEOF
+"
+}
+
 # Helper function to create a category
 create_category() {
     local name="$1"
@@ -70,11 +93,32 @@ echo ""
 echo "==> Creating test properties..."
 
 # ==========================================
+# Meta-Properties
+# ==========================================
+echo "  - Meta-properties..."
+create_property "Has display type" "Controls how a property is rendered (e.g. Email, URL, Image)." "Text" "[[Allows value::Email]]
+[[Allows value::URL]]
+[[Allows value::Image]]
+[[Allows value::Boolean]]
+[[Allows value::Page]]
+[[Allows value::Text]]"
+
+# ==========================================
 # Property Type 1: Text Properties
 # ==========================================
 echo "  - Text properties..."
 create_property "Has full name" "The full name of a person." "Text" "[[Display label::Full Name]]"
-create_property "Has biography" "Biography or description text." "Text" ""
+
+# Biography with custom display template
+create_property_with_display "Has biography" "Biography or description text." "Text" "=== Display template ===
+<div class=\"bio-block\" style=\"background: #f9f9f9; padding: 10px; border-left: 3px solid #0066cc; margin: 10px 0;\">
+  <div class=\"bio-label\" style=\"font-weight: bold; color: #0066cc; margin-bottom: 5px;\">Biography</div>
+  <div class=\"bio-value\" style=\"white-space: pre-wrap;\">{{{value}}}</div>
+</div>
+
+=== Display type ===
+none"
+
 create_property "Has research interests" "Research interests and expertise areas." "Text" "[[Display label::Research Interests]]"
 create_property "Has office location" "Office or workspace location." "Text" ""
 
@@ -82,9 +126,29 @@ create_property "Has office location" "Office or workspace location." "Text" ""
 # Property Type 2: Contact Information
 # ==========================================
 echo "  - Contact information properties..."
-create_property "Has email" "Email address." "Email" "[[Display label::Email]]"
+
+# Create display pattern properties (templates that other properties can reference)
+echo "  - Display pattern properties..."
+create_property_with_display "Email" "Display pattern for rendering email addresses." "Text" "=== Display template ===
+[mailto:{{{value}}} {{{value}}}]
+
+=== Display type ===
+none
+
+[[Category:Display Patterns]]"
+
+create_property_with_display "URL" "Display pattern for rendering website URLs." "Text" "=== Display template ===
+[{{{value}}} Website]
+
+=== Display type ===
+none
+
+[[Category:Display Patterns]]"
+
+# Contact properties using display patterns
+create_property "Has email" "Email address." "Email" "[[Display label::Email]][[Has display pattern::Property:Email]]"
 create_property "Has phone" "Phone number." "Telephone number" ""
-create_property "Has website" "Personal or lab website URL." "URL" ""
+create_property "Has website" "Personal or lab website URL." "URL" "[[Has display pattern::Property:URL]]"
 create_property "Has orcid" "ORCID identifier (e.g., 0000-0000-0000-0000)." "Text" ""
 
 # ==========================================
@@ -109,8 +173,8 @@ create_property "Has room number" "Office or room number." "Number" ""
 # Property Type 5: Boolean Properties
 # ==========================================
 echo "  - Boolean properties..."
-create_property "Has active status" "Whether the person is currently active." "Boolean" ""
-create_property "Has public profile" "Whether profile is publicly visible." "Boolean" ""
+create_property "Has active status" "Whether the person is currently active." "Boolean" "[[Has display type::Boolean]]"
+create_property "Has public profile" "Whether profile is publicly visible." "Boolean" "[[Has display type::Boolean]]"
 
 # ==========================================
 # Property Type 6: Page/Reference Properties
@@ -151,7 +215,7 @@ create_property "Has employment status" "Employment or appointment status." "Tex
 # ==========================================
 echo "  - Specialized properties..."
 create_property "Has geographic location" "Geographic coordinates (lat, lon)." "Geographic coordinate" ""
-create_property "Has code repository" "URL to code repository (GitHub, GitLab, etc.)." "URL" ""
+create_property "Has code repository" "URL to code repository (GitHub, GitLab, etc.)." "URL" "[[Has display type::URL]]"
 
 # ==========================================
 # Property Type 9: Academic/Research Properties

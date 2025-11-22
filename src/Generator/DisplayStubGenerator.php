@@ -22,7 +22,8 @@ use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
  *   - Provides consistent HTML/CSS structure for easy styling
  *   - Normalizes property → parameter conversions identically to other generators
  */
-class DisplayStubGenerator {
+class DisplayStubGenerator
+{
 
     /** @var PageCreator */
     private $pageCreator;
@@ -44,7 +45,8 @@ class DisplayStubGenerator {
      * @param string|null $value
      * @return string
      */
-    private function sanitize( ?string $value ): string {
+    private function sanitize(?string $value): string
+    {
         return $value ?? '';
     }
 
@@ -58,55 +60,32 @@ class DisplayStubGenerator {
      * @param CategoryModel $category Effective category (inherited)
      * @return string
      */
-    public function generateDisplayStub( CategoryModel $category ): string {
+    public function generateDisplayStub(CategoryModel $category): string
+    {
 
         $lines = [];
 
         /* ------------------------------------------------------------------
          * NOINCLUDE header
          * ------------------------------------------------------------------ */
+        /* ------------------------------------------------------------------
+         * NOINCLUDE header
+         * ------------------------------------------------------------------ */
         $lines[] = '<noinclude>';
         $lines[] = '<!-- DISPLAY TEMPLATE STUB (AUTO-CREATED by StructureSync) -->';
-        $lines[] = '<!-- This template is SAFE TO EDIT and will NOT be overwritten. -->';
-        $lines[] = '<!-- Customize the visual layout for pages in [[Category:' . $this->sanitize( $category->getName() ) . ']]. -->';
-        $lines[] = '<!-- You may reorganize sections, add wikitables, images, etc. -->';
+        $lines[] = '<!-- This template is SAFE TO EDIT. -->';
+        $lines[] = '<!-- By default, it renders all properties defined in the category schema. -->';
+        $lines[] = '<!-- You can replace the content below with custom layout using: -->';
+        $lines[] = '<!-- {{#StructureSyncRenderSection:' . $this->sanitize($category->getName()) . '|Section Name}} -->';
         $lines[] = '</noinclude>';
+        $lines[] = '<includeonly>';
+        $lines[] = '{{#StructureSyncRenderAllProperties:' . $this->sanitize($category->getName()) . '}}';
+        $lines[] = '</includeonly>';
 
-        /* ------------------------------------------------------------------
-         * HEADER SECTION (if configured)
-         * ------------------------------------------------------------------ */
-        $headerProps = $category->getDisplayHeaderProperties();
-        if ( !empty( $headerProps ) ) {
-            $lines[] = '<div class="ss-header">';
+        // We no longer generate the verbose default content here because the renderer handles it.
+        // This keeps the template clean and updates automatically if the schema changes.
 
-            foreach ( $headerProps as $propertyName ) {
-                $param = $this->sanitize( $this->propertyToParameter( $propertyName ) );
-                $lines[] = '  {{#if:{{{' . $param . '|}}}|';
-                $lines[] = '    <h1 class="ss-header-field">{{{' . $param . '}}}</h1>';
-                $lines[] = '  }}';
-            }
-
-            $lines[] = '</div>';
-            $lines[] = '';
-        }
-
-        /* ------------------------------------------------------------------
-         * SECTIONS from display config
-         * ------------------------------------------------------------------ */
-        $sections = $category->getDisplaySections();
-        if ( !empty( $sections ) ) {
-            foreach ( $sections as $section ) {
-                $lines = array_merge( $lines, $this->generateDisplaySection( $section ) );
-            }
-        }
-        else {
-            /* --------------------------------------------------------------
-             * FALLBACK SECTION
-             * -------------------------------------------------------------- */
-            $lines = array_merge( $lines, $this->generateDefaultDisplaySection( $category ) );
-        }
-
-        return implode( "\n", $lines );
+        return implode("\n", $lines);
     }
 
     /* =====================================================================
@@ -119,22 +98,23 @@ class DisplayStubGenerator {
      * @param array<string,mixed> $section
      * @return string[]
      */
-    private function generateDisplaySection( array $section ): array {
+    private function generateDisplaySection(array $section): array
+    {
         $lines = [];
 
-        $name = $this->sanitize( $section['name'] ?? 'Section' );
+        $name = $this->sanitize($section['name'] ?? 'Section');
         $properties = $section['properties'] ?? [];
 
         // Sort for stable regeneration
-        $properties = array_values( array_unique( array_map( 'strval', $properties ) ) );
-        sort( $properties );
+        $properties = array_values(array_unique(array_map('strval', $properties)));
+        sort($properties);
 
         $lines[] = '== ' . $name . ' ==';
         $lines[] = '<div class="ss-section">';
 
-        foreach ( $properties as $propertyName ) {
-            $param = $this->sanitize( $this->propertyToParameter( $propertyName ) );
-            $label = $this->sanitize( $this->propertyToLabel( $propertyName ) );
+        foreach ($properties as $propertyName) {
+            $param = $this->sanitize($this->propertyToParameter($propertyName));
+            $label = $this->sanitize($this->propertyToLabel($propertyName));
 
             $lines[] = '  {{#if:{{{' . $param . '|}}}|';
             $lines[] = '    <div class="ss-row">';
@@ -156,19 +136,20 @@ class DisplayStubGenerator {
      * @param CategoryModel $category
      * @return array
      */
-    private function generateDefaultDisplaySection( CategoryModel $category ): array {
+    private function generateDefaultDisplaySection(CategoryModel $category): array
+    {
 
         $properties = $category->getAllProperties();
-        sort( $properties );
+        sort($properties);
 
-        $categoryLabel = $this->sanitize( $category->getLabel() );
+        $categoryLabel = $this->sanitize($category->getLabel());
         $lines = [];
         $lines[] = '== ' . $categoryLabel . ' Details ==';
         $lines[] = '<div class="ss-section">';
 
-        foreach ( $properties as $propertyName ) {
-            $param = $this->sanitize( $this->propertyToParameter( $propertyName ) );
-            $label = $this->sanitize( $this->propertyToLabel( $propertyName ) );
+        foreach ($properties as $propertyName) {
+            $param = $this->sanitize($this->propertyToParameter($propertyName));
+            $label = $this->sanitize($this->propertyToLabel($propertyName));
 
             $lines[] = '  {{#if:{{{' . $param . '|}}}|';
             $lines[] = '    <div class="ss-row">';
@@ -188,10 +169,11 @@ class DisplayStubGenerator {
      * CREATION WRAPPERS
      * ===================================================================== */
 
-    public function displayStubExists( string $categoryName ): bool {
+    public function displayStubExists(string $categoryName): bool
+    {
         $title = $this->pageCreator
-            ->makeTitle( $categoryName . '/display', NS_TEMPLATE );
-        return $title && $this->pageCreator->pageExists( $title );
+            ->makeTitle($categoryName . '/display', NS_TEMPLATE);
+        return $title && $this->pageCreator->pageExists($title);
     }
 
     /**
@@ -200,25 +182,26 @@ class DisplayStubGenerator {
      * @param CategoryModel $category
      * @return array{created:bool,message?:string,error?:string}
      */
-    public function generateDisplayStubIfMissing( CategoryModel $category ): array {
+    public function generateDisplayStubIfMissing(CategoryModel $category): array
+    {
 
         $name = $category->getName();
 
-        if ( $this->displayStubExists( $name ) ) {
+        if ($this->displayStubExists($name)) {
             return [
                 'created' => false,
                 'message' => 'Display template already exists; not overwriting.'
             ];
         }
 
-        $content = $this->generateDisplayStub( $category );
+        $content = $this->generateDisplayStub($category);
 
         $title = $this->pageCreator->makeTitle(
             $name . '/display',
             NS_TEMPLATE
         );
 
-        if ( !$title ) {
+        if (!$title) {
             return [
                 'created' => false,
                 'error' => 'Failed to create Title object.'
@@ -226,9 +209,9 @@ class DisplayStubGenerator {
         }
 
         $summary = 'StructureSync: Initial display template stub (safe to edit)';
-        $success = $this->pageCreator->createOrUpdatePage( $title, $content, $summary );
+        $success = $this->pageCreator->createOrUpdatePage($title, $content, $summary);
 
-        if ( !$success ) {
+        if (!$success) {
             return [
                 'created' => false,
                 'error' => 'Failed to write display template.'
@@ -248,19 +231,20 @@ class DisplayStubGenerator {
      * @param CategoryModel $category
      * @return array{created:bool,updated:bool,message?:string,error?:string}
      */
-    public function generateOrUpdateDisplayStub( CategoryModel $category ): array {
+    public function generateOrUpdateDisplayStub(CategoryModel $category): array
+    {
 
         $name = $category->getName();
-        $existed = $this->displayStubExists( $name );
+        $existed = $this->displayStubExists($name);
 
-        $content = $this->generateDisplayStub( $category );
+        $content = $this->generateDisplayStub($category);
 
         $title = $this->pageCreator->makeTitle(
             $name . '/display',
             NS_TEMPLATE
         );
 
-        if ( !$title ) {
+        if (!$title) {
             return [
                 'created' => false,
                 'updated' => false,
@@ -271,9 +255,9 @@ class DisplayStubGenerator {
         $summary = $existed
             ? 'StructureSync: Updated display template'
             : 'StructureSync: Initial display template stub (safe to edit)';
-        $success = $this->pageCreator->createOrUpdatePage( $title, $content, $summary );
+        $success = $this->pageCreator->createOrUpdatePage($title, $content, $summary);
 
-        if ( !$success ) {
+        if (!$success) {
             return [
                 'created' => false,
                 'updated' => false,
@@ -298,20 +282,21 @@ class DisplayStubGenerator {
      * @param string $propertyName
      * @return string
      */
-    private function propertyToParameter( string $propertyName ): string {
+    private function propertyToParameter(string $propertyName): string
+    {
 
         // Remove "Has "
         $param = $propertyName;
-        if ( str_starts_with( $param, 'Has ' ) ) {
-            $param = substr( $param, 4 );
+        if (str_starts_with($param, 'Has ')) {
+            $param = substr($param, 4);
         }
 
         // Replace problematic characters
-        $param = str_replace( ':', '_', $param );
+        $param = str_replace(':', '_', $param);
 
         // Normalize
-        $param = strtolower( trim( $param ) );
-        $param = str_replace( ' ', '_', $param );
+        $param = strtolower(trim($param));
+        $param = str_replace(' ', '_', $param);
 
         return $param;
     }
@@ -325,27 +310,28 @@ class DisplayStubGenerator {
      * @param string $propertyName
      * @return string
      */
-    private function propertyToLabel( string $propertyName ): string {
-        $propertyName = $this->sanitize( $propertyName );
+    private function propertyToLabel(string $propertyName): string
+    {
+        $propertyName = $this->sanitize($propertyName);
 
         // Try to get property model and use its label
-        $property = $this->propertyStore->readProperty( $propertyName );
-        if ( $property !== null ) {
+        $property = $this->propertyStore->readProperty($propertyName);
+        if ($property !== null) {
             return $property->getLabel();
         }
 
         // Fallback: auto-generate label from property name
         // Strip "Has " or "Has_"
-        if ( str_starts_with( $propertyName, 'Has ' ) ) {
-            $clean = substr( $propertyName, 4 );
-        } elseif ( str_starts_with( $propertyName, 'Has_' ) ) {
-            $clean = substr( $propertyName, 4 );
+        if (str_starts_with($propertyName, 'Has ')) {
+            $clean = substr($propertyName, 4);
+        } elseif (str_starts_with($propertyName, 'Has_')) {
+            $clean = substr($propertyName, 4);
         } else {
             $clean = $propertyName;
         }
 
         // Replace underscores with spaces and capitalize
-        $clean = str_replace( '_', ' ', $clean );
-        return ucwords( $clean );
+        $clean = str_replace('_', ' ', $clean);
+        return ucwords($clean);
     }
 }

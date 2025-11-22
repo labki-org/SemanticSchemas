@@ -1,0 +1,310 @@
+<?php
+
+namespace MediaWiki\Extension\StructureSync\Display;
+
+use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
+use PPFrame;
+
+/**
+ * DisplayRenderer
+ * ---------------
+ * Renders the display specification into HTML.
+ */
+class DisplayRenderer
+{
+
+    /** @var WikiPropertyStore */
+    private $propertyStore;
+
+    /** @var DisplaySpecBuilder */
+    private $specBuilder;
+
+    public function __construct(
+        WikiPropertyStore $propertyStore = null,
+        DisplaySpecBuilder $specBuilder = null
+    ) {
+        $this->propertyStore = $propertyStore ?? new WikiPropertyStore();
+        $this->specBuilder = $specBuilder ?? new DisplaySpecBuilder();
+    }
+
+    /**
+     * Render all sections as headings and rows.
+     *
+     * @param string $categoryName
+     * @param PPFrame $frame
+     * @return string
+     */
+    public function renderAllSections(string $categoryName, PPFrame $frame): string
+    {
+        $spec = $this->specBuilder->buildSpec($categoryName);
+        $html = '';
+
+        foreach ($spec['sections'] as $section) {
+            $html .= $this->renderSectionHtml($section, $frame);
+        }
+
+        return $html;
+    }
+
+    /**
+     * Render a single section by name.
+     *
+     * @param string $categoryName
+     * @param string $sectionName
+     * @param PPFrame $frame
+     * @return string
+     */
+    public function renderSection(string $categoryName, string $sectionName, PPFrame $frame): string
+    {
+        $spec = $this->specBuilder->buildSpec($categoryName);
+
+        foreach ($spec['sections'] as $section) {
+            if (strcasecmp($section['name'], $sectionName) === 0) {
+                return $this->renderSectionHtml($section, $frame);
+            }
+        }
+
+        return ''; // Section not found
+    }
+
+    /**
+     * Internal helper to render a section array to HTML.
+     *
+     * @param array $section
+     * @param PPFrame $frame
+     * @return string
+     */
+    private function renderSectionHtml(array $section, PPFrame $frame): string
+    {
+        $lines = [];
+
+        // Check if any property in this section has a value
+        $hasAnyValue = false;
+        $rows = [];
+
+        foreach ($section['properties'] as $propertyName) {
+            $paramName = $this->propertyToParameter($propertyName);
+            // Use standard getArgument since we are passing args explicitly now
+            $value = trim($frame->getArgument($paramName));
+
+            if ($value !== '') {
+                $hasAnyValue = true;
+                $label = $this->getPropertyLabel($propertyName);
+
+                // Get page title from frame for template variable
+                $pageTitle = $frame->getTitle() ? $frame->getTitle()->getText() : '';
+                $renderedValue = $this->renderValue($value, $propertyName, $pageTitle, $frame);
+
+                $rows[] = '<div class="ss-row">';
+                $rows[] = '  <span class="ss-label">' . htmlspecialchars($label) . ':</span>';
+                $rows[] = '  <span class="ss-value">' . $renderedValue . '</span>';
+                $rows[] = '</div>';
+            }
+        }
+
+        if (!$hasAnyValue) {
+            return '';
+        }
+
+        $lines[] = '<div class="ss-section">';
+        $lines[] = '  <h2 class="ss-section-title">' . htmlspecialchars($section['name']) . '</h2>';
+        $lines[] = implode("\n", $rows);
+        $lines[] = '</div>';
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Get display label for a property.
+     */
+    private function getPropertyLabel(string $propertyName): string
+    {
+        $property = $this->propertyStore->readProperty($propertyName);
+        if ($property) {
+            return $property->getDisplayLabel();
+        }
+
+        // Fallback if property not found in store
+        // (Replicate PropertyModel logic roughly)
+        $clean = preg_replace('/^Has[_ ]/', '', $propertyName);
+        $clean = str_replace('_', ' ', $clean);
+        return ucwords($clean);
+    }
+
+    /**
+     * Get display type for a property.
+     */
+    private function getPropertyDisplayType(string $propertyName): ?string
+    {
+        $property = $this->propertyStore->readProperty($propertyName);
+        return $property ? $property->getDisplayType() : null;
+    }
+
+    /**
+     * Render a value using property's display template or fallback.
+     *
+     * @param string $value Property value
+     * @param string $propertyName Property name
+     * @param string $pageTitle Current page title
+     * @param PPFrame $frame Parser frame for parsing wikitext
+     * @return string Rendered HTML
+     */
+    private function renderValue(string $value, string $propertyName, string $pageTitle, PPFrame $frame): string
+    {
+        $property = $this->propertyStore->readProperty($propertyName);
+
+        // 1. Check for inline template
+        if ($property && $property->getDisplayTemplate()) {
+            $wikitext = $this->expandTemplate(
+                $property->getDisplayTemplate(),
+                ['value' => $value, 'property' => $propertyName, 'page' => $pageTitle]
+            );
+            // Parse the wikitext to convert [mailto:...] etc to actual links
+            return $this->parseWikitext($wikitext, $frame);
+        }
+
+        // 2. Check for display pattern (property-to-property reference)
+        if ($property && $property->getDisplayPattern()) {
+            $visited = [];
+            $patternTemplate = $this->resolveDisplayPattern($property->getDisplayPattern(), $visited);
+            if ($patternTemplate) {
+                $wikitext = $this->expandTemplate(
+                    $patternTemplate,
+                    ['value' => $value, 'property' => $propertyName, 'page' => $pageTitle]
+                );
+                // Parse the wikitext
+                return $this->parseWikitext($wikitext, $frame);
+            }
+        }
+
+        // 3. Check for display type (legacy annotation, could reference shared template)
+        if ($property && $property->getDisplayType()) {
+            $displayType = $property->getDisplayType();
+
+            // Try to load as a pattern property (for backwards compat)
+            $typeTemplate = $this->loadDisplayTypeTemplate($displayType);
+            if ($typeTemplate) {
+                $wikitext = $this->expandTemplate(
+                    $typeTemplate,
+                    ['value' => $value, 'property' => $propertyName, 'page' => $pageTitle]
+                );
+                // Parse the wikitext
+                return $this->parseWikitext($wikitext, $frame);
+        // Simple variable replacement for { {{value}}}, { {{property}}}, { {{page}}}
+        $expanded = $template;
+        $expanded = str_replace('{{{value}}}', $vars['value'] ?? '', $expanded);
+        $expanded = str_replace('{{{property}}}', $vars['property'] ?? '', $expanded);
+        $expanded = str_replace('{{{page}}}', $vars['page'] ?? '', $expanded);
+
+        // Return as-is (will be interpreted as wikitext by MediaWiki)
+        return $expanded;
+    }
+
+    /**
+     * Load display template by resolving pattern references.
+     * 
+     * @param string $propertyName Property name or pattern name
+     * @return string|null Template content or null if not found
+     */
+    private function loadDisplayTypeTemplate(string $propertyName): ?string
+    {
+        $visited = [];
+        return $this->resolveDisplayPattern($propertyName, $visited);
+    }
+
+    /**
+     * Recursively resolve display pattern with cycle detection.
+     * 
+     * @param string $propertyName Property name to resolve
+     * @param array $visited Tracking array for cycle detection
+     * @return string|null Template or null
+     */
+    private function resolveDisplayPattern(string $propertyName, array &$visited): ?string
+    {
+        // Cycle detection
+        if (in_array($propertyName, $visited)) {
+            return null; // Cycle detected, fall back
+        }
+        $visited[] = $propertyName;
+
+        $property = $this->propertyStore->readProperty($propertyName);
+        if (!$property) {
+            return null;
+        }
+
+        // 1. Check for inline template
+        if ($property->getDisplayTemplate()) {
+            return $property->getDisplayTemplate();
+        }
+
+        // 2. Follow pattern reference
+        if ($property->getDisplayPattern()) {
+            return $this->resolveDisplayPattern($property->getDisplayPattern(), $visited);
+        }
+
+        // 3. No template found
+        return null;
+    }
+
+    /**
+     * Render value using built-in hardcoded display types.
+     * 
+     * @param string $value
+     * @param string $displayType
+     * @return string
+     */
+    private function renderBuiltInDisplayType(string $value, string $displayType): string
+    {
+        if ($displayType === null) {
+            return htmlspecialchars($value);
+        }
+
+        switch (strtolower($displayType)) {
+            case 'email':
+                // Render as mailto link
+                return '[mailto:' . $value . ' ' . $value . ']';
+
+            case 'url':
+                // Render as external link
+                return '[' . $value . ' Website]';
+
+            case 'image':
+                // Render as image
+                return '[[File:' . $value . '|thumb|200px]]';
+
+            case 'boolean':
+                // Render as Yes/No
+                $v = strtolower($value);
+                if (in_array($v, ['1', 'true', 'yes', 'on'])) {
+                    return 'Yes';
+                }
+                return 'No';
+
+            default:
+                return htmlspecialchars($value);
+        }
+    }
+
+    /**
+     * Convert property name to parameter name.
+     * Matches logic in TemplateGenerator.
+     */
+    private function propertyToParameter(string $propertyName): string
+    {
+        // Remove "Has " prefix
+        $param = $propertyName;
+        if (str_starts_with($param, 'Has ')) {
+            $param = substr($param, 4);
+        }
+
+        // Replace ":" with "_"
+        $param = str_replace(':', '_', $param);
+
+        // Normalize
+        $param = strtolower(trim($param));
+        $param = str_replace(' ', '_', $param);
+
+        return $param;
+    }
+}

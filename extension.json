@@ -24,6 +24,14 @@
 	"ExtensionMessagesFiles": {
 		"StructureSyncAlias": "StructureSync.alias.php"
 	},
+	"Hooks": {
+		"ParserFirstCallInit": "MediaWiki\\Extension\\StructureSync\\Parser\\DisplayParserFunctions::onParserFirstCallInit"
+	},
+	"AutoloadClasses": {
+		"MediaWiki\\Extension\\StructureSync\\Parser\\DisplayParserFunctions": "src/Parser/DisplayParserFunctions.php",
+		"MediaWiki\\Extension\\StructureSync\\Display\\DisplayRenderer": "src/Display/DisplayRenderer.php",
+		"MediaWiki\\Extension\\StructureSync\\Display\\DisplaySpecBuilder": "src/Display/DisplaySpecBuilder.php"
+	},
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\StructureSync\\": "src/"
 	},

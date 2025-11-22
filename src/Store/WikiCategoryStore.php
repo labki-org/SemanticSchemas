@@ -9,16 +9,18 @@ use MediaWiki\Title\Title;
 /**
  * Handles reading and writing Category pages with schema metadata
  */
-class WikiCategoryStore {
+class WikiCategoryStore
+{
 
     /** @var PageCreator */
     private $pageCreator;
 
     /** Schema content markers */
     private const MARKER_START = '<!-- StructureSync Schema Start -->';
-    private const MARKER_END   = '<!-- StructureSync Schema End -->';
+    private const MARKER_END = '<!-- StructureSync Schema End -->';
 
-    public function __construct( PageCreator $pageCreator = null ) {
+    public function __construct(PageCreator $pageCreator = null)
+    {
         $this->pageCreator = $pageCreator ?? new PageCreator();
     }
 
@@ -28,22 +30,23 @@ class WikiCategoryStore {
      * @param string $categoryName Category name (without "Category:" prefix)
      * @return CategoryModel|null
      */
-    public function readCategory( string $categoryName ): ?CategoryModel {
-        $title = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
-        if ( $title === null || !$this->pageCreator->pageExists( $title ) ) {
+    public function readCategory(string $categoryName): ?CategoryModel
+    {
+        $title = $this->pageCreator->makeTitle($categoryName, NS_CATEGORY);
+        if ($title === null || !$this->pageCreator->pageExists($title)) {
             return null;
         }
 
-        $content = $this->pageCreator->getPageContent( $title );
-        if ( $content === null ) {
+        $content = $this->pageCreator->getPageContent($title);
+        if ($content === null) {
             return null;
         }
 
         // Parse structural metadata inside the markers
-        $data = $this->parseCategoryContent( $content, $categoryName );
+        $data = $this->parseCategoryContent($content, $categoryName);
 
         // Could read from SMW later; for now parsing-only
-        return new CategoryModel( $categoryName, $data );
+        return new CategoryModel($categoryName, $data);
     }
 
     /**
@@ -53,7 +56,8 @@ class WikiCategoryStore {
      * - DO NOT extract parent categories from [[Category:...]] tags.
      * - ONLY use [[Has parent category::Category:Foo]].
      */
-    private function parseCategoryContent( string $content, string $categoryName ): array {
+    private function parseCategoryContent(string $content, string $categoryName): array
+    {
 
         $data = [
             'parents' => [],
@@ -71,8 +75,8 @@ class WikiCategoryStore {
             $content,
             $matches
         );
-        if ( !empty( $matches[1] ) ) {
-            $data['parents'] = array_map( 'trim', $matches[1] );
+        if (!empty($matches[1])) {
+            $data['parents'] = array_map('trim', $matches[1]);
         }
 
         // Extract required properties
@@ -81,8 +85,8 @@ class WikiCategoryStore {
             $content,
             $matches
         );
-        if ( !empty( $matches[1] ) ) {
-            $data['properties']['required'] = array_map( 'trim', $matches[1] );
+        if (!empty($matches[1])) {
+            $data['properties']['required'] = array_map('trim', $matches[1]);
         }
 
         // Extract optional properties
@@ -91,13 +95,51 @@ class WikiCategoryStore {
             $content,
             $matches
         );
-        if ( !empty( $matches[1] ) ) {
-            $data['properties']['optional'] = array_map( 'trim', $matches[1] );
+        if (!empty($matches[1])) {
+            $data['properties']['optional'] = array_map('trim', $matches[1]);
+        }
+
+        // Extract display sections from {{#subobject:display_section_*}}
+        $sections = [];
+        // Match each subobject block
+        preg_match_all(
+            '/\{\{#subobject:display_section_(\d+)([^}]*)\}\}/s',
+            $content,
+            $subobjectMatches,
+            PREG_SET_ORDER
+        );
+
+        foreach ($subobjectMatches as $match) {
+            $sectionContent = $match[2];
+            $section = [];
+
+            // Extract section name
+            if (preg_match('/\|Has display section name=([^\|\}]+)/', $sectionContent, $nameMatch)) {
+                $section['name'] = trim($nameMatch[1]);
+            }
+
+            // Extract section properties
+            preg_match_all(
+                '/\|Has display section property=Property:([^\|\}]+)/',
+                $sectionContent,
+                $propMatches
+            );
+            if (!empty($propMatches[1])) {
+                $section['properties'] = array_map('trim', $propMatches[1]);
+            }
+
+            if (!empty($section['name']) && !empty($section['properties'])) {
+                $sections[] = $section;
+            }
+        }
+
+        if (!empty($sections)) {
+            $data['display']['sections'] = $sections;
         }
 
         // Description extraction unchanged
         $data['label'] = $categoryName;
-        $data['description'] = $this->extractDescription( $content );
+        $data['description'] = $this->extractDescription($content);
 
         return $data;
     }
@@ -105,16 +147,17 @@ class WikiCategoryStore {
     /**
      * Extract description from content
      */
-    private function extractDescription( string $content ): string {
-        $lines = explode( "\n", $content );
-        foreach ( $lines as $line ) {
-            $line = trim( $line );
+    private function extractDescription(string $content): string
+    {
+        $lines = explode("\n", $content);
+        foreach ($lines as $line) {
+            $line = trim($line);
             if (
                 $line !== '' &&
-                !str_starts_with( $line, '[[' ) &&
-                !str_starts_with( $line, '{{' ) &&
-                !str_starts_with( $line, '<!--' ) &&
-                !str_starts_with( $line, '=' )
+                !str_starts_with($line, '[[') &&
+                !str_starts_with($line, '{{') &&
+                !str_starts_with($line, '<!--') &&
+                !str_starts_with($line, '=')
             ) {
                 return $line;
             }
@@ -125,16 +168,17 @@ class WikiCategoryStore {
     /**
      * Write a category to the wiki
      */
-    public function writeCategory( CategoryModel $category ): bool {
+    public function writeCategory(CategoryModel $category): bool
+    {
 
-        $title = $this->pageCreator->makeTitle( $category->getName(), NS_CATEGORY );
-        if ( $title === null ) {
+        $title = $this->pageCreator->makeTitle($category->getName(), NS_CATEGORY);
+        if ($title === null) {
             return false;
         }
 
-        $existingContent = $this->pageCreator->getPageContent( $title ) ?? '';
+        $existingContent = $this->pageCreator->getPageContent($title) ?? '';
 
-        $schemaContent = $this->generateSchemaMetadata( $category );
+        $schemaContent = $this->generateSchemaMetadata($category);
 
         // Write inside markers
         $newContent = $this->pageCreator->updateWithinMarkers(
@@ -146,13 +190,13 @@ class WikiCategoryStore {
 
         // Add tracking category
         $tracking = '[[Category:StructureSync-managed]]';
-        if ( strpos( $newContent, $tracking ) === false ) {
+        if (strpos($newContent, $tracking) === false) {
             $newContent .= "\n$tracking";
         }
 
         $summary = "StructureSync: Update category schema metadata";
 
-        return $this->pageCreator->createOrUpdatePage( $title, $newContent, $summary );
+        return $this->pageCreator->createOrUpdatePage($title, $newContent, $summary);
     }
 
     /**
@@ -162,37 +206,38 @@ class WikiCategoryStore {
      * - DO NOT write `[[Category:Parent]]` into the categories.
      * - Only emit semantic metadata.
      */
-    private function generateSchemaMetadata( CategoryModel $category ): string {
+    private function generateSchemaMetadata(CategoryModel $category): string
+    {
 
         $lines = [];
 
         // Description (optional)
-        if ( $category->getDescription() !== '' ) {
+        if ($category->getDescription() !== '') {
             $lines[] = $category->getDescription();
             $lines[] = '';
         }
 
         // Parents
-        foreach ( $category->getParents() as $parent ) {
+        foreach ($category->getParents() as $parent) {
             $lines[] = "[[Has parent category::Category:$parent]]";
         }
-        if ( !empty( $category->getParents() ) ) {
+        if (!empty($category->getParents())) {
             $lines[] = '';
         }
 
         // Required props
-        if ( $req = $category->getRequiredProperties() ) {
+        if ($req = $category->getRequiredProperties()) {
             $lines[] = '=== Required Properties ===';
-            foreach ( $req as $prop ) {
+            foreach ($req as $prop) {
                 $lines[] = "[[Has required property::Property:$prop]]";
             }
             $lines[] = '';
         }
 
         // Optional props
-        if ( $opt = $category->getOptionalProperties() ) {
+        if ($opt = $category->getOptionalProperties()) {
             $lines[] = '=== Optional Properties ===';
-            foreach ( $opt as $prop ) {
+            foreach ($opt as $prop) {
                 $lines[] = "[[Has optional property::Property:$prop]]";
             }
             $lines[] = '';
@@ -200,18 +245,18 @@ class WikiCategoryStore {
 
         // Display sections
         $sections = $category->getDisplaySections();
-        if ( !empty( $sections ) ) {
+        if (!empty($sections)) {
             $lines[] = '=== Display Configuration ===';
 
-            foreach ( $sections as $idx => $sec ) {
+            foreach ($sections as $idx => $sec) {
                 $lines[] = "{{#subobject:display_section_$idx";
                 $name = $sec['name'] ?? '';
-                $lines[] = "|Has display section name=" . ( $name !== null ? (string)$name : '' );
+                $lines[] = "|Has display section name=" . ($name !== null ? (string) $name : '');
 
-                if ( !empty( $sec['properties'] ) ) {
-                    foreach ( $sec['properties'] as $p ) {
-                        $pSafe = $p !== null ? (string)$p : '';
-                        if ( $pSafe !== '' ) {
+                if (!empty($sec['properties'])) {
+                    foreach ($sec['properties'] as $p) {
+                        $pSafe = $p !== null ? (string) $p : '';
+                        if ($pSafe !== '') {
                             $lines[] = "|Has display section property=Property:$pSafe";
                         }
                     }
@@ -223,29 +268,30 @@ class WikiCategoryStore {
             $lines[] = '';
         }
 
-        return implode( "\n", $lines );
+        return implode("\n", $lines);
     }
 
     /**
      * Get all Category: pages
      */
-    public function getAllCategories(): array {
+    public function getAllCategories(): array
+    {
 
         $categories = [];
-        $lb  = MediaWikiServices::getInstance()->getDBLoadBalancer();
-        $dbr = $lb->getConnection( DB_REPLICA );
+        $lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
+        $dbr = $lb->getConnection(DB_REPLICA);
 
         $res = $dbr->newSelectQueryBuilder()
-            ->select( 'page_title' )
-            ->from( 'page' )
-            ->where( [ 'page_namespace' => NS_CATEGORY ] )
-            ->caller( __METHOD__ )
+            ->select('page_title')
+            ->from('page')
+            ->where(['page_namespace' => NS_CATEGORY])
+            ->caller(__METHOD__)
             ->fetchResultSet();
 
-        foreach ( $res as $row ) {
-            $name = str_replace( '_', ' ', $row->page_title );
-            $cat  = $this->readCategory( $name );
-            if ( $cat !== null ) {
+        foreach ($res as $row) {
+            $name = str_replace('_', ' ', $row->page_title);
+            $cat = $this->readCategory($name);
+            if ($cat !== null) {
                 $categories[$name] = $cat;
             }
         }
@@ -253,8 +299,9 @@ class WikiCategoryStore {
         return $categories;
     }
 
-    public function categoryExists( string $categoryName ): bool {
-        $title = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
-        return $title !== null && $this->pageCreator->pageExists( $title );
+    public function categoryExists(string $categoryName): bool
+    {
+        $title = $this->pageCreator->makeTitle($categoryName, NS_CATEGORY);
+        return $title !== null && $this->pageCreator->pageExists($title);
     }
 }

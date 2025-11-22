@@ -17,7 +17,8 @@ namespace MediaWiki\Extension\StructureSync\Schema;
  *   - Schema objects remain stable across request boundaries
  *   - Inheritance & merging can be done safely by cloning or reconstruction
  */
-class PropertyModel {
+class PropertyModel
+{
 
     /** @var string Canonical property name (SMW Property page name) */
     private $name;
@@ -40,6 +41,15 @@ class PropertyModel {
     /** @var string|null Parent property (for SMW subproperty semantics) */
     private $subpropertyOf;
 
+    /** @var string|null Display type hint (e.g. "Email", "URL", "Image") */
+    private $displayType;
+
+    /** @var string|null Wiki-editable display template (wikitext) */
+    private $displayTemplate;
+
+    /** @var string|null Property name to reference for display pattern */
+    private $displayPattern;
+
     /* ---------------------------------------------------------------------
      * CONSTRUCTOR
      * --------------------------------------------------------------------- */
@@ -48,38 +58,58 @@ class PropertyModel {
      * @param string $name Property name (e.g. "Has advisor")
      * @param array $data Structured schema array
      */
-    public function __construct( string $name, array $data = [] ) {
+    public function __construct(string $name, array $data = [])
+    {
 
         // Property names must be canonicalized (whitespace trimmed)
-        $this->name = trim( $name );
+        $this->name = trim($name);
 
-        $this->datatype      = $this->normalizeDatatype( $data['datatype'] ?? 'Text' );
-        
+        $this->datatype = $this->normalizeDatatype($data['datatype'] ?? 'Text');
+
         // Set label: use provided label, or auto-generate if label equals name
-        if ( !empty( $data['label'] ) ) {
-            $this->label = (string)$data['label'];
+        if (!empty($data['label'])) {
+            $this->label = (string) $data['label'];
         } else {
             $this->label = $this->name;
         }
-        
+
         // Auto-generate label if it equals the name (meaning no explicit label was provided)
-        if ( $this->label === $this->name ) {
-            $this->label = $this->autoGenerateLabel( $this->name );
+        if ($this->label === $this->name) {
+            $this->label = $this->autoGenerateLabel($this->name);
         }
-        
-        $this->description   = $data['description'] ?? '';
+
+        $this->description = $data['description'] ?? '';
 
         $allowedValues = $data['allowedValues'] ?? [];
-        $this->allowedValues = is_array( $allowedValues )
-            ? array_values( array_filter( array_map( 'trim', $allowedValues ) ) )
+        $this->allowedValues = is_array($allowedValues)
+            ? array_values(array_filter(array_map('trim', $allowedValues)))
             : [];
 
-        $this->rangeCategory = isset( $data['rangeCategory'] )
-            ? trim( $data['rangeCategory'] )
+        $this->rangeCategory = isset($data['rangeCategory'])
+            ? trim($data['rangeCategory'])
             : null;
 
-        $this->subpropertyOf = isset( $data['subpropertyOf'] )
-            ? trim( $data['subpropertyOf'] )
+        $this->subpropertyOf = isset($data['subpropertyOf'])
+            ? trim($data['subpropertyOf'])
+            : null;
+
+        // Display type: check new display block first, then legacy annotation
+        if (isset($data['display']['type'])) {
+            $this->displayType = trim($data['display']['type']);
+        } elseif (isset($data['displayType'])) {
+            $this->displayType = trim($data['displayType']);
+        } else {
+            $this->displayType = null;
+        }
+
+        // Display template: from new display block
+        $this->displayTemplate = isset($data['display']['template'])
+            ? trim($data['display']['template'])
+            : null;
+
+        // Display pattern: property-to-property template reference
+        $this->displayPattern = isset($data['displayPattern'])
+            ? trim($data['displayPattern'])
             : null;
     }
 
@@ -93,28 +123,29 @@ class PropertyModel {
      * @param string $datatype
      * @return string
      */
-    private function normalizeDatatype( string $datatype ): string {
+    private function normalizeDatatype(string $datatype): string
+    {
 
-        $datatype = trim( $datatype );
+        $datatype = trim($datatype);
 
         // Supported types based on SMW core datatype mappings
         static $valid = [
-            'Text',
-            'Page',
-            'Date',
-            'Number',
-            'Email',
-            'URL',
-            'Boolean',
-            'Code',
-            'Geographic coordinate',
-            'Quantity',
-            'Temperature',
-            'Telephone number',
+        'Text',
+        'Page',
+        'Date',
+        'Number',
+        'Email',
+        'URL',
+        'Boolean',
+        'Code',
+        'Geographic coordinate',
+        'Quantity',
+        'Temperature',
+        'Telephone number',
         ];
 
         // Unknown → Text (SMW default behavior)
-        return in_array( $datatype, $valid ) ? $datatype : 'Text';
+        return in_array($datatype, $valid) ? $datatype : 'Text';
     }
 
     /**
@@ -131,43 +162,90 @@ class PropertyModel {
      * @param string $name Property name
      * @return string Generated label
      */
-    private function autoGenerateLabel( string $name ): string {
-        $clean = preg_replace( '/^Has[_ ]/', '', $name );
-        $clean = str_replace( '_', ' ', $clean );
-        return ucwords( $clean );
+    private function autoGenerateLabel(string $name): string
+    {
+        $clean = preg_replace('/^Has[_ ]/', '', $name);
+        $clean = str_replace('_', ' ', $clean);
+        return ucwords($clean);
     }
 
     /* ---------------------------------------------------------------------
      * BASIC ACCESSORS
      * --------------------------------------------------------------------- */
 
-    public function getName(): string {
+    public function getName(): string
+    {
         return $this->name;
     }
 
-    public function getDatatype(): string {
+    public function getDatatype(): string
+    {
         return $this->datatype;
     }
 
-    public function getLabel(): string {
-        // Ensure label is never empty - fallback to name if somehow empty
-        return !empty( $this->label ) ? (string)$this->label : $this->name;
+    public function getLabel(): string
+    {
+        return $this->getDisplayLabel();
     }
 
-    public function getDescription(): string {
+    /**
+     * Get the display label.
+     *
+     * Logic:
+     * 1. If explicit label was provided in schema, use it.
+     * 2. If not, generate from name:
+     *    - Strip "Has " prefix
+     *    - Replace "_" with space
+     *    - Capitalize words
+     *
+     * @return string
+     */
+    public function getDisplayLabel(): string
+    {
+        // If label is different from name, it was explicitly set (or we already auto-generated it in constructor)
+        // The constructor already handles the "auto-generate if empty" logic and sets $this->label.
+        // So we can just return $this->label, but let's be explicit about the fallback just in case.
+
+        if (!empty($this->label)) {
+            return (string) $this->label;
+        }
+
+        return $this->autoGenerateLabel($this->name);
+    }
+
+    public function getDescription(): string
+    {
         return $this->description;
     }
 
-    public function getAllowedValues(): array {
+    public function getAllowedValues(): array
+    {
         return $this->allowedValues;
     }
 
-    public function getRangeCategory(): ?string {
+    public function getRangeCategory(): ?string
+    {
         return $this->rangeCategory;
     }
 
-    public function getSubpropertyOf(): ?string {
+    public function getSubpropertyOf(): ?string
+    {
         return $this->subpropertyOf;
+    }
+
+    public function getDisplayType(): ?string
+    {
+        return $this->displayType;
+    }
+
+    public function getDisplayTemplate(): ?string
+    {
+        return $this->displayTemplate;
+    }
+
+    public function getDisplayPattern(): ?string
+    {
+        return $this->displayPattern;
     }
 
     /* ---------------------------------------------------------------------
@@ -177,21 +255,24 @@ class PropertyModel {
     /**
      * Whether this property has enumeration constraints.
      */
-    public function hasAllowedValues(): bool {
-        return !empty( $this->allowedValues );
+    public function hasAllowedValues(): bool
+    {
+        return !empty($this->allowedValues);
     }
 
     /**
      * Whether the property maps to the SMW "Page" type.
      */
-    public function isPageType(): bool {
+    public function isPageType(): bool
+    {
         return $this->datatype === 'Page';
     }
 
     /**
      * Whether this property is a Page-type restricted to a CATEGORY range.
      */
-    public function isCategoryRestrictedPageType(): bool {
+    public function isCategoryRestrictedPageType(): bool
+    {
         return $this->isPageType() && $this->rangeCategory !== null && $this->rangeCategory !== '';
     }
 
@@ -204,24 +285,29 @@ class PropertyModel {
      *
      * @return array
      */
-    public function toArray(): array {
+    public function toArray(): array
+    {
 
         $data = [
-            'datatype'    => $this->datatype,
-            'label'       => $this->label,
+            'datatype' => $this->datatype,
+            'label' => $this->label,
             'description' => $this->description,
         ];
 
-        if ( $this->hasAllowedValues() ) {
+        if ($this->hasAllowedValues()) {
             $data['allowedValues'] = $this->allowedValues;
         }
 
-        if ( $this->rangeCategory !== null ) {
+        if ($this->rangeCategory !== null) {
             $data['rangeCategory'] = $this->rangeCategory;
         }
 
-        if ( $this->subpropertyOf !== null ) {
+        if ($this->subpropertyOf !== null) {
             $data['subpropertyOf'] = $this->subpropertyOf;
+        }
+
+        if ($this->displayType !== null) {
+            $data['displayType'] = $this->displayType;
         }
 
         return $data;
@@ -236,7 +322,8 @@ class PropertyModel {
      *
      * @return string
      */
-    public function getSMWType(): string {
+    public function getSMWType(): string
+    {
 
         // Explicit pass-through — normalizeDatatype() already validated types.
         return $this->datatype;
