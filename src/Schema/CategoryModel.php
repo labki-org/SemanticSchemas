@@ -75,7 +75,7 @@ class CategoryModel {
             $data['parents'] ?? []
         );
 
-        $this->label = $data['label'] ?? $name;
+        $this->label = !empty( $data['label'] ) ? (string)$data['label'] : $name;
         $this->description = $data['description'] ?? '';
 
         $this->requiredProperties = self::normalizeList(
@@ -103,7 +103,8 @@ class CategoryModel {
     }
 
     public function getLabel(): string {
-        return $this->label;
+        // Ensure label is never empty - fallback to name if somehow empty
+        return !empty( $this->label ) ? (string)$this->label : $this->name;
     }
 
     public function getDescription(): string {

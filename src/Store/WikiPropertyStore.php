@@ -106,6 +106,11 @@ class WikiPropertyStore {
             $data['subpropertyOf'] = trim( str_replace( '_', ' ', $m[1] ) );
         }
 
+        /* Display label ------------------------------------------------- */
+        if ( preg_match( '/\[\[Display label::([^\|\]]+)/i', $content, $m ) ) {
+            $data['label'] = trim( $m[1] );
+        }
+
         /* Description --------------------------------------------------- */
         $lines = explode( "\n", $content );
         foreach ( $lines as $line ) {
@@ -174,6 +179,11 @@ class WikiPropertyStore {
 
         // Datatype
         $lines[] = '[[Has type::' . $property->getSMWType() . ']]';
+
+        // Display label (only if different from property name)
+        if ( $property->getLabel() !== $property->getName() ) {
+            $lines[] = '[[Display label::' . $property->getLabel() . ']]';
+        }
 
         // Allowed values
         if ( $property->hasAllowedValues() ) {

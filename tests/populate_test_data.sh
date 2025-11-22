@@ -73,16 +73,16 @@ echo "==> Creating test properties..."
 # Property Type 1: Text Properties
 # ==========================================
 echo "  - Text properties..."
-create_property "Has full name" "The full name of a person." "Text" ""
+create_property "Has full name" "The full name of a person." "Text" "[[Display label::Full Name]]"
 create_property "Has biography" "Biography or description text." "Text" ""
-create_property "Has research interests" "Research interests and expertise areas." "Text" ""
+create_property "Has research interests" "Research interests and expertise areas." "Text" "[[Display label::Research Interests]]"
 create_property "Has office location" "Office or workspace location." "Text" ""
 
 # ==========================================
 # Property Type 2: Contact Information
 # ==========================================
 echo "  - Contact information properties..."
-create_property "Has email" "Email address." "Email" ""
+create_property "Has email" "Email address." "Email" "[[Display label::Email]]"
 create_property "Has phone" "Phone number." "Telephone number" ""
 create_property "Has website" "Personal or lab website URL." "URL" ""
 create_property "Has orcid" "ORCID identifier (e.g., 0000-0000-0000-0000)." "Text" ""
@@ -92,8 +92,8 @@ create_property "Has orcid" "ORCID identifier (e.g., 0000-0000-0000-0000)." "Tex
 # ==========================================
 echo "  - Date/time properties..."
 create_property "Has birth date" "Date of birth." "Date" ""
-create_property "Has start date" "Start date (employment, enrollment, etc.)." "Date" ""
-create_property "Has end date" "End date (graduation, departure, etc.)." "Date" ""
+create_property "Has start date" "Start date (employment, enrollment, etc.)." "Date" "[[Display label::Start Date]]"
+create_property "Has end date" "End date (graduation, departure, etc.)." "Date" "[[Display label::End Date]]"
 create_property "Has publication date" "Date of publication." "Date" ""
 
 # ==========================================
@@ -101,8 +101,8 @@ create_property "Has publication date" "Date of publication." "Date" ""
 # ==========================================
 echo "  - Numeric properties..."
 create_property "Has cohort year" "Year of cohort or class." "Number" ""
-create_property "Has publication count" "Number of publications." "Number" ""
-create_property "Has h index" "H-index metric." "Number" ""
+create_property "Has publication count" "Number of publications." "Number" "[[Display label::Publication Count]]"
+create_property "Has h index" "H-index metric." "Number" "[[Display label::H Index]]"
 create_property "Has room number" "Office or room number." "Number" ""
 
 # ==========================================
@@ -116,10 +116,10 @@ create_property "Has public profile" "Whether profile is publicly visible." "Boo
 # Property Type 6: Page/Reference Properties
 # ==========================================
 echo "  - Page/reference properties..."
-create_property "Has advisor" "Academic advisor or supervisor." "Page" ""
-create_property "Has lab" "Lab or research group affiliation." "Page" ""
-create_property "Has institution" "Institutional affiliation." "Page" ""
-create_property "Has department" "Department affiliation." "Page" ""
+create_property "Has advisor" "Academic advisor or supervisor." "Page" "[[Display label::Advisor]]"
+create_property "Has lab" "Lab or research group affiliation." "Page" "[[Display label::Lab]]"
+create_property "Has institution" "Institutional affiliation." "Page" "[[Display label::Institution]]"
+create_property "Has department" "Department affiliation." "Page" "[[Display label::Department]]"
 create_property "Has collaborator" "Research collaborators." "Page" ""
 
 # ==========================================
@@ -134,7 +134,8 @@ create_property "Has lab role" "Role in the lab." "Text" "[[Allows value::PI]]
 [[Allows value::Research Assistant]]
 [[Allows value::Visitor]]"
 
-create_property "Has academic level" "Academic level or degree status." "Text" "[[Allows value::Undergraduate]]
+create_property "Has academic level" "Academic level or degree status." "Text" "[[Display label::Academic Level]]
+[[Allows value::Undergraduate]]
 [[Allows value::Masters]]
 [[Allows value::PhD]]
 [[Allows value::Postdoc]]

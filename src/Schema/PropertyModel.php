@@ -54,7 +54,19 @@ class PropertyModel {
         $this->name = trim( $name );
 
         $this->datatype      = $this->normalizeDatatype( $data['datatype'] ?? 'Text' );
-        $this->label         = $data['label'] ?? $this->name;
+        
+        // Set label: use provided label, or auto-generate if label equals name
+        if ( !empty( $data['label'] ) ) {
+            $this->label = (string)$data['label'];
+        } else {
+            $this->label = $this->name;
+        }
+        
+        // Auto-generate label if it equals the name (meaning no explicit label was provided)
+        if ( $this->label === $this->name ) {
+            $this->label = $this->autoGenerateLabel( $this->name );
+        }
+        
         $this->description   = $data['description'] ?? '';
 
         $allowedValues = $data['allowedValues'] ?? [];
@@ -105,6 +117,26 @@ class PropertyModel {
         return in_array( $datatype, $valid ) ? $datatype : 'Text';
     }
 
+    /**
+     * Auto-generate a human-readable label from a property name.
+     *
+     * Strips "Has " or "Has_" prefix, replaces underscores with spaces,
+     * and capitalizes words.
+     *
+     * Examples:
+     *   "Has department" → "Department"
+     *   "Has_research_area" → "Research Area"
+     *   "Has_full_name" → "Full Name"
+     *
+     * @param string $name Property name
+     * @return string Generated label
+     */
+    private function autoGenerateLabel( string $name ): string {
+        $clean = preg_replace( '/^Has[_ ]/', '', $name );
+        $clean = str_replace( '_', ' ', $clean );
+        return ucwords( $clean );
+    }
+
     /* ---------------------------------------------------------------------
      * BASIC ACCESSORS
      * --------------------------------------------------------------------- */
@@ -118,7 +150,8 @@ class PropertyModel {
     }
 
     public function getLabel(): string {
-        return $this->label;
+        // Ensure label is never empty - fallback to name if somehow empty
+        return !empty( $this->label ) ? (string)$this->label : $this->name;
     }
 
     public function getDescription(): string {

@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\StructureSync\Generator;
 
 use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
 use MediaWiki\Extension\StructureSync\Store\PageCreator;
+use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
 
 /**
  * DisplayStubGenerator
@@ -26,8 +27,25 @@ class DisplayStubGenerator {
     /** @var PageCreator */
     private $pageCreator;
 
-    public function __construct( PageCreator $pageCreator = null ) {
+    /** @var WikiPropertyStore */
+    private $propertyStore;
+
+    public function __construct(
+        PageCreator $pageCreator = null,
+        WikiPropertyStore $propertyStore = null
+    ) {
         $this->pageCreator = $pageCreator ?? new PageCreator();
+        $this->propertyStore = $propertyStore ?? new WikiPropertyStore();
+    }
+
+    /**
+     * Sanitize a value to ensure MediaWiki never encounters null.
+     *
+     * @param string|null $value
+     * @return string
+     */
+    private function sanitize( ?string $value ): string {
+        return $value ?? '';
     }
 
     /* =====================================================================
@@ -50,7 +68,7 @@ class DisplayStubGenerator {
         $lines[] = '<noinclude>';
         $lines[] = '<!-- DISPLAY TEMPLATE STUB (AUTO-CREATED by StructureSync) -->';
         $lines[] = '<!-- This template is SAFE TO EDIT and will NOT be overwritten. -->';
-        $lines[] = '<!-- Customize the visual layout for pages in [[Category:' . $category->getName() . ']]. -->';
+        $lines[] = '<!-- Customize the visual layout for pages in [[Category:' . $this->sanitize( $category->getName() ) . ']]. -->';
         $lines[] = '<!-- You may reorganize sections, add wikitables, images, etc. -->';
         $lines[] = '</noinclude><includeonly>';
 
@@ -62,7 +80,7 @@ class DisplayStubGenerator {
             $lines[] = '<div class="ss-header">';
 
             foreach ( $headerProps as $propertyName ) {
-                $param = $this->propertyToParameter( $propertyName );
+                $param = $this->sanitize( $this->propertyToParameter( $propertyName ) );
                 $lines[] = '  {{#if:{{{' . $param . '|}}}|';
                 $lines[] = '    <h1 class="ss-header-field">{{{' . $param . '}}}</h1>';
                 $lines[] = '  }}';
@@ -106,19 +124,19 @@ class DisplayStubGenerator {
     private function generateDisplaySection( array $section ): array {
         $lines = [];
 
-        $name = $section['name'] ?? 'Section';
+        $name = $this->sanitize( $section['name'] ?? 'Section' );
         $properties = $section['properties'] ?? [];
 
         // Sort for stable regeneration
         $properties = array_values( array_unique( array_map( 'strval', $properties ) ) );
         sort( $properties );
 
-        $lines[] = "== $name ==";
+        $lines[] = '== ' . $name . ' ==';
         $lines[] = '<div class="ss-section">';
 
         foreach ( $properties as $propertyName ) {
-            $param = $this->propertyToParameter( $propertyName );
-            $label = $this->propertyToLabel( $propertyName );
+            $param = $this->sanitize( $this->propertyToParameter( $propertyName ) );
+            $label = $this->sanitize( $this->propertyToLabel( $propertyName ) );
 
             $lines[] = '  {{#if:{{{' . $param . '|}}}|';
             $lines[] = '    <div class="ss-row">';
@@ -150,8 +168,8 @@ class DisplayStubGenerator {
         $lines[] = '<div class="ss-section">';
 
         foreach ( $properties as $propertyName ) {
-            $param = $this->propertyToParameter( $propertyName );
-            $label = $this->propertyToLabel( $propertyName );
+            $param = $this->sanitize( $this->propertyToParameter( $propertyName ) );
+            $label = $this->sanitize( $this->propertyToLabel( $propertyName ) );
 
             $lines[] = '  {{#if:{{{' . $param . '|}}}|';
             $lines[] = '    <div class="ss-row">';
@@ -255,17 +273,33 @@ class DisplayStubGenerator {
     /**
      * Convert a property name into a human-readable label for display.
      *
+     * Uses PropertyModel label if available, otherwise falls back to
+     * auto-generated label based on property name.
+     *
      * @param string $propertyName
      * @return string
      */
     private function propertyToLabel( string $propertyName ): string {
+        $propertyName = $this->sanitize( $propertyName );
 
-        // Strip "Has "
-        if ( str_starts_with( $propertyName, 'Has ' ) ) {
-            return substr( $propertyName, 4 );
+        // Try to get property model and use its label
+        $property = $this->propertyStore->readProperty( $propertyName );
+        if ( $property !== null ) {
+            return $property->getLabel();
         }
 
-        // If property is namespaced (Foaf:name) display "Foaf:name"
-        return $propertyName;
+        // Fallback: auto-generate label from property name
+        // Strip "Has " or "Has_"
+        if ( str_starts_with( $propertyName, 'Has ' ) ) {
+            $clean = substr( $propertyName, 4 );
+        } elseif ( str_starts_with( $propertyName, 'Has_' ) ) {
+            $clean = substr( $propertyName, 4 );
+        } else {
+            $clean = $propertyName;
+        }
+
+        // Replace underscores with spaces and capitalize
+        $clean = str_replace( '_', ' ', $clean );
+        return ucwords( $clean );
     }
 }

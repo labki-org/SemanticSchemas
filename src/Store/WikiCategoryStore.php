@@ -205,11 +205,15 @@ class WikiCategoryStore {
 
             foreach ( $sections as $idx => $sec ) {
                 $lines[] = "{{#subobject:display_section_$idx";
-                $lines[] = "|Has display section name=" . ( $sec['name'] ?? '' );
+                $name = $sec['name'] ?? '';
+                $lines[] = "|Has display section name=" . ( $name !== null ? (string)$name : '' );
 
                 if ( !empty( $sec['properties'] ) ) {
                     foreach ( $sec['properties'] as $p ) {
-                        $lines[] = "|Has display section property=Property:$p";
+                        $pSafe = $p !== null ? (string)$p : '';
+                        if ( $pSafe !== '' ) {
+                            $lines[] = "|Has display section property=Property:$pSafe";
+                        }
                     }
                 }
 
