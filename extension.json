@@ -35,6 +35,19 @@
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\StructureSync\\": "src/"
 	},
+	"ResourceModules": {
+		"ext.structuresync.styles": {
+			"styles": [
+				"resources/ext.structuresync.styles.css"
+			],
+			"localBasePath": "",
+			"remoteExtPath": "StructureSync",
+			"targets": [
+				"desktop",
+				"mobile"
+			]
+		}
+	},
 	"SpecialPages": {
 		"StructureSync": "MediaWiki\\Extension\\StructureSync\\Special\\SpecialStructureSync"
 	},

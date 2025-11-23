@@ -209,29 +209,253 @@ class SpecialStructureSync extends SpecialPage
 	private function showNavigation(string $currentAction): void
 	{
 		$tabs = [
-			'overview' => $this->msg('structuresync-overview')->text(),
-			'export' => $this->msg('structuresync-export')->text(),
-			'import' => $this->msg('structuresync-import')->text(),
-			'validate' => $this->msg('structuresync-validate')->text(),
-			'generate' => $this->msg('structuresync-generate')->text(),
-			'diff' => $this->msg('structuresync-diff')->text(),
+			'overview' => [
+				'label' => $this->msg('structuresync-overview')->text(),
+				'subtext' => $this->msg('structuresync-tab-overview-subtext')->text(),
+			],
+			'export' => [
+				'label' => $this->msg('structuresync-export')->text(),
+				'subtext' => $this->msg('structuresync-tab-export-subtext')->text(),
+			],
+			'import' => [
+				'label' => $this->msg('structuresync-import')->text(),
+				'subtext' => $this->msg('structuresync-tab-import-subtext')->text(),
+			],
+			'validate' => [
+				'label' => $this->msg('structuresync-validate')->text(),
+				'subtext' => $this->msg('structuresync-tab-validate-subtext')->text(),
+			],
+			'generate' => [
+				'label' => $this->msg('structuresync-generate')->text(),
+				'subtext' => $this->msg('structuresync-tab-generate-subtext')->text(),
+			],
+			'diff' => [
+				'label' => $this->msg('structuresync-diff')->text(),
+				'subtext' => $this->msg('structuresync-tab-diff-subtext')->text(),
+			],
 		];
 
-		$html = '<div class="structuresync-nav"><ul>';
-
-		foreach ($tabs as $action => $label) {
-			$class = ($action === $currentAction) ? 'active' : '';
+		$links = '';
+		foreach ($tabs as $action => $data) {
 			$url = $this->getPageTitle($action)->getLocalURL();
-			$html .= Html::rawElement(
-				'li',
-				['class' => $class],
-				Html::element('a', ['href' => $url], $label)
+			$isActive = ($action === $currentAction);
+			$links .= Html::rawElement(
+				'a',
+				[
+					'href' => $url,
+					'class' => 'structuresync-tab' . ($isActive ? ' is-active' : ''),
+					'aria-current' => $isActive ? 'page' : null,
+				],
+				Html::rawElement('span', ['class' => 'structuresync-tab-label'], $data['label']) .
+				Html::rawElement('span', ['class' => 'structuresync-tab-subtext'], $data['subtext'])
 			);
 		}
 
-		$html .= '</ul></div>';
+		$nav = Html::rawElement(
+			'nav',
+			['class' => 'structuresync-tabs', 'role' => 'tablist'],
+			$links
+		);
 
-		$this->getOutput()->addHTML($html);
+		$this->getOutput()->addHTML(
+			Html::rawElement('div', ['class' => 'structuresync-shell'], $nav)
+		);
+	}
+
+	/**
+	 * Wrap arbitrary HTML in the standard page shell container.
+	 *
+	 * @param string $html
+	 * @return string
+	 */
+	private function wrapShell(string $html): string
+	{
+		return Html::rawElement('div', ['class' => 'structuresync-shell'], $html);
+	}
+
+	/**
+	 * Render a compact stat card tile.
+	 *
+	 * @param string $label
+	 * @param string $value
+	 * @param string $subtext
+	 * @return string
+	 */
+	private function renderStatCard(string $label, string $value, string $subtext = ''): string
+	{
+		$body = Html::rawElement('div', ['class' => 'structuresync-stat-label'], $label) .
+			Html::rawElement('div', ['class' => 'structuresync-stat-value'], $value);
+
+		if ($subtext !== '') {
+			$body .= Html::rawElement('p', ['class' => 'structuresync-stat-subtext'], $subtext);
+		}
+
+		return Html::rawElement('div', ['class' => 'structuresync-stat-card'], $body);
+	}
+
+	/**
+	 * Format timestamps for display using the viewer's language.
+	 *
+	 * @param string|null $timestamp
+	 * @return string
+	 */
+	private function formatTimestamp(?string $timestamp): string
+	{
+		if ($timestamp === null || trim($timestamp) === '') {
+			return $this->msg('structuresync-label-not-available')->text();
+		}
+
+		$ts = wfTimestamp(TS_MW, $timestamp);
+		if ($ts === false) {
+			return $timestamp;
+		}
+
+		$lang = $this->getLanguage();
+		return $lang->userDate($ts, $this->getUser()) . ' · ' . $lang->userTime($ts, $this->getUser());
+	}
+
+	/**
+	 * Trim schema hashes for smaller display.
+	 *
+	 * @param string|null $hash
+	 * @return string
+	 */
+	private function formatSchemaHash(?string $hash): string
+	{
+		if ($hash === null || $hash === '') {
+			return $this->msg('structuresync-label-not-available')->text();
+		}
+
+		return substr($hash, 0, 10) . '…';
+	}
+
+	/**
+	 * Render a colored pill badge.
+	 *
+	 * @param bool $state
+	 * @param string $labelWhenTrue
+	 * @param string $labelWhenFalse
+	 * @param string $trueClass
+	 * @param string $falseClass
+	 * @return string
+	 */
+	private function renderBadge(
+		bool $state,
+		string $labelWhenTrue,
+		string $labelWhenFalse,
+		string $trueClass = 'is-ok',
+		string $falseClass = 'is-alert'
+	): string {
+		return Html::rawElement(
+			'span',
+			['class' => 'structuresync-badge ' . ($state ? $trueClass : $falseClass)],
+			$state ? $labelWhenTrue : $labelWhenFalse
+		);
+	}
+
+	/**
+	 * Render a badge that links to a MediaWiki title when provided.
+	 *
+	 * @param bool $state
+	 * @param string $labelWhenTrue
+	 * @param string $labelWhenFalse
+	 * @param Title|null $title
+	 * @param string $trueClass
+	 * @param string $falseClass
+	 * @return string
+	 */
+	private function renderBadgeLink(
+		bool $state,
+		string $labelWhenTrue,
+		string $labelWhenFalse,
+		?Title $title,
+		string $trueClass = 'is-ok',
+		string $falseClass = 'is-alert'
+	): string {
+		$badge = Html::rawElement(
+			'span',
+			['class' => 'structuresync-badge ' . ($state ? $trueClass : $falseClass)],
+			$state ? $labelWhenTrue : $labelWhenFalse
+		);
+
+		if ($title === null) {
+			return $badge;
+		}
+
+		return Html::rawElement(
+			'a',
+			[
+				'href' => $title->getLocalURL(),
+				'class' => 'structuresync-inline-link'
+			],
+			$badge
+		);
+	}
+
+	/**
+	 * Resolve the PageForms namespace ID.
+	 *
+	 * @return int
+	 */
+	private function getFormNamespace(): int
+	{
+		return defined('PF_NS_FORM') ? constant('PF_NS_FORM') : NS_MAIN;
+	}
+
+	private function getTemplateTitle(string $categoryName): ?Title
+	{
+		return Title::makeTitleSafe(NS_TEMPLATE, $categoryName);
+	}
+
+	private function getFormTitle(string $categoryName): ?Title
+	{
+		return Title::makeTitleSafe($this->getFormNamespace(), $categoryName);
+	}
+
+	private function getDisplayTitle(string $categoryName): ?Title
+	{
+		return Title::makeTitleSafe(NS_TEMPLATE, $categoryName . '/display');
+	}
+
+	/**
+	 * Metadata describing quick actions surfaced on the overview page.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function getQuickActions(): array
+	{
+		return [
+			[
+				'action' => 'import',
+				'label' => $this->msg('structuresync-import')->text(),
+				'description' => $this->msg('structuresync-import-description')->text(),
+			],
+			[
+				'action' => 'generate',
+				'label' => $this->msg('structuresync-generate')->text(),
+				'description' => $this->msg('structuresync-generate-description')->text(),
+			],
+			[
+				'action' => 'validate',
+				'label' => $this->msg('structuresync-validate')->text(),
+				'description' => $this->msg('structuresync-validate-description')->text(),
+			],
+			[
+				'action' => 'diff',
+				'label' => $this->msg('structuresync-diff')->text(),
+				'description' => $this->msg('structuresync-diff-description')->text(),
+			],
+		];
+	}
+
+	/**
+	 * Resolve the namespace ID used for Semantic MediaWiki properties.
+	 *
+	 * @return int
+	 */
+	private function getPropertyNamespace(): int
+	{
+		return defined('SMW_NS_PROPERTY') ? constant('SMW_NS_PROPERTY') : NS_MAIN;
 	}
 
 	/**
@@ -245,63 +469,143 @@ class SpecialStructureSync extends SpecialPage
 		$exporter = new SchemaExporter();
 		$stats = $exporter->getStatistics();
 		$stateManager = new StateManager();
+		$state = $stateManager->getFullState();
 
 		// Check sync status
 		$isDirty = $stateManager->isDirty();
-		$sourceSchemaHash = $stateManager->getSourceSchemaHash();
+		$lastChange = $state['lastChangeTimestamp'] ?? null;
+		$lastGenerated = $state['generated'] ?? null;
+		$sourceSchemaHash = $state['sourceSchemaHash'] ?? null;
 
-		// Status box at top
-		if ($isDirty) {
-			$statusMessage = $this->msg('structuresync-status-out-of-sync')->text();
-			$generateUrl = $this->getPageTitle('generate')->getLocalURL();
-			$generateLink = Html::element(
+		$statusMessage = $isDirty
+			? $this->msg('structuresync-status-out-of-sync')->text()
+			: $this->msg('structuresync-status-in-sync')->text();
+
+		$hero = Html::rawElement(
+			'div',
+			['class' => 'structuresync-hero'],
+			Html::rawElement(
+				'div',
+				[],
+				Html::element(
+					'h1',
+					[],
+					$this->msg('structuresync')->text() . ' — ' . $this->msg('structuresync-overview')->text()
+				) .
+				Html::element(
+					'p',
+					[],
+					$this->msg('structuresync-overview-hero-description')->text()
+				)
+			) .
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-hero-status'],
+				Html::rawElement(
+					'span',
+					['class' => 'structuresync-status-chip ' . ($isDirty ? 'is-dirty' : 'is-clean')],
+					$statusMessage
+				) .
+				($isDirty
+					? Html::element(
+						'a',
+						[
+							'href' => $this->getPageTitle('generate')->getLocalURL(),
+							'class' => 'mw-ui-button mw-ui-progressive'
+						],
+						$this->msg('structuresync-status-generate-link')->text()
+					)
+					: '')
+			)
+		);
+
+		$categoryCount = (int)($stats['categoryCount'] ?? 0);
+		$propertyCount = (int)($stats['propertyCount'] ?? 0);
+		$lang = $this->getLanguage();
+
+		$summaryGrid = Html::rawElement(
+			'div',
+			['class' => 'structuresync-summary-grid'],
+			$this->renderStatCard(
+				$this->msg('structuresync-label-categories')->text(),
+				$lang->formatNum($categoryCount),
+				$this->msg('structuresync-categories-count')->numParams($categoryCount)->text()
+			) .
+			$this->renderStatCard(
+				$this->msg('structuresync-label-properties')->text(),
+				$lang->formatNum($propertyCount),
+				$this->msg('structuresync-properties-count')->numParams($propertyCount)->text()
+			) .
+			$this->renderStatCard(
+				$this->msg('structuresync-label-last-change')->text(),
+				$this->formatTimestamp($lastChange)
+			) .
+			$this->renderStatCard(
+				$this->msg('structuresync-label-last-generation')->text(),
+				$this->formatTimestamp($lastGenerated)
+			) .
+			$this->renderStatCard(
+				$this->msg('structuresync-label-schema-hash')->text(),
+				$this->formatSchemaHash($sourceSchemaHash)
+			)
+		);
+
+		$quickActions = '';
+		foreach ($this->getQuickActions() as $action) {
+			$quickActions .= Html::rawElement(
 				'a',
-				['href' => $generateUrl],
-				$this->msg('structuresync-status-generate-link')->text()
-			);
-			$statusMessage .= ' ' . $generateLink;
-			$html = Html::rawElement(
-				'div',
-				['class' => 'mw-message-box mw-message-box-error'],
-				$statusMessage
-			);
-		} else {
-			$html = Html::rawElement(
-				'div',
-				['class' => 'mw-message-box mw-message-box-success'],
-				$this->msg('structuresync-status-in-sync')->text()
+				[
+					'href' => $this->getPageTitle($action['action'])->getLocalURL(),
+					'class' => 'structuresync-quick-action'
+				],
+				Html::element('strong', [], $action['label']) .
+				Html::rawElement('span', [], $action['description'])
 			);
 		}
 
-		$html .= Html::element(
-			'h2',
-			[],
-			$this->msg('structuresync-overview-summary')->text()
+		$quickActionsCard = Html::rawElement(
+			'div',
+			['class' => 'structuresync-card'],
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-card-header'],
+				Html::element(
+					'h3',
+					['class' => 'structuresync-card-title'],
+					$this->msg('structuresync-overview-quick-actions')->text()
+				) .
+				Html::element(
+					'p',
+					['class' => 'structuresync-card-subtitle'],
+					$this->msg('structuresync-overview-quick-actions-subtitle')->text()
+				)
+			) .
+			Html::rawElement('div', ['class' => 'structuresync-quick-actions'], $quickActions)
 		);
 
-		// Basic statistics (category & property counts)
-		$html .= Html::openElement('div', ['class' => 'structuresync-stats']);
-		$html .= Html::element(
-			'p',
-			[],
-			$this->msg('structuresync-categories-count')
-				->numParams($stats['categoryCount'] ?? 0)
-				->text()
+		$categoryCard = Html::rawElement(
+			'div',
+			['class' => 'structuresync-card'],
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-card-header'],
+				Html::element(
+					'h3',
+					['class' => 'structuresync-card-title'],
+					$this->msg('structuresync-overview-summary')->text()
+				) .
+				Html::element(
+					'p',
+					['class' => 'structuresync-card-subtitle'],
+					$this->msg('structuresync-overview-categories-subtitle')->text()
+				)
+			) .
+			Html::rawElement('div', ['class' => 'structuresync-table-wrapper'], $this->getCategoryStatusTable())
 		);
-		$html .= Html::element(
-			'p',
-			[],
-			$this->msg('structuresync-properties-count')
-				->numParams($stats['propertyCount'] ?? 0)
-				->text()
-		);
-		$html .= Html::closeElement('div');
 
-		// Category status table
-		$html .= Html::element('h3', [], 'Categories');
-		$html .= $this->getCategoryStatusTable();
+		$content = $hero . $summaryGrid . $quickActionsCard . $categoryCard;
 
-		$output->addHTML($html);
+		$output->addHTML($this->wrapShell($content));
 	}
 
 	/**
@@ -323,8 +627,11 @@ class SpecialStructureSync extends SpecialPage
 		$categories = $categoryStore->getAllCategories();
 
 		if (empty($categories)) {
-			// Could be localized with a message key if desired.
-			return Html::element('p', [], 'No categories found.');
+			return Html::rawElement(
+				'div',
+				['class' => 'structuresync-empty-state'],
+				$this->msg('structuresync-overview-no-categories')->text()
+			);
 		}
 
 		// Get stored hashes for comparison
@@ -356,7 +663,7 @@ class SpecialStructureSync extends SpecialPage
 					continue; // Already checked
 				}
 
-				$propTitle = $pageCreator->makeTitle($propertyName, \SMW_NS_PROPERTY);
+				$propTitle = $pageCreator->makeTitle($propertyName, $this->getPropertyNamespace());
 				if ($propTitle && $propTitle->exists()) {
 					$propContent = $pageCreator->getPageContent($propTitle);
 					if ($propContent !== null) {
@@ -372,7 +679,7 @@ class SpecialStructureSync extends SpecialPage
 
 		$html = Html::openElement(
 			'table',
-			['class' => 'wikitable sortable structuresync-category-table']
+			['class' => 'wikitable sortable structuresync-table']
 		);
 
 		$html .= Html::openElement('thead');
@@ -408,25 +715,46 @@ class SpecialStructureSync extends SpecialPage
 			$html .= Html::element('td', [], $name);
 			$html .= Html::element('td', [], (string) count($category->getParents()));
 			$html .= Html::element('td', [], (string) count($category->getAllProperties()));
-			$html .= Html::element(
+			$html .= Html::rawElement(
 				'td',
 				[],
-				$templateGenerator->semanticTemplateExists($name) ? '✓' : '✗'
+				$this->renderBadgeLink(
+					$templateGenerator->semanticTemplateExists($name),
+					$this->msg('structuresync-badge-available')->text(),
+					$this->msg('structuresync-badge-missing')->text(),
+					$this->getTemplateTitle($name)
+				)
 			);
-			$html .= Html::element(
+			$html .= Html::rawElement(
 				'td',
 				[],
-				$formGenerator->formExists($name) ? '✓' : '✗'
+				$this->renderBadgeLink(
+					$formGenerator->formExists($name),
+					$this->msg('structuresync-badge-available')->text(),
+					$this->msg('structuresync-badge-missing')->text(),
+					$this->getFormTitle($name)
+				)
 			);
-			$html .= Html::element(
+			$html .= Html::rawElement(
 				'td',
 				[],
-				$displayGenerator->displayStubExists($name) ? '✓' : '✗'
+				$this->renderBadgeLink(
+					$displayGenerator->displayStubExists($name),
+					$this->msg('structuresync-badge-available')->text(),
+					$this->msg('structuresync-badge-missing')->text(),
+					$this->getDisplayTitle($name)
+				)
 			);
-			$html .= Html::element(
+			$html .= Html::rawElement(
 				'td',
 				[],
-				$isModified ? '✗' : '✓'
+				$this->renderBadge(
+					!$isModified,
+					$this->msg('structuresync-badge-clean')->text(),
+					$this->msg('structuresync-badge-review')->text(),
+					'is-ok',
+					'is-alert'
+				)
 			);
 			$html .= Html::closeElement('tr');
 		}
@@ -495,14 +823,13 @@ class SpecialStructureSync extends SpecialPage
 			$schemaContent = $loader->saveToJson($schema);
 		}
 
-		$html = Html::element(
-			'p',
-			[],
-			$this->msg('structuresync-export-description')->text()
-		);
+		$downloadUrl = $this->getPageTitle('export')->getLocalURL([
+			'format' => $format,
+			'action' => 'export',
+			'download' => '1'
+		]);
 
-		// Format selector
-		$html .= Html::openElement(
+		$form = Html::openElement(
 			'form',
 			[
 				'method' => 'get',
@@ -510,18 +837,17 @@ class SpecialStructureSync extends SpecialPage
 			]
 		);
 
-		$html .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$html .= Html::element(
+		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
+		$form .= Html::element(
 			'label',
 			[],
 			$this->msg('structuresync-export-format')->text()
 		);
-
-		$html .= Html::openElement('select', [
+		$form .= Html::openElement('select', [
 			'name' => 'format',
 			'onchange' => 'this.form.submit()'
 		]);
-		$html .= Html::element(
+		$form .= Html::element(
 			'option',
 			[
 				'value' => 'json',
@@ -529,7 +855,7 @@ class SpecialStructureSync extends SpecialPage
 			],
 			$this->msg('structuresync-export-format-json')->text()
 		);
-		$html .= Html::element(
+		$form .= Html::element(
 			'option',
 			[
 				'value' => 'yaml',
@@ -537,60 +863,77 @@ class SpecialStructureSync extends SpecialPage
 			],
 			$this->msg('structuresync-export-format-yaml')->text()
 		);
-		$html .= Html::closeElement('select');
-		$html .= Html::closeElement('div');
+		$form .= Html::closeElement('select');
+		$form .= Html::closeElement('div');
+		$form .= Html::closeElement('form');
 
-		$html .= Html::closeElement('form');
-
-		// Preview heading
-		$html .= Html::element(
-			'h3',
-			[],
-			$this->msg('structuresync-export-schema-preview')->text()
+		$formCard = Html::rawElement(
+			'div',
+			['class' => 'structuresync-card'],
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-card-header'],
+				Html::element(
+					'h3',
+					['class' => 'structuresync-card-title'],
+					$this->msg('structuresync-export-title')->text()
+				) .
+				Html::element(
+					'p',
+					['class' => 'structuresync-card-subtitle'],
+					$this->msg('structuresync-export-description')->text()
+				)
+			) .
+			$form .
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-export-actions'],
+				Html::element(
+					'a',
+					[
+						'href' => $downloadUrl,
+						'class' => 'mw-ui-button mw-ui-progressive'
+					],
+					$this->msg('structuresync-export-download')->text()
+				)
+			)
 		);
 
-		// Download button
-		$downloadUrl = $this->getPageTitle('export')->getLocalURL([
-			'format' => $format,
-			'action' => 'export',
-			'download' => '1'
-		]);
-
-		$html .= Html::openElement('div', ['class' => 'structuresync-export-actions']);
-		$html .= Html::element(
-			'a',
-			[
-				'href' => $downloadUrl,
-				'class' => 'mw-ui-button mw-ui-progressive',
-				'style' => 'margin-bottom: 10px; display: inline-block;'
-			],
-			$this->msg('structuresync-export-download')->text()
+		$previewCard = Html::rawElement(
+			'div',
+			['class' => 'structuresync-card'],
+			Html::element(
+				'h3',
+				['class' => 'structuresync-card-title'],
+				$this->msg('structuresync-export-schema-preview')->text()
+			) .
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-schema-display'],
+				Html::rawElement(
+					'pre',
+					['class' => 'structuresync-schema-content'],
+					Html::element('code', [], $schemaContent)
+				)
+			) .
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-export-actions'],
+				Html::rawElement(
+					'button',
+					[
+						'type' => 'button',
+						'class' => 'mw-ui-button',
+						'onclick' => 'navigator.clipboard.writeText(' . json_encode($schemaContent) . ').then(() => alert(\'Copied to clipboard\')).catch(() => alert(\'Copy failed\'));'
+					],
+					$this->msg('structuresync-export-copy')->text()
+				)
+			)
 		);
-		$html .= Html::closeElement('div');
 
-		// Schema content preview
-		$html .= Html::openElement('div', ['class' => 'structuresync-schema-display']);
-		$html .= Html::openElement('pre', [
-			'class' => 'structuresync-schema-content',
-			'style' => 'background: #f8f9fa; border: 1px solid #a7d7f9; padding: 15px; overflow-x: auto; max-height: 600px; overflow-y: auto;'
-		]);
-		$html .= Html::element('code', [], $schemaContent);
-		$html .= Html::closeElement('pre');
-		$html .= Html::closeElement('div');
-
-		// Simple copy-to-clipboard helper
-		$html .= Html::openElement('div', ['class' => 'structuresync-export-actions']);
-		$html .= Html::openElement('button', [
-			'type' => 'button',
-			'class' => 'mw-ui-button',
-			'onclick' => 'navigator.clipboard.writeText(' . json_encode($schemaContent) . ').then(() => alert(\'Copied to clipboard!\')).catch(() => alert(\'Failed to copy\'));',
-			'style' => 'margin-top: 10px;'
-		]);
-		$html .= $this->msg('structuresync-export-copy')->text();
-		$html .= Html::closeElement('button');
-		$html .= Html::closeElement('div');
-
-		$output->addHTML($html);
+		$output->addHTML(
+			$this->wrapShell($formCard . $previewCard)
+		);
 	}
 
 	/**
@@ -615,68 +958,94 @@ class SpecialStructureSync extends SpecialPage
 			return;
 		}
 
-		// Render import form
-		$html = Html::element(
-			'p',
-			[],
-			$this->msg('structuresync-import-description')->text()
-		);
-
-		$html .= Html::openElement('form', [
+		$form = Html::openElement('form', [
 			'method' => 'post',
 			'enctype' => 'multipart/form-data',
 			'action' => $this->getPageTitle('import')->getLocalURL()
 		]);
 
-		// File upload input
-		$html .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$html .= Html::element(
+		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
+		$form .= Html::element(
 			'label',
 			[],
 			$this->msg('structuresync-import-file')->text()
 		);
-		$html .= Html::element('input', [
+		$form .= Html::element('input', [
 			'type' => 'file',
 			'name' => 'schemafile',
 			'accept' => '.json,.yaml,.yml'
 		]);
-		$html .= Html::closeElement('div');
+		$form .= Html::closeElement('div');
 
-		// Textarea input
-		$html .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$html .= Html::element(
+		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
+		$form .= Html::element(
 			'label',
 			[],
 			$this->msg('structuresync-import-text')->text()
 		);
-		$html .= Html::element('textarea', [
+		$form .= Html::element('textarea', [
 			'name' => 'schematext',
-			'rows' => '10',
+			'rows' => '12',
 			'cols' => '80'
 		], '');
-		$html .= Html::closeElement('div');
+		$form .= Html::closeElement('div');
 
-		// Dry run checkbox
-		$html .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$html .= Html::check('dryrun', false, ['id' => 'dryrun']);
-		$html .= Html::element(
+		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
+		$form .= Html::check('dryrun', false, ['id' => 'dryrun']);
+		$form .= Html::element(
 			'label',
 			['for' => 'dryrun'],
 			$this->msg('structuresync-import-dryrun')->text()
 		);
-		$html .= Html::closeElement('div');
+		$form .= Html::closeElement('div');
 
-		$html .= Html::hidden('action', 'import');
-		$html .= Html::hidden('token', $this->getUser()->getEditToken());
+		$form .= Html::hidden('action', 'import');
+		$form .= Html::hidden('token', $this->getUser()->getEditToken());
 
-		$html .= Html::submitButton(
+		$form .= Html::submitButton(
 			$this->msg('structuresync-import-button')->text(),
 			['class' => 'mw-ui-button mw-ui-progressive']
 		);
 
-		$html .= Html::closeElement('form');
+		$form .= Html::closeElement('form');
 
-		$output->addHTML($html);
+		$helper = Html::rawElement(
+			'div',
+			['class' => 'structuresync-help-card'],
+			Html::element('strong', [], $this->msg('structuresync-import-title')->text()) .
+			Html::openElement('ul') .
+			Html::element('li', [], $this->msg('structuresync-import-description')->text()) .
+			Html::element('li', [], $this->msg('structuresync-import-dryrun')->text()) .
+			Html::element('li', [], $this->msg('structuresync-import-posthint-generate')->text()) .
+			Html::closeElement('ul')
+		);
+
+		$card = Html::rawElement(
+			'div',
+			['class' => 'structuresync-card'],
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-card-header'],
+				Html::element(
+					'h3',
+					['class' => 'structuresync-card-title'],
+					$this->msg('structuresync-import-title')->text()
+				) .
+				Html::element(
+					'p',
+					['class' => 'structuresync-card-subtitle'],
+					$this->msg('structuresync-import-description')->text()
+				)
+			) .
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-form-grid'],
+				Html::rawElement('div', [], $form) .
+				Html::rawElement('div', [], $helper)
+			)
+		);
+
+		$output->addHTML($this->wrapShell($card));
 	}
 
 	/**
@@ -811,67 +1180,72 @@ class SpecialStructureSync extends SpecialPage
 		$result = $exporter->validateWikiState();
 		$stateManager = new StateManager();
 
-		$html = Html::element(
-			'p',
-			[],
-			$this->msg('structuresync-validate-description')->text()
+		$body = Html::rawElement(
+			'div',
+			['class' => 'structuresync-card-header'],
+			Html::element(
+				'h3',
+				['class' => 'structuresync-card-title'],
+				$this->msg('structuresync-validate-title')->text()
+			) .
+			Html::element(
+				'p',
+				['class' => 'structuresync-card-subtitle'],
+				$this->msg('structuresync-validate-description')->text()
+			)
 		);
 
-		// Check for schema changes
-		$sourceSchemaHash = $stateManager->getSourceSchemaHash();
-		if ($sourceSchemaHash !== null) {
-			// Schema hash exists, but we can't compare with current import here
-			// This would require storing the current import's hash, which is done in import flow
-		}
-
 		if (empty($result['errors'])) {
-			$html .= Html::successBox(
+			$body .= Html::successBox(
 				$this->msg('structuresync-validate-success')->text()
 			);
 		} else {
-			$html .= Html::element(
+			$body .= Html::element(
 				'h3',
 				[],
 				$this->msg('structuresync-validate-errors')->text()
 			);
-			$html .= Html::openElement('ul');
+			$body .= Html::openElement('ul');
 			foreach ($result['errors'] as $error) {
-				$html .= Html::element('li', [], $error);
+				$body .= Html::element('li', [], $error);
 			}
-			$html .= Html::closeElement('ul');
+			$body .= Html::closeElement('ul');
 		}
 
 		if (!empty($result['warnings'])) {
-			$html .= Html::element(
+			$body .= Html::element(
 				'h3',
 				[],
 				$this->msg('structuresync-validate-warnings')->text()
 			);
-			$html .= Html::openElement('ul');
+			$body .= Html::openElement('ul');
 			foreach ($result['warnings'] as $warning) {
-				$html .= Html::element('li', [], $warning);
+				$body .= Html::element('li', [], $warning);
 			}
-			$html .= Html::closeElement('ul');
+			$body .= Html::closeElement('ul');
 		}
 
-		// Display modified pages if any
 		$modifiedPages = $result['modifiedPages'] ?? [];
 		if (!empty($modifiedPages)) {
-			$html .= Html::element(
+			$body .= Html::element(
 				'h3',
 				[],
 				$this->msg('structuresync-validate-modified-pages')
 					->numParams(count($modifiedPages))
 					->text()
 			);
-			$html .= Html::openElement('ul');
+			$body .= Html::openElement('ul');
 			foreach ($modifiedPages as $pageName) {
-				$html .= Html::element('li', [], $pageName);
+				$body .= Html::element('li', [], $pageName);
 			}
-			$html .= Html::closeElement('ul');
+			$body .= Html::closeElement('ul');
 		}
 
-		$output->addHTML($html);
+		$output->addHTML(
+			$this->wrapShell(
+				Html::rawElement('div', ['class' => 'structuresync-card'], $body)
+			)
+		);
 	}
 
 	/**
@@ -893,55 +1267,84 @@ class SpecialStructureSync extends SpecialPage
 			return;
 		}
 
-		$html = Html::element(
-			'p',
-			[],
-			$this->msg('structuresync-generate-description')->text()
-		);
+		$categoryStore = new WikiCategoryStore();
+		$categories = $categoryStore->getAllCategories();
 
-		$html .= Html::openElement('form', [
+		$form = Html::openElement('form', [
 			'method' => 'post',
 			'action' => $this->getPageTitle('generate')->getLocalURL()
 		]);
 
-		// Category picker driven by current wiki categories
-		$categoryStore = new WikiCategoryStore();
-		$categories = $categoryStore->getAllCategories();
-
-		$html .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$html .= Html::element(
+		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
+		$form .= Html::element(
 			'label',
 			[],
 			$this->msg('structuresync-generate-category')->text()
 		);
-		$html .= Html::openElement('select', ['name' => 'category']);
-		$html .= Html::element(
+		$form .= Html::openElement('select', ['name' => 'category']);
+		$form .= Html::element(
 			'option',
 			['value' => ''],
 			$this->msg('structuresync-generate-all')->text()
 		);
 		foreach ($categories as $category) {
 			$name = $category->getName();
-			$html .= Html::element(
+			$form .= Html::element(
 				'option',
 				['value' => $name],
 				$name
 			);
 		}
-		$html .= Html::closeElement('select');
-		$html .= Html::closeElement('div');
+		$form .= Html::closeElement('select');
+		$form .= Html::closeElement('div');
 
-		$html .= Html::hidden('action', 'generate');
-		$html .= Html::hidden('token', $this->getUser()->getEditToken());
+		$form .= Html::hidden('action', 'generate');
+		$form .= Html::hidden('token', $this->getUser()->getEditToken());
 
-		$html .= Html::submitButton(
+		$form .= Html::submitButton(
 			$this->msg('structuresync-generate-button')->text(),
 			['class' => 'mw-ui-button mw-ui-progressive']
 		);
 
-		$html .= Html::closeElement('form');
+		$form .= Html::closeElement('form');
 
-		$output->addHTML($html);
+		$helper = Html::rawElement(
+			'div',
+			['class' => 'structuresync-help-card'],
+			Html::element('strong', [], $this->msg('structuresync-generate-title')->text()) .
+			Html::openElement('ul') .
+			Html::element('li', [], $this->msg('structuresync-generate-description')->text()) .
+			Html::element('li', [], $this->msg('structuresync-generate-tip')->text()) .
+			Html::element('li', [], $this->msg('structuresync-status-modified-outside')->text()) .
+			Html::closeElement('ul')
+		);
+
+		$card = Html::rawElement(
+			'div',
+			['class' => 'structuresync-card'],
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-card-header'],
+				Html::element(
+					'h3',
+					['class' => 'structuresync-card-title'],
+					$this->msg('structuresync-generate-title')->text()
+				) .
+				Html::element(
+					'p',
+					['class' => 'structuresync-card-subtitle'],
+					$this->msg('structuresync-generate-description')->text()
+				)
+			) .
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-form-grid'],
+				Html::rawElement('div', [], $form) .
+				Html::rawElement('div', [], $helper)
+			)
+		);
+
+		$output->addHTML($this->wrapShell($card));
 	}
 
 	/**
@@ -971,12 +1374,7 @@ class SpecialStructureSync extends SpecialPage
 		$formGenerator = new FormGenerator();
 		$displayGenerator = new DisplayStubGenerator();
 
-		// Show progress indicator
-		$output->addHTML(
-			Html::rawElement( 'div', [ 'class' => 'structuresync-progress' ],
-				Html::element( 'p', [], $this->msg( 'structuresync-generate-inprogress' )->text() )
-			)
-		);
+		$progressContainerOpen = false;
 
 		try {
 			// Determine target categories
@@ -993,6 +1391,13 @@ class SpecialStructureSync extends SpecialPage
 				));
 				return;
 			}
+
+			$progressContainerOpen = true;
+			$output->addHTML(
+				Html::openElement( 'div', [ 'class' => 'structuresync-progress' ] ) .
+				Html::element( 'p', [], $this->msg( 'structuresync-generate-inprogress' )->text() ) .
+				Html::openElement( 'div', [ 'class' => 'structuresync-progress-log' ] )
+			);
 
 			// Build map for inheritance resolution
 			$categoryMap = [];
@@ -1024,13 +1429,13 @@ class SpecialStructureSync extends SpecialPage
 				$name = $category->getName();
 
 				// Progress feedback for each category
-				if ( $totalCount > 3 ) {
-					$output->addHTML(
-						Html::rawElement( 'div', [ 'class' => 'structuresync-progress-item' ],
-							$this->msg( 'structuresync-generate-processing' )->params( $name )->text()
-						)
-					);
-				}
+				$output->addHTML(
+					Html::element(
+						'div',
+						[ 'class' => 'structuresync-progress-item' ],
+						$this->msg( 'structuresync-generate-processing' )->params( $name )->text()
+					)
+				);
 
 				try {
 					// Effective category (merged properties)
@@ -1070,7 +1475,7 @@ class SpecialStructureSync extends SpecialPage
 			$allProperties = $propertyStore->getAllProperties();
 			foreach ($allProperties as $property) {
 				$propertyName = $property->getName();
-				$title = $pageCreator->makeTitle($propertyName, \SMW_NS_PROPERTY);
+				$title = $pageCreator->makeTitle($propertyName, $this->getPropertyNamespace());
 				if ($title && $title->exists()) {
 					$content = $pageCreator->getPageContent($title);
 					if ($content !== null) {
@@ -1084,6 +1489,14 @@ class SpecialStructureSync extends SpecialPage
 			if (!empty($pageHashes)) {
 				$stateManager->setPageHashes($pageHashes);
 				$stateManager->clearDirty();
+			}
+
+			if ( $progressContainerOpen ) {
+				$output->addHTML(
+					Html::closeElement( 'div' ) . // closes log
+					Html::closeElement( 'div' )   // closes progress container
+				);
+				$progressContainerOpen = false;
 			}
 
 			// Log the operation
@@ -1102,6 +1515,12 @@ class SpecialStructureSync extends SpecialPage
 				)
 			);
 		} catch (\Exception $e) {
+			if ( $progressContainerOpen ) {
+				$output->addHTML(
+					Html::closeElement( 'div' ) .
+					Html::closeElement( 'div' )
+				);
+			}
 			// Log exception
 			$this->logOperation( 'generate', 'Generation exception: ' . $e->getMessage(), [
 				'exception' => get_class( $e ),
@@ -1133,42 +1552,56 @@ class SpecialStructureSync extends SpecialPage
 			return;
 		}
 
-		$html = Html::element(
-			'p',
-			[],
-			$this->msg('structuresync-diff-description')->text()
-		);
-
-		$html .= Html::openElement('form', [
+		$form = Html::openElement('form', [
 			'method' => 'post',
 			'enctype' => 'multipart/form-data',
 			'action' => $this->getPageTitle('diff')->getLocalURL()
 		]);
 
-		$html .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$html .= Html::element(
+		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
+		$form .= Html::element(
 			'label',
 			[],
 			$this->msg('structuresync-diff-file')->text()
 		);
-		$html .= Html::element('textarea', [
+		$form .= Html::element('textarea', [
 			'name' => 'schematext',
-			'rows' => '10',
+			'rows' => '12',
 			'cols' => '80'
 		], '');
-		$html .= Html::closeElement('div');
+		$form .= Html::closeElement('div');
 
-		$html .= Html::hidden('action', 'diff');
-		$html .= Html::hidden('token', $this->getUser()->getEditToken());
+		$form .= Html::hidden('action', 'diff');
+		$form .= Html::hidden('token', $this->getUser()->getEditToken());
 
-		$html .= Html::submitButton(
+		$form .= Html::submitButton(
 			$this->msg('structuresync-diff-button')->text(),
 			['class' => 'mw-ui-button mw-ui-progressive']
 		);
 
-		$html .= Html::closeElement('form');
+		$form .= Html::closeElement('form');
 
-		$output->addHTML($html);
+		$card = Html::rawElement(
+			'div',
+			['class' => 'structuresync-card'],
+			Html::rawElement(
+				'div',
+				['class' => 'structuresync-card-header'],
+				Html::element(
+					'h3',
+					['class' => 'structuresync-card-title'],
+					$this->msg('structuresync-diff-title')->text()
+				) .
+				Html::element(
+					'p',
+					['class' => 'structuresync-card-subtitle'],
+					$this->msg('structuresync-diff-description')->text()
+				)
+			) .
+			$form
+		);
+
+		$output->addHTML($this->wrapShell($card));
 	}
 
 	/**
