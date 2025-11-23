@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\StructureSync\Generator;
 use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
 use MediaWiki\Extension\StructureSync\Store\PageCreator;
 use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Util\NamingHelper;
 
 /**
  * DisplayStubGenerator
@@ -12,8 +13,20 @@ use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
  * Generates human-editable display templates in:
  *     Template:<Category>/display
  *
- * These templates are intentionally NOT overwritten after creation.
- * Regenerating them could destroy user customizations.
+ * IMPORTANT: Stub vs Generated Templates
+ * ---------------------------------------
+ * Display templates are "stubs" - they are created once but NOT regenerated
+ * on subsequent schema imports. This is intentional to preserve user customizations.
+ * 
+ * Users can freely edit these templates to customize the display layout without
+ * fear of their changes being overwritten.
+ * 
+ * The stub delegates rendering to parser functions that read the current schema:
+ *   - {{#StructureSyncRenderAllProperties:CategoryName}} - Renders all sections
+ *   - {{#StructureSyncRenderSection:CategoryName|SectionName}} - Renders specific section
+ * 
+ * This approach balances automatic updates (via parser functions) with
+ * customization freedom (by not overwriting the stub template itself).
  *
  * This generator:
  *   - Uses inherited display sections/header from CategoryModel
@@ -41,9 +54,11 @@ class DisplayStubGenerator
 
     /**
      * Sanitize a value to ensure MediaWiki never encounters null.
+     * 
+     * This is a safety wrapper that converts null to empty string.
      *
-     * @param string|null $value
-     * @return string
+     * @param string|null $value Value to sanitize
+     * @return string The value or empty string if null
      */
     private function sanitize(?string $value): string
     {
@@ -56,18 +71,19 @@ class DisplayStubGenerator
 
     /**
      * Generate display template stub content.
+     * 
+     * Creates a minimal stub template that delegates rendering to parser functions.
+     * This approach allows the schema to be updated without regenerating the template,
+     * preserving any user customizations.
      *
      * @param CategoryModel $category Effective category (inherited)
-     * @return string
+     * @return string Wikitext content for the display template
      */
     public function generateDisplayStub(CategoryModel $category): string
     {
 
         $lines = [];
 
-        /* ------------------------------------------------------------------
-         * NOINCLUDE header
-         * ------------------------------------------------------------------ */
         /* ------------------------------------------------------------------
          * NOINCLUDE header
          * ------------------------------------------------------------------ */
@@ -89,86 +105,15 @@ class DisplayStubGenerator
     }
 
     /* =====================================================================
-     * SECTION GENERATORS
-     * ===================================================================== */
-
-    /**
-     * Generate a structured section defined by schema "display.sections".
-     *
-     * @param array<string,mixed> $section
-     * @return string[]
-     */
-    private function generateDisplaySection(array $section): array
-    {
-        $lines = [];
-
-        $name = $this->sanitize($section['name'] ?? 'Section');
-        $properties = $section['properties'] ?? [];
-
-        // Sort for stable regeneration
-        $properties = array_values(array_unique(array_map('strval', $properties)));
-        sort($properties);
-
-        $lines[] = '== ' . $name . ' ==';
-        $lines[] = '<div class="ss-section">';
-
-        foreach ($properties as $propertyName) {
-            $param = $this->sanitize($this->propertyToParameter($propertyName));
-            $label = $this->sanitize($this->propertyToLabel($propertyName));
-
-            $lines[] = '  {{#if:{{{' . $param . '|}}}|';
-            $lines[] = '    <div class="ss-row">';
-            $lines[] = '      <span class="ss-label">\'\'\'' . $label . ':\'\'\'</span>';
-            $lines[] = '      <span class="ss-value">{{{' . $param . '}}}</span>';
-            $lines[] = '    </div>';
-            $lines[] = '  }}';
-        }
-
-        $lines[] = '</div>';
-        $lines[] = '';
-
-        return $lines;
-    }
-
-    /**
-     * Default fallback display (if no display config exists).
-     *
-     * @param CategoryModel $category
-     * @return array
-     */
-    private function generateDefaultDisplaySection(CategoryModel $category): array
-    {
-
-        $properties = $category->getAllProperties();
-        sort($properties);
-
-        $categoryLabel = $this->sanitize($category->getLabel());
-        $lines = [];
-        $lines[] = '== ' . $categoryLabel . ' Details ==';
-        $lines[] = '<div class="ss-section">';
-
-        foreach ($properties as $propertyName) {
-            $param = $this->sanitize($this->propertyToParameter($propertyName));
-            $label = $this->sanitize($this->propertyToLabel($propertyName));
-
-            $lines[] = '  {{#if:{{{' . $param . '|}}}|';
-            $lines[] = '    <div class="ss-row">';
-            $lines[] = '      <span class="ss-label">\'\'\'' . $label . ':\'\'\'</span>';
-            $lines[] = '      <span class="ss-value">{{{' . $param . '}}}</span>';
-            $lines[] = '    </div>';
-            $lines[] = '  }}';
-        }
-
-        $lines[] = '</div>';
-        $lines[] = '';
-
-        return $lines;
-    }
-
-    /* =====================================================================
      * CREATION WRAPPERS
      * ===================================================================== */
 
+    /**
+     * Check if a display stub already exists for a category.
+     * 
+     * @param string $categoryName Category name (without namespace)
+     * @return bool True if the display template exists
+     */
     public function displayStubExists(string $categoryName): bool
     {
         $title = $this->pageCreator
@@ -178,9 +123,12 @@ class DisplayStubGenerator
 
     /**
      * Create the stub if missing (never overwrite existing display templates).
+     * 
+     * This method respects the principle that display templates are user-editable
+     * and should not be regenerated once created.
      *
-     * @param CategoryModel $category
-     * @return array{created:bool,message?:string,error?:string}
+     * @param CategoryModel $category Category to generate stub for
+     * @return array{created:bool,message?:string,error?:string} Result with status and message
      */
     public function generateDisplayStubIfMissing(CategoryModel $category): array
     {
@@ -226,10 +174,17 @@ class DisplayStubGenerator
 
     /**
      * Create or update the display template stub.
-     * This will overwrite existing templates.
+     * 
+     * WARNING: This will overwrite existing templates, potentially destroying
+     * user customizations. Use generateDisplayStubIfMissing() in normal workflows.
+     * 
+     * This method is primarily for:
+     * - Initial setup
+     * - Explicit regeneration requests
+     * - Recovery from corrupted templates
      *
-     * @param CategoryModel $category
-     * @return array{created:bool,updated:bool,message?:string,error?:string}
+     * @param CategoryModel $category Category to generate/update stub for
+     * @return array{created:bool,updated:bool,message?:string,error?:string} Result with status
      */
     public function generateOrUpdateDisplayStub(CategoryModel $category): array
     {
@@ -278,37 +233,25 @@ class DisplayStubGenerator
 
     /**
      * Convert property name → template parameter name (consistent with Forms + Templates).
+     * 
+     * Delegates to NamingHelper for consistent transformation across all generators.
      *
-     * @param string $propertyName
-     * @return string
+     * @param string $propertyName SMW property name
+     * @return string Normalized parameter name for use in templates
      */
     private function propertyToParameter(string $propertyName): string
     {
-
-        // Remove "Has "
-        $param = $propertyName;
-        if (str_starts_with($param, 'Has ')) {
-            $param = substr($param, 4);
-        }
-
-        // Replace problematic characters
-        $param = str_replace(':', '_', $param);
-
-        // Normalize
-        $param = strtolower(trim($param));
-        $param = str_replace(' ', '_', $param);
-
-        return $param;
+        return NamingHelper::propertyToParameter($propertyName);
     }
 
     /**
      * Convert a property name into a human-readable label for display.
      *
      * Uses PropertyModel label if available, otherwise falls back to
-     * auto-generated label based on property name.
+     * auto-generated label using NamingHelper.
      *
-     * @param string $propertyName
-     * @return string
+     * @param string $propertyName SMW property name
+     * @return string Human-readable label
      */
     private function propertyToLabel(string $propertyName): string
     {
@@ -320,18 +263,7 @@ class DisplayStubGenerator
             return $property->getLabel();
         }
 
-        // Fallback: auto-generate label from property name
-        // Strip "Has " or "Has_"
-        if (str_starts_with($propertyName, 'Has ')) {
-            $clean = substr($propertyName, 4);
-        } elseif (str_starts_with($propertyName, 'Has_')) {
-            $clean = substr($propertyName, 4);
-        } else {
-            $clean = $propertyName;
-        }
-
-        // Replace underscores with spaces and capitalize
-        $clean = str_replace('_', ' ', $clean);
-        return ucwords($clean);
+        // Fallback: auto-generate label from property name using NamingHelper
+        return NamingHelper::generatePropertyLabel($propertyName);
     }
 }

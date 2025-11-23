@@ -6,39 +6,99 @@ namespace MediaWiki\Extension\StructureSync\Schema;
  * SchemaValidator
  * ----------------
  * Validates category + property definitions for StructureSync.
+ * 
+ * This class performs comprehensive validation of schema structure before
+ * import to catch errors early and provide helpful error messages.
  *
+ * Validation Levels:
+ * -----------------
+ * Two severity levels are supported:
+ * - **ERROR**: Schema violations that will cause import failure or runtime errors
+ * - **WARNING**: Issues that may indicate problems but won't prevent import
+ * 
  * Validates:
- *   - required top-level fields
+ *   - required top-level fields (schemaVersion, categories, properties)
  *   - category definitions (parents, properties, display, forms)
  *   - property definitions (datatype, allowed values, rangeCategory)
  *   - missing references (properties used by categories but not defined)
- *   - multi-parent inheritance
- *   - circular category dependencies
+ *   - multi-parent inheritance consistency
+ *   - circular category dependencies (via InheritanceResolver)
+ *   - display/form section structure
+ *   - naming conventions and best practices (warnings)
+ * 
+ * Error Messages:
+ * --------------
+ * Error messages are designed to be actionable:
+ * - Include the entity name (category/property) that failed
+ * - Specify the exact field that's invalid
+ * - Suggest fixes where possible
+ * - Provide context for why the validation failed
+ * 
+ * Custom Validation Hooks:
+ * -----------------------
+ * Extensions can register custom validation rules via the
+ * 'StructureSyncValidateSchema' hook (future enhancement).
  */
 class SchemaValidator {
 
+	/** @var array Custom validation rules registered by extensions */
+	private $customValidators = [];
+
 	/**
-	 * Validate entire schema
+	 * Validate entire schema (errors only, for backward compatibility)
 	 *
 	 * @param array $schema
 	 * @return array List of error messages
 	 */
 	public function validateSchema( array $schema ): array {
+		$result = $this->validateSchemaWithSeverity( $schema );
+		return $result['errors'];
+	}
+
+	/**
+	 * Validate entire schema with severity levels.
+	 *
+	 * Returns a structured result with both errors and warnings:
+	 * [
+	 *   'errors' => [...],    // Critical issues that prevent import
+	 *   'warnings' => [...],  // Non-critical issues
+	 * ]
+	 *
+	 * @param array $schema
+	 * @return array Validation result with 'errors' and 'warnings' keys
+	 */
+	public function validateSchemaWithSeverity( array $schema ): array {
 		$errors = [];
+		$warnings = [];
 
 		// Basic structure
 		if ( !isset( $schema['schemaVersion'] ) ) {
-			$errors[] = 'Missing required field: schemaVersion';
+			$errors[] = $this->formatError(
+				'schema',
+				'',
+				'Missing required field: schemaVersion',
+				'Add "schemaVersion": "1.0" to the schema root'
+			);
 		}
 
 		if ( !isset( $schema['categories'] ) || !is_array( $schema['categories'] ) ) {
-			$errors[] = 'Missing or invalid field: categories (must be array)';
-			return $errors; // cannot continue
+			$errors[] = $this->formatError(
+				'schema',
+				'categories',
+				'Missing or invalid field: categories',
+				'Ensure "categories" is an object/array at schema root'
+			);
+			return [ 'errors' => $errors, 'warnings' => $warnings ]; // cannot continue
 		}
 
 		if ( !isset( $schema['properties'] ) || !is_array( $schema['properties'] ) ) {
-			$errors[] = 'Missing or invalid field: properties (must be array)';
-			return $errors;
+			$errors[] = $this->formatError(
+				'schema',
+				'properties',
+				'Missing or invalid field: properties',
+				'Ensure "properties" is an object/array at schema root'
+			);
+			return [ 'errors' => $errors, 'warnings' => $warnings ];
 		}
 
 		$categories = $schema['categories'];
@@ -46,18 +106,25 @@ class SchemaValidator {
 
 		// Validate category definitions
 		foreach ( $categories as $categoryName => $categoryData ) {
-			$errors = array_merge(
-				$errors,
-				$this->validateCategory( $categoryName, $categoryData, $categories, $properties )
+			$categoryResult = $this->validateCategory(
+				$categoryName,
+				$categoryData,
+				$categories,
+				$properties
 			);
+			$errors = array_merge( $errors, $categoryResult['errors'] );
+			$warnings = array_merge( $warnings, $categoryResult['warnings'] );
 		}
 
 		// Validate property definitions
 		foreach ( $properties as $propertyName => $propertyData ) {
-			$errors = array_merge(
-				$errors,
-				$this->validateProperty( $propertyName, $propertyData, $categories )
+			$propertyResult = $this->validateProperty(
+				$propertyName,
+				$propertyData,
+				$categories
 			);
+			$errors = array_merge( $errors, $propertyResult['errors'] );
+			$warnings = array_merge( $warnings, $propertyResult['warnings'] );
 		}
 
 		// Detect inheritance cycles
@@ -66,7 +133,79 @@ class SchemaValidator {
 			$this->checkCircularDependencies( $categories )
 		);
 
-		return $errors;
+		// Generate general warnings
+		$warnings = array_merge(
+			$warnings,
+			$this->generateWarnings( $schema )
+		);
+
+		// Run custom validators (if any)
+		foreach ( $this->customValidators as $validator ) {
+			$customResult = call_user_func( $validator, $schema );
+			if ( isset( $customResult['errors'] ) ) {
+				$errors = array_merge( $errors, $customResult['errors'] );
+			}
+			if ( isset( $customResult['warnings'] ) ) {
+				$warnings = array_merge( $warnings, $customResult['warnings'] );
+			}
+		}
+
+		return [
+			'errors' => $errors,
+			'warnings' => $warnings,
+		];
+	}
+
+	/**
+	 * Format a validation error message with context and suggestions.
+	 *
+	 * @param string $entityType 'category', 'property', or 'schema'
+	 * @param string $entityName Name of the entity (category/property)
+	 * @param string $issue Description of the issue
+	 * @param string $suggestion How to fix it
+	 * @return string Formatted error message
+	 */
+	private function formatError(
+		string $entityType,
+		string $entityName,
+		string $issue,
+		string $suggestion
+	): string {
+		$prefix = $entityType === 'schema' ? 'Schema' : ucfirst( $entityType ) . " '$entityName'";
+		$message = "$prefix: $issue";
+		if ( $suggestion ) {
+			$message .= " → Fix: $suggestion";
+		}
+		return $message;
+	}
+
+	/**
+	 * Format a validation warning message.
+	 *
+	 * @param string $entityType 'category', 'property', or 'schema'
+	 * @param string $entityName Name of the entity
+	 * @param string $issue Description of the issue
+	 * @return string Formatted warning message
+	 */
+	private function formatWarning(
+		string $entityType,
+		string $entityName,
+		string $issue
+	): string {
+		$prefix = $entityType === 'schema' ? 'Schema' : ucfirst( $entityType ) . " '$entityName'";
+		return "$prefix: $issue";
+	}
+
+	/**
+	 * Register a custom validation rule.
+	 *
+	 * Validator should be a callable that takes a schema array and returns:
+	 * [ 'errors' => [...], 'warnings' => [...] ]
+	 *
+	 * @param callable $validator
+	 */
+	public function registerCustomValidator( callable $validator ): void {
+		$this->customValidators[] = $validator;
 	}
 
 
@@ -81,16 +220,46 @@ class SchemaValidator {
 		array $allProperties
 	): array {
 		$errors = [];
+		$warnings = [];
+
+		// --- Name validation ------------------------------------------------
+		if ( empty( $categoryName ) || trim( $categoryName ) === '' ) {
+			$errors[] = $this->formatError(
+				'category',
+				$categoryName,
+				'Name cannot be empty',
+				'Provide a non-empty category name'
+			);
+			return [ 'errors' => $errors, 'warnings' => $warnings ];
+		}
+
+		// Check naming conventions
+		if ( preg_match( '/[_\-]/', $categoryName ) ) {
+			$warnings[] = $this->formatWarning(
+				'category',
+				$categoryName,
+				'Name contains underscores or hyphens; spaces are recommended for category names'
+			);
+		}
 
 		// --- parents --------------------------------------------------------
 		if ( isset( $categoryData['parents'] ) ) {
 			if ( !is_array( $categoryData['parents'] ) ) {
-				$errors[] = "Category '$categoryName': parents must be an array";
+				$errors[] = $this->formatError(
+					'category',
+					$categoryName,
+					'parents must be an array',
+					'Use an array like ["ParentCategory1", "ParentCategory2"]'
+				);
 			} else {
 				foreach ( $categoryData['parents'] as $parent ) {
 					if ( !isset( $allCategories[$parent] ) ) {
-						$errors[] =
-							"Category '$categoryName': parent category '$parent' does not exist";
+						$errors[] = $this->formatError(
+							'category',
+							$categoryName,
+							"parent category '$parent' does not exist in schema",
+							"Add '$parent' to the categories section or remove it from parents"
+						);
 					}
 				}
 			}
@@ -98,29 +267,38 @@ class SchemaValidator {
 
 		// --- properties -----------------------------------------------------
 		if ( isset( $categoryData['properties'] ) ) {
-			$errors = array_merge(
-				$errors,
-				$this->validateCategoryProperties( $categoryName, $categoryData['properties'], $allProperties )
+			$propResult = $this->validateCategoryProperties(
+				$categoryName,
+				$categoryData['properties'],
+				$allProperties
 			);
+			$errors = array_merge( $errors, $propResult['errors'] );
+			$warnings = array_merge( $warnings, $propResult['warnings'] );
 		}
 
 		// --- display config -----------------------------------------------
 		if ( isset( $categoryData['display'] ) ) {
-			$errors = array_merge(
-				$errors,
-				$this->validateDisplayConfig( $categoryName, $categoryData['display'], $allProperties )
+			$displayResult = $this->validateDisplayConfig(
+				$categoryName,
+				$categoryData['display'],
+				$allProperties
 			);
+			$errors = array_merge( $errors, $displayResult['errors'] );
+			$warnings = array_merge( $warnings, $displayResult['warnings'] );
 		}
 
 		// --- form config ---------------------------------------------------
 		if ( isset( $categoryData['forms'] ) ) {
-			$errors = array_merge(
-				$errors,
-				$this->validateFormConfig( $categoryName, $categoryData['forms'], $allProperties )
+			$formResult = $this->validateFormConfig(
+				$categoryName,
+				$categoryData['forms'],
+				$allProperties
 			);
+			$errors = array_merge( $errors, $formResult['errors'] );
+			$warnings = array_merge( $warnings, $formResult['warnings'] );
 		}
 
-		return $errors;
+		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}
 
 	private function validateCategoryProperties(
@@ -129,16 +307,26 @@ class SchemaValidator {
 		array $allProperties
 	): array {
 		$errors = [];
+		$warnings = [];
 
 		// Required
 		if ( isset( $propertyLists['required'] ) ) {
 			if ( !is_array( $propertyLists['required'] ) ) {
-				$errors[] = "Category '$categoryName': properties.required must be an array";
+				$errors[] = $this->formatError(
+					'category',
+					$categoryName,
+					'properties.required must be an array',
+					'Use an array like ["Property1", "Property2"]'
+				);
 			} else {
 				foreach ( $propertyLists['required'] as $p ) {
 					if ( !isset( $allProperties[$p] ) ) {
-						$errors[] =
-							"Category '$categoryName': required property '$p' does not exist";
+						$errors[] = $this->formatError(
+							'category',
+							$categoryName,
+							"required property '$p' is not defined in schema",
+							"Add '$p' to the properties section or remove it from this category"
+						);
 					}
 				}
 			}
@@ -147,18 +335,27 @@ class SchemaValidator {
 		// Optional
 		if ( isset( $propertyLists['optional'] ) ) {
 			if ( !is_array( $propertyLists['optional'] ) ) {
-				$errors[] = "Category '$categoryName': properties.optional must be an array";
+				$errors[] = $this->formatError(
+					'category',
+					$categoryName,
+					'properties.optional must be an array',
+					'Use an array like ["Property1", "Property2"]'
+				);
 			} else {
 				foreach ( $propertyLists['optional'] as $p ) {
 					if ( !isset( $allProperties[$p] ) ) {
-						$errors[] =
-							"Category '$categoryName': optional property '$p' does not exist";
+						$errors[] = $this->formatError(
+							'category',
+							$categoryName,
+							"optional property '$p' is not defined in schema",
+							"Add '$p' to the properties section or remove it from this category"
+						);
 					}
 				}
 			}
 		}
 
-		return $errors;
+		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}
 
 
@@ -172,16 +369,26 @@ class SchemaValidator {
 		array $allProperties
 	): array {
 		$errors = [];
+		$warnings = [];
 
 		// header
 		if ( isset( $config['header'] ) ) {
 			if ( !is_array( $config['header'] ) ) {
-				$errors[] = "Category '$categoryName': display.header must be an array";
+				$errors[] = $this->formatError(
+					'category',
+					$categoryName,
+					'display.header must be an array',
+					'Use an array of property names like ["Property1", "Property2"]'
+				);
 			} else {
 				foreach ( $config['header'] as $prop ) {
 					if ( !isset( $allProperties[$prop] ) ) {
-						$errors[] =
-							"Category '$categoryName': display header property '$prop' does not exist";
+						$errors[] = $this->formatError(
+							'category',
+							$categoryName,
+							"display header property '$prop' is not defined in schema",
+							"Add '$prop' to properties or remove it from display header"
+						);
 					}
 				}
 			}
@@ -190,22 +397,40 @@ class SchemaValidator {
 		// sections
 		if ( isset( $config['sections'] ) ) {
 			if ( !is_array( $config['sections'] ) ) {
-				$errors[] = "Category '$categoryName': display.sections must be an array";
+				$errors[] = $this->formatError(
+					'category',
+					$categoryName,
+					'display.sections must be an array',
+					'Use an array of section objects'
+				);
 			} else {
 				foreach ( $config['sections'] as $i => $section ) {
 					if ( !isset( $section['name'] ) ) {
-						$errors[] = "Category '$categoryName': display.sections[$i] missing 'name'";
+						$errors[] = $this->formatError(
+							'category',
+							$categoryName,
+							"display.sections[$i] missing 'name' field",
+							"Add a 'name' field to section $i"
+						);
 					}
 
 					if ( isset( $section['properties'] ) ) {
 						if ( !is_array( $section['properties'] ) ) {
-							$errors[] =
-								"Category '$categoryName': display.sections[$i].properties must be array";
+							$errors[] = $this->formatError(
+								'category',
+								$categoryName,
+								"display.sections[$i].properties must be an array",
+								'Use an array of property names'
+							);
 						} else {
 							foreach ( $section['properties'] as $prop ) {
 								if ( !isset( $allProperties[$prop] ) ) {
-									$errors[] =
-										"Category '$categoryName': display section property '$prop' does not exist";
+									$errors[] = $this->formatError(
+										'category',
+										$categoryName,
+										"display section property '$prop' is not defined in schema",
+										"Add '$prop' to properties or remove it from this display section"
+									);
 								}
 							}
 						}
@@ -214,7 +439,7 @@ class SchemaValidator {
 			}
 		}
 
-		return $errors;
+		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}
 
 
@@ -228,26 +453,45 @@ class SchemaValidator {
 		array $allProperties
 	): array {
 		$errors = [];
+		$warnings = [];
 
 		if ( isset( $config['sections'] ) ) {
 			if ( !is_array( $config['sections'] ) ) {
-				$errors[] = "Category '$categoryName': forms.sections must be an array";
+				$errors[] = $this->formatError(
+					'category',
+					$categoryName,
+					'forms.sections must be an array',
+					'Use an array of section objects'
+				);
 			} else {
 				foreach ( $config['sections'] as $i => $section ) {
 
 					if ( !isset( $section['name'] ) ) {
-						$errors[] = "Category '$categoryName': forms.sections[$i] missing 'name'";
+						$errors[] = $this->formatError(
+							'category',
+							$categoryName,
+							"forms.sections[$i] missing 'name' field",
+							"Add a 'name' field to form section $i"
+						);
 					}
 
 					if ( isset( $section['properties'] ) ) {
 						if ( !is_array( $section['properties'] ) ) {
-							$errors[] =
-								"Category '$categoryName': forms.sections[$i].properties must be array";
+							$errors[] = $this->formatError(
+								'category',
+								$categoryName,
+								"forms.sections[$i].properties must be an array",
+								'Use an array of property names'
+							);
 						} else {
 							foreach ( $section['properties'] as $prop ) {
 								if ( !isset( $allProperties[$prop] ) ) {
-									$errors[] =
-										"Category '$categoryName': form section property '$prop' does not exist";
+									$errors[] = $this->formatError(
+										'category',
+										$categoryName,
+										"form section property '$prop' is not defined in schema",
+										"Add '$prop' to properties or remove it from this form section"
+									);
 								}
 							}
 						}
@@ -256,7 +500,7 @@ class SchemaValidator {
 			}
 		}
 
-		return $errors;
+		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}
 
 
@@ -270,29 +514,64 @@ class SchemaValidator {
 		array $allCategories
 	): array {
 		$errors = [];
+		$warnings = [];
+
+		// Name validation
+		if ( empty( $propertyName ) || trim( $propertyName ) === '' ) {
+			$errors[] = $this->formatError(
+				'property',
+				$propertyName,
+				'Name cannot be empty',
+				'Provide a non-empty property name'
+			);
+			return [ 'errors' => $errors, 'warnings' => $warnings ];
+		}
+
+		// Check naming conventions
+		if ( !str_starts_with( $propertyName, 'Has ' ) ) {
+			$warnings[] = $this->formatWarning(
+				'property',
+				$propertyName,
+				'Property names should start with "Has " by SMW convention'
+			);
+		}
 
 		// datatype required
 		if ( !isset( $propertyData['datatype'] ) ) {
-			$errors[] = "Property '$propertyName': missing datatype";
+			$errors[] = $this->formatError(
+				'property',
+				$propertyName,
+				'missing required field: datatype',
+				'Add a datatype field (e.g., "Text", "Page", "Number", "Date")'
+			);
 		}
 
 		// allowedValues must be array
 		if ( isset( $propertyData['allowedValues'] ) &&
 			!is_array( $propertyData['allowedValues'] ) ) {
 
-			$errors[] = "Property '$propertyName': allowedValues must be an array";
+			$errors[] = $this->formatError(
+				'property',
+				$propertyName,
+				'allowedValues must be an array',
+				'Use an array of allowed values like ["Value1", "Value2"]'
+			);
 		}
 
 		// rangeCategory must exist
 		if ( isset( $propertyData['rangeCategory'] ) ) {
 			$range = $propertyData['rangeCategory'];
 			if ( !isset( $allCategories[$range] ) ) {
-				$errors[] =
-					"Property '$propertyName': rangeCategory '$range' does not exist";
+				$errors[] = $this->formatError(
+					'property',
+					$propertyName,
+					"rangeCategory '$range' is not defined in schema",
+					"Add '$range' to the categories section or remove rangeCategory"
+				);
 			}
 		}
 
-		return $errors;
+		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}
 
 

@@ -7,18 +7,39 @@ use MediaWiki\Title\Title;
 /**
  * PageHashComputer
  * ---------------
- * Computes SHA256 hashes for Category and Property pages.
- * For Categories: only hashes the StructureSync-generated section (between markers).
- * For Properties: hashes the entire page content.
+ * Computes SHA256 hashes for Category and Property pages to detect modifications.
+ * 
+ * Hash Scope:
+ * ----------
+ * For Categories: Only hashes content between StructureSync markers
+ * For Properties: Only hashes content between StructureSync markers
+ * 
+ * This allows users to add custom content outside the markers without
+ * triggering "modified outside StructureSync" warnings.
+ * 
+ * Marker Format Requirements:
+ * --------------------------
+ * - Markers must be HTML comments
+ * - Must appear exactly as: <!-- StructureSync Start --> and <!-- StructureSync End -->
+ * - Case-sensitive
+ * - Markers must not be nested
+ * - Content between markers is trimmed before hashing for consistency
+ * 
+ * Hash Format:
+ * -----------
+ * Hashes are returned with "sha256:" prefix for algorithm identification.
+ * This allows future support for other algorithms if needed.
+ * 
+ * Example: "sha256:abc123def456..."
  */
 class PageHashComputer {
 
-	/** @var PageCreator */
-	private $pageCreator;
+    /** @var PageCreator */
+    private $pageCreator;
 
-	/** Schema content markers */
-	private const MARKER_START = '<!-- StructureSync Start -->';
-	private const MARKER_END = '<!-- StructureSync End -->';
+    /** Schema content markers - must match WikiCategoryStore and WikiPropertyStore */
+    private const MARKER_START = '<!-- StructureSync Start -->';
+    private const MARKER_END = '<!-- StructureSync End -->';
 
 	/**
 	 * @param PageCreator|null $pageCreator

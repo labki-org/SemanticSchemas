@@ -11,16 +11,34 @@ use MediaWiki\Title\Title;
  * ------------------
  * Responsible for reading/writing SMW Property: pages and reconstructing
  * PropertyModel objects from raw content.
+ * 
+ * Storage Format:
+ * --------------
+ * Property metadata is stored within HTML comment markers:
+ * <!-- StructureSync Start -->
+ * ...metadata and semantic annotations...
+ * <!-- StructureSync End -->
+ * 
+ * Semantic Annotations Used:
+ * - [[Has type::DataType]]
+ * - [[Display label::Label]]
+ * - [[Allows value::EnumValue]]
+ * - [[Has domain and range::Category:CategoryName]]
+ * - [[Subproperty of::PropertyName]]
+ * - [[Allows value from category::CategoryName]]
+ * - [[Allows value from namespace::NamespaceName]]
  *
- * Fully corrected version:
+ * Features:
  *   - Description extraction ignores headings (= ... =)
  *   - Ensures consistent metadata keys exist (rangeCategory/subpropertyOf)
  *   - Adds StructureSync markers for hashing and dirty detection
- *   - Normalizes property names
+ *   - Normalizes property names (underscores to spaces)
+ *   - Supports both PageForms and SMW canonical syntax
  */
 class WikiPropertyStore
 {
 
+    /** Schema content markers - must match PageHashComputer and WikiCategoryStore */
     private const MARKER_START = '<!-- StructureSync Start -->';
     private const MARKER_END = '<!-- StructureSync End -->';
 

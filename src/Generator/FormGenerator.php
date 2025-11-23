@@ -6,6 +6,7 @@ use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
 use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
 use MediaWiki\Extension\StructureSync\Store\PageCreator;
 use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Util\NamingHelper;
 
 /**
  * FormGenerator
@@ -27,6 +28,12 @@ use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
  *   - $ancestorChain should be the C3-linearized ancestor list including self.
  */
 class FormGenerator {
+    
+    /** @var int Heading level for top-level sections (===) */
+    private const HEADING_LEVEL_TOP = 3;
+    
+    /** @var int Heading level for subsections (====) */
+    private const HEADING_LEVEL_SUB = 4;
 
     /** @var PageCreator */
     private $pageCreator;
@@ -68,9 +75,18 @@ class FormGenerator {
      * @param CategoryModel $category      Effective (inherited) category
      * @param string[]      $ancestorChain Optional list of ancestor names including self
      *
-     * @return string
+     * @return string PageForms wikitext
+     * @throws \InvalidArgumentException If category name is empty
      */
     public function generateForm( CategoryModel $category, array $ancestorChain = [] ): string {
+        
+        if (trim($category->getName()) === '') {
+            throw new \InvalidArgumentException('Category name cannot be empty');
+        }
+        
+        if (trim($category->getLabel()) === '') {
+            throw new \InvalidArgumentException('Category label cannot be empty');
+        }
 
         $lines = [];
 
@@ -126,7 +142,7 @@ class FormGenerator {
                 // Simple fallback (no ancestor info)
                 $lines = array_merge(
                     $lines,
-                    $this->generateSimpleRequiredOptionalSections( $category, 3 )
+                    $this->generateSimpleRequiredOptionalSections( $category, self::HEADING_LEVEL_TOP )
                 );
             }
         }
@@ -200,7 +216,7 @@ class FormGenerator {
 
         $lines = array_merge(
             $lines,
-            $this->generateSimpleRequiredOptionalSections( $category, 4 )
+            $this->generateSimpleRequiredOptionalSections( $category, self::HEADING_LEVEL_SUB )
         );
 
         // 2) Sections for each ancestor (excluding this category)
@@ -313,29 +329,16 @@ class FormGenerator {
 
     /**
      * Convert property name → safe PageForms parameter name.
+     * 
+     * Delegates to NamingHelper for consistent transformation across all generators.
      *
-     * Rules (aligned with TemplateGenerator & DisplayStubGenerator):
-     *   - Remove leading "Has "
-     *   - Replace ":" with "_"
-     *   - Lowercase
-     *   - Spaces → underscores
-     *
-     * @param string $propertyName
-     * @return string
+     * @param string $propertyName SMW property name
+     * @return string Normalized parameter name for PageForms
      */
     private function propertyToParameter( string $propertyName ): string {
-
-        $param = $propertyName;
-
-        if ( str_starts_with( $param, 'Has ' ) ) {
-            $param = substr( $param, 4 );
-        }
-
-        $param = str_replace( ':', '_', $param );
-        $param = strtolower( trim( $param ) );
-        $param = str_replace( ' ', '_', $param );
-
-        // Ensure parameter name is never empty
+        $param = NamingHelper::propertyToParameter($propertyName);
+        
+        // Ensure parameter name is never empty (fallback)
         if ( empty( $param ) ) {
             $param = 'value';
         }
@@ -346,35 +349,55 @@ class FormGenerator {
     /**
      * Update or create the corresponding Form: page.
      *
-     * @param string $formName
-     * @param string $content
-     * @return bool
+     * @param string $formName Form name (without namespace)
+     * @param string $content Form wikitext content
+     * @return bool True on success, false on failure
+     * @throws \InvalidArgumentException If form name is empty
      */
     public function updateForm( string $formName, string $content ): bool {
+        
+        if (trim($formName) === '') {
+            throw new \InvalidArgumentException('Form name cannot be empty');
+        }
 
         $title = $this->pageCreator->makeTitle( $formName, PF_NS_FORM );
         if ( $title === null ) {
+            wfLogWarning("StructureSync: Failed to create Title for form '$formName'");
             return false;
         }
 
         $summary = 'StructureSync: Auto-generated form';
-        return $this->pageCreator->createOrUpdatePage( $title, $content, $summary );
+        $result = $this->pageCreator->createOrUpdatePage( $title, $content, $summary );
+        
+        if (!$result) {
+            wfLogWarning("StructureSync: Failed to save form '$formName'");
+        }
+        
+        return $result;
     }
 
     /**
      * Convenience wrapper to generate + save a form.
+     * 
+     * This combines form generation and page creation into a single operation.
      *
-     * @param CategoryModel $category
-     * @param string[]      $ancestorChain
-     * @return bool
+     * @param CategoryModel $category Effective (inherited) category
+     * @param string[]      $ancestorChain Optional list of ancestor names
+     * @return bool True on success, false on failure
+     * @throws \InvalidArgumentException If category name/label is invalid
      */
     public function generateAndSaveForm(
         CategoryModel $category,
         array $ancestorChain = []
     ): bool {
 
-        $wikitext = $this->generateForm( $category, $ancestorChain );
-        return $this->updateForm( $category->getName(), $wikitext );
+        try {
+            $wikitext = $this->generateForm( $category, $ancestorChain );
+            return $this->updateForm( $category->getName(), $wikitext );
+        } catch (\Exception $e) {
+            wfLogWarning("StructureSync: Failed to generate/save form for '{$category->getName()}': " . $e->getMessage());
+            return false;
+        }
     }
 
     /**

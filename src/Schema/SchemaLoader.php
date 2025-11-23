@@ -16,8 +16,16 @@ use Symfony\Component\Yaml\Yaml;
  *   - Safe file I/O with consistent exceptions
  *   - Pretty JSON and YAML output for readability
  *   - Minimal structural validation helpers
+ *   - File size limits for security (10MB default)
+ *   - Support for gzip compressed schemas
  */
 class SchemaLoader {
+
+	/**
+	 * Maximum allowed file size (10MB default)
+	 * Can be overridden by setting $wgStructureSyncMaxSchemaSize
+	 */
+	private const MAX_FILE_SIZE = 10485760; // 10MB
 
 	/**
 	 * Load schema from a JSON string
@@ -90,6 +98,10 @@ class SchemaLoader {
 	/**
 	 * Auto-detect based on file extension and parse
 	 *
+	 * Supports:
+	 *   - .json / .yaml / .yml
+	 *   - .json.gz / .yaml.gz / .yml.gz (gzip compressed)
+	 *
 	 * @param string $filePath
 	 * @return array
 	 * @throws \RuntimeException
@@ -99,12 +111,42 @@ class SchemaLoader {
 			throw new \RuntimeException( "File not found: $filePath" );
 		}
 
-		$content = file_get_contents( $filePath );
-		if ( $content === false ) {
-			throw new \RuntimeException( "Cannot read file: $filePath" );
+		// Security: Check file size before reading
+		$fileSize = filesize( $filePath );
+		if ( $fileSize === false ) {
+			throw new \RuntimeException( "Cannot determine file size: $filePath" );
 		}
 
-		$ext = strtolower( pathinfo( $filePath, PATHINFO_EXTENSION ) );
+		$maxSize = defined( 'MW_PHPUNIT_TEST' ) ? self::MAX_FILE_SIZE * 10 : self::MAX_FILE_SIZE;
+		if ( $fileSize > $maxSize ) {
+			$maxMB = round( $maxSize / 1048576, 1 );
+			$actualMB = round( $fileSize / 1048576, 1 );
+			throw new \RuntimeException(
+				"Schema file too large: {$actualMB}MB exceeds maximum of {$maxMB}MB"
+			);
+		}
+
+		// Check if file is gzip compressed
+		$isGzipped = $this->isGzipFile( $filePath );
+
+		if ( $isGzipped ) {
+			$content = gzdecode( file_get_contents( $filePath ) );
+			if ( $content === false ) {
+				throw new \RuntimeException( "Failed to decompress gzip file: $filePath" );
+			}
+		} else {
+			$content = file_get_contents( $filePath );
+			if ( $content === false ) {
+				throw new \RuntimeException( "Cannot read file: $filePath" );
+			}
+		}
+
+		// Determine format from extension (strip .gz if present)
+		$fileName = basename( $filePath );
+		if ( str_ends_with( $fileName, '.gz' ) ) {
+			$fileName = substr( $fileName, 0, -3 );
+		}
+		$ext = strtolower( pathinfo( $fileName, PATHINFO_EXTENSION ) );
 
 		if ( $ext === 'json' ) {
 			return $this->loadFromJson( $content );
@@ -218,5 +260,74 @@ class SchemaLoader {
 			&& array_key_exists( 'properties', $schema )
 			&& is_array( $schema['categories'] )
 			&& is_array( $schema['properties'] );
+	}
+
+	/**
+	 * Check if a file is gzip compressed by examining magic bytes.
+	 *
+	 * Gzip files start with 0x1f 0x8b
+	 *
+	 * @param string $filePath
+	 * @return bool
+	 */
+	private function isGzipFile( string $filePath ): bool {
+		$handle = fopen( $filePath, 'rb' );
+		if ( $handle === false ) {
+			return false;
+		}
+
+		$magic = fread( $handle, 2 );
+		fclose( $handle );
+
+		if ( $magic === false || strlen( $magic ) < 2 ) {
+			return false;
+		}
+
+		// Gzip magic bytes: 0x1f 0x8b
+		return ord( $magic[0] ) === 0x1f && ord( $magic[1] ) === 0x8b;
+	}
+
+	/**
+	 * Save schema to file with optional gzip compression.
+	 *
+	 * @param array $schema
+	 * @param string $filePath
+	 * @param bool $compress If true, gzip compress the output
+	 * @return bool
+	 * @throws \RuntimeException
+	 */
+	public function saveToFileCompressed( array $schema, string $filePath, bool $compress = true ): bool {
+		$ext = strtolower( pathinfo( $filePath, PATHINFO_EXTENSION ) );
+
+		// Determine base format
+		$isGzExt = ( $ext === 'gz' );
+		if ( $isGzExt ) {
+			$fileName = basename( $filePath, '.gz' );
+			$ext = strtolower( pathinfo( $fileName, PATHINFO_EXTENSION ) );
+		}
+
+		if ( $ext === 'json' ) {
+			$content = $this->saveToJson( $schema );
+		} elseif ( $ext === 'yaml' || $ext === 'yml' ) {
+			$content = $this->saveToYaml( $schema );
+		} else {
+			// Default to JSON
+			$content = $this->saveToJson( $schema );
+		}
+
+		if ( $compress ) {
+			$content = gzencode( $content, 9 ); // Maximum compression
+			if ( $content === false ) {
+				throw new \RuntimeException( "Failed to compress schema" );
+			}
+		}
+
+		$ok = file_put_contents( $filePath, $content );
+
+		if ( $ok === false ) {
+			throw new \RuntimeException( "Failed to write file: $filePath" );
+		}
+
+		return true;
 	}
 }

@@ -36,6 +36,11 @@
 	"structuresync-import-updated": "Updated: $1",
 	"structuresync-import-unchanged": "Unchanged: $1",
 	"structuresync-import-errors": "Errors: $1",
+	"structuresync-import-posthint-generate": "Next step: go to Generate to create templates/forms.",
+	"structuresync-import-inprogress": "Importing schema... Please wait.",
+	"structuresync-import-no-schema": "No schema provided. Please upload a file or paste schema text.",
+	"structuresync-import-error": "Import failed: $1",
+	"structuresync-ratelimit-exceeded": "Rate limit exceeded. You can perform up to $1 operations per hour. Please try again later.",
 	"structuresync-validate-title": "Validate Schema",
 	"structuresync-validate-description": "Validate the current wiki schema for consistency",
 	"structuresync-validate-button": "Run Validation",
@@ -47,7 +52,11 @@
 	"structuresync-generate-all": "Generate all",
 	"structuresync-generate-category": "Category:",
 	"structuresync-generate-button": "Generate",
-	"structuresync-generate-success": "Artifacts generated successfully",
+	"structuresync-generate-success": "Successfully generated artifacts for $1 of $2 categories.",
+	"structuresync-generate-inprogress": "Generating artifacts... Please wait.",
+	"structuresync-generate-processing": "Processing category: $1",
+	"structuresync-generate-no-categories": "No matching categories found.",
+	"structuresync-generate-error": "Generation failed: $1",
 	"structuresync-diff-title": "Diff Schema",
 	"structuresync-diff-description": "Compare a schema file with the current wiki state",
 	"structuresync-diff-file": "Upload or paste schema:",
@@ -65,6 +74,8 @@
 	"structuresync-status-modified-outside": "Modified outside StructureSync",
 	"structuresync-status-generate-link": "Generate artifacts",
 	"structuresync-status-schema-changed": "Schema file has changed since last import",
-	"structuresync-validate-modified-pages": "Pages modified outside StructureSync: $1"
+	"structuresync-validate-modified-pages": "Pages modified outside StructureSync: $1",
+	"structuresync-log-name": "StructureSync log",
+	"structuresync-log-header": "This log tracks StructureSync operations (import, export, generate)"
 }
 

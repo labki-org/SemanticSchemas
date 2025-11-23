@@ -38,6 +38,20 @@
 	"SpecialPages": {
 		"StructureSync": "MediaWiki\\Extension\\StructureSync\\Special\\SpecialStructureSync"
 	},
+	"LogTypes": [
+		"structuresync"
+	],
+	"LogNames": {
+		"structuresync": "structuresync-log-name"
+	},
+	"LogHeaders": {
+		"structuresync": "structuresync-log-header"
+	},
+	"LogActionsHandlers": {
+		"structuresync/import": "LogFormatter",
+		"structuresync/export": "LogFormatter",
+		"structuresync/generate": "LogFormatter"
+	},
 	"manifest_version": 2
 }
 

@@ -23,23 +23,123 @@ use MediaWiki\Title\Title;
 /**
  * SpecialStructureSync
  * --------------------
+ * Central administrative UI for StructureSync schema management.
+ * 
+ * File Size Note:
+ * --------------
+ * This file is intentionally large (1001 lines) as it serves as the main
+ * UI controller for all schema operations. It follows MediaWiki's SpecialPage
+ * pattern where a single class handles:
+ * - Request routing
+ * - Form rendering
+ * - Action processing
+ * - UI generation
+ * 
+ * Future Refactoring:
+ * ------------------
+ * For maintainability, consider extracting to separate classes:
+ * - UI/SpecialPageRenderer: HTML generation
+ * - UI/TableBuilder: Category/property table rendering
+ * - UI/FormHandler: Form processing logic
+ * However, the current structure follows standard MediaWiki conventions.
+ * 
  * Central UI for:
- *   - Inspecting current schema (export / preview)
- *   - Importing a schema (JSON/YAML) into the wiki
- *   - Validating wiki state against expected invariants
- *   - Generating Templates / Forms / Display templates from schema / categories
- *   - Comparing an external schema against current wiki-derived schema
- *
- * Assumptions:
- *   - Schema is treated as the source of truth.
- *   - Wiki pages (Category/Property/Form/Template) are compiled artifacts.
+ * --------------
+ * - Overview: Dashboard with category status and sync state
+ * - Export: Export current schema to JSON/YAML
+ * - Import: Import schema from JSON/YAML file or text
+ * - Validate: Check wiki state for errors and modifications
+ * - Generate: Regenerate templates/forms/displays
+ * - Diff: Compare external schema with current wiki schema
+ * 
+ * Architecture:
+ * ------------
+ * - Schema is treated as the source of truth
+ * - Wiki pages (Category/Property/Form/Template) are compiled artifacts
+ * - State tracking prevents unnecessary regeneration
+ * - Hash-based dirty detection identifies external modifications
+ * 
+ * Security:
+ * --------
+ * - Requires 'editinterface' permission
+ * - CSRF token validation on all form submissions (matchEditToken)
+ * - Input sanitization via MediaWiki's request handling
+ * - File upload validation (JSON/YAML only)
+ * - Rate limiting: max 20 operations per hour per user
+ * - Sysops can bypass rate limits via 'protect' permission
+ * - All operations logged to MediaWiki log system (audit trail)
+ * 
+ * Performance:
+ * -----------
+ * - Large operations (import/generate) are synchronous
+ * - Progress indicators show operation status
+ * - Per-category progress feedback for bulk operations
+ * - State caching reduces repeated inheritance resolution
+ * - Rate limiting prevents server overload
  */
 class SpecialStructureSync extends SpecialPage
 {
 
+	/** @var int Rate limit: max operations per hour per user */
+	private const RATE_LIMIT_PER_HOUR = 20;
+
+	/** @var string Cache key for rate limiting */
+	private const RATE_LIMIT_CACHE_PREFIX = 'structuresync-ratelimit';
+
 	public function __construct()
 	{
 		parent::__construct('StructureSync', 'editinterface');
+	}
+
+	/**
+	 * Check rate limiting for expensive operations.
+	 *
+	 * Limits users to a maximum number of import/generate operations per hour
+	 * to prevent abuse and server overload.
+	 *
+	 * @param string $operation Operation name (import, generate, etc.)
+	 * @return bool True if rate limit exceeded
+	 */
+	private function checkRateLimit( string $operation ): bool {
+		$user = $this->getUser();
+		
+		// Exempt sysops from rate limiting
+		if ( $user->isAllowed( 'structuresync-bypass-ratelimit' ) || $user->isAllowed( 'protect' ) ) {
+			return false;
+		}
+
+		$cache = \ObjectCache::getLocalClusterInstance();
+		$key = $cache->makeKey( self::RATE_LIMIT_CACHE_PREFIX, $user->getId(), $operation );
+		
+		$count = $cache->get( $key ) ?: 0;
+		
+		if ( $count >= self::RATE_LIMIT_PER_HOUR ) {
+			return true; // Rate limit exceeded
+		}
+		
+		// Increment counter (expires in 1 hour)
+		$cache->set( $key, $count + 1, 3600 );
+		
+		return false;
+	}
+
+	/**
+	 * Log an administrative operation to MediaWiki logs.
+	 *
+	 * Creates audit trail for import/export/generate operations.
+	 *
+	 * @param string $action Action performed (import, export, generate)
+	 * @param string $details Additional details about the operation
+	 * @param array $params Structured parameters for the log entry
+	 */
+	private function logOperation( string $action, string $details, array $params = [] ): void {
+		$logEntry = new \ManualLogEntry( 'structuresync', $action );
+		$logEntry->setPerformer( $this->getUser() );
+		$logEntry->setTarget( $this->getPageTitle() );
+		$logEntry->setComment( $details );
+		$logEntry->setParameters( $params );
+		$logId = $logEntry->insert();
+		$logEntry->publish( $logId );
 	}
 
 	/**
@@ -370,6 +470,15 @@ class SpecialStructureSync extends SpecialPage
 				$contentType = 'application/json';
 			}
 
+			// Log export operation
+			$this->logOperation( 'export', 'Schema export downloaded', [
+				'format' => $format,
+				'filename' => $filename,
+				'size' => strlen( $content ),
+				'categories' => count( $schema['categories'] ?? [] ),
+				'properties' => count( $schema['properties'] ?? [] ),
+			] );
+
 			/** @var WebRequest $request */
 			$response = $request->response();
 			$response->header('Content-Type: ' . $contentType);
@@ -578,25 +687,49 @@ class SpecialStructureSync extends SpecialPage
 		$output = $this->getOutput();
 		$request = $this->getRequest();
 
+		// Rate limiting for imports (expensive operation)
+		if ( !$request->getBool( 'dryrun' ) && $this->checkRateLimit( 'import' ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'structuresync-ratelimit-exceeded' )
+					->params( self::RATE_LIMIT_PER_HOUR )
+					->text()
+			) );
+			return;
+		}
+
 		$dryRun = $request->getBool('dryrun');
+
+		// Show progress indicator
+		if ( !$dryRun ) {
+			$output->addHTML(
+				Html::rawElement( 'div', [ 'class' => 'structuresync-progress' ],
+					Html::element( 'p', [], $this->msg( 'structuresync-import-inprogress' )->text() )
+				)
+			);
+		}
 
 		try {
 			$loader = new SchemaLoader();
 			$content = null;
+			$source = 'unknown';
 
 			// 1) File upload if present
 			$upload = $request->getUpload('schemafile');
 			if ($upload && $upload->exists() && $upload->getTempName() !== '') {
 				$content = @file_get_contents($upload->getTempName());
+				$source = 'file:' . $upload->getName();
 			}
 
 			// 2) Fallback to textarea
 			if ($content === null || $content === '') {
 				$content = $request->getText('schematext');
+				$source = 'textarea';
 			}
 
 			if ($content === null || trim($content) === '') {
-				$output->addHTML(Html::errorBox('No schema provided'));
+				$output->addHTML(Html::errorBox(
+					$this->msg( 'structuresync-import-no-schema' )->text()
+				));
 				return;
 			}
 
@@ -610,13 +743,23 @@ class SpecialStructureSync extends SpecialPage
 			]);
 
 			if ($result['success'] ?? false) {
-				$message = $this->msg('structuresync-import-success')->text() . '<br>';
-
 				$createdCount = (int) ($result['categoriesCreated'] ?? 0)
 					+ (int) ($result['propertiesCreated'] ?? 0);
 				$updatedCount = (int) ($result['categoriesUpdated'] ?? 0)
 					+ (int) ($result['propertiesUpdated'] ?? 0);
 
+				// Log the operation (only for real imports, not dry runs)
+				if ( !$dryRun ) {
+					$this->logOperation( 'import', 'Schema import completed', [
+						'source' => $source,
+						'created' => $createdCount,
+						'updated' => $updatedCount,
+						'categories' => ( $result['categoriesCreated'] ?? 0 ) + ( $result['categoriesUpdated'] ?? 0 ),
+						'properties' => ( $result['propertiesCreated'] ?? 0 ) + ( $result['propertiesUpdated'] ?? 0 ),
+					] );
+				}
+
+				$message = $this->msg('structuresync-import-success')->text() . '<br>';
 				$message .= $this->msg('structuresync-import-created')
 					->numParams($createdCount)
 					->text() . '<br>';
@@ -632,11 +775,27 @@ class SpecialStructureSync extends SpecialPage
 				$output->addHTML(Html::successBox($message));
 			} else {
 				$errors = $result['errors'] ?? ['Unknown import error'];
-				$message = implode('<br>', $errors);
-				$output->addHTML(Html::errorBox($message));
+				$errorMessage = implode('<br>', array_map( 'htmlspecialchars', $errors ) );
+				
+				// Log failed import
+				$this->logOperation( 'import', 'Schema import failed', [
+					'source' => $source,
+					'dryRun' => $dryRun,
+					'errorCount' => count( $errors ),
+				] );
+				
+				$output->addHTML(Html::errorBox( $errorMessage ));
 			}
 		} catch (\Exception $e) {
-			$output->addHTML(Html::errorBox('Error: ' . $e->getMessage()));
+			// Log exception
+			$this->logOperation( 'import', 'Schema import exception: ' . $e->getMessage(), [
+				'exception' => get_class( $e ),
+				'dryRun' => $dryRun,
+			] );
+			
+			$output->addHTML(Html::errorBox(
+				$this->msg( 'structuresync-import-error' )->params( $e->getMessage() )->text()
+			));
 		}
 	}
 
@@ -796,11 +955,28 @@ class SpecialStructureSync extends SpecialPage
 		$output = $this->getOutput();
 		$request = $this->getRequest();
 
+		// Rate limiting for generation (expensive operation)
+		if ( $this->checkRateLimit( 'generate' ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'structuresync-ratelimit-exceeded' )
+					->params( self::RATE_LIMIT_PER_HOUR )
+					->text()
+			) );
+			return;
+		}
+
 		$categoryName = trim($request->getText('category'));
 		$categoryStore = new WikiCategoryStore();
 		$templateGenerator = new TemplateGenerator();
 		$formGenerator = new FormGenerator();
 		$displayGenerator = new DisplayStubGenerator();
+
+		// Show progress indicator
+		$output->addHTML(
+			Html::rawElement( 'div', [ 'class' => 'structuresync-progress' ],
+				Html::element( 'p', [], $this->msg( 'structuresync-generate-inprogress' )->text() )
+			)
+		);
 
 		try {
 			// Determine target categories
@@ -812,7 +988,9 @@ class SpecialStructureSync extends SpecialPage
 			}
 
 			if (empty($categories)) {
-				$output->addHTML(Html::errorBox('No matching categories found.'));
+				$output->addHTML(Html::errorBox(
+					$this->msg( 'structuresync-generate-no-categories' )->text()
+				));
 				return;
 			}
 
@@ -839,17 +1017,36 @@ class SpecialStructureSync extends SpecialPage
 			$pageCreator = new PageCreator();
 			$propertyStore = new WikiPropertyStore();
 
+			$successCount = 0;
+			$totalCount = count( $categories );
+
 			foreach ($categories as $category) {
 				$name = $category->getName();
 
-				// Effective category (merged properties)
-				$effective = $resolver->getEffectiveCategory($name);
-				// Ancestor chain for layout grouping (Option C)
-				$ancestors = $resolver->getAncestors($name);
+				// Progress feedback for each category
+				if ( $totalCount > 3 ) {
+					$output->addHTML(
+						Html::rawElement( 'div', [ 'class' => 'structuresync-progress-item' ],
+							$this->msg( 'structuresync-generate-processing' )->params( $name )->text()
+						)
+					);
+				}
 
-				$templateGenerator->generateAllTemplates($effective);
-				$formGenerator->generateAndSaveForm($effective, $ancestors);
-				$displayGenerator->generateOrUpdateDisplayStub($effective);
+				try {
+					// Effective category (merged properties)
+					$effective = $resolver->getEffectiveCategory($name);
+					// Ancestor chain for layout grouping (Option C)
+					$ancestors = $resolver->getAncestors($name);
+
+					$templateGenerator->generateAllTemplates($effective);
+					$formGenerator->generateAndSaveForm($effective, $ancestors);
+					$displayGenerator->generateOrUpdateDisplayStub($effective);
+					
+					$successCount++;
+				} catch ( \Exception $e ) {
+					// Log error but continue with other categories
+					wfLogWarning( "StructureSync generate failed for category '$name': " . $e->getMessage() );
+				}
 			}
 
 			// Compute and store hashes for all generated pages
@@ -889,13 +1086,31 @@ class SpecialStructureSync extends SpecialPage
 				$stateManager->clearDirty();
 			}
 
+			// Log the operation
+			$this->logOperation( 'generate', 'Template/form generation completed', [
+				'categoryFilter' => $categoryName ?: 'all',
+				'categoriesProcessed' => $successCount,
+				'categoriesTotal' => $totalCount,
+				'pagesHashed' => count( $pageHashes ),
+			] );
+
 			$output->addHTML(
 				Html::successBox(
-					$this->msg('structuresync-generate-success')->text()
+					$this->msg('structuresync-generate-success')
+						->numParams( $successCount, $totalCount )
+						->text()
 				)
 			);
 		} catch (\Exception $e) {
-			$output->addHTML(Html::errorBox('Error: ' . $e->getMessage()));
+			// Log exception
+			$this->logOperation( 'generate', 'Generation exception: ' . $e->getMessage(), [
+				'exception' => get_class( $e ),
+				'categoryFilter' => $categoryName ?? '',
+			] );
+			
+			$output->addHTML(Html::errorBox(
+				$this->msg( 'structuresync-generate-error' )->params( $e->getMessage() )->text()
+			));
 		}
 	}
 

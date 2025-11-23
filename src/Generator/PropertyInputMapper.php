@@ -8,12 +8,26 @@ use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
  * PropertyInputMapper
  * --------------------
  * Converts SMW property metadata into PageForms input definitions.
+ * 
+ * This class encapsulates the complex logic of mapping Semantic MediaWiki
+ * property types and constraints to PageForms input field types and parameters.
+ * 
+ * Mapping Priority (highest to lowest):
+ * 1. Allowed values (enum) → dropdown
+ * 2. Autocomplete sources (category/namespace) → combobox
+ * 3. Page type with range restriction → combobox
+ * 4. SMW datatype mapping → various input types
  *
  * Responsibilities:
  *   - Map SMW datatype → PageForms input type
  *   - Add PageForms parameters (values, size, ranges, etc.)
  *   - Produce syntactically valid PF input strings
  *   - Support required/optional fields based on CategoryModel requirements
+ * 
+ * PageForms Compatibility:
+ *   - Tested with PageForms 5.3+
+ *   - Uses standard PF input types (text, dropdown, combobox, datepicker, etc.)
+ *   - Follows PF parameter syntax conventions
  */
 class PropertyInputMapper {
 
@@ -23,9 +37,23 @@ class PropertyInputMapper {
 
     /**
      * Determine PageForms input type for a given property.
+     * 
+     * The selection logic follows a priority order:
+     * 1. If property has allowed values → dropdown (highest priority)
+     * 2. If property has autocomplete source → combobox
+     * 3. If property is Page type → combobox
+     * 4. Otherwise → map by SMW datatype
+     * 
+     * Examples:
+     *   - Text property → text input
+     *   - Number property → number input
+     *   - Date property → datepicker
+     *   - Boolean property → checkbox
+     *   - Property with allowed values ["A", "B", "C"] → dropdown
+     *   - Page property with category range → combobox with autocomplete
      *
-     * @param PropertyModel $property
-     * @return string
+     * @param PropertyModel $property Property to map
+     * @return string PageForms input type (e.g., 'text', 'dropdown', 'combobox')
      */
     public function getInputType( PropertyModel $property ): string {
 
@@ -81,9 +109,22 @@ class PropertyInputMapper {
 
     /**
      * Return PageForms input parameters for the property (except mandatory).
+     * 
+     * Generates the parameter string that goes after "input type=" in PageForms syntax.
+     * Parameters are property-specific and depend on the datatype and constraints.
+     * 
+     * Common parameters:
+     * - size: Width of text inputs (default: 60)
+     * - rows/cols: Dimensions for textarea
+     * - values: Comma-separated list for dropdown/checkboxes
+     * - values from category: Source for autocomplete
+     * - values from namespace: Source for autocomplete
+     * - autocomplete: Enable autocomplete (on/off)
+     * 
+     * The mandatory parameter is handled separately in generateInputDefinition().
      *
-     * @param PropertyModel $property
-     * @return array<string,string>
+     * @param PropertyModel $property Property to generate parameters for
+     * @return array<string,string> Map of parameter name => value
      */
     public function getInputParameters( PropertyModel $property ): array {
 
@@ -153,10 +194,23 @@ class PropertyInputMapper {
 
     /**
      * Build the PageForms input definition string.
+     * 
+     * Combines the input type and all parameters into a complete PageForms
+     * input definition string suitable for use in {{{field}}} tags.
+     * 
+     * Output format: "input type=<type>|param1=value1|param2=value2|..."
+     * 
+     * Example outputs:
+     * - "input type=text|size=60"
+     * - "input type=dropdown|values=A,B,C|mandatory=true"
+     * - "input type=combobox|values from category=Department|autocomplete=on"
+     * 
+     * The mandatory parameter is only added for required fields to avoid
+     * PageForms validation on optional fields.
      *
-     * @param PropertyModel $property
+     * @param PropertyModel $property Property to generate definition for
      * @param bool $isMandatory Whether the category requires this property
-     * @return string PageForms input definition
+     * @return string PageForms input definition (without surrounding {{{field}}} tags)
      */
     public function generateInputDefinition( PropertyModel $property, bool $isMandatory = false ): string {
 

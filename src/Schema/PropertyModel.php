@@ -63,14 +63,23 @@ class PropertyModel
     /**
      * @param string $name Property name (e.g. "Has advisor")
      * @param array $data Structured schema array
+     * @throws \InvalidArgumentException If name is empty or datatype is invalid
      */
     public function __construct(string $name, array $data = [])
     {
 
         // Property names must be canonicalized (whitespace trimmed)
         $this->name = trim($name);
+        
+        if ($this->name === '') {
+            throw new \InvalidArgumentException('Property name cannot be empty');
+        }
 
         $this->datatype = $this->normalizeDatatype($data['datatype'] ?? 'Text');
+        
+        if ($this->datatype === '') {
+            throw new \InvalidArgumentException("Property '$name' has invalid datatype");
+        }
 
         // Set label: use provided label, or auto-generate if label equals name
         if (!empty($data['label'])) {
@@ -143,8 +152,11 @@ class PropertyModel
     /**
      * Normalize SMW datatype input.
      *
+     * Validates against a list of standard SMW datatypes. If an unknown
+     * datatype is provided, logs a warning and defaults to 'Text'.
+     *
      * @param string $datatype
-     * @return string
+     * @return string Valid SMW datatype
      */
     private function normalizeDatatype(string $datatype): string
     {
@@ -152,23 +164,45 @@ class PropertyModel
         $datatype = trim($datatype);
 
         // Supported types based on SMW core datatype mappings
+        // @see https://www.semantic-mediawiki.org/wiki/Help:List_of_datatypes
         static $valid = [
-        'Text',
-        'Page',
-        'Date',
-        'Number',
-        'Email',
-        'URL',
-        'Boolean',
-        'Code',
-        'Geographic coordinate',
-        'Quantity',
-        'Temperature',
-        'Telephone number',
+            'Text',
+            'Page',
+            'Date',
+            'Number',
+            'Email',
+            'URL',
+            'Boolean',
+            'Code',
+            'Geographic coordinate',
+            'Quantity',
+            'Temperature',
+            'Telephone number',
+            'Annotation URI',  // Added for completeness
+            'External identifier',
+            'Keyword',
+            'Monolingual text',
+            'Record',
+            'Reference',
         ];
 
-        // Unknown → Text (SMW default behavior)
-        return in_array($datatype, $valid) ? $datatype : 'Text';
+        // Case-insensitive validation (SMW accepts various casings)
+        $validLower = array_map( 'strtolower', $valid );
+        $datatypeLower = strtolower( $datatype );
+        
+        $index = array_search( $datatypeLower, $validLower );
+        if ( $index !== false ) {
+            // Return the canonical casing
+            return $valid[$index];
+        }
+
+        // Unknown datatype: log warning and fallback to Text (SMW default behavior)
+        wfLogWarning(
+            "StructureSync: Unknown datatype '$datatype' for property '{$this->name}'. " .
+            "Falling back to 'Text'. Valid types: " . implode( ', ', $valid )
+        );
+        
+        return 'Text';
     }
 
     /**

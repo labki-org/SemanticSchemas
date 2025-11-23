@@ -59,101 +59,200 @@ class SchemaExporter {
         $this->pageCreator = $pageCreator ?? new PageCreator();
     }
 
-    /**
-     * Export the wiki ontology to an array structure.
-     *
-     * @param bool $includeInherited  If true, expand inherited properties.
-     * @return array
-     */
-    public function exportToArray( bool $includeInherited = false ): array {
-        $categories = $this->categoryStore->getAllCategories();
-        $properties = $this->propertyStore->getAllProperties();
+	/**
+	 * Export the wiki ontology to an array structure.
+	 *
+	 * Options:
+	 *   - includeInherited (bool): If true, expand inherited properties
+	 *   - continueOnError (bool): If true, skip failed items rather than aborting
+	 *   - errorCallback (callable): Optional callback for error reporting
+	 *
+	 * @param bool $includeInherited  If true, expand inherited properties.
+	 * @param array $options Additional export options
+	 * @return array Schema with optional 'exportErrors' key
+	 */
+	public function exportToArray( bool $includeInherited = false, array $options = [] ): array {
+		$continueOnError = $options['continueOnError'] ?? true;
+		$errorCallback = $options['errorCallback'] ?? null;
 
-        // Stabilize key ordering for deterministic diffs
-        ksort( $categories );
-        ksort( $properties );
+		$categories = $this->categoryStore->getAllCategories();
+		$properties = $this->propertyStore->getAllProperties();
 
-        $schema = [
-            'schemaVersion' => self::SCHEMA_VERSION,
-            'categories'    => [],
-            'properties'    => [],
-        ];
+		// Stabilize key ordering for deterministic diffs
+		ksort( $categories );
+		ksort( $properties );
 
-        // -------------------------------------------------------------
-        // CATEGORY EXPORT
-        // -------------------------------------------------------------
-        if ( $includeInherited && !empty( $categories ) ) {
-            $resolver = $this->inheritanceResolver ?? new InheritanceResolver( $categories );
+		$schema = [
+			'schemaVersion' => self::SCHEMA_VERSION,
+			'categories'    => [],
+			'properties'    => [],
+		];
 
-            foreach ( $categories as $name => $category ) {
-                try {
-                    $effective = $resolver->getEffectiveCategory( $name );
-                    $schema['categories'][$name] = $effective->toArray();
-                } catch ( \RuntimeException $e ) {
-                    wfLogWarning(
-                        "StructureSync: Inheritance resolution failed for $name: " . $e->getMessage()
-                    );
-                    $schema['categories'][$name] = $category->toArray();
-                }
-            }
-        }
-        else {
-            foreach ( $categories as $name => $category ) {
-                $schema['categories'][$name] = $category->toArray();
-            }
-        }
+		$exportErrors = [];
 
-        // -------------------------------------------------------------
-        // PROPERTY EXPORT
-        // -------------------------------------------------------------
-        foreach ( $properties as $name => $property ) {
-            $schema['properties'][$name] = $property->toArray();
-        }
+		// -------------------------------------------------------------
+		// CATEGORY EXPORT
+		// -------------------------------------------------------------
+		if ( $includeInherited && !empty( $categories ) ) {
+			$resolver = $this->inheritanceResolver ?? new InheritanceResolver( $categories );
 
-        return $schema;
-    }
+			foreach ( $categories as $name => $category ) {
+				try {
+					$effective = $resolver->getEffectiveCategory( $name );
+					$schema['categories'][$name] = $effective->toArray();
+				} catch ( \RuntimeException $e ) {
+					$error = "Category '$name': " . $e->getMessage();
+					$exportErrors[] = $error;
 
-    /**
-     * Export only a subset of categories (and the properties they use).
-     *
-     * @param string[] $categoryNames
-     * @return array
-     */
-    public function exportCategories( array $categoryNames ): array {
-        $schema = [
-            'schemaVersion' => self::SCHEMA_VERSION,
-            'categories'    => [],
-            'properties'    => [],
-        ];
+					wfLogWarning( "StructureSync export: $error" );
 
-        $usedProperties = [];
+					if ( $errorCallback !== null && is_callable( $errorCallback ) ) {
+						call_user_func( $errorCallback, 'category', $name, $e );
+					}
 
-        foreach ( $categoryNames as $name ) {
-            $category = $this->categoryStore->readCategory( $name );
-            if ( !$category ) {
-                continue;
-            }
+					if ( $continueOnError ) {
+						// Fall back to raw category
+						$schema['categories'][$name] = $category->toArray();
+					} else {
+						throw new \RuntimeException( "Export failed: $error", 0, $e );
+					}
+				}
+			}
+		}
+		else {
+			foreach ( $categories as $name => $category ) {
+				try {
+					$schema['categories'][$name] = $category->toArray();
+				} catch ( \Exception $e ) {
+					$error = "Category '$name': " . $e->getMessage();
+					$exportErrors[] = $error;
 
-            $schema['categories'][$name] = $category->toArray();
-            $usedProperties = array_merge(
-                $usedProperties,
-                $category->getAllProperties()
-            );
-        }
+					wfLogWarning( "StructureSync export: $error" );
 
-        // Deduplicate + sort for stability
-        $usedProperties = array_unique( $usedProperties );
-        sort( $usedProperties );
+					if ( $errorCallback !== null && is_callable( $errorCallback ) ) {
+						call_user_func( $errorCallback, 'category', $name, $e );
+					}
 
-        foreach ( $usedProperties as $propertyName ) {
-            $property = $this->propertyStore->readProperty( $propertyName );
-            if ( $property ) {
-                $schema['properties'][$propertyName] = $property->toArray();
-            }
-        }
+					if ( !$continueOnError ) {
+						throw new \RuntimeException( "Export failed: $error", 0, $e );
+					}
+				}
+			}
+		}
 
-        return $schema;
-    }
+		// -------------------------------------------------------------
+		// PROPERTY EXPORT
+		// -------------------------------------------------------------
+		foreach ( $properties as $name => $property ) {
+			try {
+				$schema['properties'][$name] = $property->toArray();
+			} catch ( \Exception $e ) {
+				$error = "Property '$name': " . $e->getMessage();
+				$exportErrors[] = $error;
+
+				wfLogWarning( "StructureSync export: $error" );
+
+				if ( $errorCallback !== null && is_callable( $errorCallback ) ) {
+					call_user_func( $errorCallback, 'property', $name, $e );
+				}
+
+				if ( !$continueOnError ) {
+					throw new \RuntimeException( "Export failed: $error", 0, $e );
+				}
+			}
+		}
+
+		// Include errors in result if any occurred
+		if ( !empty( $exportErrors ) ) {
+			$schema['exportErrors'] = $exportErrors;
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Export only a subset of categories (and the properties they use).
+	 *
+	 * @param string[] $categoryNames
+	 * @param array $options Export options (continueOnError, errorCallback)
+	 * @return array
+	 */
+	public function exportCategories( array $categoryNames, array $options = [] ): array {
+		$continueOnError = $options['continueOnError'] ?? true;
+		$errorCallback = $options['errorCallback'] ?? null;
+
+		$schema = [
+			'schemaVersion' => self::SCHEMA_VERSION,
+			'categories'    => [],
+			'properties'    => [],
+		];
+
+		$exportErrors = [];
+		$usedProperties = [];
+
+		foreach ( $categoryNames as $name ) {
+			try {
+				$category = $this->categoryStore->readCategory( $name );
+				if ( !$category ) {
+					$exportErrors[] = "Category '$name': not found";
+					continue;
+				}
+
+				$schema['categories'][$name] = $category->toArray();
+				$usedProperties = array_merge(
+					$usedProperties,
+					$category->getAllProperties()
+				);
+			} catch ( \Exception $e ) {
+				$error = "Category '$name': " . $e->getMessage();
+				$exportErrors[] = $error;
+
+				wfLogWarning( "StructureSync export: $error" );
+
+				if ( $errorCallback !== null && is_callable( $errorCallback ) ) {
+					call_user_func( $errorCallback, 'category', $name, $e );
+				}
+
+				if ( !$continueOnError ) {
+					throw new \RuntimeException( "Export failed: $error", 0, $e );
+				}
+			}
+		}
+
+		// Deduplicate + sort for stability
+		$usedProperties = array_unique( $usedProperties );
+		sort( $usedProperties );
+
+		foreach ( $usedProperties as $propertyName ) {
+			try {
+				$property = $this->propertyStore->readProperty( $propertyName );
+				if ( $property ) {
+					$schema['properties'][$propertyName] = $property->toArray();
+				} else {
+					$exportErrors[] = "Property '$propertyName': not found";
+				}
+			} catch ( \Exception $e ) {
+				$error = "Property '$propertyName': " . $e->getMessage();
+				$exportErrors[] = $error;
+
+				wfLogWarning( "StructureSync export: $error" );
+
+				if ( $errorCallback !== null && is_callable( $errorCallback ) ) {
+					call_user_func( $errorCallback, 'property', $propertyName, $e );
+				}
+
+				if ( !$continueOnError ) {
+					throw new \RuntimeException( "Export failed: $error", 0, $e );
+				}
+			}
+		}
+
+		if ( !empty( $exportErrors ) ) {
+			$schema['exportErrors'] = $exportErrors;
+		}
+
+		return $schema;
+	}
 
     /**
      * Gather statistics about current ontology.

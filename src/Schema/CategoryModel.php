@@ -12,11 +12,31 @@ namespace MediaWiki\Extension\StructureSync\Schema;
  *   - direct display & form configuration
  *   - direct parent list
  *
+ * Immutability Contract:
+ * ---------------------
+ * Once constructed, this object cannot be modified. All properties are private
+ * and only accessible through getters. The mergeWithParent() method returns
+ * a NEW instance rather than modifying the existing one.
+ * 
  * This object does NOT automatically handle inheritance. InheritanceResolver is
  * responsible for repeatedly calling mergeWithParent() in topological order to
  * produce an "effective" merged CategoryModel.
  *
- * This object is read-only after construction.
+ * Inheritance Strategy:
+ * --------------------
+ * Parent categories are listed in the 'parents' array. The InheritanceResolver
+ * uses C3 linearization to determine the correct merge order. Properties from
+ * parents are inherited according to these rules:
+ * - Required properties remain required unless explicitly made optional
+ * - Optional properties are inherited
+ * - Display/form configurations are merged (child overrides parent)
+ * 
+ * Validation:
+ * ----------
+ * Basic validation is performed in the constructor. Full validation including
+ * circular reference detection should be done by InheritanceResolver.
+ *
+ * @psalm-immutable
  */
 class CategoryModel {
 
@@ -63,20 +83,45 @@ class CategoryModel {
 
     /**
      * Constructor
+     * 
+     * Creates an immutable CategoryModel from schema data. Performs basic
+     * validation on the input data structure.
      *
      * @param string $name  Category name (no namespace)
      * @param array  $data  Parsed schema array for this category
+     * @throws \InvalidArgumentException If name is empty or contains invalid characters
      */
     public function __construct( string $name, array $data = [] ) {
+        
+        // Validate name
+        $name = trim($name);
+        if ($name === '') {
+            throw new \InvalidArgumentException('Category name cannot be empty');
+        }
+        
+        // Basic validation for obviously invalid characters
+        if (preg_match('/[<>{}|#]/', $name)) {
+            throw new \InvalidArgumentException("Category name '$name' contains invalid characters");
+        }
 
         $this->name = $name;
 
         $this->parents = self::normalizeList(
             $data['parents'] ?? []
         );
+        
+        // Validate parent names (basic check)
+        foreach ($this->parents as $parent) {
+            if (trim($parent) === '') {
+                throw new \InvalidArgumentException("Category '$name' has empty parent name");
+            }
+            if ($parent === $name) {
+                throw new \InvalidArgumentException("Category '$name' cannot be its own parent");
+            }
+        }
 
         $this->label = !empty( $data['label'] ) ? (string)$data['label'] : $name;
-        $this->description = $data['description'] ?? '';
+        $this->description = isset($data['description']) ? (string)$data['description'] : '';
 
         $this->requiredProperties = self::normalizeList(
             $data['properties']['required'] ?? []
@@ -85,6 +130,14 @@ class CategoryModel {
         $this->optionalProperties = self::normalizeList(
             $data['properties']['optional'] ?? []
         );
+        
+        // Check for properties that are both required and optional
+        $duplicates = array_intersect($this->requiredProperties, $this->optionalProperties);
+        if (!empty($duplicates)) {
+            throw new \InvalidArgumentException(
+                "Category '$name' has properties in both required and optional lists: " . implode(', ', $duplicates)
+            );
+        }
 
         $this->displayConfig = $data['display'] ?? [];
         $this->formConfig = $data['forms'] ?? [];
@@ -197,11 +250,45 @@ class CategoryModel {
 
     /**
      * Merge this CategoryModel with a parent's CategoryModel.
+     * 
+     * This method creates a NEW CategoryModel that combines properties from
+     * both the parent and child. The child's settings take precedence where
+     * there are conflicts (child override pattern).
+     * 
+     * Merge Behavior by Field:
+     * ------------------------
+     * 
+     * Required Properties:
+     *   - Union of parent.required + child.required
+     *   - Once a property is required by any ancestor, it stays required
+     *   - Child CANNOT demote a parent's required property to optional
+     *   - Rationale: Child should satisfy parent's constraints
+     * 
+     * Optional Properties:
+     *   - Union of parent.optional + child.optional
+     *   - MINUS any properties that are in merged required list
+     *   - If child makes an optional property required, it moves to required
+     * 
+     * Display Config:
+     *   - Sections with same name are merged (child properties appended)
+     *   - New sections from child are added
+     *   - Child header overrides parent header
+     * 
+     * Form Config:
+     *   - Child completely overrides parent if child has form config
+     *   - Otherwise parent form config is inherited as-is
+     * 
+     * Metadata:
+     *   - Name, label, description, parents from THIS (child) category
+     *   - Parent's metadata is not inherited
+     * 
+     * Example:
+     *   Parent: required=[A,B], optional=[C]
+     *   Child:  required=[B,D], optional=[E]
+     *   Result: required=[A,B,D], optional=[C,E]
      *
-     * Child overrides parent where conflicting settings exist.
-     *
-     * @param CategoryModel $parent
-     * @return CategoryModel New merged model
+     * @param CategoryModel $parent Parent category to merge from
+     * @return CategoryModel New merged model (this object is unchanged)
      */
     public function mergeWithParent( CategoryModel $parent ): CategoryModel {
 

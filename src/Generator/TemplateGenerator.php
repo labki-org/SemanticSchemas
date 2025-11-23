@@ -5,14 +5,31 @@ namespace MediaWiki\Extension\StructureSync\Generator;
 use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
 use MediaWiki\Extension\StructureSync\Store\PageCreator;
 use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
+use MediaWiki\Extension\StructureSync\Util\NamingHelper;
 
 /**
  * TemplateGenerator
  * -----------------
- * Generates:
+ * Generates two types of templates for each category:
  *   - Semantic templates   → Template:<Category>/semantic
  *   - Dispatcher templates → Template:<Category>
  *
+ * Template Naming Conventions:
+ * - Semantic: "Template:<CategoryName>/semantic"
+ *   Stores SMW property values using {{#set:...}}
+ * - Dispatcher: "Template:<CategoryName>"
+ *   Coordinates semantic storage and display rendering
+ *   Sets default form with {{#default_form:...}}
+ * 
+ * Architecture:
+ * The three-template system (dispatcher, semantic, display) provides:
+ * 1. Clean separation of concerns (data vs presentation)
+ * 2. Allows display templates to be user-editable
+ * 3. Enables automatic regeneration without breaking customizations
+ * 
+ * Template Flow:
+ * Page → Dispatcher → Semantic (stores data) + Display (renders view)
+ * 
  * Semantic templates store SMW data using #set.
  * Dispatcher templates wrap semantic + display templates.
  */
@@ -47,17 +64,33 @@ class TemplateGenerator
 
     /**
      * Generate semantic template wikitext for a category.
+     * 
+     * Creates a template that stores all property values using SMW's {{#set:}}
+     * parser function. Each property gets a parameter that maps to the SMW property.
      *
      * Output location:
      *   Template:<Category>/semantic
+     * 
+     * Generated structure:
+     * - Noinclude header with metadata
+     * - {{#set:...}} block with all properties
+     * - Category annotation
      *
      * @param CategoryModel $category Effective (inherited) category
-     * @return string
+     * @return string Wikitext content for semantic template
+     * @throws \InvalidArgumentException If category name is empty
      */
     public function generateSemanticTemplate(CategoryModel $category): string
     {
+        if (trim($category->getName()) === '') {
+            throw new \InvalidArgumentException('Category name cannot be empty');
+        }
 
         $properties = $category->getAllProperties();
+        
+        // Note: Empty properties is valid - category might be purely organizational
+        // or inherit all properties from parents
+        
         sort($properties); // Deterministic output
 
         $lines = [];
@@ -101,21 +134,36 @@ class TemplateGenerator
 
     /**
      * Generate dispatcher template wikitext for the category.
+     * 
+     * The dispatcher is the main template that users transclude on pages.
+     * It coordinates the semantic and display templates, ensuring both
+     * data storage and presentation happen correctly.
      *
      * Output location:
      *   Template:<Category>
      *
      * Dispatcher template ensures:
-     *   - semantic template applied
-     *   - display template applied
+     *   - Default form is set (for "edit with form" link)
+     *   - Semantic template applied (stores data)
+     *   - Display template applied (renders view)
+     * 
+     * Template parameters are passed through to both sub-templates.
      *
      * @param CategoryModel $category Effective (inherited) category
-     * @return string
+     * @return string Wikitext content for dispatcher template
+     * @throws \InvalidArgumentException If category name is empty
      */
     public function generateDispatcherTemplate(CategoryModel $category): string
     {
+        if (trim($category->getName()) === '') {
+            throw new \InvalidArgumentException('Category name cannot be empty');
+        }
 
         $properties = $category->getAllProperties();
+        
+        // Note: Empty properties is valid - category might be purely organizational
+        // or inherit all properties from parents
+        
         sort($properties);
 
         $name = $this->sanitize($category->getName());
@@ -174,28 +222,46 @@ class TemplateGenerator
 
     /**
      * Create or update a template page.
+     * 
+     * Handles the actual page creation/update operation with error handling.
      *
      * @param string $templateName  Name without namespace prefix
-     * @param string $content
-     * @return bool
+     * @param string $content Wikitext content
+     * @return bool True on success, false on failure
+     * @throws \InvalidArgumentException If template name is empty
      */
     public function updateTemplate(string $templateName, string $content): bool
     {
+        if (trim($templateName) === '') {
+            throw new \InvalidArgumentException('Template name cannot be empty');
+        }
 
         $title = $this->pageCreator->makeTitle($templateName, NS_TEMPLATE);
         if (!$title) {
+            wfLogWarning("StructureSync: Failed to create Title for template '$templateName'");
             return false;
         }
 
         $summary = 'StructureSync: Auto-generated template';
-        return $this->pageCreator->createOrUpdatePage($title, $content, $summary);
+        $result = $this->pageCreator->createOrUpdatePage($title, $content, $summary);
+        
+        if (!$result) {
+            wfLogWarning("StructureSync: Failed to save template '$templateName'");
+        }
+        
+        return $result;
     }
 
     /**
      * Generate semantic + dispatcher templates for a category.
+     * 
+     * This is the main entry point for template generation. It creates both
+     * templates in the correct order and reports any failures.
+     * 
+     * The operation continues even if one template fails, but reports all errors.
      *
-     * @param CategoryModel $category
-     * @return array{success:bool,errors:string[]}
+     * @param CategoryModel $category Category to generate templates for
+     * @return array{success:bool,errors:string[]} Result with overall success and error list
      */
     public function generateAllTemplates(CategoryModel $category): array
     {
@@ -203,22 +269,32 @@ class TemplateGenerator
         $result = ['success' => true, 'errors' => []];
         $name = $category->getName();
 
-        /* ------------------------------------------------------------------
-         * SEMANTIC TEMPLATE
-         * ------------------------------------------------------------------ */
-        $semantic = $this->generateSemanticTemplate($category);
-        if (!$this->updateTemplate($name . '/semantic', $semantic)) {
+        try {
+            /* --------------------------------------------------------------
+             * SEMANTIC TEMPLATE
+             * -------------------------------------------------------------- */
+            $semantic = $this->generateSemanticTemplate($category);
+            if (!$this->updateTemplate($name . '/semantic', $semantic)) {
+                $result['success'] = false;
+                $result['errors'][] = "Failed to create semantic template for $name";
+            }
+        } catch (\Exception $e) {
             $result['success'] = false;
-            $result['errors'][] = "Failed to create semantic template for $name";
+            $result['errors'][] = "Error generating semantic template for $name: " . $e->getMessage();
         }
 
-        /* ------------------------------------------------------------------
-         * DISPATCHER TEMPLATE
-         * ------------------------------------------------------------------ */
-        $dispatcher = $this->generateDispatcherTemplate($category);
-        if (!$this->updateTemplate($name, $dispatcher)) {
+        try {
+            /* --------------------------------------------------------------
+             * DISPATCHER TEMPLATE
+             * -------------------------------------------------------------- */
+            $dispatcher = $this->generateDispatcherTemplate($category);
+            if (!$this->updateTemplate($name, $dispatcher)) {
+                $result['success'] = false;
+                $result['errors'][] = "Failed to create dispatcher template for $name";
+            }
+        } catch (\Exception $e) {
             $result['success'] = false;
-            $result['errors'][] = "Failed to create dispatcher template for $name";
+            $result['errors'][] = "Error generating dispatcher template for $name: " . $e->getMessage();
         }
 
         return $result;
@@ -230,29 +306,15 @@ class TemplateGenerator
 
     /**
      * Convert SMW property names → PageForms parameter names.
-     *   "Has full name" → "full_name"
-     *   "Foaf:name"     → "foaf_name"
+     * 
+     * Delegates to NamingHelper for consistent transformation across all generators.
      *
-     * @param string $propertyName
-     * @return string
+     * @param string $propertyName SMW property name
+     * @return string Normalized parameter name
      */
     private function propertyToParameter(string $propertyName): string
     {
-
-        // Remove "Has " prefix
-        $param = $propertyName;
-        if (str_starts_with($param, 'Has ')) {
-            $param = substr($param, 4);
-        }
-
-        // Replace ":" with "_" (safe for PageForms)
-        $param = str_replace(':', '_', $param);
-
-        // Normalize spacing
-        $param = strtolower(trim($param));
-        $param = str_replace(' ', '_', $param);
-
-        return $param;
+        return NamingHelper::propertyToParameter($propertyName);
     }
 
     /**

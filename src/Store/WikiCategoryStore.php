@@ -7,7 +7,26 @@ use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 
 /**
- * Handles reading and writing Category pages with schema metadata
+ * WikiCategoryStore
+ * ----------------
+ * Handles reading and writing Category pages with schema metadata.
+ * 
+ * This class manages the bidirectional mapping between:
+ * - Wiki Category pages (with semantic annotations)
+ * - CategoryModel objects (schema representation)
+ * 
+ * Storage Format:
+ * --------------
+ * Schema metadata is stored within HTML comment markers on Category pages:
+ * <!-- StructureSync Start -->
+ * ...metadata...
+ * <!-- StructureSync End -->
+ * 
+ * Semantic Annotations Used:
+ * - [[Has parent category::Category:ParentName]]
+ * - [[Has required property::Property:PropName]]
+ * - [[Has optional property::Property:PropName]]
+ * - {{#subobject:display_section_N|...}} for display sections
  */
 class WikiCategoryStore
 {
@@ -15,9 +34,15 @@ class WikiCategoryStore
     /** @var PageCreator */
     private $pageCreator;
 
-    /** Schema content markers */
+    /** Schema content markers - must match PageHashComputer */
     private const MARKER_START = '<!-- StructureSync Start -->';
     private const MARKER_END = '<!-- StructureSync End -->';
+    
+    /** Regex patterns for parsing semantic annotations */
+    private const PATTERN_PARENT = '/\[\[Has parent category::Category:([^\]]+)\]\]/';
+    private const PATTERN_REQUIRED = '/\[\[Has required property::Property:([^\]]+)\]\]/';
+    private const PATTERN_OPTIONAL = '/\[\[Has optional property::Property:([^\]]+)\]\]/';
+    private const PATTERN_SUBOBJECT = '/\{\{#subobject:display_section_(\d+)([^}]*)\}\}/s';
 
     public function __construct(PageCreator $pageCreator = null)
     {
@@ -71,7 +96,7 @@ class WikiCategoryStore
 
         // Extract ONLY semantic parent categories
         preg_match_all(
-            '/\[\[Has parent category::Category:([^\]]+)\]\]/',
+            self::PATTERN_PARENT,
             $content,
             $matches
         );
@@ -81,7 +106,7 @@ class WikiCategoryStore
 
         // Extract required properties
         preg_match_all(
-            '/\[\[Has required property::Property:([^\]]+)\]\]/',
+            self::PATTERN_REQUIRED,
             $content,
             $matches
         );
@@ -91,7 +116,7 @@ class WikiCategoryStore
 
         // Extract optional properties
         preg_match_all(
-            '/\[\[Has optional property::Property:([^\]]+)\]\]/',
+            self::PATTERN_OPTIONAL,
             $content,
             $matches
         );
@@ -103,7 +128,7 @@ class WikiCategoryStore
         $sections = [];
         // Match each subobject block
         preg_match_all(
-            '/\{\{#subobject:display_section_(\d+)([^}]*)\}\}/s',
+            self::PATTERN_SUBOBJECT,
             $content,
             $subobjectMatches,
             PREG_SET_ORDER
