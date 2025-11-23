@@ -170,28 +170,13 @@ class WikiCategoryStore
     }
 
     /**
-     * Extract description from content within StructureSync markers.
-     * Looks for a line starting with "Description:"
+     * Extract description from semantic property [[Has description::...]]
      */
     private function extractDescription(string $content): string
     {
-        // Extract content within StructureSync markers
-        $startPos = strpos($content, self::MARKER_START);
-        $endPos = strpos($content, self::MARKER_END);
-        
-        if ($startPos === false || $endPos === false || $endPos <= $startPos) {
-            return '';
-        }
-        
-        $markerContent = substr($content, $startPos + strlen(self::MARKER_START), $endPos - $startPos - strlen(self::MARKER_START));
-        
-        // Look for "Description:" line
-        $lines = explode("\n", $markerContent);
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (preg_match('/^Description:\s*(.+)$/i', $line, $matches)) {
-                return trim($matches[1]);
-            }
+        // Extract from semantic property [[Has description::...]]
+        if (preg_match('/\[\[Has description::([^\|\]]+)/i', $content, $matches)) {
+            return trim($matches[1]);
         }
         
         return '';
@@ -245,8 +230,7 @@ class WikiCategoryStore
 
         // Description (optional)
         if ($category->getDescription() !== '') {
-            $lines[] = 'Description: ' . $category->getDescription();
-            $lines[] = '';
+            $lines[] = '[[Has description::' . $category->getDescription() . ']]';
         }
 
         // Parents

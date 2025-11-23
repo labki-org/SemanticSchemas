@@ -56,6 +56,9 @@ class PropertyModel
     /** @var string|null Namespace name for autocomplete value source */
     private $allowedNamespace;
 
+    /** @var bool Whether the property allows multiple values */
+    private $allowsMultipleValues;
+
     /* ---------------------------------------------------------------------
      * CONSTRUCTOR
      * --------------------------------------------------------------------- */
@@ -137,6 +140,9 @@ class PropertyModel
         $this->allowedNamespace = isset($data['allowedNamespace'])
             ? trim($data['allowedNamespace'])
             : null;
+
+        // Allows multiple values (default: false)
+        $this->allowsMultipleValues = !empty($data['allowsMultipleValues']);
     }
 
     /* ---------------------------------------------------------------------
@@ -309,6 +315,11 @@ class PropertyModel
         return $this->allowedNamespace;
     }
 
+    public function allowsMultipleValues(): bool
+    {
+        return $this->allowsMultipleValues;
+    }
+
     /* ---------------------------------------------------------------------
      * BOOLEAN CHECKS
      * --------------------------------------------------------------------- */
@@ -405,6 +416,10 @@ class PropertyModel
 
         if ($this->allowedNamespace !== null) {
             $data['allowedNamespace'] = $this->allowedNamespace;
+        }
+
+        if ($this->allowsMultipleValues) {
+            $data['allowsMultipleValues'] = true;
         }
 
         return $data;

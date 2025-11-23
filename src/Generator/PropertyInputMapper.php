@@ -13,10 +13,11 @@ use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
  * property types and constraints to PageForms input field types and parameters.
  * 
  * Mapping Priority (highest to lowest):
- * 1. Allowed values (enum) → dropdown
- * 2. Autocomplete sources (category/namespace) → combobox
- * 3. Page type with range restriction → combobox
- * 4. SMW datatype mapping → various input types
+ * 1. Multiple values → tokens (supports autocomplete)
+ * 2. Allowed values (enum) → dropdown
+ * 3. Autocomplete sources (category/namespace) → combobox
+ * 4. Page type with range restriction → combobox
+ * 5. SMW datatype mapping → various input types
  *
  * Responsibilities:
  *   - Map SMW datatype → PageForms input type
@@ -39,10 +40,11 @@ class PropertyInputMapper {
      * Determine PageForms input type for a given property.
      * 
      * The selection logic follows a priority order:
-     * 1. If property has allowed values → dropdown (highest priority)
-     * 2. If property has autocomplete source → combobox
-     * 3. If property is Page type → combobox
-     * 4. Otherwise → map by SMW datatype
+     * 1. If property allows multiple values → tokens (highest priority, supports autocomplete)
+     * 2. If property has allowed values → dropdown
+     * 3. If property has autocomplete source → combobox
+     * 4. If property is Page type → combobox
+     * 5. Otherwise → map by SMW datatype
      * 
      * Examples:
      *   - Text property → text input
@@ -51,9 +53,10 @@ class PropertyInputMapper {
      *   - Boolean property → checkbox
      *   - Property with allowed values ["A", "B", "C"] → dropdown
      *   - Page property with category range → combobox with autocomplete
+     *   - Property with [[Allows multiple values::true]] → tokens (supports autocomplete)
      *
      * @param PropertyModel $property Property to map
-     * @return string PageForms input type (e.g., 'text', 'dropdown', 'combobox')
+     * @return string PageForms input type (e.g., 'text', 'dropdown', 'combobox', 'tokens')
      */
     public function getInputType( PropertyModel $property ): string {
 
@@ -75,9 +78,16 @@ class PropertyInputMapper {
         ];
 
         // Special cases override defaults
-        // Priority order: enum values → autocomplete sources → Page-type → defaults
+        // Priority order: multiple values → enum values → autocomplete sources → Page-type → defaults
 
-        // 1. Dropdown enum (highest priority)
+        // 0. Multiple values (highest priority)
+        // Use 'tokens' input type for properties that allow multiple values
+        // Note: 'tokens' supports autocomplete and is compatible with dropdown values
+        if ( $property->allowsMultipleValues() ) {
+            return 'tokens';
+        }
+
+        // 1. Dropdown enum
         if ( $property->hasAllowedValues() ) {
             return 'dropdown';
         }
@@ -232,6 +242,9 @@ class PropertyInputMapper {
             }
             $paramText .= "|$key=$value";
         }
+
+        // Note: For properties with allowsMultipleValues=true, we use 'tokens' input type
+        // which inherently supports multiple values, so no additional |multiple flag is needed
 
         return "input type=$inputType$paramText";
     }

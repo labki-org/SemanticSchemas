@@ -43,9 +43,12 @@ create_property() {
     local extra="$4"  # Additional annotations (optional)
     
     docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:$name' <<'PROPEOF'
-$description
+<!-- StructureSync Start -->
 [[Has type::$type]]
+[[Has description::$description]]
 $extra
+<!-- StructureSync End -->
+
 [[Category:Properties]]
 PROPEOF
 "
@@ -60,9 +63,8 @@ create_property_with_display() {
     
     docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:$name' <<'PROPEOF'
 <!-- StructureSync Start -->
-Description: $description
-
 [[Has type::$type]]
+[[Has description::$description]]
 
 $display_block
 <!-- StructureSync End -->
@@ -91,9 +93,36 @@ echo ""
 echo "==> Creating test properties..."
 
 # ==========================================
+# Core Meta-Properties
+# ==========================================
+echo "  - Core meta-properties..."
+
+# Create Has description property first (used for describing all properties and categories)
+docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has description' <<'PROPEOF'
+<!-- StructureSync Start -->
+[[Has type::Text]]
+[[Has description::A description of a property or category.]]
+<!-- StructureSync End -->
+
+[[Category:Properties]]
+PROPEOF
+"
+
+# Create Allows multiple values property
+docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Allows multiple values' <<'PROPEOF'
+<!-- StructureSync Start -->
+[[Has type::Boolean]]
+[[Has description::Indicates whether a property can have multiple values.]]
+<!-- StructureSync End -->
+
+[[Category:Properties]]
+PROPEOF
+"
+
+# ==========================================
 # Meta-Properties
 # ==========================================
-echo "  - Meta-properties..."
+echo "  - Display meta-properties..."
 create_property "Has display type" "Controls how a property is rendered (e.g. Email, URL, Image)." "Text" "[[Allows value::Email]]
 [[Allows value::URL]]
 [[Allows value::Image]]
@@ -182,8 +211,9 @@ create_property "Has advisor" "Academic advisor or supervisor." "Page" "[[Displa
 create_property "Has lab" "Lab or research group affiliation." "Page" "[[Display label::Lab]]"
 create_property "Has institution" "Institutional affiliation." "Page" "[[Display label::Institution]]"
 create_property "Has department" "Department affiliation." "Page" "[[Display label::Department]]
-[[Allows value from category::Department]]"
-create_property "Has collaborator" "Research collaborators." "Page" ""
+[[Allows value from category::Department]]
+[[Allows multiple values::true]]"
+create_property "Has collaborator" "Research collaborators." "Page" "[[Allows multiple values::true]]"
 
 # ==========================================
 # Property Type 7: Properties with Allowed Values
@@ -223,7 +253,7 @@ echo "  - Academic/research properties..."
 create_property "Has degree" "Academic degree obtained." "Text" ""
 create_property "Has thesis title" "Title of thesis or dissertation." "Text" ""
 create_property "Has research area" "Primary research area." "Text" ""
-create_property "Has keywords" "Research keywords." "Text" ""
+create_property "Has keywords" "Research keywords." "Text" "[[Allows multiple values::true]]"
 
 echo ""
 echo "==> Creating test categories with schema..."
@@ -235,7 +265,7 @@ echo "  - Base categories..."
 
 # Base Person category (simple base category with basic schema)
 create_category "Person" "<!-- StructureSync Start -->
-Description: A person in our organization.
+[[Has description::A person in our organization.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
@@ -262,7 +292,7 @@ Description: A person in our organization.
 
 # LabMember category (base category for lab members)
 create_category "LabMember" "<!-- StructureSync Start -->
-Description: A member of the lab.
+[[Has description::A member of the lab.]]
 
 === Required Properties ===
 [[Has required property::Property:Has lab role]]
@@ -276,7 +306,7 @@ Description: A member of the lab.
 
 # Organization category (base category, no parents)
 create_category "Organization" "<!-- StructureSync Start -->
-Description: An organization or institution.
+[[Has description::An organization or institution.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
@@ -288,7 +318,7 @@ Description: An organization or institution.
 
 # Lab category (inherits from Organization)
 create_category "Lab" "<!-- StructureSync Start -->
-Description: A research lab or group.
+[[Has description::A research lab or group.]]
 
 [[Has parent category::Category:Organization]]
 
@@ -310,7 +340,7 @@ Description: A research lab or group.
 
 # Publication category (standalone category)
 create_category "Publication" "<!-- StructureSync Start -->
-Description: A research publication.
+[[Has description::A research publication.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
@@ -329,7 +359,7 @@ Description: A research publication.
 
 # Project category (base category)
 create_category "Project" "<!-- StructureSync Start -->
-Description: A research project.
+[[Has description::A research project.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
@@ -344,7 +374,7 @@ echo "  - Single inheritance hierarchies..."
 
 # Faculty category (inherits from Person only)
 create_category "Faculty" "<!-- StructureSync Start -->
-Description: Faculty member.
+[[Has description::Faculty member.]]
 
 [[Has parent category::Category:Person]]
 
@@ -377,7 +407,7 @@ Description: Faculty member.
 
 # Student category (base for all students, inherits from Person)
 create_category "Student" "<!-- StructureSync Start -->
-Description: A student.
+[[Has description::A student.]]
 
 [[Has parent category::Category:Person]]
 
@@ -401,7 +431,7 @@ Description: A student.
 
 # Undergraduate category (inherits from Student, single inheritance chain)
 create_category "Undergraduate" "<!-- StructureSync Start -->
-Description: An undergraduate student.
+[[Has description::An undergraduate student.]]
 
 [[Has parent category::Category:Student]]
 
@@ -420,7 +450,7 @@ echo "  - Multiple inheritance hierarchies..."
 
 # GraduateStudent category (multiple inheritance: Person + LabMember)
 create_category "GraduateStudent" "<!-- StructureSync Start -->
-Description: A graduate student in the lab.
+[[Has description::A graduate student in the lab.]]
 
 [[Has parent category::Category:Person]]
 [[Has parent category::Category:LabMember]]
@@ -453,7 +483,7 @@ Description: A graduate student in the lab.
 
 # Postdoc category (multiple inheritance: Person + LabMember)
 create_category "Postdoc" "<!-- StructureSync Start -->
-Description: A postdoctoral researcher in the lab.
+[[Has description::A postdoctoral researcher in the lab.]]
 
 [[Has parent category::Category:Person]]
 [[Has parent category::Category:LabMember]]
@@ -479,7 +509,7 @@ Description: A postdoctoral researcher in the lab.
 
 # PI category (Principal Investigator, inherits from Faculty + LabMember)
 create_category "PI" "<!-- StructureSync Start -->
-Description: A principal investigator (lab head).
+[[Has description::A principal investigator (lab head).]]
 
 [[Has parent category::Category:Faculty]]
 [[Has parent category::Category:LabMember]]
@@ -503,7 +533,7 @@ echo "  - Deep hierarchy examples..."
 
 # PhDStudent category (deep inheritance: Person -> Student -> GraduateStudent + LabMember)
 create_category "PhDStudent" "<!-- StructureSync Start -->
-Description: A PhD student in the lab.
+[[Has description::A PhD student in the lab.]]
 
 [[Has parent category::Category:GraduateStudent]]
 
@@ -522,7 +552,7 @@ Description: A PhD student in the lab.
 
 # MastersStudent category (deep inheritance: Person -> Student -> GraduateStudent)
 create_category "MastersStudent" "<!-- StructureSync Start -->
-Description: A masters student.
+[[Has description::A masters student.]]
 
 [[Has parent category::Category:GraduateStudent]]
 
@@ -541,12 +571,12 @@ echo "  - Edge case categories..."
 
 # EmptyCategory (category with no properties defined)
 create_category "EmptyCategory" "<!-- StructureSync Start -->
-Description: A category with no properties (for testing).
+[[Has description::A category with no properties (for testing).]]
 <!-- StructureSync End -->"
 
 # SimpleCategory (category with minimal schema)
 create_category "SimpleCategory" "<!-- StructureSync Start -->
-Description: A simple category for testing.
+[[Has description::A simple category for testing.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
@@ -574,7 +604,7 @@ echo "  - Creating Department category for autocomplete demo..."
 
 # Create Department category (for autocomplete demonstration)
 create_category "Department" "<!-- StructureSync Start -->
-Description: An academic department within an institution.
+[[Has description::An academic department within an institution.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
@@ -801,6 +831,7 @@ echo ""
 echo "Created:"
 echo ""
 echo "PROPERTIES (30+):"
+echo "  - Meta: Has description, Allows multiple values"
 echo "  - Text: Has full name, Has biography, Has research interests, Has office location"
 echo "  - Contact: Has email, Has phone, Has website, Has orcid"
 echo "  - Date/Time: Has birth date, Has start date, Has end date, Has publication date"
@@ -809,6 +840,7 @@ echo "  - Boolean: Has active status, Has public profile"
 echo "  - Page/Reference: Has advisor, Has lab, Has institution, Has collaborator"
 echo "  - With Autocomplete: Has department (demonstrates [[Allows value from category::Department]])"
 echo "  - With Allowed Values: Has lab role, Has academic level, Has employment status"
+echo "  - With Multiple Values: Has department, Has collaborator, Has keywords"
 echo "  - Specialized: Has geographic location, Has code repository"
 echo "  - Academic: Has degree, Has thesis title, Has research area, Has keywords"
 echo ""

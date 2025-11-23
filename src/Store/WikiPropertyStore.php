@@ -168,21 +168,15 @@ class WikiPropertyStore
         }
 
         /* Description --------------------------------------------------- */
-        // Extract from within StructureSync markers, must start with "Description:"
-        $startPos = strpos($content, self::MARKER_START);
-        $endPos = strpos($content, self::MARKER_END);
-        
-        if ($startPos !== false && $endPos !== false && $endPos > $startPos) {
-            $markerContent = substr($content, $startPos + strlen(self::MARKER_START), $endPos - $startPos - strlen(self::MARKER_START));
-            
-            $lines = explode("\n", $markerContent);
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if (preg_match('/^Description:\s*(.+)$/i', $line, $matches)) {
-                    $data['description'] = trim($matches[1]);
-                    break;
-                }
-            }
+        // Extract from semantic property [[Has description::...]]
+        if (preg_match('/\[\[Has description::([^\|\]]+)/i', $content, $m)) {
+            $data['description'] = trim($m[1]);
+        }
+
+        /* Allows multiple values ---------------------------------------- */
+        // Extract from semantic property [[Allows multiple values::true]]
+        if (preg_match('/\[\[Allows multiple values::(true|yes|1)\]\]/i', $content, $m)) {
+            $data['allowsMultipleValues'] = true;
         }
 
         /* Display block (new wiki-editable templates) ------------------- */
@@ -333,13 +327,18 @@ class WikiPropertyStore
 
         $lines = [];
 
-        if ($property->getDescription() !== '') {
-            $lines[] = 'Description: ' . $property->getDescription();
-            $lines[] = '';
-        }
-
         // Datatype
         $lines[] = '[[Has type::' . $property->getSMWType() . ']]';
+
+        // Description
+        if ($property->getDescription() !== '') {
+            $lines[] = '[[Has description::' . $property->getDescription() . ']]';
+        }
+
+        // Allows multiple values
+        if ($property->allowsMultipleValues()) {
+            $lines[] = '[[Allows multiple values::true]]';
+        }
 
         // Display label (only if different from property name)
         if ($property->getLabel() !== $property->getName()) {
