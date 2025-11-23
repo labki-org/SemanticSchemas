@@ -112,16 +112,28 @@ class DisplayRenderer
 
             if ($value !== '') {
                 $hasAnyValue = true;
-                $label = $this->getPropertyLabel($propertyName);
 
                 // Get page title from frame for template variable
                 $pageTitle = $frame->getTitle() ? $frame->getTitle()->getText() : '';
                 $renderedValue = $this->renderValue($value, $propertyName, $pageTitle, $frame);
 
-                $rows[] = '<div class="' . self::CSS_PREFIX . 'row">';
-                $rows[] = '  <span class="' . self::CSS_PREFIX . 'label">' . htmlspecialchars($label) . ':</span>';
-                $rows[] = '  <span class="' . self::CSS_PREFIX . 'value">' . $renderedValue . '</span>';
-                $rows[] = '</div>';
+                // Check if property has a custom display template
+                $property = $this->propertyStore->readProperty($propertyName);
+                $hasCustomDisplay = $property !== null && $property->getDisplayTemplate() !== null;
+
+                if ($hasCustomDisplay) {
+                    // Custom display template handles its own formatting and labels
+                    $rows[] = '<div class="' . self::CSS_PREFIX . 'row ' . self::CSS_PREFIX . 'custom-display">';
+                    $rows[] = '  ' . $renderedValue;
+                    $rows[] = '</div>';
+                } else {
+                    // Default: label + value structure
+                    $label = $this->getPropertyLabel($propertyName);
+                    $rows[] = '<div class="' . self::CSS_PREFIX . 'row">';
+                    $rows[] = '  <span class="' . self::CSS_PREFIX . 'label">' . htmlspecialchars($label) . ':</span>';
+                    $rows[] = '  <span class="' . self::CSS_PREFIX . 'value">' . $renderedValue . '</span>';
+                    $rows[] = '</div>';
+                }
             }
         }
 
