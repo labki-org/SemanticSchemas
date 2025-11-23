@@ -789,6 +789,11 @@ docker compose exec -T mediawiki php extensions/StructureSync/maintenance/export
     --output=/var/www/html/w/extensions/StructureSync/tests/test-schema.json
 
 echo ""
+echo "==> Refreshing Semantic MediaWiki data..."
+echo "This may take a minute as SMW re-parses all pages to extract properties..."
+docker compose exec -T mediawiki php extensions/SemanticMediaWiki/maintenance/rebuildData.php -f --skip-properties --report-runtime
+
+echo ""
 echo "========================================"
 echo "Test data populated successfully!"
 echo "========================================"

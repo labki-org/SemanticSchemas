@@ -193,8 +193,7 @@ class TemplateGenerator
         $lines[] = '{{' . $name . '/semantic';
         foreach ($properties as $property) {
             $param = $this->sanitize($this->propertyToParameter($property));
-            $propertySafe = $this->sanitize($property);
-            $lines[] = ' | ' . $propertySafe . ' = {{{' . $param . '|}}}';
+            $lines[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
         }
         $lines[] = '}}';
         $lines[] = '';
