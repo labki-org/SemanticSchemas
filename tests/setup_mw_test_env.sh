@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
 #
@@ -35,10 +34,11 @@ LOG_DIR="$EXT_DIR/logs"
 
 echo "==> Using MW directory: $MW_DIR"
 
-# ---------------- RESET ENV ----------------
+# ---------------- RESET ENV (FULL) ----------------
 
 if [ -d "$MW_DIR" ]; then
     cd "$MW_DIR"
+    echo "==> Shutting down existing containers and removing volumes..."
     docker compose down -v || true
 fi
 
@@ -50,8 +50,9 @@ fi
 
 cd "$MW_DIR"
 
+echo "==> Resetting MediaWiki core to clean $MW_BRANCH..."
 git fetch --all
-git checkout -f "$MW_BRANCH" || git checkout -f "origin/$MW_BRANCH"
+git checkout "$MW_BRANCH"
 git reset --hard "$MW_BRANCH"
 git clean -fdx
 git submodule update --init --recursive || true
@@ -71,33 +72,24 @@ EOF
 echo "==> Starting MW containers..."
 docker compose up -d
 
-# ---------------- CLEAN vendor BEFORE composer install ----------------
-
-echo "==> Cleaning vendor + composer.lock inside container..."
-docker compose exec -T mediawiki bash -lc "
-  cd $CONTAINER_WIKI
-  rm -rf vendor composer.lock
-"
-
-echo "==> Installing MediaWiki core composer dependencies..."
-docker compose exec -T mediawiki composer install \
-    --no-dev --no-interaction --no-progress
+echo "==> Installing composer deps (core only)..."
+docker compose exec -T mediawiki composer update --no-interaction --no-progress
 
 echo "==> Running MediaWiki install script..."
+# LocalSettings.php must not reference SMW yet
 docker compose exec -T mediawiki bash -lc "rm -f $CONTAINER_WIKI/LocalSettings.php"
 docker compose exec -T mediawiki /bin/bash /docker/install.sh
 
 echo "==> Fixing SQLite permissions..."
-docker compose exec -T mediawiki bash -lc \
-    "chmod -R o+rwx $CONTAINER_WIKI/cache/sqlite"
+docker compose exec -T mediawiki bash -lc "chmod -R o+rwx $CONTAINER_WIKI/cache/sqlite || true"
 
 # ---------------- EXTENSION & LOG MOUNTS ----------------
 
 echo "==> Preparing host log directory..."
 mkdir -p "$LOG_DIR"
-chmod 777 "$LOG_DIR"
+chmod 777 "$LOG_DIR" || true
 
-echo "==> Writing override file..."
+echo "==> Writing docker-compose.override.yml..."
 cat > "$MW_DIR/docker-compose.override.yml" <<EOF
 services:
   mediawiki:
@@ -107,7 +99,7 @@ services:
       - $LOG_DIR:$CONTAINER_LOG_DIR
 EOF
 
-echo "==> Restarting with extension mount..."
+echo "==> Restarting with StructureSync mount..."
 docker compose down
 docker compose up -d
 
@@ -125,12 +117,12 @@ docker compose exec -T mediawiki bash -lc "
   {
     echo ''
     echo '// === Semantic MediaWiki ==='
-    echo 'wfLoadExtension( \"SemanticMediaWiki\" );'
-    echo 'enableSemantics( \"localhost\" );'
+    echo 'wfLoadExtension(\"SemanticMediaWiki\");'
+    echo 'enableSemantics(\"localhost\");'
   } >> $CONTAINER_WIKI/LocalSettings.php
 "
 
-echo "==> Running MW updater..."
+echo "==> Running MW updater for SMW..."
 docker compose exec -T mediawiki php maintenance/update.php --quick
 
 echo "==> Initializing SMW store..."
@@ -157,7 +149,7 @@ docker compose exec -T mediawiki bash -lc "
   {
     echo ''
     echo '// === PageForms ==='
-    echo 'wfLoadExtension( \"PageForms\" );'
+    echo 'wfLoadExtension(\"PageForms\");'
   } >> $CONTAINER_WIKI/LocalSettings.php
 "
 
@@ -172,14 +164,14 @@ docker compose exec -T mediawiki bash -lc "
   {
     echo ''
     echo '// === ParserFunctions ==='
-    echo 'wfLoadExtension( \"ParserFunctions\" );'
+    echo 'wfLoadExtension(\"ParserFunctions\");'
   } >> $CONTAINER_WIKI/LocalSettings.php
 "
 
 echo "==> Running MW updater for ParserFunctions..."
 docker compose exec -T mediawiki php maintenance/update.php --quick
 
-# ---------------- STRUCTURESYNCH ----------------
+# ---------------- STRUCTURESYNC ----------------
 
 echo "==> Verifying StructureSync extension directory..."
 docker compose exec -T mediawiki bash -lc "
@@ -193,8 +185,6 @@ docker compose exec -T mediawiki bash -lc "
   fi
   echo '✓ StructureSync extension directory found'
 "
-
-# ---------------- ENSURE NO vendor/ IN StructureSync ----------------
 
 echo "==> Removing vendor/ inside StructureSync (avoid merge/pollution)..."
 docker compose exec -T mediawiki bash -lc "
@@ -218,7 +208,7 @@ docker compose exec -T mediawiki bash -lc "
   {
     echo ''
     echo '// === StructureSync ==='
-    echo 'wfLoadExtension( \"StructureSync\" );'
+    echo 'wfLoadExtension(\"StructureSync\");'
     echo '\$wgDebugLogGroups[\"structuresync\"] = \"$CONTAINER_LOG_FILE\";'
   } >> $CONTAINER_WIKI/LocalSettings.php
 "
