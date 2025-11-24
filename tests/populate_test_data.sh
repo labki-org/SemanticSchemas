@@ -119,6 +119,76 @@ docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:
 PROPEOF
 "
 
+# Create Has target namespace property
+docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has target namespace' <<'PROPEOF'
+<!-- StructureSync Start -->
+[[Has type::Text]]
+[[Has description::The namespace where pages created by this category's form should be placed (e.g., User, Project, Help).]]
+<!-- StructureSync End -->
+
+[[Category:Properties]]
+PROPEOF
+"
+
+# Create Has parent category property
+docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has parent category' <<'PROPEOF'
+<!-- StructureSync Start -->
+[[Has type::Page]]
+[[Has description::Specifies parent categories for inheritance in the category hierarchy.]]
+[[Allows multiple values::true]]
+<!-- StructureSync End -->
+
+[[Category:Properties]]
+PROPEOF
+"
+
+# Create Has required property property
+docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has required property' <<'PROPEOF'
+<!-- StructureSync Start -->
+[[Has type::Page]]
+[[Has description::Properties that must be filled in for pages of this category.]]
+[[Allows multiple values::true]]
+<!-- StructureSync End -->
+
+[[Category:Properties]]
+PROPEOF
+"
+
+# Create Has optional property property
+docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has optional property' <<'PROPEOF'
+<!-- StructureSync Start -->
+[[Has type::Page]]
+[[Has description::Properties that may optionally be filled in for pages of this category.]]
+[[Allows multiple values::true]]
+<!-- StructureSync End -->
+
+[[Category:Properties]]
+PROPEOF
+"
+
+# Create Has display section property
+docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has display section' <<'PROPEOF'
+<!-- StructureSync Start -->
+[[Has type::Text]]
+[[Has description::Display section configuration for organizing how properties are shown on a page.]]
+[[Allows multiple values::true]]
+<!-- StructureSync End -->
+
+[[Category:Properties]]
+PROPEOF
+"
+
+# Create Has label property
+docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has label' <<'PROPEOF'
+<!-- StructureSync Start -->
+[[Has type::Text]]
+[[Has description::A human-readable label for display purposes.]]
+<!-- StructureSync End -->
+
+[[Category:Properties]]
+PROPEOF
+"
+
 # ==========================================
 # Meta-Properties
 # ==========================================
@@ -567,6 +637,66 @@ create_category "MastersStudent" "<!-- StructureSync Start -->
 
 [[Category:GraduateStudent]]"
 
+echo "  - Namespace targeting categories..."
+
+# UserProfile category (uses target namespace)
+create_category "UserProfile" "<!-- StructureSync Start -->
+[[Has description::A user profile page (created in User namespace).]]
+[[Has target namespace::User]]
+
+=== Required Properties ===
+[[Has required property::Property:Has full name]]
+[[Has required property::Property:Has email]]
+
+=== Optional Properties ===
+[[Has optional property::Property:Has biography]]
+[[Has optional property::Property:Has website]]
+
+{{#subobject:display_section_0
+|Has display section name=User Information
+|Has display section property=Property:Has full name
+|Has display section property=Property:Has email
+|Has display section property=Property:Has website
+}}
+<!-- StructureSync End -->"
+
+# Category category (meta-category for defining categories themselves)
+create_category "Category" "<!-- StructureSync Start -->
+[[Has description::Defines the structure of all Categories used within the wiki.]]
+[[Has target namespace::Category]]
+
+=== Required Properties ===
+[[Has required property::Property:Has label]]
+[[Has required property::Property:Has description]]
+
+=== Optional Properties ===
+[[Has optional property::Property:Has parent category]]
+[[Has optional property::Property:Has target namespace]]
+[[Has optional property::Property:Has required property]]
+[[Has optional property::Property:Has optional property]]
+[[Has optional property::Property:Has display section]]
+
+{{#subobject:display_section_0
+|Has display section name=Basic Information
+|Has display section property=Property:Has label
+|Has display section property=Property:Has description
+}}
+
+{{#subobject:display_section_1
+|Has display section name=Category Structure
+|Has display section property=Property:Has parent category
+|Has display section property=Property:Has required property
+|Has display section property=Property:Has optional property
+}}
+
+{{#subobject:display_section_2
+|Has display section name=Display Sections
+|Has display section property=Property:Has display section
+}}
+<!-- StructureSync End -->
+
+[[Category:StructureSync]]"
+
 echo "  - Edge case categories..."
 
 # EmptyCategory (category with no properties defined)
@@ -830,8 +960,8 @@ echo "========================================"
 echo ""
 echo "Created:"
 echo ""
-echo "PROPERTIES (30+):"
-echo "  - Meta: Has description, Allows multiple values"
+echo "PROPERTIES (35+):"
+echo "  - Meta: Has description, Allows multiple values, Has target namespace, Has parent category, Has required property, Has optional property, Has display section, Has label"
 echo "  - Text: Has full name, Has biography, Has research interests, Has office location"
 echo "  - Contact: Has email, Has phone, Has website, Has orcid"
 echo "  - Date/Time: Has birth date, Has start date, Has end date, Has publication date"
@@ -844,12 +974,14 @@ echo "  - With Multiple Values: Has department, Has collaborator, Has keywords"
 echo "  - Specialized: Has geographic location, Has code repository"
 echo "  - Academic: Has degree, Has thesis title, Has research area, Has keywords"
 echo ""
-echo "CATEGORIES (16+):"
+echo "CATEGORIES (18+):"
 echo "  Base Categories (no parents):"
 echo "    - Person (with display sections)"
 echo "    - Organization, Lab, Publication, Project"
 echo "    - LabMember"
 echo "    - Department (for autocomplete demo)"
+echo "    - UserProfile (demonstrates target namespace)"
+echo "    - Category (meta-category for defining categories, uses Category namespace)"
 echo "  Single Inheritance:"
 echo "    - Faculty (Person -> Faculty)"
 echo "    - Student (Person -> Student)"

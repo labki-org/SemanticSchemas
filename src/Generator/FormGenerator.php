@@ -106,7 +106,16 @@ class FormGenerator {
         // PageForms form info
         // ------------------------------------------------------------------
         $lines[] = '{{{info';
-        $lines[] = '|page name=<' . $this->sanitize( $category->getLabel() ) . '>';
+        
+        // If category has a target namespace, use the format <Namespace:{{{label}}}>
+        // Otherwise use the simple format <Label>
+        if ( $category->getTargetNamespace() !== null ) {
+            $pageName = '<' . $this->sanitize( $category->getTargetNamespace() ) . ':{{{label}}}>';
+        } else {
+            $pageName = '<' . $this->sanitize( $category->getLabel() ) . '>';
+        }
+        $lines[] = '|page name=' . $pageName;
+        
         $lines[] = '|create title=Create new ' . $this->sanitize( $category->getLabel() );
         $lines[] = '|edit title=Edit ' . $this->sanitize( $category->getLabel() );
         $lines[] = '}}}';

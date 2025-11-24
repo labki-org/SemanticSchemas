@@ -166,6 +166,11 @@ class WikiCategoryStore
         $data['label'] = $categoryName;
         $data['description'] = $this->extractDescription($content);
 
+        // Extract target namespace
+        if (preg_match('/\[\[Has target namespace::([^\|\]]+)/i', $content, $m)) {
+            $data['targetNamespace'] = trim($m[1]);
+        }
+
         return $data;
     }
 
@@ -231,6 +236,11 @@ class WikiCategoryStore
         // Description (optional)
         if ($category->getDescription() !== '') {
             $lines[] = '[[Has description::' . $category->getDescription() . ']]';
+        }
+
+        // Target namespace (optional)
+        if ($category->getTargetNamespace() !== null) {
+            $lines[] = '[[Has target namespace::' . $category->getTargetNamespace() . ']]';
         }
 
         // Parents

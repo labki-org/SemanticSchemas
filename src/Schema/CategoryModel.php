@@ -52,6 +52,9 @@ class CategoryModel {
     /** @var string Long-form description */
     private $description;
 
+    /** @var string|null Target namespace for pages created with this category's form */
+    private $targetNamespace;
+
     /** @var string[] Direct required properties */
     private $requiredProperties;
 
@@ -122,6 +125,9 @@ class CategoryModel {
 
         $this->label = !empty( $data['label'] ) ? (string)$data['label'] : $name;
         $this->description = isset($data['description']) ? (string)$data['description'] : '';
+        $this->targetNamespace = isset($data['targetNamespace']) && trim($data['targetNamespace']) !== '' 
+            ? trim($data['targetNamespace']) 
+            : null;
 
         $this->requiredProperties = self::normalizeList(
             $data['properties']['required'] ?? []
@@ -162,6 +168,10 @@ class CategoryModel {
 
     public function getDescription(): string {
         return $this->description;
+    }
+
+    public function getTargetNamespace(): ?string {
+        return $this->targetNamespace;
     }
 
     /** @return string[] Direct required properties */

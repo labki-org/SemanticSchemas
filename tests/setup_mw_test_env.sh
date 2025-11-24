@@ -150,6 +150,7 @@ docker compose exec -T mediawiki bash -lc "
     echo ''
     echo '// === PageForms ==='
     echo 'wfLoadExtension(\"PageForms\");'
+    echo '\$wgPageFormsAllowCreateInRestrictedNamespaces = true;'
   } >> $CONTAINER_WIKI/LocalSettings.php
 "
 
