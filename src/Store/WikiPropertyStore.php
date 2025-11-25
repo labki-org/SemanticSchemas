@@ -10,16 +10,34 @@ use MediaWiki\Title\Title;
  * WikiPropertyStore
  * ------------------
  * Responsible for reading/writing SMW Property: pages and reconstructing
- * PropertyModel objects from raw content.
+ * PropertyModel objects from SMW semantic data.
  * 
- * Storage Format:
- * --------------
- * Property metadata is stored within HTML comment markers:
+ * Reading Strategy:
+ * -----------------
+ * Queries Semantic MediaWiki's data store directly for property metadata.
+ * Display templates are still parsed from wikitext since they contain
+ * actual template content (not semantic data).
+ * 
+ * Writing Strategy:
+ * -----------------
+ * Property metadata is written within HTML comment markers:
  * <!-- StructureSync Start -->
- * ...metadata and semantic annotations...
+ * ...semantic annotations...
  * <!-- StructureSync End -->
  * 
- * Semantic Annotations Used:
+ * Semantic Properties Read:
+ * - Has type (→ datatype)
+ * - Display label (→ label)
+ * - Allows value (→ allowedValues array)
+ * - Has domain and range (→ rangeCategory)
+ * - Subproperty of (→ subpropertyOf)
+ * - Allows value from category (→ allowedCategory)
+ * - Allows value from namespace (→ allowedNamespace)
+ * - Has description (→ description)
+ * - Has display pattern (→ displayFromProperty)
+ * - Allows multiple values (→ allowsMultipleValues)
+ * 
+ * Semantic Annotations Written:
  * - [[Has type::DataType]]
  * - [[Display label::Label]]
  * - [[Allows value::EnumValue]]
@@ -27,13 +45,14 @@ use MediaWiki\Title\Title;
  * - [[Subproperty of::PropertyName]]
  * - [[Allows value from category::CategoryName]]
  * - [[Allows value from namespace::NamespaceName]]
+ * - [[Has description::...]]
+ * - [[Has display pattern::Property:...]]
+ * - [[Allows multiple values::true]]
  *
  * Features:
- *   - Description extraction ignores headings (= ... =)
- *   - Ensures consistent metadata keys exist (rangeCategory/subpropertyOf)
- *   - Adds StructureSync markers for hashing and dirty detection
- *   - Normalizes property names (underscores to spaces)
- *   - Supports both PageForms and SMW canonical syntax
+ * - Normalizes property names (underscores to spaces)
+ * - Ensures consistent metadata keys exist (rangeCategory/subpropertyOf)
+ * - Adds StructureSync markers for hashing and dirty detection
  */
 class WikiPropertyStore
 {
@@ -64,12 +83,8 @@ class WikiPropertyStore
             return null;
         }
 
-        $content = $this->pageCreator->getPageContent($title);
-        if ($content === null) {
-            return null;
-        }
-
-        $data = $this->parsePropertyContent($content);
+        // Query SMW for semantic data instead of parsing wikitext
+        $data = $this->queryPropertyFromSMW($title, $canonical);
 
         // Ensure existence of keys
         $data += [
@@ -94,103 +109,183 @@ class WikiPropertyStore
     }
 
     /* ---------------------------------------------------------------------
-     * PARSE PROPERTY CONTENT
+     * QUERY PROPERTY FROM SMW
      * --------------------------------------------------------------------- */
 
-    private function parsePropertyContent(string $content): array
+    /**
+     * Query property metadata from SMW
+     *
+     * Reads semantic properties directly from SMW store instead of parsing wikitext.
+     *
+     * @param \MediaWiki\Title\Title $title Property title
+     * @param string $canonical Canonical property name
+     * @return array Property data array
+     */
+    private function queryPropertyFromSMW(\MediaWiki\Title\Title $title, string $canonical): array
     {
-
         $data = [];
 
+        // Get SMW semantic data for this property page
+        $store = \SMW\StoreFactory::getStore();
+        $subject = \SMW\DIWikiPage::newFromTitle($title);
+        $semanticData = $store->getSemanticData($subject);
+
         /* Datatype ------------------------------------------------------ */
-        if (preg_match('/\[\[Has type::([^\|\]]+)/i', $content, $m)) {
-            $data['datatype'] = trim($m[1]);
+        $types = $this->getSMWPropertyValues($semanticData, 'Has type', 'text');
+        if (!empty($types)) {
+            $data['datatype'] = $types[0];
         }
 
         /* Allowed values ------------------------------------------------ */
-        preg_match_all('/\[\[Allows value::([^\|\]]+)/i', $content, $m);
-        if (!empty($m[1])) {
-            $data['allowedValues'] = array_values(
-                array_unique(array_map('trim', $m[1]))
-            );
-        }
+        $data['allowedValues'] = $this->getSMWPropertyValues($semanticData, 'Allows value', 'text');
 
         /* Range category ------------------------------------------------ */
-        if (
-            preg_match(
-                '/\[\[Has domain and range::Category:([^\|\]]+)/i',
-                $content,
-                $m
-            )
-        ) {
-            $data['rangeCategory'] = trim($m[1]);
+        $ranges = $this->getSMWPropertyValues($semanticData, 'Has domain and range', 'category');
+        if (!empty($ranges)) {
+            $data['rangeCategory'] = $ranges[0];
         }
 
         /* Subproperty --------------------------------------------------- */
-        if (preg_match('/\[\[Subproperty of::([^\|\]]+)/i', $content, $m)) {
-            $data['subpropertyOf'] = trim(str_replace('_', ' ', $m[1]));
+        $subprops = $this->getSMWPropertyValues($semanticData, 'Subproperty of', 'property');
+        if (!empty($subprops)) {
+            $data['subpropertyOf'] = $subprops[0];
         }
 
         /* Display label ------------------------------------------------- */
-        if (preg_match('/\[\[Display label::([^\|\]]+)/i', $content, $m)) {
-            $data['label'] = trim($m[1]);
+        $labels = $this->getSMWPropertyValues($semanticData, 'Display label', 'text');
+        if (!empty($labels)) {
+            $data['label'] = $labels[0];
         }
 
         /* Display pattern (property-to-property template reference) ----- */
-        // Parse SMW annotation format: [[Has display pattern::Property:Email]]
-        // This is stored as displayFromProperty in the schema
-        if (preg_match('/\[\[Has display pattern::Property:([^\|\]]+)/i', $content, $m)) {
-            $data['displayFromProperty'] = trim($m[1]);
+        $patterns = $this->getSMWPropertyValues($semanticData, 'Has display pattern', 'property');
+        if (!empty($patterns)) {
+            $data['displayFromProperty'] = $patterns[0];
         }
 
         /* Autocomplete sources (category) ------------------------------- */
-        // Support both PageForms and SMW canonical syntax:
-        // [[Allows value from category::Department]]
-        // [[Allows value from::Category:Department]]
-        if (preg_match('/\[\[Allows value from category::([^\|\]]+)/i', $content, $m)) {
-            // PageForms syntax: extract category name directly
-            $data['allowedCategory'] = trim($m[1]);
-        } elseif (preg_match('/\[\[Allows value from::Category:([^\|\]]+)/i', $content, $m)) {
-            // SMW canonical syntax: strip "Category:" prefix
-            $data['allowedCategory'] = trim($m[1]);
+        // Try both property names
+        $allowedCats = $this->getSMWPropertyValues($semanticData, 'Allows value from category', 'text');
+        if (empty($allowedCats)) {
+            $allowedCats = $this->getSMWPropertyValues($semanticData, 'Allows value from', 'category');
+        }
+        if (!empty($allowedCats)) {
+            $data['allowedCategory'] = $allowedCats[0];
         }
 
         /* Autocomplete sources (namespace) ------------------------------ */
-        // Support both PageForms and SMW canonical syntax:
-        // [[Allows value from namespace::Main]]
-        // [[Allows value from::Namespace:Main]]
-        if (preg_match('/\[\[Allows value from namespace::([^\|\]]+)/i', $content, $m)) {
-            // PageForms syntax: extract namespace name directly
-            $data['allowedNamespace'] = trim($m[1]);
-        } elseif (preg_match('/\[\[Allows value from::Namespace:([^\|\]]+)/i', $content, $m)) {
-            // SMW canonical syntax: strip "Namespace:" prefix
-            $data['allowedNamespace'] = trim($m[1]);
+        $allowedNS = $this->getSMWPropertyValues($semanticData, 'Allows value from namespace', 'text');
+        if (!empty($allowedNS)) {
+            $data['allowedNamespace'] = $allowedNS[0];
         }
 
         /* Description --------------------------------------------------- */
-        // Extract from semantic property [[Has description::...]]
-        if (preg_match('/\[\[Has description::([^\|\]]+)/i', $content, $m)) {
-            $data['description'] = trim($m[1]);
+        $descriptions = $this->getSMWPropertyValues($semanticData, 'Has description', 'text');
+        if (!empty($descriptions)) {
+            $data['description'] = $descriptions[0];
         }
 
         /* Allows multiple values ---------------------------------------- */
-        // Extract from semantic property [[Allows multiple values::true]]
-        if (preg_match('/\[\[Allows multiple values::(true|yes|1)\]\]/i', $content, $m)) {
+        $multiValues = $this->getSMWPropertyValues($semanticData, 'Allows multiple values', 'text');
+        if (!empty($multiValues) && in_array(strtolower($multiValues[0]), ['true', 'yes', '1'])) {
             $data['allowsMultipleValues'] = true;
         }
 
         /* Display block (new wiki-editable templates) ------------------- */
-        $displayData = $this->parseDisplayBlock($content);
-        if (!empty($displayData)) {
-            $data['display'] = $displayData;
-            // If displayFromProperty is in the Display block, extract it
-            if (isset($displayData['fromProperty'])) {
-                $data['displayFromProperty'] = $displayData['fromProperty'];
+        // For display template, we still need to read from wikitext
+        // as it contains actual template content, not just semantic annotations
+        $content = $this->pageCreator->getPageContent($title);
+        if ($content !== null) {
+            $displayData = $this->parseDisplayBlock($content);
+            if (!empty($displayData)) {
+                $data['display'] = $displayData;
+                // If displayFromProperty is in the Display block, extract it
+                if (isset($displayData['fromProperty'])) {
+                    $data['displayFromProperty'] = $displayData['fromProperty'];
+                }
             }
         }
 
         return $data;
     }
+
+    /**
+     * Get property values from SMW semantic data
+     *
+     * @param \SMW\SemanticData $semanticData
+     * @param string $propertyName
+     * @param string $type Expected type: 'text', 'property', 'category', or 'page'
+     * @return array
+     */
+    private function getSMWPropertyValues(\SMW\SemanticData $semanticData, string $propertyName, string $type = 'text'): array
+    {
+        try {
+            $property = \SMW\DIProperty::newFromUserLabel($propertyName);
+            $propertyValues = $semanticData->getPropertyValues($property);
+
+            $values = [];
+            foreach ($propertyValues as $dataItem) {
+                $value = $this->extractSMWValue($dataItem, $type);
+                if ($value !== null) {
+                    $values[] = $value;
+                }
+            }
+
+            return $values;
+        } catch (\Exception $e) {
+            // Property doesn't exist or other error
+            return [];
+        }
+    }
+
+    /**
+     * Extract value from SMW DataItem
+     *
+     * @param \SMWDataItem $dataItem
+     * @param string $type Expected type
+     * @return string|null
+     */
+    private function extractSMWValue(\SMWDataItem $dataItem, string $type): ?string
+    {
+        if ($dataItem instanceof \SMW\DIWikiPage) {
+            $title = $dataItem->getTitle();
+            if ($title === null) {
+                return null;
+            }
+
+            switch ($type) {
+                case 'property':
+                    return $title->getNamespace() === \SMW_NS_PROPERTY 
+                        ? $title->getText() 
+                        : null;
+                
+                case 'category':
+                    return $title->getNamespace() === NS_CATEGORY 
+                        ? $title->getText() 
+                        : null;
+                
+                case 'page':
+                    return $title->getPrefixedText();
+                
+                default:
+                    return $title->getText();
+            }
+        } elseif ($dataItem instanceof \SMWDIBlob) {
+            return $dataItem->getString();
+        } elseif ($dataItem instanceof \SMWDIString) {
+            return $dataItem->getString();
+        }
+
+        return null;
+    }
+
+    /* ---------------------------------------------------------------------
+     * DISPLAY TEMPLATE PARSING
+     * 
+     * Note: Display templates contain actual wikitext content (not semantic data),
+     * so they must still be parsed from the page source. This is the only part
+     * that still requires wikitext parsing.
+     * --------------------------------------------------------------------- */
 
     /**
      * Parse the Display block within StructureSync markers

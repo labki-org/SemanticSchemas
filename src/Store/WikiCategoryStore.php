@@ -15,18 +15,33 @@ use MediaWiki\Title\Title;
  * - Wiki Category pages (with semantic annotations)
  * - CategoryModel objects (schema representation)
  * 
- * Storage Format:
- * --------------
- * Schema metadata is stored within HTML comment markers on Category pages:
+ * Reading Strategy:
+ * -----------------
+ * Queries Semantic MediaWiki's data store directly instead of parsing wikitext.
+ * This ensures we always work with rendered semantic data after template expansion.
+ * 
+ * Writing Strategy:
+ * -----------------
+ * Schema metadata is written within HTML comment markers on Category pages:
  * <!-- StructureSync Start -->
- * ...metadata...
+ * ...semantic annotations...
  * <!-- StructureSync End -->
  * 
- * Semantic Annotations Used:
+ * Semantic Properties Read:
+ * - Has parent category (→ parents)
+ * - Has required property (→ required properties list)
+ * - Has optional property (→ optional properties list)
+ * - Has description (→ description)
+ * - Has target namespace (→ target namespace)
+ * - Subobjects with "Has display section name" and "Has display section property" (→ display sections)
+ * 
+ * Semantic Annotations Written:
  * - [[Has parent category::Category:ParentName]]
  * - [[Has required property::Property:PropName]]
  * - [[Has optional property::Property:PropName]]
- * - {{#subobject:display_section_N|...}} for display sections
+ * - [[Has description::...]]
+ * - [[Has target namespace::...]]
+ * - {{#subobject:display_section_N|Has display section name=...|Has display section property=Property:...}}
  */
 class WikiCategoryStore
 {
@@ -37,12 +52,6 @@ class WikiCategoryStore
     /** Schema content markers - must match PageHashComputer */
     private const MARKER_START = '<!-- StructureSync Start -->';
     private const MARKER_END = '<!-- StructureSync End -->';
-    
-    /** Regex patterns for parsing semantic annotations */
-    private const PATTERN_PARENT = '/\[\[Has parent category::Category:([^\]]+)\]\]/';
-    private const PATTERN_REQUIRED = '/\[\[Has required property::Property:([^\]]+)\]\]/';
-    private const PATTERN_OPTIONAL = '/\[\[Has optional property::Property:([^\]]+)\]\]/';
-    private const PATTERN_SUBOBJECT = '/\{\{#subobject:display_section_(\d+)([^}]*)\}\}/s';
 
     public function __construct(PageCreator $pageCreator = null)
     {
@@ -62,28 +71,24 @@ class WikiCategoryStore
             return null;
         }
 
-        $content = $this->pageCreator->getPageContent($title);
-        if ($content === null) {
-            return null;
-        }
+        // Query SMW for semantic data instead of parsing wikitext
+        $data = $this->queryCategoryFromSMW($title, $categoryName);
 
-        // Parse structural metadata inside the markers
-        $data = $this->parseCategoryContent($content, $categoryName);
-
-        // Could read from SMW later; for now parsing-only
         return new CategoryModel($categoryName, $data);
     }
 
     /**
-     * Parse category metadata from page content
+     * Query category metadata from SMW
      *
-     * NOTE: **Corrected behavior**
-     * - DO NOT extract parent categories from [[Category:...]] tags.
-     * - ONLY use [[Has parent category::Category:Foo]].
+     * Reads semantic properties directly from SMW store instead of parsing wikitext.
+     * This ensures we always work with the rendered/stored semantic data.
+     *
+     * @param Title $title Category title
+     * @param string $categoryName Category name (without prefix)
+     * @return array Category data array
      */
-    private function parseCategoryContent(string $content, string $categoryName): array
+    private function queryCategoryFromSMW(\MediaWiki\Title\Title $title, string $categoryName): array
     {
-
         $data = [
             'parents' => [],
             'properties' => [
@@ -92,100 +97,155 @@ class WikiCategoryStore
             ],
             'display' => [],
             'forms' => [],
+            'label' => $categoryName,
+            'description' => '',
         ];
 
-        // Extract ONLY semantic parent categories
-        preg_match_all(
-            self::PATTERN_PARENT,
-            $content,
-            $matches
-        );
-        if (!empty($matches[1])) {
-            $data['parents'] = array_map('trim', $matches[1]);
+        // Get SMW semantic data for this page
+        $store = \SMW\StoreFactory::getStore();
+        $subject = \SMW\DIWikiPage::newFromTitle($title);
+        $semanticData = $store->getSemanticData($subject);
+
+        // Extract parent categories from "Has parent category" property
+        $data['parents'] = $this->getPropertyValues($semanticData, 'Has parent category', 'category');
+
+        // Extract required properties from "Has required property" property
+        $data['properties']['required'] = $this->getPropertyValues($semanticData, 'Has required property', 'property');
+
+        // Extract optional properties from "Has optional property" property
+        $data['properties']['optional'] = $this->getPropertyValues($semanticData, 'Has optional property', 'property');
+
+        // Extract description from "Has description" property
+        $descriptions = $this->getPropertyValues($semanticData, 'Has description', 'text');
+        if (!empty($descriptions)) {
+            $data['description'] = $descriptions[0];
         }
 
-        // Extract required properties
-        preg_match_all(
-            self::PATTERN_REQUIRED,
-            $content,
-            $matches
-        );
-        if (!empty($matches[1])) {
-            $data['properties']['required'] = array_map('trim', $matches[1]);
+        // Extract target namespace from "Has target namespace" property
+        $namespaces = $this->getPropertyValues($semanticData, 'Has target namespace', 'text');
+        if (!empty($namespaces)) {
+            $data['targetNamespace'] = $namespaces[0];
         }
 
-        // Extract optional properties
-        preg_match_all(
-            self::PATTERN_OPTIONAL,
-            $content,
-            $matches
-        );
-        if (!empty($matches[1])) {
-            $data['properties']['optional'] = array_map('trim', $matches[1]);
+        // Extract display sections from subobjects
+        $data['display']['sections'] = $this->extractDisplaySections($semanticData);
+
+        return $data;
+    }
+
+    /**
+     * Get property values from semantic data
+     *
+     * @param \SMW\SemanticData $semanticData
+     * @param string $propertyName Property name (e.g., "Has required property")
+     * @param string $type Expected type: 'text', 'property', 'category', or 'page'
+     * @return array Array of values
+     */
+    private function getPropertyValues(\SMW\SemanticData $semanticData, string $propertyName, string $type = 'text'): array
+    {
+        try {
+            $property = \SMW\DIProperty::newFromUserLabel($propertyName);
+            $propertyValues = $semanticData->getPropertyValues($property);
+
+            $values = [];
+            foreach ($propertyValues as $dataItem) {
+                $value = $this->extractValueFromDataItem($dataItem, $type);
+                if ($value !== null) {
+                    $values[] = $value;
+                }
+            }
+
+            return $values;
+        } catch (\Exception $e) {
+            // Property doesn't exist or other error
+            return [];
+        }
+    }
+
+    /**
+     * Extract value from SMW DataItem based on expected type
+     *
+     * @param \SMWDataItem $dataItem
+     * @param string $type Expected type: 'text', 'property', 'category', or 'page'
+     * @return string|null
+     */
+    private function extractValueFromDataItem(\SMWDataItem $dataItem, string $type): ?string
+    {
+        if ($dataItem instanceof \SMW\DIWikiPage) {
+            $title = $dataItem->getTitle();
+            if ($title === null) {
+                return null;
+            }
+
+            // Extract based on expected type
+            switch ($type) {
+                case 'property':
+                    // Remove "Property:" prefix
+                    return $title->getNamespace() === \SMW_NS_PROPERTY 
+                        ? $title->getText() 
+                        : null;
+                
+                case 'category':
+                    // Remove "Category:" prefix
+                    return $title->getNamespace() === NS_CATEGORY 
+                        ? $title->getText() 
+                        : null;
+                
+                case 'page':
+                    // Return full page name
+                    return $title->getPrefixedText();
+                
+                default:
+                    return $title->getText();
+            }
+        } elseif ($dataItem instanceof \SMWDIBlob) {
+            // Text/string value
+            return $dataItem->getString();
+        } elseif ($dataItem instanceof \SMWDIString) {
+            return $dataItem->getString();
         }
 
-        // Extract display sections from {{#subobject:display_section_*}}
+        return null;
+    }
+
+    /**
+     * Extract display sections from subobjects
+     *
+     * @param \SMW\SemanticData $semanticData
+     * @return array Array of display sections
+     */
+    private function extractDisplaySections(\SMW\SemanticData $semanticData): array
+    {
         $sections = [];
-        // Match each subobject block
-        preg_match_all(
-            self::PATTERN_SUBOBJECT,
-            $content,
-            $subobjectMatches,
-            PREG_SET_ORDER
-        );
+        $subobjects = $semanticData->getSubSemanticData();
 
-        foreach ($subobjectMatches as $match) {
-            $sectionContent = $match[2];
+        foreach ($subobjects as $subobjectData) {
+            $subobjectName = $subobjectData->getSubject()->getSubobjectName();
+            
+            // Only process display_section_* subobjects
+            if (strpos($subobjectName, 'display_section_') !== 0) {
+                continue;
+            }
+
             $section = [];
 
-            // Extract section name
-            if (preg_match('/\|Has display section name=([^\|\}]+)/', $sectionContent, $nameMatch)) {
-                $section['name'] = trim($nameMatch[1]);
+            // Get section name
+            $names = $this->getPropertyValues($subobjectData, 'Has display section name', 'text');
+            if (!empty($names)) {
+                $section['name'] = $names[0];
             }
 
-            // Extract section properties
-            preg_match_all(
-                '/\|Has display section property=Property:([^\|\}]+)/',
-                $sectionContent,
-                $propMatches
-            );
-            if (!empty($propMatches[1])) {
-                $section['properties'] = array_map('trim', $propMatches[1]);
-            }
+            // Get section properties
+            $section['properties'] = $this->getPropertyValues($subobjectData, 'Has display section property', 'property');
 
             if (!empty($section['name']) && !empty($section['properties'])) {
                 $sections[] = $section;
             }
         }
 
-        if (!empty($sections)) {
-            $data['display']['sections'] = $sections;
-        }
-
-        // Description extraction unchanged
-        $data['label'] = $categoryName;
-        $data['description'] = $this->extractDescription($content);
-
-        // Extract target namespace
-        if (preg_match('/\[\[Has target namespace::([^\|\]]+)/i', $content, $m)) {
-            $data['targetNamespace'] = trim($m[1]);
-        }
-
-        return $data;
+        return $sections;
     }
 
-    /**
-     * Extract description from semantic property [[Has description::...]]
-     */
-    private function extractDescription(string $content): string
-    {
-        // Extract from semantic property [[Has description::...]]
-        if (preg_match('/\[\[Has description::([^\|\]]+)/i', $content, $matches)) {
-            return trim($matches[1]);
-        }
-        
-        return '';
-    }
 
     /**
      * Write a category to the wiki
