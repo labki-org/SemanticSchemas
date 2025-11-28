@@ -35,29 +35,121 @@
 	list-style: none;
 	margin: 0;
 	padding: 0;
+	font-size: 0.95em;
 }
 
 .ss-hierarchy-tree li {
 	margin: 0.5em 0;
-	padding-left: 1.5em;
 	position: relative;
 }
 
-.ss-hierarchy-tree li::before {
-	content: '→';
-	position: absolute;
-	left: 0;
-	color: #72777d;
+/* Node content wrapper */
+.ss-hierarchy-node-content {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.25em 0.5em;
+	border-radius: 3px;
+	transition: background-color 0.2s;
 }
 
+.ss-hierarchy-node-content:hover {
+	background-color: #f8f9fa;
+}
+
+/* Collapsible toggle button */
+.ss-hierarchy-toggle {
+	display: inline-block;
+	width: 1.2em;
+	height: 1.2em;
+	line-height: 1.2em;
+	text-align: center;
+	cursor: pointer;
+	user-select: none;
+	color: #0645ad;
+	font-size: 0.8em;
+	transition: transform 0.2s;
+	flex-shrink: 0;
+}
+
+.ss-hierarchy-toggle:hover {
+	color: #0b0080;
+	background-color: #eaf3ff;
+	border-radius: 2px;
+}
+
+.ss-hierarchy-toggle:focus {
+	outline: 2px solid #36c;
+	outline-offset: 1px;
+	border-radius: 2px;
+}
+
+/* Nested lists with indentation */
 .ss-hierarchy-tree-nested {
 	list-style: none;
 	margin-top: 0.5em;
-	padding-left: 1em;
+	margin-left: 1.5em;
+	padding-left: 1.5em;
+	border-left: 2px solid #eaecf0;
+	position: relative;
 }
 
+.ss-hierarchy-tree-nested::before {
+	content: '';
+	position: absolute;
+	left: -2px;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background: linear-gradient(to bottom, #a2a9b1 0%, transparent 100%);
+}
+
+/* Add connecting lines */
+.ss-hierarchy-tree-nested > li::before {
+	content: '';
+	position: absolute;
+	left: -1.5em;
+	top: 1.2em;
+	width: 1em;
+	height: 0;
+	border-top: 2px solid #eaecf0;
+}
+
+/* Highlight parent categories differently */
+.ss-hierarchy-has-children > .ss-hierarchy-node-content > a {
+	font-weight: 600;
+}
+
+/* Root level category (most specific) - special styling */
+.ss-hierarchy-tree > li:first-child > .ss-hierarchy-node-content {
+	background-color: #f0f7ff;
+	padding: 0.5em 0.75em;
+	border-left: 3px solid #0645ad;
+	font-weight: 600;
+}
+
+.ss-hierarchy-tree > li:first-child > .ss-hierarchy-node-content > a {
+	color: #0645ad;
+	font-size: 1.05em;
+}
+
+/* Collapsed state */
+.ss-hierarchy-collapsed > .ss-hierarchy-tree-nested {
+	display: none;
+}
+
+/* Category links */
 .ss-hierarchy-tree a {
 	font-weight: 500;
+	text-decoration: none;
+	color: #0645ad;
+}
+
+.ss-hierarchy-tree a:hover {
+	text-decoration: underline;
+}
+
+.ss-hierarchy-tree a:visited {
+	color: #0b0080;
 }
 
 /* Property table styles */
@@ -176,5 +268,166 @@
 	border: 1px solid #a2a9b1;
 	border-radius: 3px;
 	background-color: #f8f9fa;
+}
+
+/* ========================================
+   Property Tabs
+   ======================================== */
+
+.ss-prop-tabs {
+	display: flex;
+	gap: 0.25em;
+	margin-bottom: 1em;
+	border-bottom: 2px solid #a2a9b1;
+}
+
+.ss-prop-tab {
+	padding: 0.5em 1em;
+	background: #f8f9fa;
+	border: 1px solid #a2a9b1;
+	border-bottom: none;
+	border-radius: 4px 4px 0 0;
+	cursor: pointer;
+	font-weight: 500;
+	color: #202122;
+	transition: background-color 0.2s, color 0.2s;
+	position: relative;
+	top: 1px;
+}
+
+.ss-prop-tab:hover {
+	background: #eaecf0;
+}
+
+.ss-prop-tab-active {
+	background: #fff;
+	color: #0645ad;
+	border-bottom: 2px solid #fff;
+	font-weight: 600;
+}
+
+.ss-prop-tab:focus {
+	outline: 2px solid #36c;
+	outline-offset: -2px;
+}
+
+/* Tab content containers */
+.ss-prop-tab-contents {
+	position: relative;
+}
+
+.ss-prop-tab-content {
+	display: none;
+}
+
+.ss-prop-tab-content-active {
+	display: block;
+}
+
+/* ========================================
+   Properties by Type View
+   ======================================== */
+
+.ss-prop-by-type {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5em;
+}
+
+.ss-prop-type-section {
+	border: 1px solid #a2a9b1;
+	border-radius: 4px;
+	padding: 1em;
+	background: #f8f9fa;
+}
+
+.ss-prop-type-required-section {
+	border-left: 4px solid #d33;
+	background: #fef6f6;
+}
+
+.ss-prop-type-optional-section {
+	border-left: 4px solid #14866d;
+	background: #f0fdf4;
+}
+
+.ss-prop-type-heading {
+	margin: 0 0 0.75em 0;
+	font-size: 1.1em;
+	font-weight: 600;
+	color: #202122;
+	padding-bottom: 0.5em;
+	border-bottom: 1px solid #c8ccd1;
+}
+
+.ss-prop-type-required-section .ss-prop-type-heading {
+	color: #d33;
+}
+
+.ss-prop-type-optional-section .ss-prop-type-heading {
+	color: #14866d;
+}
+
+.ss-prop-list-by-type {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 0.5em;
+}
+
+.ss-prop-list-by-type li {
+	padding: 0.4em 0.6em;
+	border-radius: 3px;
+	background: #fff;
+	border: 1px solid #eaecf0;
+	font-size: 0.95em;
+}
+
+.ss-prop-list-by-type .ss-prop-required {
+	border-left: 3px solid #d33;
+}
+
+.ss-prop-list-by-type .ss-prop-optional {
+	border-left: 3px solid #14866d;
+}
+
+.ss-prop-source-label {
+	color: #72777d;
+	font-size: 0.9em;
+	white-space: nowrap;
+}
+
+.ss-prop-source-label a {
+	color: #72777d;
+	text-decoration: none;
+}
+
+.ss-prop-source-label a:hover {
+	color: #0645ad;
+	text-decoration: underline;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+	.ss-prop-list-by-type {
+		grid-template-columns: 1fr;
+	}
+	
+	.ss-prop-tabs {
+		flex-direction: column;
+		border-bottom: none;
+	}
+	
+	.ss-prop-tab {
+		border-radius: 4px;
+		border: 1px solid #a2a9b1;
+		top: 0;
+	}
+	
+	.ss-prop-tab-active {
+		border: 2px solid #0645ad;
+	}
 }
 

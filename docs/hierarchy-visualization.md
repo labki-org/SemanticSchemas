@@ -228,22 +228,41 @@ PhDStudent
 - Each branch shows a parent relationship
 - Multiple parents appear as multiple branches (multiple inheritance)
 
-### Properties Table
+### Properties Display
 
-Properties are grouped by their source category:
+The properties section offers **two viewing modes** via tabs:
+
+#### By Category Tab (Default)
+Properties grouped by their source category:
 
 | Source Category | Properties |
 |----------------|------------|
 | Category:Faculty | Has department (required)<br>Has institution (required)<br>Has office location (optional) |
 | Category:Person | Has full name (required)<br>Has email (required)<br>Has phone (optional) |
 
+#### By Type Tab
+Properties grouped by required/optional status:
+
+**Required Properties (5)**
+- Has full name (Person)
+- Has email (Person)
+- Has department (Faculty)
+- Has institution (Faculty)
+- Has office hours (Faculty)
+
+**Optional Properties (2)**
+- Has phone (Person)
+- Has office location (Faculty)
+
 **Color coding:**
-- **Red/pink background + "required" badge**: Must be filled in
-- **Green background + "optional" badge**: May be filled in
+- **Red/pink background + left border**: Required properties
+- **Green background + left border**: Optional properties
+- Required/optional badges in "By Category" view
 
 **Clickable links:**
 - Category names link to category pages
 - Property names link to property pages
+- Source categories (in parentheses) are clickable in "By Type" view
 
 ---
 

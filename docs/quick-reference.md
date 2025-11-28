@@ -19,6 +19,15 @@ Special:StructureSync/hierarchy?category=CategoryName
 curl "http://wiki.example.org/api.php?action=structuresync-hierarchy&category=Faculty&format=json"
 ```
 
+## Property Views
+
+The properties section has two tabs:
+
+| Tab | View |
+|-----|------|
+| **By Category** | Properties grouped by source category (default) |
+| **By Type** | Properties grouped as Required/Optional with counts |
+
 ## Color Coding
 
 | Color | Meaning |
