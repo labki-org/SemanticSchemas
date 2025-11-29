@@ -95,6 +95,8 @@ class DisplayStubGenerator
         $lines[] = '<!-- {{#StructureSyncRenderSection:' . $this->sanitize($category->getName()) . '|Section Name}} -->';
         $lines[] = '</noinclude>';
         $lines[] = '<includeonly>';
+        $lines[] = '{{#structuresync_hierarchy:}}';
+        $lines[] = '';
         $lines[] = '{{#StructureSyncRenderAllProperties:' . $this->sanitize($category->getName()) . '}}';
         $lines[] = '</includeonly>';
 

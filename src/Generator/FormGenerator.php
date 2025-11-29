@@ -119,6 +119,14 @@ class FormGenerator {
         
         $lines[] = '{{#forminput:' . implode( '|', $forminputParams ) . '}}';
         $lines[] = '</noinclude><includeonly>';
+        
+        // ------------------------------------------------------------------
+        // Auto-inject hierarchy preview if "Has parent category" is present
+        // ------------------------------------------------------------------
+        $hasParentCategoryField = $this->hasParentCategoryProperty( $category );
+        if ( $hasParentCategoryField ) {
+            $lines[] = '{{#structuresync_load_form_preview:}}';
+        }
         $lines[] = '';
 
         // ------------------------------------------------------------------
@@ -161,6 +169,14 @@ class FormGenerator {
         // ------------------------------------------------------------------
         $lines[] = '{{{end template}}}';
         $lines[] = '';
+        
+        // Add hierarchy preview container if "Has parent category" is present
+        if ( $hasParentCategoryField ) {
+            $lines[] = "'''Hierarchy Preview:'''";
+            $lines[] = '<div id="ss-form-hierarchy-preview" data-parent-field="parent_category"></div>';
+            $lines[] = '';
+        }
+        
         $lines[] = '{{{standard input|summary}}}';
         $lines[] = '';
         $lines[] = '{{{standard input|save}}} '
@@ -419,5 +435,24 @@ class FormGenerator {
 
         $title = $this->pageCreator->makeTitle( $categoryName, PF_NS_FORM );
         return $title && $this->pageCreator->pageExists( $title );
+    }
+
+    /**
+     * Check if a category has "Has parent category" property.
+     * 
+     * This is used to determine if the hierarchy preview should be auto-injected
+     * into the generated form.
+     *
+     * @param CategoryModel $category
+     * @return bool True if "Has parent category" is in required or optional properties
+     */
+    private function hasParentCategoryProperty( CategoryModel $category ): bool {
+        $requiredProps = $category->getRequiredProperties();
+        $optionalProps = $category->getOptionalProperties();
+        
+        // Check if "Has parent category" is in either list
+        // Property names in MediaWiki use spaces, not underscores
+        return in_array( 'Has parent category', $requiredProps, true ) 
+            || in_array( 'Has parent category', $optionalProps, true );
     }
 }

@@ -80,6 +80,24 @@
 				"desktop",
 				"mobile"
 			]
+		},
+		"ext.structuresync.hierarchy.formpreview": {
+			"scripts": [
+				"resources/ext.structuresync.hierarchy.formpreview.js"
+			],
+			"styles": [
+				"resources/ext.structuresync.hierarchy.formpreview.css"
+			],
+			"dependencies": [
+				"mediawiki.api",
+				"jquery"
+			],
+			"localBasePath": "",
+			"remoteExtPath": "StructureSync",
+			"targets": [
+				"desktop",
+				"mobile"
+			]
 		}
 	},
 	"APIModules": {

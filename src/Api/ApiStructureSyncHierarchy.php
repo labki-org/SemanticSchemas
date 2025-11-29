@@ -51,13 +51,26 @@ class ApiStructureSyncHierarchy extends ApiBase
     {
         $params = $this->extractRequestParams();
         $categoryName = $params['category'];
+        $parentCategories = $params['parents'] ?? null;
 
         // Remove "Category:" prefix if present
         $categoryName = preg_replace('/^Category:/i', '', $categoryName);
 
         // Get hierarchy data from service
         $service = new CategoryHierarchyService();
-        $hierarchyData = $service->getHierarchyData($categoryName);
+        
+        // If parent categories are provided, use virtual mode (for form preview)
+        if ($parentCategories !== null && is_array($parentCategories) && count($parentCategories) > 0) {
+            // Clean up parent category names
+            $cleanParents = array_map(function($parent) {
+                return preg_replace('/^Category:/i', '', trim($parent));
+            }, $parentCategories);
+            $cleanParents = array_filter($cleanParents); // Remove empty strings
+            
+            $hierarchyData = $service->getVirtualHierarchyData($categoryName, array_values($cleanParents));
+        } else {
+            $hierarchyData = $service->getHierarchyData($categoryName);
+        }
 
         // Convert boolean 'required' values to integers for reliable JSON encoding
         // (MediaWiki API can strip boolean false values)
@@ -88,6 +101,12 @@ class ApiStructureSyncHierarchy extends ApiBase
                 self::PARAM_REQUIRED => true,
                 self::PARAM_HELP_MSG => 'structuresync-api-param-category',
             ],
+            'parents' => [
+                self::PARAM_TYPE => 'string',
+                self::PARAM_REQUIRED => false,
+                self::PARAM_ISMULTI => true,
+                self::PARAM_HELP_MSG => 'structuresync-api-param-parents',
+            ],
         ];
     }
 
@@ -103,6 +122,8 @@ class ApiStructureSyncHierarchy extends ApiBase
                 => 'apihelp-structuresync-hierarchy-example-1',
             'action=structuresync-hierarchy&category=Category:GraduateStudent'
                 => 'apihelp-structuresync-hierarchy-example-2',
+            'action=structuresync-hierarchy&category=NewCategory&parents=Faculty|Person'
+                => 'apihelp-structuresync-hierarchy-example-3',
         ];
     }
 

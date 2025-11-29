@@ -118,7 +118,9 @@
 	"structuresync-hierarchy-required": "required",
 	"structuresync-hierarchy-optional": "optional",
 	"structuresync-api-param-category": "Category name to retrieve hierarchy for (with or without 'Category:' prefix)",
+	"structuresync-api-param-parents": "Optional: Parent categories for virtual hierarchy preview (for form preview mode). Pipe-separated list.",
 	"apihelp-structuresync-hierarchy-example-1": "Get hierarchy for PhDStudent category",
-	"apihelp-structuresync-hierarchy-example-2": "Get hierarchy for GraduateStudent category (with prefix)"
+	"apihelp-structuresync-hierarchy-example-2": "Get hierarchy for GraduateStudent category (with prefix)",
+	"apihelp-structuresync-hierarchy-example-3": "Get virtual hierarchy preview with specified parents"
 }
 

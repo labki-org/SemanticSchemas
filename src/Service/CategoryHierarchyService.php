@@ -216,5 +216,131 @@ class CategoryHierarchyService
 
         return $properties;
     }
+
+    /**
+     * Get hierarchy data for a virtual (not-yet-created) category with specified parents.
+     * 
+     * This is used for form previews when creating new categories. It builds a hierarchy
+     * assuming the category has the specified parents, even though the category doesn't
+     * exist in the wiki yet.
+     * 
+     * @param string $categoryName Category name (without "Category:" prefix)
+     * @param array $parentNames Array of parent category names (without "Category:" prefix)
+     * @return array Hierarchy data structure
+     */
+    public function getVirtualHierarchyData(string $categoryName, array $parentNames): array
+    {
+        // Initialize empty result
+        $result = [
+            'rootCategory' => "Category:$categoryName",
+            'nodes' => [],
+            'inheritedProperties' => [],
+        ];
+
+        // Load all existing categories
+        $allCategories = $this->categoryStore->getAllCategories();
+        if (empty($allCategories)) {
+            // No categories exist yet, just return the virtual root
+            $result['nodes']["Category:$categoryName"] = [
+                'title' => "Category:$categoryName",
+                'parents' => array_map(function($p) { return "Category:$p"; }, $parentNames),
+            ];
+            return $result;
+        }
+
+        // Filter parents to only include those that actually exist
+        $existingParents = array_filter($parentNames, function($parentName) use ($allCategories) {
+            return isset($allCategories[$parentName]);
+        });
+
+        // Build node for the virtual category
+        $result['nodes']["Category:$categoryName"] = [
+            'title' => "Category:$categoryName",
+            'parents' => array_map(function($p) { return "Category:$p"; }, $existingParents),
+        ];
+
+        // Build node tree for each existing parent
+        $visited = [];
+        foreach ($existingParents as $parentName) {
+            $this->buildNodeTree($parentName, $allCategories, $result['nodes'], $visited);
+        }
+
+        // Extract properties that would be inherited from the parents
+        $result['inheritedProperties'] = $this->extractVirtualInheritedProperties(
+            $existingParents,
+            $allCategories
+        );
+
+        return $result;
+    }
+
+    /**
+     * Extract properties that would be inherited by a virtual category from its parents.
+     * 
+     * This simulates what properties the category would inherit if it existed with
+     * the specified parents.
+     *
+     * @param array $parentNames Array of parent category names (without prefix)
+     * @param array<string,CategoryModel> $allCategories Map of all categories
+     * @return array List of property data: [propertyTitle, sourceCategory, required]
+     */
+    private function extractVirtualInheritedProperties(
+        array $parentNames,
+        array $allCategories
+    ): array {
+        if (empty($parentNames)) {
+            return [];
+        }
+
+        $properties = [];
+        $seenProperties = []; // Track which properties we've already added
+        $resolver = new InheritanceResolver($allCategories);
+
+        // Process each parent and its ancestors
+        foreach ($parentNames as $parentName) {
+            if (!isset($allCategories[$parentName])) {
+                continue;
+            }
+
+            // Get ancestor chain for this parent (includes the parent itself)
+            $ancestors = $resolver->getAncestors($parentName);
+
+            // Collect properties from this lineage
+            foreach ($ancestors as $ancestorName) {
+                $ancestor = $allCategories[$ancestorName] ?? null;
+                if ($ancestor === null) {
+                    continue;
+                }
+
+                $sourceCategoryTitle = "Category:$ancestorName";
+
+                // Add required properties
+                foreach ($ancestor->getRequiredProperties() as $propName) {
+                    if (!isset($seenProperties[$propName])) {
+                        $properties[] = [
+                            'propertyTitle' => "Property:$propName",
+                            'sourceCategory' => $sourceCategoryTitle,
+                            'required' => true,
+                        ];
+                        $seenProperties[$propName] = true;
+                    }
+                }
+
+                // Add optional properties
+                foreach ($ancestor->getOptionalProperties() as $propName) {
+                    if (!isset($seenProperties[$propName])) {
+                        $properties[] = [
+                            'propertyTitle' => "Property:$propName",
+                            'sourceCategory' => $sourceCategoryTitle,
+                            'required' => false,
+                        ];
+                        $seenProperties[$propName] = true;
+                    }
+                }
+            }
+        }
+
+        return $properties;
+    }
 }
 

@@ -77,6 +77,12 @@ class DisplayParserFunctions
             [$instance, 'renderHierarchy'],
             SFH_OBJECT_ARGS
         );
+
+        $parser->setFunctionHook(
+            'structuresync_load_form_preview',
+            [$instance, 'loadFormPreview'],
+            SFH_OBJECT_ARGS
+        );
     }
 
     /**
@@ -260,5 +266,35 @@ class DisplayParserFunctions
         }
 
         return true;
+    }
+
+    /**
+     * Parser function to load the form preview ResourceLoader module.
+     * 
+     * Usage: {{#structuresync_load_form_preview:}}
+     * 
+     * This is a convenience function for forms to load the hierarchy preview
+     * module without needing inline scripts.
+     * 
+     * @param Parser $parser MediaWiki parser instance
+     * @param PPFrame $frame Parser frame
+     * @param array $args Function arguments (unused)
+     * @return array Parser function return value
+     */
+    public function loadFormPreview(Parser $parser, PPFrame $frame, array $args): array
+    {
+        // Add the ResourceLoader module to the page output
+        $output = $parser->getOutput();
+        $output->addModules(['ext.structuresync.hierarchy.formpreview']);
+        
+        // Force the module to load with dependencies
+        // mw.loader.using() ensures dependencies are loaded first
+        $output->addHeadItem(
+            'structuresync-form-preview-loader',
+            Html::inlineScript('mw.loader.using("ext.structuresync.hierarchy.formpreview");')
+        );
+        
+        // Return empty string - this function just loads the module
+        return ['', 'noparse' => false, 'isHTML' => false];
     }
 }

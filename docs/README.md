@@ -19,6 +19,12 @@ Welcome to the StructureSync documentation!
   - Understanding the display
   - Troubleshooting
 
+- **[Form Preview Setup](form-preview-setup.md)** - Add live hierarchy preview to category creation forms
+  - Dynamic preview as users add parent categories
+  - Shows inheritance hierarchy
+  - Displays inherited properties count
+  - Step-by-step setup instructions
+
 ## For Administrators
 
 ### Schema Management

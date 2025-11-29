@@ -66,15 +66,27 @@ This is useful for:
 
 ## Embedding in Category Pages
 
-You can embed the hierarchy visualization directly on Category pages using a parser function.
+The hierarchy visualization is **automatically included** in all generated category display templates. You can also manually add it to any page.
 
-### Syntax
+### Automatic Inclusion
+
+When StructureSync generates or updates artifacts via `Special:StructureSync/regenerate`, the hierarchy parser function is automatically added to:
+
+**`Template:<Category>/display`** - The display template for each category
+
+This means every Category page will automatically show the hierarchy at the top, above the property details. No manual editing required!
+
+### Manual Addition
+
+If you want to add it to other pages or customize its position:
+
+#### Syntax
 
 ```wiki
 {{#structuresync_hierarchy:}}
 ```
 
-### Usage
+#### Usage
 
 1. **Edit a Category page** (e.g., `Category:Faculty`)
 
