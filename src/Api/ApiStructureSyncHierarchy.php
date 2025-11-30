@@ -83,6 +83,15 @@ class ApiStructureSyncHierarchy extends ApiBase
             unset($prop); // Break the reference
         }
 
+		if (isset($hierarchyData['inheritedSubgroups'])) {
+			foreach ($hierarchyData['inheritedSubgroups'] as $idx => &$subgroup) {
+				if (isset($subgroup['required'])) {
+					$subgroup['required'] = $subgroup['required'] ? 1 : 0;
+				}
+			}
+			unset($subgroup);
+		}
+
         // Return result
         $result = $this->getResult();
         $result->addValue(null, $this->getModuleName(), $hierarchyData);

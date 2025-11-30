@@ -4,8 +4,10 @@ namespace MediaWiki\Extension\StructureSync\Generator;
 
 use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
 use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
+use MediaWiki\Extension\StructureSync\Schema\SubobjectModel;
 use MediaWiki\Extension\StructureSync\Store\PageCreator;
 use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
 use MediaWiki\Extension\StructureSync\Util\NamingHelper;
 
 /**
@@ -51,6 +53,9 @@ class FormGenerator {
     /** @var PropertyInputMapper */
     private $inputMapper;
 
+    /** @var WikiSubobjectStore */
+    private $subobjectStore;
+
     /**
      * @param PageCreator|null $pageCreator
      * @param WikiPropertyStore|null $propertyStore
@@ -59,11 +64,13 @@ class FormGenerator {
     public function __construct(
         PageCreator $pageCreator = null,
         WikiPropertyStore $propertyStore = null,
-        PropertyInputMapper $inputMapper = null
+        PropertyInputMapper $inputMapper = null,
+        WikiSubobjectStore $subobjectStore = null
     ) {
         $this->pageCreator   = $pageCreator   ?? new PageCreator();
         $this->propertyStore = $propertyStore ?? new WikiPropertyStore();
         $this->inputMapper   = $inputMapper   ?? new PropertyInputMapper();
+        $this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
     }
 
     /**
@@ -169,6 +176,11 @@ class FormGenerator {
         // ------------------------------------------------------------------
         $lines[] = '{{{end template}}}';
         $lines[] = '';
+
+        $subgroupSections = $this->generateSubgroupFormBlocks( $category );
+        if ( !empty( $subgroupSections ) ) {
+            $lines = array_merge( $lines, $subgroupSections );
+        }
         
         // Add free text section for parent category membership
         // This becomes static page content, not template code
@@ -327,7 +339,8 @@ class FormGenerator {
      */
     private function generateFieldDefinition(
         string $propertyName,
-        CategoryModel $category
+        CategoryModel $category,
+        ?bool $isRequiredOverride = null
     ): array {
 
         $lines = [];
@@ -336,7 +349,7 @@ class FormGenerator {
         $property = $this->propertyStore->readProperty( $propertyName )
             ?: new PropertyModel( $propertyName, [ 'datatype' => 'Text' ] );
 
-        $isRequired = $category->isPropertyRequired( $propertyName );
+        $isRequired = $isRequiredOverride ?? $category->isPropertyRequired( $propertyName );
 
         // Input definition
         $inputDefinition = $this->inputMapper->generateInputDefinition(
@@ -355,6 +368,98 @@ class FormGenerator {
         // PageForms field syntax: {{{field|param_name|property=PropertyName|input type=...}}}
         // Note: property= maps to SMW property, and PageForms will use the property's Display label automatically
         $lines[] = '{{{field|' . $this->sanitize( $param ) . '|property=' . $propertyNameSafe . '|' . $this->sanitize( $inputDefinition ) . '}}}';
+        $lines[] = '';
+
+        return $lines;
+    }
+
+    /**
+     * Generate PageForms blocks for each declared subgroup.
+     *
+     * @param CategoryModel $category
+     * @return array
+     */
+    private function generateSubgroupFormBlocks( CategoryModel $category ): array {
+        $lines = [];
+
+        $subgroupMap = [];
+        foreach ( $category->getRequiredSubgroups() as $required ) {
+            $subgroupMap[$required] = true;
+        }
+        foreach ( $category->getOptionalSubgroups() as $optional ) {
+            if ( !isset( $subgroupMap[$optional] ) ) {
+                $subgroupMap[$optional] = false;
+            }
+        }
+
+        if ( empty( $subgroupMap ) ) {
+            return $lines;
+        }
+
+        foreach ( $subgroupMap as $subgroupName => $isRequired ) {
+            $subobject = $this->subobjectStore->readSubobject( $subgroupName );
+            if ( !$subobject instanceof SubobjectModel ) {
+                wfLogWarning( "StructureSync: Missing subobject '$subgroupName' referenced by category '{$category->getName()}'" );
+                continue;
+            }
+
+            $lines = array_merge(
+                $lines,
+                $this->buildSubgroupFormSection( $category, $subobject, $isRequired )
+            );
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Build a single subgroup form section.
+     *
+     * @param CategoryModel $category
+     * @param SubobjectModel $subobject
+     * @return array
+     */
+    private function buildSubgroupFormSection( CategoryModel $category, SubobjectModel $subobject, bool $isRequired ): array {
+        $lines = [];
+        $label = $this->sanitize( $subobject->getLabel() ?: $subobject->getName() );
+
+        $lines[] = '=== ' . $label . ' ===';
+        $lines[] = '';
+
+        $templateName = NamingHelper::subgroupTemplateName(
+            $category->getName(),
+            $subobject->getName()
+        );
+
+        $forParams = [
+            $templateName,
+            'multiple',
+            'label=' . $label,
+        ];
+        if ( $isRequired ) {
+            $forParams[] = 'minimum instances=1';
+        }
+
+        $lines[] = '{{{for template|' . implode( '|', $forParams ) . '}}}';
+
+        $properties = array_merge(
+            $subobject->getRequiredProperties(),
+            $subobject->getOptionalProperties()
+        );
+
+        foreach ( $properties as $propertyName ) {
+            $isRequired = $subobject->isPropertyRequired( $propertyName );
+            $lines = array_merge(
+                $lines,
+                $this->generateFieldDefinition(
+                    $propertyName,
+                    $category,
+                    $isRequired
+                )
+            );
+        }
+
+        $lines[] = '{{{end template}}}';
         $lines[] = '';
 
         return $lines;
@@ -393,7 +498,7 @@ class FormGenerator {
             throw new \InvalidArgumentException('Form name cannot be empty');
         }
 
-        $title = $this->pageCreator->makeTitle( $formName, PF_NS_FORM );
+        $title = $this->pageCreator->makeTitle( $formName, \PF_NS_FORM );
         if ( $title === null ) {
             wfLogWarning("StructureSync: Failed to create Title for form '$formName'");
             return false;
@@ -441,7 +546,7 @@ class FormGenerator {
      */
     public function formExists( string $categoryName ): bool {
 
-        $title = $this->pageCreator->makeTitle( $categoryName, PF_NS_FORM );
+        $title = $this->pageCreator->makeTitle( $categoryName, \PF_NS_FORM );
         return $title && $this->pageCreator->pageExists( $title );
     }
 

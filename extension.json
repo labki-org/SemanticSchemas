@@ -24,6 +24,26 @@
 	"ExtensionMessagesFiles": {
 		"StructureSyncAlias": "StructureSync.alias.php"
 	},
+	"namespaces": [
+		{
+			"id": 3300,
+			"constant": "NS_SUBOBJECT",
+			"name": "Subobject",
+			"content": true
+		},
+		{
+			"id": 3301,
+			"constant": "NS_SUBOBJECT_TALK",
+			"name": "Subobject_talk"
+		}
+	],
+	"namespaceAliases": {
+		"Subobject": "NS_SUBOBJECT",
+		"Subobject_talk": "NS_SUBOBJECT_TALK"
+	},
+	"contentNamespaces": [
+		"NS_SUBOBJECT"
+	],
 	"Hooks": {
 		"ParserFirstCallInit": "MediaWiki\\Extension\\StructureSync\\Parser\\DisplayParserFunctions::onParserFirstCallInit"
 	},

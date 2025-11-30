@@ -244,6 +244,7 @@ class SchemaLoader {
 			'schemaVersion' => '1.0',
 			'categories'    => [],
 			'properties'    => [],
+			'subobjects'    => [],
 		];
 	}
 
@@ -258,8 +259,10 @@ class SchemaLoader {
 		return isset( $schema['schemaVersion'] )
 			&& array_key_exists( 'categories', $schema )
 			&& array_key_exists( 'properties', $schema )
+			&& array_key_exists( 'subobjects', $schema )
 			&& is_array( $schema['categories'] )
-			&& is_array( $schema['properties'] );
+			&& is_array( $schema['properties'] )
+			&& is_array( $schema['subobjects'] );
 	}
 
 	/**

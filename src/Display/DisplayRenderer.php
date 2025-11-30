@@ -3,9 +3,12 @@
 namespace MediaWiki\Extension\StructureSync\Display;
 
 use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
 use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
+use MediaWiki\Extension\StructureSync\Schema\SubobjectModel;
 use MediaWiki\Extension\StructureSync\Util\NamingHelper;
 use PPFrame;
+use MediaWiki\Title\Title;
 
 /**
  * DisplayRenderer
@@ -32,12 +35,17 @@ class DisplayRenderer
     /** @var DisplaySpecBuilder */
     private $specBuilder;
 
+    /** @var WikiSubobjectStore */
+    private $subobjectStore;
+
     public function __construct(
         WikiPropertyStore $propertyStore = null,
-        DisplaySpecBuilder $specBuilder = null
+        DisplaySpecBuilder $specBuilder = null,
+        WikiSubobjectStore $subobjectStore = null
     ) {
         $this->propertyStore = $propertyStore ?? new WikiPropertyStore();
         $this->specBuilder = $specBuilder ?? new DisplaySpecBuilder();
+        $this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
     }
 
     /**
@@ -50,11 +58,20 @@ class DisplayRenderer
     public function renderAllSections(string $categoryName, PPFrame $frame): string
     {
         $spec = $this->specBuilder->buildSpec($categoryName);
+        wfDebugLog( 'structuresync', 'renderAllSections: Category=' . $categoryName . ', Sections=' . json_encode( array_map( function( $s ) { return [ 'name' => $s['name'], 'properties' => $s['properties'] ]; }, $spec['sections'] ) ) );
         $html = '';
 
         foreach ($spec['sections'] as $section) {
+            wfDebugLog( 'structuresync', 'renderAllSections: Rendering section: ' . $section['name'] );
             $html .= $this->renderSectionHtml($section, $frame);
         }
+
+        // Subgroups are now handled by the dispatcher template via #ask queries
+        // $html .= $this->renderSubgroupSections(
+        //     $categoryName,
+        //     $spec['subgroups'] ?? [],
+        //     $frame
+        // );
 
         return $html;
     }
@@ -109,6 +126,8 @@ class DisplayRenderer
             $paramName = $this->propertyToParameter($propertyName);
             // Use standard getArgument since we are passing args explicitly now
             $value = trim($frame->getArgument($paramName));
+            
+            wfDebugLog( 'structuresync', 'renderSectionHtml: Property=' . $propertyName . ', Param=' . $paramName . ', Value=' . ( $value !== '' ? $value : '(empty)' ) );
 
             if ($value !== '') {
                 $hasAnyValue = true;
@@ -259,6 +278,340 @@ class DisplayRenderer
 
         // 4. Default: plain text with HTML escaping
         return htmlspecialchars($value);
+    }
+
+	/**
+	 * Render subgroup tables based on SMW subobject instances.
+	 *
+	 * @param string $categoryName
+	 * @param array $subgroups
+	 * @param PPFrame $frame
+	 * @return string
+	 */
+	private function renderSubgroupSections( string $categoryName, array $subgroups, PPFrame $frame ): string {
+		if (
+			( empty( $subgroups['required'] ) )
+			&& ( empty( $subgroups['optional'] ) )
+		) {
+			return '';
+		}
+
+		// Get the actual page title from the parser, not the template title
+		// The parser's title is the page being rendered
+		$parser = $frame->parser;
+		$title = $parser->getTitle();
+		
+		if ( !$title instanceof Title ) {
+			wfDebugLog( 'structuresync', 'renderSubgroupSections: No title found in parser' );
+			return '';
+		}
+
+		wfDebugLog( 'structuresync', 'renderSubgroupSections: Category=' . $categoryName . ', Required=' . json_encode( $subgroups['required'] ?? [] ) . ', Optional=' . json_encode( $subgroups['optional'] ?? [] ) );
+		wfDebugLog( 'structuresync', 'renderSubgroupSections: Using page title: ' . $title->getPrefixedText() );
+
+		$pageSubobjects = $this->collectPageSubobjects( $title );
+		
+		wfDebugLog( 'structuresync', 'renderSubgroupSections: Found subobjects for keys: ' . implode( ', ', array_keys( $pageSubobjects ) ) );
+
+		$html = '';
+
+		foreach ( $subgroups['required'] ?? [] as $subgroupName ) {
+			$found = isset( $pageSubobjects[$subgroupName] ) ? count( $pageSubobjects[$subgroupName] ) : 0;
+			wfDebugLog( 'structuresync', 'renderSubgroupSections: Required subgroup ' . $subgroupName . ' - found ' . $found . ' entries' );
+			$html .= $this->renderSingleSubgroup(
+				$categoryName,
+				$subgroupName,
+				true,
+				$pageSubobjects[$subgroupName] ?? [],
+				$frame
+			);
+		}
+
+		foreach ( $subgroups['optional'] ?? [] as $subgroupName ) {
+			$found = isset( $pageSubobjects[$subgroupName] ) ? count( $pageSubobjects[$subgroupName] ) : 0;
+			wfDebugLog( 'structuresync', 'renderSubgroupSections: Optional subgroup ' . $subgroupName . ' - found ' . $found . ' entries' );
+			$html .= $this->renderSingleSubgroup(
+				$categoryName,
+				$subgroupName,
+				false,
+				$pageSubobjects[$subgroupName] ?? [],
+				$frame
+			);
+		}
+
+		return $html;
+	}
+
+	/**
+	 * @param string $categoryName
+	 * @param string $subgroupName
+	 * @param bool $isRequired
+	 * @param \SMW\SemanticData[] $semanticRows
+	 * @param PPFrame $frame
+	 * @return string
+	 */
+	private function renderSingleSubgroup(
+		string $categoryName,
+		string $subgroupName,
+		bool $isRequired,
+		array $semanticRows,
+		PPFrame $frame
+	): string {
+		$subobject = $this->subobjectStore->readSubobject( $subgroupName );
+		if ( !$subobject instanceof SubobjectModel ) {
+			wfLogWarning(
+				"StructureSync: Unable to render subgroup '$subgroupName' for category '$categoryName' (definition missing)"
+			);
+			return '';
+		}
+
+		$rows = $this->convertSemanticRows( $semanticRows, $subobject, $frame );
+
+		if ( empty( $rows ) && !$isRequired ) {
+			return '';
+		}
+
+		$label = htmlspecialchars( $subobject->getLabel() ?: $subobject->getName(), ENT_QUOTES );
+		$html = [];
+		$html[] = '<div class="ss-section ss-subgroup">';
+		$html[] = '<h2 class="ss-section-title">' . $label . '</h2>';
+
+		if ( empty( $rows ) ) {
+			$html[] = '<p class="ss-hierarchy-empty">' . htmlspecialchars( 'No entries yet.', ENT_QUOTES ) . '</p>';
+			$html[] = '</div>';
+			return implode( "\n", $html );
+		}
+
+		$properties = $subobject->getAllProperties();
+		
+		// Build table as wikitext so links can be parsed
+		$tableWikitext = [];
+		$tableWikitext[] = '{| class="wikitable ss-subgroup-table"';
+		$tableWikitext[] = '|-';
+		// Header row
+		foreach ( $properties as $propertyName ) {
+			$tableWikitext[] = '! ' . $this->getPropertyLabel( $propertyName );
+		}
+		// Data rows
+		foreach ( $rows as $row ) {
+			$tableWikitext[] = '|-';
+			foreach ( $properties as $propertyName ) {
+				$value = $row[$propertyName] ?? '';
+				$tableWikitext[] = '| ' . $value;
+			}
+		}
+		$tableWikitext[] = '|}';
+		
+		// Parse the entire table wikitext to convert links to HTML
+		$tableHtml = $this->parseWikitext( implode( "\n", $tableWikitext ), $frame );
+		$html[] = $tableHtml;
+		$html[] = '</div>';
+
+		return implode( "\n", $html );
+	}
+
+	/**
+	 * Convert SMW subobject rows into display-safe arrays.
+	 *
+	 * @param \SMW\SemanticData[] $semanticRows
+	 * @param SubobjectModel $subobject
+	 * @param PPFrame $frame Parser frame for parsing wikitext links
+	 * @return array<int,array<string,string>>
+	 */
+	private function convertSemanticRows( array $semanticRows, SubobjectModel $subobject, PPFrame $frame ): array {
+		$rows = [];
+		$properties = $subobject->getAllProperties();
+
+		foreach ( $semanticRows as $rowData ) {
+			$row = [];
+			foreach ( $properties as $propertyName ) {
+				// Check property type to determine how to render it
+				$property = $this->propertyStore->readProperty( $propertyName );
+				$isPageType = $property !== null && strtolower( $property->getDatatype() ) === 'page';
+				
+				if ( $isPageType ) {
+					// For Page type properties, get the page titles and render as wikitext links
+					$values = $this->getSemanticPropertyValues( $rowData, $propertyName, 'page' );
+					if ( empty( $values ) ) {
+						$row[$propertyName] = '';
+						continue;
+					}
+					
+					// Generate wikitext links: [[Page Title]]
+					$formatted = array_map(
+						function ( $value ) {
+							return '[[' . $value . ']]';
+						},
+						$values
+					);
+					// Keep as wikitext - will be parsed when table is built
+					$row[$propertyName] = implode( '<br />', $formatted );
+				} else {
+					// For other types, render as plain text
+					$values = $this->getSemanticPropertyValues( $rowData, $propertyName, 'text' );
+					if ( empty( $values ) ) {
+						$row[$propertyName] = '';
+						continue;
+					}
+
+					$formatted = array_map(
+						function ( $value ) {
+							return htmlspecialchars( $value, ENT_QUOTES );
+						},
+						$values
+					);
+					$row[$propertyName] = implode( '<br />', $formatted );
+				}
+			}
+			$rows[] = $row;
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * @param Title $title
+	 * @return array<string,\SMW\SemanticData[]>
+	 */
+	private function collectPageSubobjects( Title $title ): array {
+		$grouped = [];
+
+		wfDebugLog( 'structuresync', 'collectPageSubobjects: Starting for page ' . $title->getPrefixedText() );
+
+		try {
+			/** @var object $store */
+			$store = \SMW\StoreFactory::getStore();
+			$subject = \SMW\DIWikiPage::newFromTitle( $title );
+			$semanticData = $store->getSemanticData( $subject );
+			$subSemantic = $semanticData->getSubSemanticData();
+
+			wfDebugLog( 'structuresync', 'collectPageSubobjects: Found ' . count( $subSemantic ) . ' subobjects' );
+
+			foreach ( $subSemantic as $subobjectData ) {
+				wfDebugLog( 'structuresync', 'collectPageSubobjects: Processing subobject' );
+				
+				$types = $this->getSemanticPropertyValues(
+					$subobjectData,
+					'Has subgroup type',
+					'subobject'
+				);
+				
+				wfDebugLog( 'structuresync', 'collectPageSubobjects: Has subgroup type values: ' . json_encode( $types ) );
+				
+				if ( empty( $types ) ) {
+					// Debug: log what properties this subobject actually has
+					$allProps = [];
+					// Get all properties by trying to read common property names
+					$testProps = [ 'Has author', 'Has author order', 'Is corresponding author', 'Is co-first author' ];
+					foreach ( $testProps as $testProp ) {
+						$values = $this->getSemanticPropertyValues( $subobjectData, $testProp, 'text' );
+						if ( !empty( $values ) ) {
+							$allProps[] = $testProp . '=' . implode( ',', $values );
+						}
+					}
+					wfDebugLog( 'structuresync', 'collectPageSubobjects: Subobject missing Has subgroup type. Found properties: ' . implode( ', ', $allProps ) );
+					continue;
+				}
+
+				$typeName = $types[0];
+				wfDebugLog( 'structuresync', 'collectPageSubobjects: Raw typeName: ' . $typeName );
+				
+				// Normalize: ensure we're using just the name (stringifyDataItem should handle this, but be defensive)
+				if ( strpos( $typeName, 'Subobject:' ) === 0 ) {
+					$typeName = substr( $typeName, strlen( 'Subobject:' ) );
+				}
+				
+				wfDebugLog( 'structuresync', 'collectPageSubobjects: Normalized typeName: ' . $typeName );
+				$grouped[$typeName][] = $subobjectData;
+			}
+			
+			wfDebugLog( 'structuresync', 'collectPageSubobjects: Final grouped keys: ' . implode( ', ', array_keys( $grouped ) ) );
+		} catch ( \Exception $e ) {
+			wfDebugLog( 'structuresync', 'collectPageSubobjects: Exception: ' . $e->getMessage() );
+			wfLogWarning( 'StructureSync: Failed to collect subobject data for ' . $title->getPrefixedText() . ': ' . $e->getMessage() );
+		}
+
+		return $grouped;
+	}
+
+	/**
+	 * Extract property values from SemanticData.
+	 *
+	 * @param \SMW\SemanticData $semanticData
+	 * @param string $propertyName
+	 * @param string $type
+	 * @return array
+	 */
+	private function getSemanticPropertyValues( $semanticData, string $propertyName, string $type = 'text' ): array {
+		$values = [];
+		try {
+			$property = \SMW\DIProperty::newFromUserLabel( $propertyName );
+			$rawValues = $semanticData->getPropertyValues( $property );
+			wfDebugLog( 'structuresync', 'getSemanticPropertyValues: Property=' . $propertyName . ', Type=' . $type . ', Raw count=' . count( $rawValues ) );
+			
+			foreach ( $rawValues as $dataItem ) {
+				$value = $this->stringifyDataItem( $dataItem, $type );
+				wfDebugLog( 'structuresync', 'getSemanticPropertyValues: Extracted value=' . ( $value ?? 'NULL' ) );
+				if ( $value !== null ) {
+					$values[] = $value;
+				}
+			}
+		} catch ( \Exception $e ) {
+			wfDebugLog( 'structuresync', 'getSemanticPropertyValues: Exception for ' . $propertyName . ': ' . $e->getMessage() );
+		}
+
+		return $values;
+	}
+
+	/**
+	 * Convert SMW data item to human-readable string.
+	 *
+	 * @param \SMWDataItem $dataItem
+	 * @param string $type
+	 * @return string|null
+	 */
+	private function stringifyDataItem( $dataItem, string $type ): ?string {
+		if ( $dataItem instanceof \SMW\DIWikiPage ) {
+			$title = $dataItem->getTitle();
+			if ( !$title ) {
+				wfDebugLog( 'structuresync', 'stringifyDataItem: DIWikiPage with null title' );
+				return null;
+			}
+			
+			$ns = $title->getNamespace();
+			$text = $title->getText();
+			$prefixed = $title->getPrefixedText();
+			
+			wfDebugLog( 'structuresync', 'stringifyDataItem: Type=' . $type . ', Namespace=' . $ns . ', Text=' . $text . ', Prefixed=' . $prefixed );
+			
+			// For subobject type, return just the text (without namespace prefix)
+			// to match the subgroup name used as a key
+			if ( $type === 'subobject' && $ns === NS_SUBOBJECT ) {
+				wfDebugLog( 'structuresync', 'stringifyDataItem: Returning text only (subobject match): ' . $text );
+				return $text;
+			}
+			
+			wfDebugLog( 'structuresync', 'stringifyDataItem: Returning prefixed text: ' . $prefixed );
+			return $prefixed;
+		}
+
+		if ( $dataItem instanceof \SMWDIBoolean ) {
+			return $dataItem->getBoolean() ? 'Yes' : 'No';
+		}
+
+		if ( $dataItem instanceof \SMWDINumber ) {
+			return (string)$dataItem->getNumber();
+		}
+
+		if ( $dataItem instanceof \SMWDITime ) {
+			return $dataItem->getTimestamp()->format( 'Y-m-d' );
+		}
+
+		if ( $dataItem instanceof \SMWDIBlob || $dataItem instanceof \SMWDIString ) {
+			return $dataItem->getString();
+		}
+
+		return null;
     }
 
     /**

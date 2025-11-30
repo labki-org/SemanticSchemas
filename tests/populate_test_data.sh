@@ -85,6 +85,17 @@ CATEOF
 "
 }
 
+# Helper function to create a subobject definition
+create_subobject() {
+    local name="$1"
+    local content="$2"
+    
+    docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Subobject:$name' <<'SUBEOF'
+$content
+SUBEOF
+"
+}
+
 echo "=========================================="
 echo "Creating comprehensive test data for StructureSync"
 echo "=========================================="
@@ -165,6 +176,17 @@ docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:
 [[Category:Properties]]
 PROPEOF
 "
+
+# Create Has required subgroup property
+create_property "Has required subgroup" "Declares a required subgroup (Subobject page) for a category." "Page" "[[Allows value from namespace::Subobject]]
+[[Allows multiple values::true]]"
+
+# Create Has optional subgroup property
+create_property "Has optional subgroup" "Declares an optional subgroup (Subobject page) for a category." "Page" "[[Allows value from namespace::Subobject]]
+[[Allows multiple values::true]]"
+
+# Create Has subgroup type property (stored on individual subobjects)
+create_property "Has subgroup type" "Identifies which Subobject schema a stored subobject instance conforms to." "Page" "[[Allows value from namespace::Subobject]]"
 
 # Create Has display section property
 docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has display section' <<'PROPEOF'
@@ -284,6 +306,15 @@ create_property "Has department" "Department affiliation." "Page" "[[Display lab
 [[Allows value from category::Department]]
 [[Allows multiple values::true]]"
 create_property "Has collaborator" "Research collaborators." "Page" "[[Allows multiple values::true]]"
+
+# ==========================================
+# Property Type: Publication Subgroup Fields
+# ==========================================
+echo "  - Publication subgroup properties..."
+create_property "Has author" "Author referenced by a publication." "Page" "[[Allows value from category::Person]]"
+create_property "Has author order" "Ordering index for publication authors." "Number" ""
+create_property "Is co-first author" "Marks whether the author is co-first." "Boolean" ""
+create_property "Is corresponding author" "Marks whether the author is corresponding." "Boolean" ""
 
 # ==========================================
 # Property Type 7: Properties with Allowed Values
@@ -420,12 +451,29 @@ create_category "Publication" "<!-- StructureSync Start -->
 [[Has optional property::Property:Has keywords]]
 [[Has optional property::Property:Has website]]
 
+=== Required Subgroups ===
+[[Has required subgroup::Subobject:PublicationAuthor]]
+
 {{#subobject:display_section_0
 |Has display section name=Publication Details
 |Has display section property=Property:Has publication date
 |Has display section property=Property:Has keywords
 }}
 <!-- StructureSync End -->"
+
+echo "  - Subobject definitions..."
+
+create_subobject "PublicationAuthor" "<!-- StructureSync Start -->
+[[Has description::Captures publication author entries (repeatable).]]
+
+[[Has required property::Property:Has author]]
+[[Has required property::Property:Has author order]]
+
+[[Has optional property::Property:Is corresponding author]]
+[[Has optional property::Property:Is co-first author]]
+<!-- StructureSync End -->
+
+[[Category:StructureSync-managed]]"
 
 # Project category (base category)
 create_category "Project" "<!-- StructureSync Start -->
@@ -674,6 +722,8 @@ create_category "Category" "<!-- StructureSync Start -->
 [[Has optional property::Property:Has target namespace]]
 [[Has optional property::Property:Has required property]]
 [[Has optional property::Property:Has optional property]]
+[[Has optional property::Property:Has required subgroup]]
+[[Has optional property::Property:Has optional subgroup]]
 [[Has optional property::Property:Has display section]]
 
 {{#subobject:display_section_0
@@ -687,6 +737,8 @@ create_category "Category" "<!-- StructureSync Start -->
 |Has display section property=Property:Has parent category
 |Has display section property=Property:Has required property
 |Has display section property=Property:Has optional property
+|Has display section property=Property:Has required subgroup
+|Has display section property=Property:Has optional subgroup
 }}
 
 {{#subobject:display_section_2
@@ -929,6 +981,18 @@ create_page "Recent_Publication_2024" "{{Publication
 |publication_date=2024-01-15
 |keywords=machine learning,protein folding,deep learning,bioinformatics
 |website=https://example.edu/publications/ml-protein-folding
+}}
+
+{{Publication_PublicationAuthor
+|author=Dr. Alice Johnson
+|author_order=1
+|is_corresponding_author=true
+}}
+
+{{Publication_PublicationAuthor
+|author=Emma Wilson
+|author_order=2
+|is_co-first_author=true
 }}
 
 [[Category:Publication]]"

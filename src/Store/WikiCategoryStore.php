@@ -102,7 +102,9 @@ class WikiCategoryStore
         ];
 
         // Get SMW semantic data for this page
+        /** @var object $store */
         $store = \SMW\StoreFactory::getStore();
+        /** @var object $subject */
         $subject = \SMW\DIWikiPage::newFromTitle($title);
         $semanticData = $store->getSemanticData($subject);
 
@@ -127,6 +129,18 @@ class WikiCategoryStore
             $data['targetNamespace'] = $namespaces[0];
         }
 
+		// Extract required / optional subgroups
+		$data['subgroups']['required'] = $this->getPropertyValues(
+			$semanticData,
+			'Has required subgroup',
+			'subobject'
+		);
+		$data['subgroups']['optional'] = $this->getPropertyValues(
+			$semanticData,
+			'Has optional subgroup',
+			'subobject'
+		);
+
         // Extract display sections from subobjects
         $data['display']['sections'] = $this->extractDisplaySections($semanticData);
 
@@ -141,7 +155,7 @@ class WikiCategoryStore
      * @param string $type Expected type: 'text', 'property', 'category', or 'page'
      * @return array Array of values
      */
-    private function getPropertyValues(\SMW\SemanticData $semanticData, string $propertyName, string $type = 'text'): array
+    private function getPropertyValues($semanticData, string $propertyName, string $type = 'text'): array
     {
         try {
             $property = \SMW\DIProperty::newFromUserLabel($propertyName);
@@ -169,7 +183,7 @@ class WikiCategoryStore
      * @param string $type Expected type: 'text', 'property', 'category', or 'page'
      * @return string|null
      */
-    private function extractValueFromDataItem(\SMWDataItem $dataItem, string $type): ?string
+    private function extractValueFromDataItem($dataItem, string $type): ?string
     {
         if ($dataItem instanceof \SMW\DIWikiPage) {
             $title = $dataItem->getTitle();
@@ -194,6 +208,11 @@ class WikiCategoryStore
                 case 'page':
                     // Return full page name
                     return $title->getPrefixedText();
+
+                case 'subobject':
+                    return $title->getNamespace() === NS_SUBOBJECT
+                        ? $title->getText()
+                        : null;
                 
                 default:
                     return $title->getText();
@@ -214,7 +233,7 @@ class WikiCategoryStore
      * @param \SMW\SemanticData $semanticData
      * @return array Array of display sections
      */
-    private function extractDisplaySections(\SMW\SemanticData $semanticData): array
+    private function extractDisplaySections($semanticData): array
     {
         $sections = [];
         $subobjects = $semanticData->getSubSemanticData();
@@ -325,6 +344,21 @@ class WikiCategoryStore
             $lines[] = '=== Optional Properties ===';
             foreach ($opt as $prop) {
                 $lines[] = "[[Has optional property::Property:$prop]]";
+            }
+
+		// Subgroups
+		if ( $req = $category->getRequiredSubgroups() ) {
+			foreach ( $req as $subgroup ) {
+				$lines[] = "[[Has required subgroup::Subobject:$subgroup]]";
+			}
+			$lines[] = '';
+		}
+
+		if ( $opt = $category->getOptionalSubgroups() ) {
+			foreach ( $opt as $subgroup ) {
+				$lines[] = "[[Has optional subgroup::Subobject:$subgroup]]";
+			}
+			$lines[] = '';
             }
             $lines[] = '';
         }

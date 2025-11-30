@@ -299,7 +299,46 @@
 			$propContainer.append($optionalSection);
 		}
 
-		$container.empty().append($propContainer);
+		// Render subgroup summary
+		var subgroups = hierarchyData.inheritedSubgroups || [];
+		var $subgroupSection = $('<div>').addClass('ss-prop-type-section');
+		$subgroupSection.append(
+			$('<h4>').addClass('ss-prop-type-heading').text('Subgroups (' + subgroups.length + ')')
+		);
+
+		if (subgroups.length === 0) {
+			$subgroupSection.append(
+				$('<p>').addClass('ss-hierarchy-empty').text('No subgroups defined.')
+			);
+		} else {
+			var $subgroupList = $('<ul>').addClass('ss-prop-list ss-prop-list-by-type');
+			subgroups.forEach(function (entry) {
+				var $li = $('<li>').addClass(entry.required ? 'ss-prop-required' : 'ss-prop-optional');
+				var subgroupTitle = entry.subgroupTitle || '';
+				if (subgroupTitle) {
+					var href = mw.util.getUrl(subgroupTitle);
+					var displayName = subgroupTitle.replace(/^Subobject:/, '');
+					$li.append(
+						$('<a>')
+							.attr('href', href)
+							.attr('title', subgroupTitle)
+							.text(displayName)
+					);
+				} else {
+					$li.text('(unnamed subgroup)');
+				}
+				$li.append(
+					' ',
+					$('<span>')
+						.addClass('ss-prop-badge')
+						.text(entry.required ? 'required' : 'optional')
+				);
+				$subgroupList.append($li);
+			});
+			$subgroupSection.append($subgroupList);
+		}
+
+		$container.empty().append($propContainer, $subgroupSection);
 	}
 
 	/**

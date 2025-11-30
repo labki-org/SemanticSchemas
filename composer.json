@@ -27,7 +27,10 @@
 	"autoload": {
 		"psr-4": {
 			"MediaWiki\\Extension\\StructureSync\\": "src/"
-		}
+		},
+		"files": [
+			"src/Util/SMWStubs.php"
+		]
 	},
 	"autoload-dev": {
 		"psr-4": {

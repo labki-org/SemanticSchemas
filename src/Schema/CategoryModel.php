@@ -61,6 +61,12 @@ class CategoryModel {
     /** @var string[] Direct optional properties */
     private $optionalProperties;
 
+    /** @var string[] Direct required subgroups */
+    private $requiredSubgroups;
+
+    /** @var string[] Direct optional subgroups */
+    private $optionalSubgroups;
+
     /**
      * @var array Display metadata in schema form:
      *   [
@@ -137,11 +143,26 @@ class CategoryModel {
             $data['properties']['optional'] ?? []
         );
         
+        $this->requiredSubgroups = self::normalizeList(
+            $data['subgroups']['required'] ?? []
+        );
+
+        $this->optionalSubgroups = self::normalizeList(
+            $data['subgroups']['optional'] ?? []
+        );
+        
         // Check for properties that are both required and optional
         $duplicates = array_intersect($this->requiredProperties, $this->optionalProperties);
         if (!empty($duplicates)) {
             throw new \InvalidArgumentException(
                 "Category '$name' has properties in both required and optional lists: " . implode(', ', $duplicates)
+            );
+        }
+
+        $subgroupOverlap = array_intersect($this->requiredSubgroups, $this->optionalSubgroups);
+        if (!empty($subgroupOverlap)) {
+            throw new \InvalidArgumentException(
+                "Category '$name' has subgroups in both required and optional lists: " . implode(', ', $subgroupOverlap)
             );
         }
 
@@ -204,6 +225,20 @@ class CategoryModel {
         return $this->formConfig;
     }
 
+    /** @return string[] Direct required subgroups */
+    public function getRequiredSubgroups(): array {
+        return $this->requiredSubgroups;
+    }
+
+    /** @return string[] Direct optional subgroups */
+    public function getOptionalSubgroups(): array {
+        return $this->optionalSubgroups;
+    }
+
+    public function hasSubgroups(): bool {
+        return !empty( $this->requiredSubgroups ) || !empty( $this->optionalSubgroups );
+    }
+
     public function getDisplayHeaderProperties(): array {
         return $this->displayConfig['header'] ?? [];
     }
@@ -242,6 +277,13 @@ class CategoryModel {
                 'optional' => $this->optionalProperties,
             ],
         ];
+
+        if ( $this->hasSubgroups() ) {
+            $data['subgroups'] = [
+                'required' => $this->requiredSubgroups,
+                'optional' => $this->optionalSubgroups,
+            ];
+        }
 
         if ( !empty( $this->displayConfig ) ) {
             $data['display'] = $this->displayConfig;
@@ -324,6 +366,24 @@ class CategoryModel {
             array_diff( $mergedOptional, $mergedRequired )
         );
 
+        // 2a. Merge subgroup requirements similar to property rules
+        $mergedRequiredSubgroups = array_unique(
+            array_merge(
+                $parent->getRequiredSubgroups(),
+                $this->requiredSubgroups
+            )
+        );
+
+        $mergedOptionalSubgroups = array_unique(
+            array_merge(
+                $parent->getOptionalSubgroups(),
+                $this->optionalSubgroups
+            )
+        );
+        $mergedOptionalSubgroups = array_values(
+            array_diff( $mergedOptionalSubgroups, $mergedRequiredSubgroups )
+        );
+
         // 3. Merge display config
         $mergedDisplay = self::mergeDisplayConfigs(
             $parent->getDisplayConfig(),
@@ -343,6 +403,10 @@ class CategoryModel {
             'properties' => [
                 'required' => array_values( $mergedRequired ),
                 'optional' => array_values( $mergedOptional ),
+            ],
+            'subgroups' => [
+                'required' => array_values( $mergedRequiredSubgroups ),
+                'optional' => array_values( $mergedOptionalSubgroups ),
             ],
             'display' => $mergedDisplay,
             'forms' => $mergedForm,

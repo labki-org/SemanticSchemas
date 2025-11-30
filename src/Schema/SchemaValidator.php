@@ -106,6 +106,7 @@ class SchemaValidator {
 
 		$categories = $schema['categories'];
 		$properties = $schema['properties'];
+		$subobjects = $schema['subobjects'] ?? [];
 
 		// Validate category definitions
 		foreach ( $categories as $categoryName => $categoryData ) {
@@ -113,7 +114,8 @@ class SchemaValidator {
 				$categoryName,
 				$categoryData,
 				$categories,
-				$properties
+				$properties,
+				$subobjects
 			);
 			$errors = array_merge( $errors, $categoryResult['errors'] );
 			$warnings = array_merge( $warnings, $categoryResult['warnings'] );
@@ -128,6 +130,19 @@ class SchemaValidator {
 			);
 			$errors = array_merge( $errors, $propertyResult['errors'] );
 			$warnings = array_merge( $warnings, $propertyResult['warnings'] );
+		}
+
+		// Validate subobject definitions
+		if ( isset( $schema['subobjects'] ) && is_array( $schema['subobjects'] ) ) {
+			foreach ( $schema['subobjects'] as $subobjectName => $subobjectData ) {
+				$subobjectResult = $this->validateSubobject(
+					$subobjectName,
+					$subobjectData,
+					$properties
+				);
+				$errors = array_merge( $errors, $subobjectResult['errors'] );
+				$warnings = array_merge( $warnings, $subobjectResult['warnings'] );
+			}
 		}
 
 		// Detect inheritance cycles
@@ -220,7 +235,8 @@ class SchemaValidator {
 		string $categoryName,
 		array $categoryData,
 		array $allCategories,
-		array $allProperties
+		array $allProperties,
+		array $allSubobjects
 	): array {
 		$errors = [];
 		$warnings = [];
@@ -279,6 +295,17 @@ class SchemaValidator {
 			$warnings = array_merge( $warnings, $propResult['warnings'] );
 		}
 
+		// --- subgroups ------------------------------------------------------
+		if ( isset( $categoryData['subgroups'] ) ) {
+			$subgroupResult = $this->validateCategorySubgroups(
+				$categoryName,
+				$categoryData['subgroups'],
+				$allSubobjects
+			);
+			$errors = array_merge( $errors, $subgroupResult['errors'] );
+			$warnings = array_merge( $warnings, $subgroupResult['warnings'] );
+		}
+
 		// --- display config -----------------------------------------------
 		if ( isset( $categoryData['display'] ) ) {
 			$displayResult = $this->validateDisplayConfig(
@@ -299,6 +326,157 @@ class SchemaValidator {
 			);
 			$errors = array_merge( $errors, $formResult['errors'] );
 			$warnings = array_merge( $warnings, $formResult['warnings'] );
+		}
+
+		return [ 'errors' => $errors, 'warnings' => $warnings ];
+	}
+
+	private function validateCategorySubgroups(
+		string $categoryName,
+		array $subgroupLists,
+		array $allSubobjects
+	): array {
+		$errors = [];
+		$warnings = [];
+
+		$required = $subgroupLists['required'] ?? [];
+		$optional = $subgroupLists['optional'] ?? [];
+
+		if ( !is_array( $required ) ) {
+			$errors[] = $this->formatError(
+				'category',
+				$categoryName,
+				'subgroups.required must be an array',
+				'Use an array like ["PublicationAuthor", ...]'
+			);
+		}
+
+		if ( !is_array( $optional ) ) {
+			$errors[] = $this->formatError(
+				'category',
+				$categoryName,
+				'subgroups.optional must be an array',
+				'Use an array like ["FundingLine", ...]'
+			);
+		}
+
+		$required = is_array( $required ) ? $required : [];
+		$optional = is_array( $optional ) ? $optional : [];
+
+		$duplicates = array_intersect(
+			array_map( 'strval', $required ),
+			array_map( 'strval', $optional )
+		);
+		if ( !empty( $duplicates ) ) {
+			$errors[] = $this->formatError(
+				'category',
+				$categoryName,
+				'Subgroups cannot be both required and optional: ' . implode( ', ', $duplicates ),
+				'Remove duplicates from either list'
+			);
+		}
+
+		foreach ( $required as $subgroupName ) {
+			if ( !isset( $allSubobjects[$subgroupName] ) ) {
+				$errors[] = $this->formatError(
+					'category',
+					$categoryName,
+					"required subgroup '$subgroupName' is not defined in schema",
+					"Add '$subgroupName' to the subobjects section or remove it from this category"
+				);
+			}
+		}
+
+		foreach ( $optional as $subgroupName ) {
+			if ( !isset( $allSubobjects[$subgroupName] ) ) {
+				$errors[] = $this->formatError(
+					'category',
+					$categoryName,
+					"optional subgroup '$subgroupName' is not defined in schema",
+					"Add '$subgroupName' to the subobjects section or remove it from this category"
+				);
+			}
+		}
+
+		return [ 'errors' => $errors, 'warnings' => $warnings ];
+	}
+
+	private function validateSubobject(
+		string $subobjectName,
+		array $subobjectData,
+		array $allProperties
+	): array {
+		$errors = [];
+		$warnings = [];
+
+		if ( trim( $subobjectName ) === '' ) {
+			$errors[] = $this->formatError(
+				'subobject',
+				$subobjectName,
+				'Name cannot be empty',
+				'Provide a non-empty subobject name'
+			);
+			return [ 'errors' => $errors, 'warnings' => $warnings ];
+		}
+
+		if ( isset( $subobjectData['properties'] ) ) {
+			$props = $subobjectData['properties'];
+			if ( !is_array( $props ) ) {
+				$errors[] = $this->formatError(
+					'subobject',
+					$subobjectName,
+					'properties must be an array with required/optional keys',
+					'Use {"required": [...], "optional": [...]}'
+				);
+			} else {
+				foreach ( [ 'required', 'optional' ] as $bucket ) {
+					if ( isset( $props[$bucket] ) && !is_array( $props[$bucket] ) ) {
+						$errors[] = $this->formatError(
+							'subobject',
+							$subobjectName,
+							"properties.$bucket must be an array",
+							'Use an array like ["Property:Has author", ...]'
+						);
+					}
+				}
+
+				$required = $props['required'] ?? [];
+				$optional = $props['optional'] ?? [];
+				$duplicates = array_intersect(
+					array_map( 'strval', $required ),
+					array_map( 'strval', $optional )
+				);
+				if ( !empty( $duplicates ) ) {
+					$errors[] = $this->formatError(
+						'subobject',
+						$subobjectName,
+						'Properties cannot be both required and optional: ' . implode( ', ', $duplicates ),
+						'Remove duplicates from either list'
+					);
+				}
+
+				foreach ( $required as $propertyName ) {
+					if ( !isset( $allProperties[$propertyName] ) ) {
+						$errors[] = $this->formatError(
+							'subobject',
+							$subobjectName,
+							"required property '$propertyName' is not defined in schema",
+							"Add '$propertyName' to the properties section or remove it from this subobject"
+						);
+					}
+				}
+
+				foreach ( $optional as $propertyName ) {
+					if ( !isset( $allProperties[$propertyName] ) ) {
+						$errors[] = $this->formatError(
+							'subobject',
+							$subobjectName,
+							"optional property '$propertyName' is not defined in schema",
+							"Add '$propertyName' to the properties section or remove it from this subobject"
+						);
+					}
+				}
+			}
 		}
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];

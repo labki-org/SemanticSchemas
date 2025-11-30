@@ -12,6 +12,7 @@ use MediaWiki\Extension\StructureSync\Schema\SchemaImporter;
 use MediaWiki\Extension\StructureSync\Schema\SchemaLoader;
 use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
 use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
 use MediaWiki\Extension\StructureSync\Store\StateManager;
 use MediaWiki\Extension\StructureSync\Store\PageHashComputer;
 use MediaWiki\Extension\StructureSync\Store\PageCreator;
@@ -528,6 +529,7 @@ class SpecialStructureSync extends SpecialPage
 
 		$categoryCount = (int)($stats['categoryCount'] ?? 0);
 		$propertyCount = (int)($stats['propertyCount'] ?? 0);
+		$subobjectCount = (int)($stats['subobjectCount'] ?? 0);
 		$lang = $this->getLanguage();
 
 		$summaryGrid = Html::rawElement(
@@ -542,6 +544,11 @@ class SpecialStructureSync extends SpecialPage
 				$this->msg('structuresync-label-properties')->text(),
 				$lang->formatNum($propertyCount),
 				$this->msg('structuresync-properties-count')->numParams($propertyCount)->text()
+			) .
+			$this->renderStatCard(
+				$this->msg('structuresync-label-subobjects')->text(),
+				$lang->formatNum($subobjectCount),
+				$this->msg('structuresync-subobjects-count')->numParams($subobjectCount)->text()
 			) .
 			$this->renderStatCard(
 				$this->msg('structuresync-label-last-change')->text(),
@@ -1428,6 +1435,7 @@ class SpecialStructureSync extends SpecialPage
 			$hashComputer = new PageHashComputer();
 			$pageCreator = new PageCreator();
 			$propertyStore = new WikiPropertyStore();
+			$subobjectStore = new WikiSubobjectStore();
 
 			$successCount = 0;
 			$totalCount = count( $categories );
@@ -1488,6 +1496,20 @@ class SpecialStructureSync extends SpecialPage
 					if ($content !== null) {
 						$hash = $hashComputer->computePropertyHash($content);
 						$pageHashes["Property:$propertyName"] = $hash;
+					}
+				}
+			}
+
+			// Hash all subobjects
+			$allSubobjects = $subobjectStore->getAllSubobjects();
+			foreach ( $allSubobjects as $subobject ) {
+				$subobjectName = $subobject->getName();
+				$title = $pageCreator->makeTitle( $subobjectName, NS_SUBOBJECT );
+				if ( $title && $title->exists() ) {
+					$content = $pageCreator->getPageContent( $title );
+					if ( $content !== null ) {
+						$hash = $hashComputer->computeSubobjectHash( $content );
+						$pageHashes["Subobject:$subobjectName"] = $hash;
 					}
 				}
 			}

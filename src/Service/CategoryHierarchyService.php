@@ -105,6 +105,12 @@ class CategoryHierarchyService
             $allCategories
         );
 
+		$result['inheritedSubgroups'] = $this->extractInheritedSubgroups(
+			$categoryName,
+			$resolver,
+			$allCategories
+		);
+
         return $result;
     }
 
@@ -215,6 +221,59 @@ class CategoryHierarchyService
         }
 
         return $properties;
+    }
+
+	/**
+	 * Extract inherited subgroups (required/optional) with source category.
+	 *
+	 * @param string $categoryName
+	 * @param InheritanceResolver $resolver
+	 * @param array<string,CategoryModel> $allCategories
+	 * @return array<int,array{subgroupTitle:string,sourceCategory:string,required:int}>
+	 */
+	private function extractInheritedSubgroups(
+		string $categoryName,
+		InheritanceResolver $resolver,
+		array $allCategories
+	): array {
+		$subgroups = [];
+		$seen = [];
+		$ancestors = $resolver->getAncestors( $categoryName );
+
+		foreach ( $ancestors as $ancestorName ) {
+			$ancestor = $allCategories[$ancestorName] ?? null;
+			if ( $ancestor === null ) {
+				continue;
+			}
+
+			$sourceCategoryTitle = "Category:$ancestorName";
+
+			foreach ( $ancestor->getRequiredSubgroups() as $subgroupName ) {
+				if ( isset( $seen[$subgroupName] ) ) {
+					continue;
+				}
+				$subgroups[] = [
+					'subgroupTitle' => "Subobject:$subgroupName",
+					'sourceCategory' => $sourceCategoryTitle,
+					'required' => 1,
+				];
+				$seen[$subgroupName] = true;
+			}
+
+			foreach ( $ancestor->getOptionalSubgroups() as $subgroupName ) {
+				if ( isset( $seen[$subgroupName] ) ) {
+					continue;
+				}
+				$subgroups[] = [
+					'subgroupTitle' => "Subobject:$subgroupName",
+					'sourceCategory' => $sourceCategoryTitle,
+					'required' => 0,
+				];
+				$seen[$subgroupName] = true;
+			}
+		}
+
+		return $subgroups;
     }
 
     /**

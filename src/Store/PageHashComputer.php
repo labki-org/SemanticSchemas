@@ -85,6 +85,23 @@ class PageHashComputer {
 	}
 
 	/**
+	 * Compute hash for a Subobject page (only StructureSync section).
+	 *
+	 * @param string $pageContent
+	 * @return string
+	 */
+	public function computeSubobjectHash( string $pageContent ): string {
+		$section = $this->extractSchemaSection(
+			$pageContent,
+			self::MARKER_START,
+			self::MARKER_END
+		);
+
+		$section = trim( $section );
+		return $this->hashContent( $section );
+	}
+
+	/**
 	 * Extract content between markers.
 	 *
 	 * @param string $content Full page content

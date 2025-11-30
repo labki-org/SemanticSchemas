@@ -43,10 +43,13 @@ class SchemaComparer {
 
 		$propertiesA = $schemaA['properties'] ?? [];
 		$propertiesB = $schemaB['properties'] ?? [];
+		$subobjectsA = $schemaA['subobjects'] ?? [];
+		$subobjectsB = $schemaB['subobjects'] ?? [];
 
 		return [
 			'categories' => $this->compareCategories( $categoriesA, $categoriesB ),
 			'properties' => $this->compareProperties( $propertiesA, $propertiesB ),
+			'subobjects' => $this->compareSubobjects( $subobjectsA, $subobjectsB ),
 		];
 	}
 
@@ -168,6 +171,67 @@ class SchemaComparer {
 				];
 			} else {
 				$unchanged[] = $propertyName;
+			}
+		}
+
+		return [
+			'added'     => $added,
+			'removed'   => $removed,
+			'modified'  => $modified,
+			'unchanged' => $unchanged,
+		];
+	}
+
+	/**
+	 * @param array<string,array> $subobjectsA
+	 * @param array<string,array> $subobjectsB
+	 * @return array
+	 */
+	private function compareSubobjects( array $subobjectsA, array $subobjectsB ): array {
+		$added = [];
+		$removed = [];
+		$modified = [];
+		$unchanged = [];
+
+		$allNames = array_unique( array_merge(
+			array_keys( $subobjectsA ),
+			array_keys( $subobjectsB )
+		) );
+		sort( $allNames );
+
+		foreach ( $allNames as $subobjectName ) {
+			$inA = array_key_exists( $subobjectName, $subobjectsA );
+			$inB = array_key_exists( $subobjectName, $subobjectsB );
+
+			if ( $inA && !$inB ) {
+				$added[] = [
+					'name' => $subobjectName,
+					'data' => $subobjectsA[$subobjectName],
+				];
+				continue;
+			}
+
+			if ( !$inA && $inB ) {
+				$removed[] = [
+					'name' => $subobjectName,
+					'data' => $subobjectsB[$subobjectName],
+				];
+				continue;
+			}
+
+			$dataA = $subobjectsA[$subobjectName] ?? [];
+			$dataB = $subobjectsB[$subobjectName] ?? [];
+
+			$diff = $this->diffSubobjectData( $dataA, $dataB );
+			if ( !empty( $diff ) ) {
+				$modified[] = [
+					'name' => $subobjectName,
+					'diff' => $diff,
+					'old'  => $dataB,
+					'new'  => $dataA,
+				];
+			} else {
+				$unchanged[] = $subobjectName;
 			}
 		}
 
@@ -355,6 +419,52 @@ class SchemaComparer {
 			$diff['extra'] = [
 				'old' => $extraB,
 				'new' => $extraA,
+			];
+		}
+
+		return $diff;
+	}
+
+	/**
+	 * @param array $dataA
+	 * @param array $dataB
+	 * @return array
+	 */
+	private function diffSubobjectData( array $dataA, array $dataB ): array {
+		$diff = [];
+
+		if ( ( $dataA['label'] ?? '' ) !== ( $dataB['label'] ?? '' ) ) {
+			$diff['label'] = [
+				'old' => $dataB['label'] ?? '',
+				'new' => $dataA['label'] ?? '',
+			];
+		}
+
+		if ( ( $dataA['description'] ?? '' ) !== ( $dataB['description'] ?? '' ) ) {
+			$diff['description'] = [
+				'old' => $dataB['description'] ?? '',
+				'new' => $dataA['description'] ?? '',
+			];
+		}
+
+		$propsA = $dataA['properties'] ?? [];
+		$propsB = $dataB['properties'] ?? [];
+
+		$reqA = $propsA['required'] ?? [];
+		$reqB = $propsB['required'] ?? [];
+		if ( $this->arraysDiffer( $reqA, $reqB ) ) {
+			$diff['properties']['required'] = [
+				'old' => $reqB,
+				'new' => $reqA,
+			];
+		}
+
+		$optA = $propsA['optional'] ?? [];
+		$optB = $propsB['optional'] ?? [];
+		if ( $this->arraysDiffer( $optA, $optB ) ) {
+			$diff['properties']['optional'] = [
+				'old' => $optB,
+				'new' => $optA,
 			];
 		}
 

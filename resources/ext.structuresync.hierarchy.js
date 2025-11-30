@@ -235,6 +235,72 @@
 	}
 
 	/**
+	 * Render inherited subgroups summary table.
+	 *
+	 * @param {jQuery} $container
+	 * @param {Object} hierarchyData
+	 */
+	function renderSubgroupTable($container, hierarchyData) {
+		var subgroups = hierarchyData.inheritedSubgroups || [];
+
+		if (!subgroups.length) {
+			$container.empty().append(
+				$('<p>').addClass('ss-hierarchy-empty').text(
+					mw.msg('structuresync-hierarchy-no-subgroups')
+				)
+			);
+			return;
+		}
+
+		var $table = $('<table>').addClass('wikitable ss-subgroup-summary');
+		var $thead = $('<thead>').append(
+			$('<tr>')
+				.append($('<th>').text(mw.msg('structuresync-hierarchy-subgroup-name')))
+				.append($('<th>').text(mw.msg('structuresync-hierarchy-source-category')))
+				.append($('<th>').text(mw.msg('structuresync-hierarchy-required-state')))
+		);
+		$table.append($thead);
+
+		var $tbody = $('<tbody>');
+		subgroups.forEach(function (entry) {
+			var subgroupTitle = entry.subgroupTitle || '';
+			var sourceTitle = entry.sourceCategory || '';
+			var isRequired = (entry.required === 1 || entry.required === true);
+
+			var subgroupDisplay = subgroupTitle.replace(/^Subobject:/, '');
+			var sourceDisplay = sourceTitle.replace(/^Category:/, '');
+
+			var $row = $('<tr>');
+			$row.append(
+				$('<td>').append(
+					subgroupTitle ?
+						$('<a>').attr('href', mw.util.getUrl(subgroupTitle)).text(subgroupDisplay) :
+						subgroupDisplay || '—'
+				)
+			);
+			$row.append(
+				$('<td>').append(
+					sourceTitle ?
+						$('<a>').attr('href', mw.util.getUrl(sourceTitle)).text(sourceDisplay) :
+						sourceDisplay || '—'
+				)
+			);
+			$row.append(
+				$('<td>').addClass(isRequired ? 'ss-prop-required' : 'ss-prop-optional').text(
+					isRequired ?
+						mw.msg('structuresync-hierarchy-required') :
+						mw.msg('structuresync-hierarchy-optional')
+				)
+			);
+
+			$tbody.append($row);
+		});
+
+		$table.append($tbody);
+		$container.empty().append($table);
+	}
+
+	/**
 	 * Render properties grouped by required/optional status.
 	 * 
 	 * @param {Array} props Properties array from API
@@ -464,9 +530,10 @@
 				return;
 			}
 
-			// Create containers for tree and properties
+			// Create containers for tree, properties, and subgroups
 			var $treeContainer = $('<div>').addClass('ss-hierarchy-tree-container');
 			var $propsContainer = $('<div>').addClass('ss-hierarchy-props-container');
+			var $subgroupContainer = $('<div>').addClass('ss-hierarchy-subgroups-container');
 
 			// Build the UI
 			$root.empty().append(
@@ -477,12 +544,17 @@
 				$('<div>').addClass('ss-hierarchy-section').append(
 					$('<h3>').text(mw.msg('structuresync-hierarchy-props-title')),
 					$propsContainer
+				),
+				$('<div>').addClass('ss-hierarchy-section').append(
+					$('<h3>').text(mw.msg('structuresync-hierarchy-subgroups-title')),
+					$subgroupContainer
 				)
 			);
 
 			// Render tree and properties
 			renderHierarchyTree($treeContainer, moduleData);
 			renderPropertyTable($propsContainer, moduleData);
+			renderSubgroupTable($subgroupContainer, moduleData);
 
 		}).fail(function (code, result) {
 			$root.removeClass('ss-hierarchy-loading').empty().append(

@@ -70,3 +70,30 @@ curl "http://wiki/api.php?action=structuresync-hierarchy&category=NAME&format=js
 - [Main README](../README.md)
 - [Implementation Notes](../IMPLEMENTATION.md)
 
+## Subobjects at a Glance
+
+1. **Define Subobject schema**
+   ```wiki
+   Subobject:PublicationAuthor
+   [[Has description::Repeatable author entry]]
+   [[Has required property::Property:Has author]]
+   [[Has required property::Property:Has author order]]
+   [[Has optional property::Property:Is co-first author]]
+   [[Has optional property::Property:Is corresponding author]]
+   ```
+2. **Reference from Category**
+   ```wiki
+   Category:Publication
+   [[Has required subgroup::Subobject:PublicationAuthor]]
+   ```
+3. **Use generated template on pages**
+   ```wiki
+   {{Publication_PublicationAuthor
+    |author=Dr. Jane Doe
+    |author_order=1
+    |is_corresponding_author=true
+   }}
+   ```
+4. **Display output**
+   - Generated `Template:Publication/display` will automatically list subgroup tables via `{{#StructureSyncRenderAllProperties:}}`.
+

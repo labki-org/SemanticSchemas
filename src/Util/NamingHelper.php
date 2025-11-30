@@ -56,9 +56,15 @@ class NamingHelper
     {
         $param = $propertyName;
 
-        // Remove "Has " prefix (case-sensitive, with space)
+        // Remove "Has " or "Is " prefix (case-sensitive, with space/underscore)
         if (str_starts_with($param, 'Has ')) {
             $param = substr($param, 4);
+        } elseif (str_starts_with($param, 'Has_')) {
+            $param = substr($param, 4);
+        } elseif (str_starts_with($param, 'Is ')) {
+            $param = substr($param, 3);
+        } elseif (str_starts_with($param, 'Is_')) {
+            $param = substr($param, 3);
         }
 
         // Replace namespace separator with underscore
@@ -174,6 +180,21 @@ class NamingHelper
         }
 
         return true;
+    }
+
+    /**
+     * Build the template name for a category/subobject combination.
+     *
+     * @param string $categoryName
+     * @param string $subobjectName
+     * @return string
+     */
+    public static function subgroupTemplateName( string $categoryName, string $subobjectName ): string {
+        $base = trim( $categoryName );
+        $sub = trim( $subobjectName );
+        $combined = $base . '_' . $sub;
+
+        return str_replace( ' ', '_', $combined );
     }
 }
 

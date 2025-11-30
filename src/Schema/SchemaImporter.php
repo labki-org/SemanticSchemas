@@ -9,6 +9,8 @@ use MediaWiki\Extension\StructureSync\Store\PageHashComputer;
 use MediaWiki\Extension\StructureSync\Generator\TemplateGenerator;
 use MediaWiki\Extension\StructureSync\Generator\FormGenerator;
 use MediaWiki\Extension\StructureSync\Generator\DisplayStubGenerator;
+use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
+use MediaWiki\Extension\StructureSync\Schema\SubobjectModel;
 use RuntimeException;
 
 /**
@@ -33,6 +35,9 @@ class SchemaImporter {
 
 	/** @var WikiPropertyStore */
 	private $propertyStore;
+
+	/** @var WikiSubobjectStore */
+	private $subobjectStore;
 
 	/** @var SchemaValidator */
 	private $validator;
@@ -65,6 +70,7 @@ class SchemaImporter {
 	public function __construct(
 		WikiCategoryStore $categoryStore = null,
 		WikiPropertyStore $propertyStore = null,
+		WikiSubobjectStore $subobjectStore = null,
 		SchemaValidator $validator = null,
 		TemplateGenerator $templateGenerator = null,
 		FormGenerator $formGenerator = null,
@@ -74,6 +80,7 @@ class SchemaImporter {
 	) {
 		$this->categoryStore    = $categoryStore    ?? new WikiCategoryStore();
 		$this->propertyStore    = $propertyStore    ?? new WikiPropertyStore();
+		$this->subobjectStore   = $subobjectStore   ?? new WikiSubobjectStore();
 		$this->validator        = $validator        ?? new SchemaValidator();
 		$this->templateGenerator = $templateGenerator ?? new TemplateGenerator();
 		$this->formGenerator     = $formGenerator     ?? new FormGenerator();
@@ -129,6 +136,9 @@ class SchemaImporter {
 			'propertiesCreated'    => 0,
 			'propertiesUpdated'    => 0,
 			'propertiesUnchanged'  => 0,
+			'subobjectsCreated'    => 0,
+			'subobjectsUpdated'    => 0,
+			'subobjectsUnchanged'  => 0,
 			'templatesCreated'     => 0,
 			'templatesUpdated'     => 0,
 			'formsCreated'         => 0,
@@ -150,7 +160,20 @@ class SchemaImporter {
 			$result['errors']              = array_merge( $result['errors'], $propertyResult['errors'] );
 		}
 
-		// 3) Import categories
+		// 3) Import subobjects after properties so references resolve
+		if ( isset( $schema['subobjects'] ) && is_array( $schema['subobjects'] ) ) {
+			$subobjectResult = $this->importSubobjects(
+				$schema['subobjects'],
+				$dryRun,
+				$overwrite
+			);
+			$result['subobjectsCreated']   = $subobjectResult['created'];
+			$result['subobjectsUpdated']   = $subobjectResult['updated'];
+			$result['subobjectsUnchanged'] = $subobjectResult['unchanged'];
+			$result['errors']              = array_merge( $result['errors'], $subobjectResult['errors'] );
+		}
+
+		// 4) Import categories
 		if ( isset( $schema['categories'] ) && is_array( $schema['categories'] ) ) {
 			try {
 				$categoryResult = $this->importCategories(
@@ -174,7 +197,7 @@ class SchemaImporter {
 			$result['success'] = false;
 		}
 
-		// 4) Update state tracking after successful import (non-dry-run)
+		// 5) Update state tracking after successful import (non-dry-run)
 		if ( !$dryRun && $result['success'] ) {
 			// Mark system as dirty
 			$this->stateManager->setDirty( true );
@@ -184,7 +207,7 @@ class SchemaImporter {
 			$this->stateManager->setSourceSchemaHash( $schemaHash );
 		}
 
-		// 5) Optionally generate artifacts (templates/forms/display) using effective categories
+		// 6) Optionally generate artifacts (templates/forms/display) using effective categories
 		if ( $generateArtifacts && !$dryRun && $result['success'] ) {
 			$artifactResult = $this->generateArtifacts();
 			$result['templatesCreated'] += $artifactResult['templatesCreated'];
@@ -265,6 +288,66 @@ class SchemaImporter {
 				}
 			} catch ( \Exception $e ) {
 				$result['errors'][] = "Error importing property '$propertyName': " . $e->getMessage();
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Import subobjects from schema.
+	 *
+	 * @param array $subobjects
+	 * @param bool $dryRun
+	 * @param bool $overwrite
+	 * @return array
+	 */
+	private function importSubobjects( array $subobjects, bool $dryRun, bool $overwrite ): array {
+		$result = [
+			'created'   => 0,
+			'updated'   => 0,
+			'unchanged' => 0,
+			'errors'    => [],
+		];
+
+		foreach ( $subobjects as $subobjectName => $subobjectData ) {
+			try {
+				$exists = $this->subobjectStore->subobjectExists( $subobjectName );
+				$newModel = new SubobjectModel( $subobjectName, $subobjectData );
+
+				if ( $exists ) {
+					$existing = $this->subobjectStore->readSubobject( $subobjectName );
+					if ( $existing instanceof SubobjectModel ) {
+						$isSame = ( $existing->toArray() === $newModel->toArray() );
+						if ( $isSame && !$overwrite ) {
+							$result['unchanged']++;
+							continue;
+						}
+					}
+				}
+
+				if ( $dryRun ) {
+					if ( $exists ) {
+						$result['updated']++;
+					} else {
+						$result['created']++;
+					}
+					continue;
+				}
+
+				$success = $this->subobjectStore->writeSubobject( $newModel );
+				if ( !$success ) {
+					$result['errors'][] = "Failed to write subobject: $subobjectName";
+					continue;
+				}
+
+				if ( $exists ) {
+					$result['updated']++;
+				} else {
+					$result['created']++;
+				}
+			} catch ( \Exception $e ) {
+				$result['errors'][] = "Error importing subobject '$subobjectName': " . $e->getMessage();
 			}
 		}
 
@@ -429,6 +512,10 @@ class SchemaImporter {
 				'new'      => [],
 				'existing' => [],
 			],
+			'subobjects' => [
+				'new'      => [],
+				'existing' => [],
+			],
 		];
 
 		// Categories
@@ -449,6 +536,17 @@ class SchemaImporter {
 					$preview['properties']['existing'][] = $name;
 				} else {
 					$preview['properties']['new'][] = $name;
+				}
+			}
+		}
+
+		// Subobjects
+		if ( isset( $schema['subobjects'] ) && is_array( $schema['subobjects'] ) ) {
+			foreach ( array_keys( $schema['subobjects'] ) as $name ) {
+				if ( $this->subobjectStore->subobjectExists( $name ) ) {
+					$preview['subobjects']['existing'][] = $name;
+				} else {
+					$preview['subobjects']['new'][] = $name;
 				}
 			}
 		}

@@ -7,6 +7,7 @@ use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
 use MediaWiki\Extension\StructureSync\Store\StateManager;
 use MediaWiki\Extension\StructureSync\Store\PageHashComputer;
 use MediaWiki\Extension\StructureSync\Store\PageCreator;
+use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
 use MediaWiki\Title\Title;
 
 /**
@@ -28,6 +29,9 @@ class SchemaExporter {
     /** @var WikiPropertyStore */
     private $propertyStore;
 
+	/** @var WikiSubobjectStore */
+	private $subobjectStore;
+
     /** @var InheritanceResolver|null */
     private $inheritanceResolver;
 
@@ -46,6 +50,7 @@ class SchemaExporter {
     public function __construct(
         WikiCategoryStore $categoryStore = null,
         WikiPropertyStore $propertyStore = null,
+		WikiSubobjectStore $subobjectStore = null,
         InheritanceResolver $inheritanceResolver = null,
         StateManager $stateManager = null,
         PageHashComputer $hashComputer = null,
@@ -53,6 +58,7 @@ class SchemaExporter {
     ) {
         $this->categoryStore = $categoryStore ?? new WikiCategoryStore();
         $this->propertyStore = $propertyStore ?? new WikiPropertyStore();
+		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
         $this->inheritanceResolver = $inheritanceResolver; // Optional injection
         $this->stateManager = $stateManager ?? new StateManager();
         $this->hashComputer = $hashComputer ?? new PageHashComputer();
@@ -77,15 +83,18 @@ class SchemaExporter {
 
 		$categories = $this->categoryStore->getAllCategories();
 		$properties = $this->propertyStore->getAllProperties();
+		$subobjects = $this->subobjectStore->getAllSubobjects();
 
 		// Stabilize key ordering for deterministic diffs
 		ksort( $categories );
 		ksort( $properties );
+		ksort( $subobjects );
 
 		$schema = [
 			'schemaVersion' => self::SCHEMA_VERSION,
 			'categories'    => [],
 			'properties'    => [],
+			'subobjects'    => [],
 		];
 
 		$exportErrors = [];
@@ -162,6 +171,22 @@ class SchemaExporter {
 			}
 		}
 
+		// -------------------------------------------------------------
+		// SUBOBJECT EXPORT
+		// -------------------------------------------------------------
+		foreach ( $subobjects as $name => $subobject ) {
+			try {
+				$schema['subobjects'][$name] = $subobject->toArray();
+			} catch ( \Exception $e ) {
+				$error = "Subobject '$name': " . $e->getMessage();
+				$exportErrors[] = $error;
+				wfLogWarning( "StructureSync export: $error" );
+				if ( !$continueOnError ) {
+					throw new \RuntimeException( "Export failed: $error", 0, $e );
+				}
+			}
+		}
+
 		// Include errors in result if any occurred
 		if ( !empty( $exportErrors ) ) {
 			$schema['exportErrors'] = $exportErrors;
@@ -185,10 +210,12 @@ class SchemaExporter {
 			'schemaVersion' => self::SCHEMA_VERSION,
 			'categories'    => [],
 			'properties'    => [],
+			'subobjects'    => [],
 		];
 
 		$exportErrors = [];
 		$usedProperties = [];
+		$usedSubobjects = [];
 
 		foreach ( $categoryNames as $name ) {
 			try {
@@ -202,6 +229,11 @@ class SchemaExporter {
 				$usedProperties = array_merge(
 					$usedProperties,
 					$category->getAllProperties()
+				);
+				$usedSubobjects = array_merge(
+					$usedSubobjects,
+					$category->getRequiredSubgroups(),
+					$category->getOptionalSubgroups()
 				);
 			} catch ( \Exception $e ) {
 				$error = "Category '$name': " . $e->getMessage();
@@ -247,6 +279,27 @@ class SchemaExporter {
 			}
 		}
 
+		$usedSubobjects = array_unique( array_filter( $usedSubobjects ) );
+		sort( $usedSubobjects );
+
+		foreach ( $usedSubobjects as $subobjectName ) {
+			try {
+				$subobject = $this->subobjectStore->readSubobject( $subobjectName );
+				if ( $subobject ) {
+					$schema['subobjects'][$subobjectName] = $subobject->toArray();
+				} else {
+					$exportErrors[] = "Subobject '$subobjectName': not found";
+				}
+			} catch ( \Exception $e ) {
+				$error = "Subobject '$subobjectName': " . $e->getMessage();
+				$exportErrors[] = $error;
+
+				if ( !$continueOnError ) {
+					throw new \RuntimeException( "Export failed: $error", 0, $e );
+				}
+			}
+		}
+
 		if ( !empty( $exportErrors ) ) {
 			$schema['exportErrors'] = $exportErrors;
 		}
@@ -262,14 +315,17 @@ class SchemaExporter {
     public function getStatistics(): array {
         $categories = $this->categoryStore->getAllCategories();
         $properties = $this->propertyStore->getAllProperties();
+        $subobjects = $this->subobjectStore->getAllSubobjects();
 
         $stats = [
             'categoryCount'            => count( $categories ),
             'propertyCount'            => count( $properties ),
+            'subobjectCount'           => count( $subobjects ),
             'categoriesWithParents'    => 0,
             'categoriesWithProperties' => 0,
             'categoriesWithDisplay'    => 0,
             'categoriesWithForms'      => 0,
+            'categoriesWithSubgroups'  => 0,
         ];
 
         foreach ( $categories as $cat ) {
@@ -284,6 +340,9 @@ class SchemaExporter {
             }
             if ( $cat->getFormConfig() ) {
                 $stats['categoriesWithForms']++;
+            }
+            if ( $cat->getRequiredSubgroups() || $cat->getOptionalSubgroups() ) {
+                $stats['categoriesWithSubgroups']++;
             }
         }
 
@@ -323,7 +382,7 @@ class SchemaExporter {
                     $namespace = NS_CATEGORY;
                 } elseif ( strpos( $pageName, 'Property:' ) === 0 ) {
                     $titleText = substr( $pageName, 9 );
-                    $namespace = \SMW_NS_PROPERTY;
+                    $namespace = defined( 'SMW_NS_PROPERTY' ) ? \SMW_NS_PROPERTY : NS_MAIN;
                 } else {
                     continue;
                 }

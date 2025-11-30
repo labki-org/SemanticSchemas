@@ -176,9 +176,11 @@ class DisplaySpecBuilder
         }
 
         // If no sections defined anywhere, create a default one with all properties
+        $currentCategory = !empty($chain) ? end($chain) : $this->categoryStore->readCategory($categoryName);
+
         if (empty($mergedSections)) {
             // Get the most specific category (last in chain, or read it if chain is empty)
-            $current = !empty($chain) ? end($chain) : $this->categoryStore->readCategory($categoryName);
+            $current = $currentCategory;
             if ($current !== null && $current !== false) {
                 $allProps = $current->getAllProperties();
                 if (!empty($allProps)) {
@@ -192,7 +194,11 @@ class DisplaySpecBuilder
         }
 
         return [
-            'sections' => $mergedSections
+            'sections' => $mergedSections,
+            'subgroups' => [
+                'required' => $currentCategory instanceof CategoryModel ? $currentCategory->getRequiredSubgroups() : [],
+                'optional' => $currentCategory instanceof CategoryModel ? $currentCategory->getOptionalSubgroups() : [],
+            ],
         ];
     }
 }
