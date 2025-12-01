@@ -99,20 +99,24 @@ class NamingHelper
     public static function generatePropertyLabel(string $propertyName): string
     {
         $clean = $propertyName;
-
+    
         // Strip "Has " or "Has_" prefix
         if (str_starts_with($clean, 'Has ')) {
             $clean = substr($clean, 4);
         } elseif (str_starts_with($clean, 'Has_')) {
             $clean = substr($clean, 4);
         }
-
-        // Replace underscores with spaces
+    
+        // Strip "Is " or "Is_" prefix (add this)
+        if (str_starts_with($clean, 'Is ')) {
+            $clean = substr($clean, 3);
+        } elseif (str_starts_with($clean, 'Is_')) {
+            $clean = substr($clean, 3);
+        }
+    
         $clean = str_replace('_', ' ', $clean);
-
-        // Capitalize each word
         return ucwords($clean);
-    }
+    }    
 
     /**
      * Sanitize a value to ensure it's never null.

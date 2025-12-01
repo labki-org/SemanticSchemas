@@ -2,147 +2,174 @@
 
 namespace MediaWiki\Extension\StructureSync\Schema;
 
+use InvalidArgumentException;
+
 /**
- * SubobjectModel
- * --------------
- * Immutable value object that represents a repeatable subgroup definition.
+ * Immutable schema-level representation of a Subobject.
  *
- * A Subobject is conceptually similar to a Category slice: it declares the
- * schema (required/optional properties) for structured, repeatable data that
- * belongs to a parent Category.
+ * A Subobject is a repeatable structured data group belonging to a Category.
+ * It defines only:
+ *   - label
+ *   - description
+ *   - required/optional properties
  *
- * Subobject pages live in the Subobject: namespace and are authored using
- * standard Semantic MediaWiki annotations such as:
- *   [[Has description::...]]
- *   [[Has required property::Property:Has author]]
- *   [[Has optional property::Property:Is corresponding author]]
- *
- * This model mirrors CategoryModel but without inheritance semantics.
- *
- * @psalm-immutable
+ * There is no inheritance or subtype merging.
  */
 class SubobjectModel {
 
-	/** @var string */
-	private $name;
+    private string $name;
+    private string $label;
+    private string $description;
 
-	/** @var string */
-	private $label;
+    /** @var string[] */
+    private array $requiredProperties;
 
-	/** @var string */
-	private $description;
+    /** @var string[] */
+    private array $optionalProperties;
 
-	/** @var string[] */
-	private $requiredProperties;
+    /* -------------------------------------------------------------------------
+     * CONSTRUCTOR
+     * ---------------------------------------------------------------------- */
 
-	/** @var string[] */
-	private $optionalProperties;
+    public function __construct(string $name, array $data = []) {
 
-	/**
-	 * @param string $name
-	 * @param array $data
-	 */
-	public function __construct( string $name, array $data = [] ) {
+        /* -------------------- Name -------------------- */
+        $name = trim($name);
+        if ($name === '') {
+            throw new InvalidArgumentException("Subobject name cannot be empty.");
+        }
+        if (preg_match('/[<>{}|#]/', $name)) {
+            throw new InvalidArgumentException(
+                "Subobject name '{$name}' contains invalid characters."
+            );
+        }
+        $this->name = $name;
 
-		$name = trim( $name );
-		if ( $name === '' ) {
-			throw new \InvalidArgumentException( 'Subobject name cannot be empty' );
-		}
+        /* -------------------- Label -------------------- */
+        $rawLabel = $data['label'] ?? $name;
+        $cleanLabel = trim((string)$rawLabel);
 
-		$this->name = $name;
+        if ($cleanLabel === '') {
+            // Normalize to a generated human-readable form
+            $this->label = $this->autoGenerateLabel($name);
+        } else {
+            $this->label = $cleanLabel;
+        }
 
-		$label = $data['label'] ?? $name;
-		$this->label = trim( $label ) !== '' ? (string)$label : $name;
+        /* -------------------- Description -------------------- */
+        $this->description = isset($data['description'])
+            ? trim((string)$data['description'])
+            : '';
 
-		$this->description = (string)( $data['description'] ?? '' );
+        /* -------------------- Properties -------------------- */
+        $props = $data['properties'] ?? [];
+        if (!is_array($props)) {
+            throw new InvalidArgumentException(
+                "Subobject '{$name}': 'properties' must be an array."
+            );
+        }
 
-		$this->requiredProperties = self::normalizeList(
-			$data['properties']['required'] ?? []
-		);
-		$this->optionalProperties = self::normalizeList(
-			$data['properties']['optional'] ?? []
-		);
+        $req = $props['required'] ?? [];
+        $opt = $props['optional'] ?? [];
 
-		$overlap = array_intersect( $this->requiredProperties, $this->optionalProperties );
-		if ( !empty( $overlap ) ) {
-			throw new \InvalidArgumentException(
-				'Subobject has properties in both required and optional lists: ' . implode( ', ', $overlap )
-			);
-		}
-	}
+        if (!is_array($req) || !is_array($opt)) {
+            throw new InvalidArgumentException(
+                "Subobject '{$name}': 'properties.required' and 'properties.optional' must be arrays."
+            );
+        }
 
-	/**
-	 * @param array $list
-	 * @return string[]
-	 */
-	private static function normalizeList( array $list ): array {
-		$list = array_map(
-			static function ( $value ) {
-				return trim( (string)$value );
-			},
-			$list
-		);
-		$list = array_filter( $list, static function ( $value ) {
-			return $value !== '';
-		} );
+        $this->requiredProperties = self::normalizeList($req);
+        $this->optionalProperties = self::normalizeList($opt);
 
-		return array_values( array_unique( $list ) );
-	}
+        $overlap = array_intersect($this->requiredProperties, $this->optionalProperties);
+        if ($overlap !== []) {
+            throw new InvalidArgumentException(
+                "Subobject '{$name}' has properties listed as both required and optional: "
+                . implode(', ', $overlap)
+            );
+        }
+    }
 
-	public function getName(): string {
-		return $this->name;
-	}
+    /* -------------------------------------------------------------------------
+     * NORMALIZATION
+     * ---------------------------------------------------------------------- */
 
-	public function getLabel(): string {
-		return $this->label;
-	}
+    private static function normalizeList(array $list): array {
+        $clean = [];
+        foreach ($list as $v) {
+            $v = trim((string)$v);
+            if ($v !== '' && !in_array($v, $clean, true)) {
+                $clean[] = $v;
+            }
+        }
+        return $clean;
+    }
 
-	public function getDescription(): string {
-		return $this->description;
-	}
+    /**
+     * Auto-generate a human-readable label.
+     * Mirrors PropertyModel label generation logic.
+     */
+    private function autoGenerateLabel(string $name): string {
+        $clean = preg_replace('/^Has[_ ]+/i', '', $name);
+        $clean = str_replace('_', ' ', $clean);
+        return ucwords($clean);
+    }
 
-	/**
-	 * @return string[]
-	 */
-	public function getRequiredProperties(): array {
-		return $this->requiredProperties;
-	}
+    /* -------------------------------------------------------------------------
+     * ACCESSORS
+     * ---------------------------------------------------------------------- */
 
-	/**
-	 * @return string[]
-	 */
-	public function getOptionalProperties(): array {
-		return $this->optionalProperties;
-	}
+    public function getName(): string {
+        return $this->name;
+    }
 
-	/**
-	 * @return string[]
-	 */
-	public function getAllProperties(): array {
-		return array_values(
-			array_unique(
-				array_merge( $this->requiredProperties, $this->optionalProperties )
-			)
-		);
-	}
+    public function getLabel(): string {
+        return $this->label;
+    }
 
-	public function isPropertyRequired( string $property ): bool {
-		return in_array( $property, $this->requiredProperties, true );
-	}
+    public function getDescription(): string {
+        return $this->description;
+    }
 
-	public function isPropertyOptional( string $property ): bool {
-		return in_array( $property, $this->optionalProperties, true );
-	}
+    /** @return string[] */
+    public function getRequiredProperties(): array {
+        return $this->requiredProperties;
+    }
 
-	public function toArray(): array {
-		return [
-			'label' => $this->label,
-			'description' => $this->description,
-			'properties' => [
-				'required' => $this->requiredProperties,
-				'optional' => $this->optionalProperties,
-			],
-		];
-	}
+    /** @return string[] */
+    public function getOptionalProperties(): array {
+        return $this->optionalProperties;
+    }
+
+    /** @return string[] */
+    public function getAllProperties(): array {
+        return array_values(
+            array_unique(
+                array_merge($this->requiredProperties, $this->optionalProperties)
+            )
+        );
+    }
+
+    public function isPropertyRequired(string $prop): bool {
+        return in_array($prop, $this->requiredProperties, true);
+    }
+
+    public function isPropertyOptional(string $prop): bool {
+        return in_array($prop, $this->optionalProperties, true);
+    }
+
+    /* -------------------------------------------------------------------------
+     * EXPORT
+     * ---------------------------------------------------------------------- */
+
+    public function toArray(): array {
+        return [
+            'label' => $this->label,
+            'description' => $this->description,
+            'properties' => [
+                'required' => $this->requiredProperties,
+                'optional' => $this->optionalProperties,
+            ],
+        ];
+    }
 }
-

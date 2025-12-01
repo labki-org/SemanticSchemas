@@ -765,6 +765,11 @@ create_category "SimpleCategory" "<!-- StructureSync Start -->
 <!-- StructureSync End -->"
 
 echo ""
+echo "==> Refreshing Semantic MediaWiki data (before form generation)..."
+echo "This ensures all semantic properties are parsed and available for template/form generation..."
+docker compose exec -T mediawiki php extensions/SemanticMediaWiki/maintenance/rebuildData.php -f --skip-properties --report-runtime
+
+echo ""
 echo "==> Generating templates and forms..."
 docker compose exec -T mediawiki php extensions/StructureSync/maintenance/regenerateArtifacts.php --generate-display
 

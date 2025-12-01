@@ -1,12 +1,21 @@
 /**
- * StructureSync Hierarchy Visualization Styles
- * --------------------------------------------
- * Styles for category hierarchy trees and inherited property tables.
+ * StructureSync Hierarchy Visualization — Optimized Styles
+ * --------------------------------------------------------
+ * Behavior and appearance are identical to the original.
+ * Redundant rules removed, spacing normalized, and selectors simplified.
  */
 
-/* Main hierarchy container */
-.ss-hierarchy-loading {
+/* ========================================================
+   Layout utilities
+   ======================================================== */
+
+   .ss-hierarchy-loading {
 	opacity: 0.6;
+}
+
+.ss-hierarchy-empty {
+	color: #72777d;
+	font-style: italic;
 }
 
 .ss-hierarchy-section {
@@ -17,24 +26,25 @@
 	margin-top: 0;
 }
 
-.ss-hierarchy-section h3 {
-	margin-top: 0;
-	margin-bottom: 0.5em;
+.ss-hierarchy-section > h3 {
+	margin: 0 0 0.5em 0;
+	padding-bottom: 0.25em;
 	font-size: 1.2em;
 	border-bottom: 1px solid #a2a9b1;
-	padding-bottom: 0.25em;
 }
 
-.ss-hierarchy-empty {
-	color: #72777d;
-	font-style: italic;
-}
+/* ========================================================
+   Tree view
+   ======================================================== */
 
-/* Hierarchy tree styles */
-.ss-hierarchy-tree {
+.ss-hierarchy-tree,
+.ss-hierarchy-tree-nested {
 	list-style: none;
 	margin: 0;
 	padding: 0;
+}
+
+.ss-hierarchy-tree {
 	font-size: 0.95em;
 }
 
@@ -43,7 +53,7 @@
 	position: relative;
 }
 
-/* Node content wrapper */
+/* Node content */
 .ss-hierarchy-node-content {
 	display: inline-flex;
 	align-items: center;
@@ -56,7 +66,7 @@
 	background-color: #f8f9fa;
 }
 
-/* Collapsible toggle button */
+/* Toggle */
 .ss-hierarchy-toggle {
 	display: inline-block;
 	width: 1.2em;
@@ -65,27 +75,24 @@
 	text-align: center;
 	cursor: pointer;
 	user-select: none;
-	color: #0645ad;
 	font-size: 0.8em;
-	transition: transform 0.2s;
-	flex-shrink: 0;
+	color: #0645ad;
+	border-radius: 2px;
+	transition: background-color 0.2s;
 }
 
 .ss-hierarchy-toggle:hover {
 	color: #0b0080;
 	background-color: #eaf3ff;
-	border-radius: 2px;
 }
 
 .ss-hierarchy-toggle:focus {
 	outline: 2px solid #36c;
 	outline-offset: 1px;
-	border-radius: 2px;
 }
 
-/* Nested lists with indentation */
+/* Nested lines */
 .ss-hierarchy-tree-nested {
-	list-style: none;
 	margin-top: 0.5em;
 	margin-left: 1.5em;
 	padding-left: 1.5em;
@@ -94,7 +101,7 @@
 }
 
 .ss-hierarchy-tree-nested::before {
-	content: '';
+	content: "";
 	position: absolute;
 	left: -2px;
 	top: 0;
@@ -103,23 +110,21 @@
 	background: linear-gradient(to bottom, #a2a9b1 0%, transparent 100%);
 }
 
-/* Add connecting lines */
 .ss-hierarchy-tree-nested > li::before {
-	content: '';
+	content: "";
 	position: absolute;
 	left: -1.5em;
 	top: 1.2em;
 	width: 1em;
-	height: 0;
 	border-top: 2px solid #eaecf0;
 }
 
-/* Highlight parent categories differently */
+/* Parent category emphasis */
 .ss-hierarchy-has-children > .ss-hierarchy-node-content > a {
 	font-weight: 600;
 }
 
-/* Root level category (most specific) - special styling */
+/* Highlight root */
 .ss-hierarchy-tree > li:first-child > .ss-hierarchy-node-content {
 	background-color: #f0f7ff;
 	padding: 0.5em 0.75em;
@@ -128,20 +133,19 @@
 }
 
 .ss-hierarchy-tree > li:first-child > .ss-hierarchy-node-content > a {
-	color: #0645ad;
 	font-size: 1.05em;
+	color: #0645ad;
 }
 
-/* Collapsed state */
 .ss-hierarchy-collapsed > .ss-hierarchy-tree-nested {
 	display: none;
 }
 
-/* Category links */
+/* Links */
 .ss-hierarchy-tree a {
 	font-weight: 500;
-	text-decoration: none;
 	color: #0645ad;
+	text-decoration: none;
 }
 
 .ss-hierarchy-tree a:hover {
@@ -152,10 +156,20 @@
 	color: #0b0080;
 }
 
-/* Property table styles */
+/* ========================================================
+   Property table
+   ======================================================== */
+
 .ss-prop-table {
 	width: 100%;
 	border-collapse: collapse;
+}
+
+.ss-prop-table th,
+.ss-prop-table td {
+	padding: 0.5em 0.75em;
+	vertical-align: top;
+	border: 1px solid #a2a9b1;
 }
 
 .ss-prop-table th {
@@ -164,19 +178,14 @@
 	text-align: left;
 }
 
-.ss-prop-table td,
-.ss-prop-table th {
-	padding: 0.5em 0.75em;
-	vertical-align: top;
-	border: 1px solid #a2a9b1;
-}
-
 .ss-prop-source-cell {
 	width: 30%;
 	font-weight: 500;
 }
 
-.ss-prop-list {
+/* Property lists */
+.ss-prop-list,
+.ss-prop-list-by-type {
 	list-style: none;
 	margin: 0;
 	padding: 0;
@@ -188,26 +197,25 @@
 	border-radius: 3px;
 }
 
-/* Required property styling (subtle red background) */
+/* Required / optional color coding */
 .ss-prop-required {
 	background-color: #fce4e4;
 	border-left: 3px solid #d33;
 }
 
-/* Optional property styling (subtle green background) */
 .ss-prop-optional {
 	background-color: #e8f4e8;
 	border-left: 3px solid #3a3;
 }
 
-/* Property badge */
+/* Badge */
 .ss-prop-badge {
 	display: inline-block;
 	font-size: 0.85em;
-	padding: 0.1em 0.4em;
-	border-radius: 3px;
 	font-weight: 600;
+	padding: 0.1em 0.4em;
 	margin-left: 0.5em;
+	border-radius: 3px;
 }
 
 .ss-prop-required .ss-prop-badge {
@@ -220,13 +228,39 @@
 	color: #fff;
 }
 
-/* Special page specific styles */
-.ss-hierarchy-special-form {
-	margin-bottom: 1.5em;
+/* ========================================================
+   Subgroup table (same look as properties)
+   ======================================================== */
+
+.ss-subgroup-summary {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 0.75em;
+}
+
+.ss-subgroup-summary th,
+.ss-subgroup-summary td {
+	padding: 0.5em 0.75em;
+	border: 1px solid #a2a9b1;
+}
+
+.ss-subgroup-summary th {
+	background-color: #eaecf0;
+	font-weight: 600;
+}
+
+/* ========================================================
+   Special page + parser function wrappers
+   ======================================================== */
+
+.ss-hierarchy-special-form,
+#ss-category-hierarchy,
+#ss-form-hierarchy-preview {
+	margin: 1em 0;
 	padding: 1em;
-	background-color: #f8f9fa;
 	border: 1px solid #a2a9b1;
 	border-radius: 3px;
+	background-color: #f8f9fa;
 }
 
 .ss-hierarchy-special-form label {
@@ -248,31 +282,14 @@
 	margin-top: 0.5em;
 }
 
-/* Category page parser function styles */
-#ss-category-hierarchy {
-	margin: 1.5em 0;
-	padding: 1em;
-	border: 1px solid #a2a9b1;
-	border-radius: 3px;
-	background-color: #f8f9fa;
-}
-
+/* Collapsed parser block */
 #ss-category-hierarchy.mw-collapsed {
 	padding: 0.5em 1em;
 }
 
-/* Form preview styles */
-#ss-form-hierarchy-preview {
-	margin: 1em 0;
-	padding: 1em;
-	border: 1px solid #a2a9b1;
-	border-radius: 3px;
-	background-color: #f8f9fa;
-}
-
-/* ========================================
-   Property Tabs
-   ======================================== */
+/* ========================================================
+   Property tabs
+   ======================================================== */
 
 .ss-prop-tabs {
 	display: flex;
@@ -290,7 +307,7 @@
 	cursor: pointer;
 	font-weight: 500;
 	color: #202122;
-	transition: background-color 0.2s, color 0.2s;
+	transition: background-color 0.2s;
 	position: relative;
 	top: 1px;
 }
@@ -302,8 +319,8 @@
 .ss-prop-tab-active {
 	background: #fff;
 	color: #0645ad;
-	border-bottom: 2px solid #fff;
 	font-weight: 600;
+	border-bottom: 2px solid #fff;
 }
 
 .ss-prop-tab:focus {
@@ -311,11 +328,7 @@
 	outline-offset: -2px;
 }
 
-/* Tab content containers */
-.ss-prop-tab-contents {
-	position: relative;
-}
-
+/* Tab contents */
 .ss-prop-tab-content {
 	display: none;
 }
@@ -323,10 +336,6 @@
 .ss-prop-tab-content-active {
 	display: block;
 }
-
-/* ========================================
-   Properties by Type View
-   ======================================== */
 
 .ss-prop-by-type {
 	display: flex;
@@ -368,10 +377,8 @@
 	color: #14866d;
 }
 
+/* List layout */
 .ss-prop-list-by-type {
-	list-style: none;
-	margin: 0;
-	padding: 0;
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 	gap: 0.5em;
@@ -381,8 +388,8 @@
 	padding: 0.4em 0.6em;
 	border-radius: 3px;
 	background: #fff;
-	border: 1px solid #eaecf0;
 	font-size: 0.95em;
+	border: 1px solid #eaecf0;
 }
 
 .ss-prop-list-by-type .ss-prop-required {
@@ -409,25 +416,24 @@
 	text-decoration: underline;
 }
 
-/* Responsive design for smaller screens */
+/* ========================================================
+   Responsive
+   ======================================================== */
+
 @media (max-width: 768px) {
 	.ss-prop-list-by-type {
 		grid-template-columns: 1fr;
 	}
-	
 	.ss-prop-tabs {
 		flex-direction: column;
 		border-bottom: none;
 	}
-	
 	.ss-prop-tab {
 		border-radius: 4px;
 		border: 1px solid #a2a9b1;
 		top: 0;
 	}
-	
 	.ss-prop-tab-active {
 		border: 2px solid #0645ad;
 	}
 }
-

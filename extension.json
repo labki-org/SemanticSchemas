@@ -45,9 +45,11 @@
 		"NS_SUBOBJECT"
 	],
 	"Hooks": {
+		"SetupAfterCache": "MediaWiki\\Extension\\StructureSync\\Hooks\\StructureSyncSetupHooks::onSetupAfterCache",
 		"ParserFirstCallInit": "MediaWiki\\Extension\\StructureSync\\Parser\\DisplayParserFunctions::onParserFirstCallInit"
 	},
 	"AutoloadClasses": {
+		"MediaWiki\\Extension\\StructureSync\\Hooks\\StructureSyncSetupHooks": "src/Hooks/StructureSyncSetupHooks.php",
 		"MediaWiki\\Extension\\StructureSync\\Parser\\DisplayParserFunctions": "src/Parser/DisplayParserFunctions.php",
 		"MediaWiki\\Extension\\StructureSync\\Display\\DisplayRenderer": "src/Display/DisplayRenderer.php",
 		"MediaWiki\\Extension\\StructureSync\\Display\\DisplaySpecBuilder": "src/Display/DisplaySpecBuilder.php"

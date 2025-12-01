@@ -237,6 +237,9 @@ docker compose exec -T mediawiki bash -lc "
     echo '// === StructureSync ==='
     echo 'wfLoadExtension(\"StructureSync\");'
     echo '\$wgDebugLogGroups[\"structuresync\"] = \"$CONTAINER_LOG_FILE\";'
+    echo ''
+    echo '// Note: Subobject namespace semantic annotations are enabled automatically'
+    echo '// via the SetupAfterCache hook in StructureSyncSetupHooks.php'
   } >> $CONTAINER_WIKI/LocalSettings.php
 "
 

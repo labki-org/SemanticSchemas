@@ -2,171 +2,180 @@
 
 namespace MediaWiki\Extension\StructureSync\Store;
 
+use MediaWiki\CommentStore\CommentStoreComment;
+use MediaWiki\Content\ContentHandler;
 use MediaWiki\Content\TextContent;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
-use WikiPage;
-use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\User\User;
 
 /**
- * Helper class for creating and updating wiki pages
+ * PageCreator
+ * -----------
+ * Safe creation, update, deletion, and reading of wiki pages.
+ * All StructureSync writing operations flow through this class.
  */
 class PageCreator {
 
-	/** @var User */
-	private $user;
+    /** @var User */
+    private User $user;
 
-	/**
-	 * @param User|null $user User performing the edits (null = system user)
-	 */
-	public function __construct( User $user = null ) {
-		if ( $user === null ) {
-			// Use a system user for automated edits
-			$user = User::newSystemUser( 'StructureSync', [ 'steal' => true ] );
-		}
-		$this->user = $user;
-	}
+    /** @var WikiPageFactory */
+    private WikiPageFactory $wikiPageFactory;
 
-	/**
-	 * Create or update a wiki page
-	 *
-	 * @param Title $title Page title
-	 * @param string $content Page content (wikitext)
-	 * @param string $summary Edit summary
-	 * @param int $flags Edit flags (EDIT_NEW, EDIT_UPDATE, etc.)
-	 * @return bool True on success
-	 */
-	public function createOrUpdatePage( Title $title, string $content, string $summary, int $flags = 0 ): bool {
-		try {
-			$wikiPageFactory = MediaWikiServices::getInstance()->getWikiPageFactory();
-			$wikiPage = $wikiPageFactory->newFromTitle( $title );
+    public function __construct(?User $user = null) {
+        $this->user = $user ?? User::newSystemUser( 'StructureSync', [ 'steal' => true ] );
+        $services = MediaWikiServices::getInstance();
+        $this->wikiPageFactory = $services->getWikiPageFactory();
+    }
 
-			$pageUpdater = $wikiPage->newPageUpdater( $this->user );
+    /* =====================================================================
+     * PAGE CREATION / UPDATE
+     * ===================================================================== */
 
-			// Set content
-			$contentObj = \ContentHandler::makeContent( $content, $title );
-			$pageUpdater->setContent( SlotRecord::MAIN, $contentObj );
+    /**
+     * Create or update a wiki page with new content.
+     *
+     * @param Title  $title
+     * @param string $content Wikitext
+     * @param string $summary Edit summary
+     * @param int    $flags PageUpdater flags
+     *
+     * @return bool
+     */
+    public function createOrUpdatePage(Title $title, string $content, string $summary, int $flags = 0): bool {
+        try {
+            $wikiPage = $this->wikiPageFactory->newFromTitle($title);
+            $updater = $wikiPage->newPageUpdater($this->user);
 
-			// Set edit summary
-			$pageUpdater->saveRevision(
-				CommentStoreComment::newUnsavedComment( $summary ),
+            $contentObj = ContentHandler::makeContent($content, $title);
+            $updater->setContent(SlotRecord::MAIN, $contentObj);
+
+            $revRecord = $updater->saveRevision(
+				CommentStoreComment::newUnsavedComment($summary),
 				$flags
 			);
+			
+			// MW 1.36+: saveRevision() throws on failure and returns RevisionRecord on success.
+			return $revRecord !== null;
+			
 
-			return !$pageUpdater->wasSuccessful() ? false : true;
-		} catch ( \Exception $e ) {
-			wfLogWarning( "StructureSync: Failed to create/update page {$title->getPrefixedText()}: " . $e->getMessage() );
-			return false;
-		}
-	}
+        } catch (\Exception $e) {
+            wfLogWarning("StructureSync: Exception saving '{$title->getPrefixedText()}': " . $e->getMessage());
+            return false;
+        }
+    }
 
-	/**
-	 * Check if a page exists
-	 *
-	 * @param Title $title
-	 * @return bool
-	 */
-	public function pageExists( Title $title ): bool {
-		return $title->exists();
-	}
+    /* =====================================================================
+     * PAGE EXISTENCE & READ
+     * ===================================================================== */
 
-	/**
-	 * Get the content of a page
-	 *
-	 * @param Title $title
-	 * @return string|null Page content or null if page doesn't exist
-	 */
-	public function getPageContent( Title $title ): ?string {
-		if ( !$title->exists() ) {
-			return null;
-		}
+    public function pageExists(Title $title): bool {
+        return $title->exists();
+    }
 
-		$wikiPageFactory = MediaWikiServices::getInstance()->getWikiPageFactory();
-		$wikiPage = $wikiPageFactory->newFromTitle( $title );
-		$content = $wikiPage->getContent();
+    public function getPageContent(Title $title): ?string {
+        if (!$title->exists()) {
+            return null;
+        }
 
-		if ( $content === null ) {
-			return null;
-		}
+        try {
+            $wikiPage = $this->wikiPageFactory->newFromTitle($title);
+            $contentObj = $wikiPage->getContent();
 
-		// Get text from TextContent, otherwise serialize
-		if ( $content instanceof TextContent ) {
-			return $content->getText();
-		}
+            if ($contentObj instanceof TextContent) {
+                return $contentObj->getText();
+            }
 
-		return $content->serialize();
-	}
+            return $contentObj?->serialize() ?? null;
 
-	/**
-	 * Get or create a Title object safely
-	 *
-	 * @param string $titleText
-	 * @param int $namespace
-	 * @return Title|null
-	 */
-	public function makeTitle( string $titleText, int $namespace ): ?Title {
-		try {
-			return Title::makeTitleSafe( $namespace, $titleText );
-		} catch ( \Exception $e ) {
-			wfLogWarning( "StructureSync: Failed to create title for '$titleText': " . $e->getMessage() );
-			return null;
-		}
-	}
+        } catch (\Exception $e) {
+            wfLogWarning("StructureSync: Failed reading page '{$title->getPrefixedText()}': " . $e->getMessage());
+            return null;
+        }
+    }
 
-	/**
-	 * Delete a page
-	 *
-	 * @param Title $title
-	 * @param string $reason Deletion reason
-	 * @return bool True on success
-	 */
-	public function deletePage( Title $title, string $reason ): bool {
-		if ( !$title->exists() ) {
-			return true; // Already deleted
-		}
+    /* =====================================================================
+     * TITLE CREATION
+     * ===================================================================== */
 
-		try {
-			$wikiPageFactory = MediaWikiServices::getInstance()->getWikiPageFactory();
-			$wikiPage = $wikiPageFactory->newFromTitle( $title );
-			$error = '';
-			$status = $wikiPage->doDeleteArticleReal( $reason, $this->user, false, null, $error );
+    /**
+     * Construct a safe Title.
+     */
+    public function makeTitle(string $text, int $namespace): ?Title {
+        $text = trim($text);
+        if ($text === '') {
+            return null;
+        }
 
-			return $status->isOK();
-		} catch ( \Exception $e ) {
-			wfLogWarning( "StructureSync: Failed to delete page {$title->getPrefixedText()}: " . $e->getMessage() );
-			return false;
-		}
-	}
+        try {
+            return Title::makeTitleSafe($namespace, $text);
+        } catch (\Exception $e) {
+            wfLogWarning("StructureSync: Title creation failed for '$text': " . $e->getMessage());
+            return null;
+        }
+    }
 
-	/**
-	 * Update or insert text within markers in page content
-	 *
-	 * @param string $content Current page content
-	 * @param string $newText New text to insert
-	 * @param string $startMarker Start marker (e.g., "<!-- StructureSync Schema Start -->")
-	 * @param string $endMarker End marker (e.g., "<!-- StructureSync Schema End -->")
-	 * @return string Updated content
-	 */
-	public function updateWithinMarkers( string $content, string $newText, string $startMarker, string $endMarker ): string {
-		// Check if markers exist
-		$startPos = strpos( $content, $startMarker );
-		$endPos = strpos( $content, $endMarker );
+    /* =====================================================================
+     * DELETE
+     * ===================================================================== */
 
-		if ( $startPos !== false && $endPos !== false && $endPos > $startPos ) {
-			// Replace content between markers
-			$before = substr( $content, 0, $startPos + strlen( $startMarker ) );
-			$after = substr( $content, $endPos );
-			return $before . "\n" . $newText . "\n" . $after;
-		} else {
-			// Append markers and content
-			if ( !empty( $content ) && substr( $content, -1 ) !== "\n" ) {
-				$content .= "\n";
-			}
-			return $content . "\n" . $startMarker . "\n" . $newText . "\n" . $endMarker . "\n";
-		}
-	}
+    /**
+     * Delete a page if it exists.
+     */
+    public function deletePage(Title $title, string $reason): bool {
+        if (!$title->exists()) {
+            return true;
+        }
+
+        try {
+            $services = MediaWikiServices::getInstance();
+            $deletePage = $services->getDeletePageFactory()->newDeletePage($title);
+
+            $status = $deletePage->deleteUnsafe($reason, $this->user);
+
+            if (!$status->isOK()) {
+                wfLogWarning("StructureSync: Failed deleting '{$title->getPrefixedText()}': " . $status->getMessage(false));
+                return false;
+            }
+
+            return true;
+
+        } catch (\Exception $e) {
+            wfLogWarning("StructureSync: Exception deleting '{$title->getPrefixedText()}': " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /* =====================================================================
+     * MARKER-BASED CONTENT UPDATES
+     * ===================================================================== */
+
+    public function updateWithinMarkers(
+        string $content,
+        string $newText,
+        string $startMarker,
+        string $endMarker
+    ): string {
+
+        $startPos = strpos($content, $startMarker);
+        $endPos   = strpos($content, $endMarker);
+
+        if ($startPos !== false && $endPos !== false && $endPos > $startPos) {
+            $before = substr($content, 0, $startPos + strlen($startMarker));
+            $after  = substr($content, $endPos);
+
+            return rtrim($before) . "\n\n" . trim($newText) . "\n\n" . ltrim($after);
+        }
+
+        // Append markers
+        $out  = rtrim($content) . "\n\n";
+        $out .= $startMarker . "\n";
+        $out .= trim($newText) . "\n";
+        $out .= $endMarker . "\n";
+
+        return $out;
+    }
 }
-

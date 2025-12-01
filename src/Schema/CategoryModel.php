@@ -2,177 +2,147 @@
 
 namespace MediaWiki\Extension\StructureSync\Schema;
 
+use InvalidArgumentException;
+
 /**
- * CategoryModel
- * --------------
- * Immutable value object that represents the *schema-level* definition of a Category,
- * including:
- *   - direct category metadata (label, description)
- *   - direct required & optional properties
- *   - direct display & form configuration
- *   - direct parent list
+ * Immutable schema-level representation of a Category.
  *
- * Immutability Contract:
- * ---------------------
- * Once constructed, this object cannot be modified. All properties are private
- * and only accessible through getters. The mergeWithParent() method returns
- * a NEW instance rather than modifying the existing one.
- * 
- * This object does NOT automatically handle inheritance. InheritanceResolver is
- * responsible for repeatedly calling mergeWithParent() in topological order to
- * produce an "effective" merged CategoryModel.
+ * Canonical schema structure:
  *
- * Inheritance Strategy:
- * --------------------
- * Parent categories are listed in the 'parents' array. The InheritanceResolver
- * uses C3 linearization to determine the correct merge order. Properties from
- * parents are inherited according to these rules:
- * - Required properties remain required unless explicitly made optional
- * - Optional properties are inherited
- * - Display/form configurations are merged (child overrides parent)
- * 
- * Validation:
- * ----------
- * Basic validation is performed in the constructor. Full validation including
- * circular reference detection should be done by InheritanceResolver.
+ *   name: string
+ *   parents: string[]
+ *   label: string
+ *   description: string
+ *   targetNamespace: string|null
  *
- * @psalm-immutable
+ *   properties:
+ *     required: string[]
+ *     optional: string[]
+ *
+ *   subgroups:
+ *     required: string[]
+ *     optional: string[]
+ *
+ *   display:
+ *     header: string[]
+ *     sections: [
+ *        [ 'name' => string, 'properties' => string[] ],
+ *     ]
+ *
+ *   forms:
+ *     sections: [
+ *        [ 'name' => string, 'properties' => string[] ],
+ *     ]
+ *
+ * Fully immutable. No parsing or backward-compatibility.
  */
 class CategoryModel {
 
-    /** @var string Category title (no namespace) */
-    private $name;
+    private string $name;
+    private array $parents;
 
-    /** @var string[] Direct parent categories (no namespace) */
-    private $parents;
+    private string $label;
+    private string $description;
 
-    /** @var string Human-readable label */
-    private $label;
+    private ?string $targetNamespace;
 
-    /** @var string Long-form description */
-    private $description;
+    private array $requiredProperties;
+    private array $optionalProperties;
 
-    /** @var string|null Target namespace for pages created with this category's form */
-    private $targetNamespace;
+    private array $requiredSubgroups;
+    private array $optionalSubgroups;
 
-    /** @var string[] Direct required properties */
-    private $requiredProperties;
+    private array $displayConfig;
+    private array $formConfig;
 
-    /** @var string[] Direct optional properties */
-    private $optionalProperties;
+    /* -------------------------------------------------------------------------
+     * CONSTRUCTOR
+     * ------------------------------------------------------------------------- */
 
-    /** @var string[] Direct required subgroups */
-    private $requiredSubgroups;
+    public function __construct(string $name, array $data = []) {
 
-    /** @var string[] Direct optional subgroups */
-    private $optionalSubgroups;
-
-    /**
-     * @var array Display metadata in schema form:
-     *   [
-     *     'header' => [prop, ...],
-     *     'sections' => [
-     *        [ 'name' => ..., 'properties' => [...] ],
-     *        ...
-     *     ]
-     *   ]
-     */
-    private $displayConfig;
-
-    /**
-     * @var array Form metadata in schema form:
-     *   [
-     *     'sections' => [
-     *        [ 'name' => ..., 'properties' => [...] ],
-     *        ...
-     *     ]
-     *   ]
-     */
-    private $formConfig;
-
-    /**
-     * Constructor
-     * 
-     * Creates an immutable CategoryModel from schema data. Performs basic
-     * validation on the input data structure.
-     *
-     * @param string $name  Category name (no namespace)
-     * @param array  $data  Parsed schema array for this category
-     * @throws \InvalidArgumentException If name is empty or contains invalid characters
-     */
-    public function __construct( string $name, array $data = [] ) {
-        
-        // Validate name
         $name = trim($name);
         if ($name === '') {
-            throw new \InvalidArgumentException('Category name cannot be empty');
+            throw new InvalidArgumentException("Category name cannot be empty.");
         }
-        
-        // Basic validation for obviously invalid characters
         if (preg_match('/[<>{}|#]/', $name)) {
-            throw new \InvalidArgumentException("Category name '$name' contains invalid characters");
+            throw new InvalidArgumentException("Category '{$name}' contains invalid characters.");
         }
-
         $this->name = $name;
 
-        $this->parents = self::normalizeList(
-            $data['parents'] ?? []
-        );
-        
-        // Validate parent names (basic check)
-        foreach ($this->parents as $parent) {
-            if (trim($parent) === '') {
-                throw new \InvalidArgumentException("Category '$name' has empty parent name");
-            }
-            if ($parent === $name) {
-                throw new \InvalidArgumentException("Category '$name' cannot be its own parent");
+        /* -------------------- Parents -------------------- */
+
+        $this->parents = self::normalizeList($data['parents'] ?? []);
+        foreach ($this->parents as $p) {
+            if ($p === $name) {
+                throw new InvalidArgumentException("Category '{$name}' cannot be its own parent.");
             }
         }
 
-        $this->label = !empty( $data['label'] ) ? (string)$data['label'] : $name;
-        $this->description = isset($data['description']) ? (string)$data['description'] : '';
-        $this->targetNamespace = isset($data['targetNamespace']) && trim($data['targetNamespace']) !== '' 
-            ? trim($data['targetNamespace']) 
-            : null;
+        /* -------------------- Metadata -------------------- */
 
-        $this->requiredProperties = self::normalizeList(
-            $data['properties']['required'] ?? []
-        );
+        $this->label = (string)($data['label'] ?? $name);
+        $this->description = (string)($data['description'] ?? '');
 
-        $this->optionalProperties = self::normalizeList(
-            $data['properties']['optional'] ?? []
-        );
-        
-        $this->requiredSubgroups = self::normalizeList(
-            $data['subgroups']['required'] ?? []
-        );
+        $ns = $data['targetNamespace'] ?? null;
+        $this->targetNamespace = ($ns !== null && trim($ns) !== '') ? trim($ns) : null;
 
-        $this->optionalSubgroups = self::normalizeList(
-            $data['subgroups']['optional'] ?? []
-        );
-        
-        // Check for properties that are both required and optional
-        $duplicates = array_intersect($this->requiredProperties, $this->optionalProperties);
-        if (!empty($duplicates)) {
-            throw new \InvalidArgumentException(
-                "Category '$name' has properties in both required and optional lists: " . implode(', ', $duplicates)
+        /* -------------------- Properties -------------------- */
+
+        $props = $data['properties'] ?? [];
+        if (!is_array($props)) {
+            throw new InvalidArgumentException("Category '{$name}': 'properties' must be an array.");
+        }
+
+        $this->requiredProperties = self::normalizeList($props['required'] ?? []);
+        $this->optionalProperties = self::normalizeList($props['optional'] ?? []);
+
+        $dup = array_intersect($this->requiredProperties, $this->optionalProperties);
+        if ($dup !== []) {
+            throw new InvalidArgumentException(
+                "Category '{$name}' has properties listed as both required and optional: " .
+                implode(', ', $dup)
             );
         }
 
-        $subgroupOverlap = array_intersect($this->requiredSubgroups, $this->optionalSubgroups);
-        if (!empty($subgroupOverlap)) {
-            throw new \InvalidArgumentException(
-                "Category '$name' has subgroups in both required and optional lists: " . implode(', ', $subgroupOverlap)
+        /* -------------------- Subgroups -------------------- */
+
+        $subs = $data['subgroups'] ?? [];
+        if (!is_array($subs)) {
+            throw new InvalidArgumentException("Category '{$name}': 'subgroups' must be an array.");
+        }
+
+        $this->requiredSubgroups = self::normalizeList($subs['required'] ?? []);
+        $this->optionalSubgroups = self::normalizeList($subs['optional'] ?? []);
+
+        $dupSG = array_intersect($this->requiredSubgroups, $this->optionalSubgroups);
+        if ($dupSG !== []) {
+            throw new InvalidArgumentException(
+                "Category '{$name}' has subgroups listed as both required and optional: " .
+                implode(', ', $dupSG)
             );
         }
 
-        $this->displayConfig = $data['display'] ?? [];
-        $this->formConfig = $data['forms'] ?? [];
+        /* -------------------- Display Config -------------------- */
+
+        $display = $data['display'] ?? [];
+        if (!is_array($display)) {
+            throw new InvalidArgumentException("Category '{$name}': 'display' must be an array.");
+        }
+        $this->displayConfig = $display;
+
+        /* -------------------- Form Config -------------------- */
+
+        $forms = $data['forms'] ?? [];
+        if (!is_array($forms)) {
+            throw new InvalidArgumentException("Category '{$name}': 'forms' must be an array.");
+        }
+        $this->formConfig = $forms;
     }
 
-    /* =======================================================================
-     * BASIC ACCESSORS
-     * ======================================================================= */
+    /* -------------------------------------------------------------------------
+     * ACCESSORS (read-only)
+     * ------------------------------------------------------------------------- */
 
     public function getName(): string {
         return $this->name;
@@ -183,8 +153,7 @@ class CategoryModel {
     }
 
     public function getLabel(): string {
-        // Ensure label is never empty - fallback to name if somehow empty
-        return !empty( $this->label ) ? (string)$this->label : $this->name;
+        return $this->label !== '' ? $this->label : $this->name;
     }
 
     public function getDescription(): string {
@@ -195,48 +164,40 @@ class CategoryModel {
         return $this->targetNamespace;
     }
 
-    /** @return string[] Direct required properties */
+    /* -------------------- Properties -------------------- */
+
     public function getRequiredProperties(): array {
         return $this->requiredProperties;
     }
 
-    /** @return string[] Direct optional properties */
     public function getOptionalProperties(): array {
         return $this->optionalProperties;
     }
 
-    /**
-     * @return string[] Direct required + optional
-     * DO NOT USE THIS FOR FORM GENERATION.
-     */
     public function getAllProperties(): array {
-        return array_values(
-            array_unique(
-                array_merge( $this->requiredProperties, $this->optionalProperties )
-            )
-        );
+        return array_values(array_unique(
+            array_merge($this->requiredProperties, $this->optionalProperties)
+        ));
     }
 
-    public function getDisplayConfig(): array {
-        return $this->displayConfig;
-    }
+    /* -------------------- Subgroups -------------------- */
 
-    public function getFormConfig(): array {
-        return $this->formConfig;
-    }
-
-    /** @return string[] Direct required subgroups */
     public function getRequiredSubgroups(): array {
         return $this->requiredSubgroups;
     }
 
-    /** @return string[] Direct optional subgroups */
     public function getOptionalSubgroups(): array {
         return $this->optionalSubgroups;
     }
 
     public function hasSubgroups(): bool {
-        return !empty( $this->requiredSubgroups ) || !empty( $this->optionalSubgroups );
+        return $this->requiredSubgroups !== [] || $this->optionalSubgroups !== [];
+    }
+
+    /* -------------------- Display + Forms -------------------- */
+
+    public function getDisplayConfig(): array {
+        return $this->displayConfig;
     }
 
     public function getDisplayHeaderProperties(): array {
@@ -247,28 +208,168 @@ class CategoryModel {
         return $this->displayConfig['sections'] ?? [];
     }
 
+    public function getFormConfig(): array {
+        return $this->formConfig;
+    }
+
     public function getFormSections(): array {
         return $this->formConfig['sections'] ?? [];
     }
 
-    public function hasParent( string $parentName ): bool {
-        return in_array( $parentName, $this->parents, true );
+    /* -------------------------------------------------------------------------
+     * MERGING (CATEGORY + PARENT)
+     * ------------------------------------------------------------------------- */
+
+    public function mergeWithParent(CategoryModel $parent): CategoryModel {
+
+        /* -------------------- Properties -------------------- */
+
+        $mergedRequired = array_values(array_unique(array_merge(
+            $parent->getRequiredProperties(),
+            $this->requiredProperties
+        )));
+
+        $mergedOptional = array_values(array_diff(
+            array_unique(array_merge(
+                $parent->getOptionalProperties(),
+                $this->optionalProperties
+            )),
+            $mergedRequired
+        ));
+
+        /* -------------------- Subgroups -------------------- */
+
+        $mergedRequiredSG = array_values(array_unique(array_merge(
+            $parent->getRequiredSubgroups(),
+            $this->requiredSubgroups
+        )));
+
+        $mergedOptionalSG = array_values(array_diff(
+            array_unique(array_merge(
+                $parent->getOptionalSubgroups(),
+                $this->optionalSubgroups
+            )),
+            $mergedRequiredSG
+        ));
+
+        /* -------------------- Display -------------------- */
+
+        $mergedDisplay = self::mergeDisplayConfigs(
+            $parent->getDisplayConfig(),
+            $this->displayConfig
+        );
+
+        /* -------------------- Forms -------------------- */
+
+        $mergedForms = self::mergeFormConfigs(
+            $parent->getFormConfig(),
+            $this->formConfig
+        );
+
+        /* -------------------- New CategoryModel -------------------- */
+
+        return new self(
+            $this->name,
+            [
+                'parents' => $this->parents,
+                'label' => $this->label,
+                'description' => $this->description,
+                'targetNamespace' => $this->targetNamespace,
+                'properties' => [
+                    'required' => $mergedRequired,
+                    'optional' => $mergedOptional,
+                ],
+                'subgroups' => [
+                    'required' => $mergedRequiredSG,
+                    'optional' => $mergedOptionalSG,
+                ],
+                'display' => $mergedDisplay,
+                'forms' => $mergedForms,
+            ]
+        );
     }
 
-    public function isPropertyRequired( string $propertyName ): bool {
-        return in_array( $propertyName, $this->requiredProperties, true );
+    /* -------------------------------------------------------------------------
+     * MERGE HELPERS
+     * ------------------------------------------------------------------------- */
+
+    private static function mergeDisplayConfigs(array $parent, array $child): array {
+        if ($parent === []) {
+            return $child;
+        }
+        if ($child === []) {
+            return $parent;
+        }
+
+        $merged = $parent;
+
+        if (isset($child['header'])) {
+            $merged['header'] = self::normalizeList($child['header']);
+        }
+
+        if (isset($child['sections'])) {
+            $mergedSections = $parent['sections'] ?? [];
+
+            foreach ($child['sections'] as $c) {
+                $found = false;
+
+                foreach ($mergedSections as &$m) {
+                    if (($m['name'] ?? null) === ($c['name'] ?? null)) {
+                        $m = $c;
+                        $found = true;
+                        break;
+                    }
+                }
+
+                if (!$found) {
+                    $mergedSections[] = $c;
+                }
+            }
+
+            $merged['sections'] = $mergedSections;
+        }
+
+        return $merged;
     }
 
-    public function isPropertyOptional( string $propertyName ): bool {
-        return in_array( $propertyName, $this->optionalProperties, true );
+    private static function mergeFormConfigs(array $parent, array $child): array {
+        if ($parent === []) {
+            return $child;
+        }
+        if ($child === []) {
+            return $parent;
+        }
+
+        $merged = $parent;
+
+        if (isset($child['sections'])) {
+            $merged['sections'] = $child['sections'];
+        }
+
+        return $merged;
     }
 
-    /* =======================================================================
-     * SCHEMA EXPORT
-     * ======================================================================= */
+    /* -------------------------------------------------------------------------
+     * UTILITIES
+     * ------------------------------------------------------------------------- */
+
+    private static function normalizeList(array $list): array {
+        $out = [];
+        foreach ($list as $v) {
+            $v = trim((string)$v);
+            if ($v !== '' && !in_array($v, $out, true)) {
+                $out[] = $v;
+            }
+        }
+        return $out;
+    }
+
+    /* -------------------------------------------------------------------------
+     * EXPORT
+     * ------------------------------------------------------------------------- */
 
     public function toArray(): array {
-        $data = [
+        $out = [
             'parents' => $this->parents,
             'label' => $this->label,
             'description' => $this->description,
@@ -278,228 +379,25 @@ class CategoryModel {
             ],
         ];
 
-        if ( $this->hasSubgroups() ) {
-            $data['subgroups'] = [
+        if ($this->hasSubgroups()) {
+            $out['subgroups'] = [
                 'required' => $this->requiredSubgroups,
                 'optional' => $this->optionalSubgroups,
             ];
         }
 
-        if ( !empty( $this->displayConfig ) ) {
-            $data['display'] = $this->displayConfig;
+        if ($this->displayConfig !== []) {
+            $out['display'] = $this->displayConfig;
         }
 
-        if ( !empty( $this->formConfig ) ) {
-            $data['forms'] = $this->formConfig;
+        if ($this->formConfig !== []) {
+            $out['forms'] = $this->formConfig;
         }
 
-        return $data;
-    }
-
-    /* =======================================================================
-     * INHERITANCE MERGING
-     * ======================================================================= */
-
-    /**
-     * Merge this CategoryModel with a parent's CategoryModel.
-     * 
-     * This method creates a NEW CategoryModel that combines properties from
-     * both the parent and child. The child's settings take precedence where
-     * there are conflicts (child override pattern).
-     * 
-     * Merge Behavior by Field:
-     * ------------------------
-     * 
-     * Required Properties:
-     *   - Union of parent.required + child.required
-     *   - Once a property is required by any ancestor, it stays required
-     *   - Child CANNOT demote a parent's required property to optional
-     *   - Rationale: Child should satisfy parent's constraints
-     * 
-     * Optional Properties:
-     *   - Union of parent.optional + child.optional
-     *   - MINUS any properties that are in merged required list
-     *   - If child makes an optional property required, it moves to required
-     * 
-     * Display Config:
-     *   - Sections with same name are merged (child properties appended)
-     *   - New sections from child are added
-     *   - Child header overrides parent header
-     * 
-     * Form Config:
-     *   - Child completely overrides parent if child has form config
-     *   - Otherwise parent form config is inherited as-is
-     * 
-     * Metadata:
-     *   - Name, label, description, parents from THIS (child) category
-     *   - Parent's metadata is not inherited
-     * 
-     * Example:
-     *   Parent: required=[A,B], optional=[C]
-     *   Child:  required=[B,D], optional=[E]
-     *   Result: required=[A,B,D], optional=[C,E]
-     *
-     * @param CategoryModel $parent Parent category to merge from
-     * @return CategoryModel New merged model (this object is unchanged)
-     */
-    public function mergeWithParent( CategoryModel $parent ): CategoryModel {
-
-        // 1. Merge required properties:
-        // If any ancestor required a property, it remains required UNLESS the
-        // child explicitly marked it optional (child override).
-        $mergedRequired = array_unique(
-            array_merge(
-                $parent->getRequiredProperties(),
-                $this->requiredProperties
-            )
-        );
-
-        // 2. Merge optional properties:
-        // union of parent + child optional, EXCEPT anything marked required.
-        $mergedOptional = array_unique(
-            array_merge(
-                $parent->getOptionalProperties(),
-                $this->optionalProperties
-            )
-        );
-        $mergedOptional = array_values(
-            array_diff( $mergedOptional, $mergedRequired )
-        );
-
-        // 2a. Merge subgroup requirements similar to property rules
-        $mergedRequiredSubgroups = array_unique(
-            array_merge(
-                $parent->getRequiredSubgroups(),
-                $this->requiredSubgroups
-            )
-        );
-
-        $mergedOptionalSubgroups = array_unique(
-            array_merge(
-                $parent->getOptionalSubgroups(),
-                $this->optionalSubgroups
-            )
-        );
-        $mergedOptionalSubgroups = array_values(
-            array_diff( $mergedOptionalSubgroups, $mergedRequiredSubgroups )
-        );
-
-        // 3. Merge display config
-        $mergedDisplay = self::mergeDisplayConfigs(
-            $parent->getDisplayConfig(),
-            $this->displayConfig
-        );
-
-        // 4. Merge form config
-        $mergedForm = self::mergeFormConfigs(
-            $parent->getFormConfig(),
-            $this->formConfig
-        );
-
-        return new self( $this->name, [
-            'parents' => $this->parents,
-            'label' => $this->label,
-            'description' => $this->description,
-            'properties' => [
-                'required' => array_values( $mergedRequired ),
-                'optional' => array_values( $mergedOptional ),
-            ],
-            'subgroups' => [
-                'required' => array_values( $mergedRequiredSubgroups ),
-                'optional' => array_values( $mergedOptionalSubgroups ),
-            ],
-            'display' => $mergedDisplay,
-            'forms' => $mergedForm,
-        ] );
-    }
-
-    /* =======================================================================
-     * CONFIG MERGING HELPERS
-     * ======================================================================= */
-
-    /**
-     * Merge parent + child display configs.
-     * Child overrides on header and section name collisions.
-     */
-    private static function mergeDisplayConfigs( array $parent, array $child ): array {
-        if ( empty( $parent ) ) {
-            return $child;
-        }
-        if ( empty( $child ) ) {
-            return $parent;
+        if ($this->targetNamespace !== null) {
+            $out['targetNamespace'] = $this->targetNamespace;
         }
 
-        $merged = $parent;
-
-        // Merge header
-        if ( isset( $child['header'] ) ) {
-            $merged['header'] = self::normalizeList( $child['header'] );
-        }
-
-        // Merge sections
-        if ( isset( $child['sections'] ) ) {
-            $mergedSections = $parent['sections'] ?? [];
-            foreach ( $child['sections'] as $childSection ) {
-                $found = false;
-                foreach ( $mergedSections as &$section ) {
-                    if ( $section['name'] === $childSection['name'] ) {
-                        // override parent
-                        $section = $childSection;
-                        $found = true;
-                        break;
-                    }
-                }
-                if ( !$found ) {
-                    // append
-                    $mergedSections[] = $childSection;
-                }
-            }
-            $merged['sections'] = $mergedSections;
-        }
-
-        return $merged;
-    }
-
-    /**
-     * Merge parent + child form configs.
-     * Child takes precedence.
-     */
-    private static function mergeFormConfigs( array $parent, array $child ): array {
-        if ( empty( $parent ) ) {
-            return $child;
-        }
-        if ( empty( $child ) ) {
-            return $parent;
-        }
-
-        $merged = $parent;
-
-        if ( isset( $child['sections'] ) ) {
-            $merged['sections'] = $child['sections'];
-        }
-
-        return $merged;
-    }
-
-    /* =======================================================================
-     * UTILITIES
-     * ======================================================================= */
-
-    /**
-     * Normalize a list of strings:
-     * - trim whitespace
-     * - remove empty entries
-     * - remove duplicates
-     * - preserve order of appearance
-     */
-    private static function normalizeList( array $list ): array {
-        $clean = [];
-        foreach ( $list as $value ) {
-            $v = trim( (string)$value );
-            if ( $v !== '' && !in_array( $v, $clean, true ) ) {
-                $clean[] = $v;
-            }
-        }
-        return $clean;
+        return $out;
     }
 }

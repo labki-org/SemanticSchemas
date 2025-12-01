@@ -5,261 +5,196 @@ namespace MediaWiki\Extension\StructureSync\Generator;
 use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
 
 /**
- * PropertyInputMapper
- * --------------------
- * Converts SMW property metadata into PageForms input definitions.
- * 
- * This class encapsulates the complex logic of mapping Semantic MediaWiki
- * property types and constraints to PageForms input field types and parameters.
- * 
- * Mapping Priority (highest to lowest):
- * 1. Multiple values → tokens (with |multiple flag)
- * 2. Allowed values (enum) → dropdown
- * 3. Autocomplete sources (category/namespace) → combobox
- * 4. Page type with range restriction → combobox
- * 5. SMW datatype mapping → various input types
+ * PropertyInputMapper (Improved 2025)
+ * -----------------------------------
+ * Converts SMW property constraints → PageForms input definitions.
  *
- * Responsibilities:
- *   - Map SMW datatype → PageForms input type
- *   - Add PageForms parameters (values, size, ranges, etc.)
- *   - Produce syntactically valid PF input strings
- *   - Support required/optional fields based on CategoryModel requirements
- * 
- * PageForms Compatibility:
- *   - Tested with PageForms 5.3+
- *   - Uses standard PF input types (text, dropdown, combobox, datepicker, etc.)
- *   - Follows PF parameter syntax conventions
+ * Feature priorities:
+ *   1. Allows multiple values → tokens
+ *   2. Allowed values (enum) → dropdown
+ *   3. Autocomplete source → combobox
+ *   4. Page-type property → combobox
+ *   5. SMW datatype fallback → (text, number, checkbox, datepicker, textarea)
+ *
+ * Produces PageForms definitions suitable for:
+ *   {{{field|MyField|property=Has something|input type=dropdown|values=A,B}}}
  */
 class PropertyInputMapper {
 
     /* =====================================================================
-     * PageForms INPUT TYPE RESOLUTION
+     * MAPPING: SMW Datatype → Default PageForms Input Type
+     * ===================================================================== */
+
+    /** @var array<string,string> */
+    private static array $datatypeMap = [
+        'Text'                  => 'text',
+        'URL'                   => 'text',
+        'Email'                 => 'text',
+        'Telephone number'      => 'text',
+        'Number'                => 'number',
+        'Quantity'              => 'text',       // Could later allow min/max
+        'Temperature'           => 'number',
+        'Date'                  => 'datepicker',
+        'Boolean'               => 'checkbox',
+        'Code'                  => 'textarea',
+        'Geographic coordinate' => 'text',
+    ];
+
+    /* =====================================================================
+     * HIGH-LEVEL INPUT TYPE LOGIC
      * ===================================================================== */
 
     /**
-     * Determine PageForms input type for a given property.
-     * 
-     * The selection logic follows a priority order:
-     * 1. If property allows multiple values → tokens (highest priority, supports autocomplete)
-     * 2. If property has allowed values → dropdown
-     * 3. If property has autocomplete source → combobox
-     * 4. If property is Page type → combobox
-     * 5. Otherwise → map by SMW datatype
-     * 
-     * Examples:
-     *   - Text property → text input
-     *   - Number property → number input
-     *   - Date property → datepicker
-     *   - Boolean property → checkbox
-     *   - Property with allowed values ["A", "B", "C"] → dropdown
-     *   - Page property with category range → combobox with autocomplete
-     *   - Property with [[Allows multiple values::true]] → tokens with |multiple flag
-     *
-     * @param PropertyModel $property Property to map
-     * @return string PageForms input type (e.g., 'text', 'dropdown', 'combobox', 'tokens')
+     * Resolve the PageForms input type in strict priority order.
      */
     public function getInputType( PropertyModel $property ): string {
 
-        $datatype = $property->getDatatype();
-
-        // Hard mapping based on SMW datatypes
-        static $map = [
-            'Text'                  => 'text',
-            'URL'                   => 'text',
-            'Email'                 => 'text',
-            'Telephone number'      => 'text',
-            'Number'                => 'number',
-            'Quantity'              => 'text',  // Could convert to number later
-            'Temperature'           => 'number',
-            'Date'                  => 'datepicker',
-            'Boolean'               => 'checkbox',
-            'Code'                  => 'textarea',
-            'Geographic coordinate' => 'text',
-        ];
-
-        // Special cases override defaults
-        // Priority order: multiple values → enum values → autocomplete sources → Page-type → defaults
-
-        // 0. Multiple values (highest priority)
-        // Use 'tokens' input type for properties that allow multiple values
-        // Note: 'tokens' supports autocomplete and is compatible with dropdown values
+        // (1) Multiple values → tokens
         if ( $property->allowsMultipleValues() ) {
             return 'tokens';
         }
 
-        // 1. Dropdown enum
+        // (2) Enum values → dropdown
         if ( $property->hasAllowedValues() ) {
             return 'dropdown';
         }
 
-        // 2. Autocomplete from category/namespace
+        // (3) Autocomplete source → combobox
         if ( $property->shouldAutocomplete() ) {
             return 'combobox';
         }
 
-        // 3. Page-type reference (lookup/autocomplete)
+        // (4) Page-type property → combobox
         if ( $property->isPageType() ) {
-
-            // If restricted to a category (range), use "combobox"
-            if ( $property->getRangeCategory() !== null ) {
-                return 'combobox';
-            }
-
-            // Else, still a Page → PageForms combobox
             return 'combobox';
         }
 
-        // 4. Fallback to datatype mapping
-        return $map[$datatype] ?? 'text';
+        // (5) Fallback to datatype mapping
+        $datatype = $property->getDatatype();
+        return self::$datatypeMap[$datatype] ?? 'text';
     }
 
     /* =====================================================================
-     * ADDITIONAL INPUT PARAMETERS
+     * PARAMETER LOGIC
      * ===================================================================== */
 
     /**
-     * Return PageForms input parameters for the property (except mandatory).
-     * 
-     * Generates the parameter string that goes after "input type=" in PageForms syntax.
-     * Parameters are property-specific and depend on the datatype and constraints.
-     * 
-     * Common parameters:
-     * - multiple: Boolean flag for properties that allow multiple values (no value needed)
-     * - size: Width of text inputs (default: 60)
-     * - rows/cols: Dimensions for textarea
-     * - values: Comma-separated list for dropdown/checkboxes
-     * - values from category: Source for autocomplete
-     * - values from namespace: Source for autocomplete
-     * - autocomplete: Enable autocomplete (on/off)
-     * 
-     * The mandatory parameter is handled separately in generateInputDefinition().
+     * Optional parameters for PageForms input types.
      *
-     * @param PropertyModel $property Property to generate parameters for
-     * @return array<string,string> Map of parameter name => value
+     * Returns key/value pairs where values may be empty strings for boolean flags:
+     *   - multiple=""
+     *   - autocomplete="on"
+     *   - values="A,B,C"
+     *   - rows="10"
      */
     public function getInputParameters( PropertyModel $property ): array {
 
         $params = [];
         $datatype = $property->getDatatype();
 
-        /* ------------------------------------------------------------------
+        /* -------------------------------------------
          * MULTIPLE VALUES
-         * When a property allows multiple values, we need the |multiple flag
-         * ------------------------------------------------------------------ */
+         * ------------------------------------------- */
         if ( $property->allowsMultipleValues() ) {
-            $params['multiple'] = '';  // PageForms uses |multiple (no value needed)
+            $params['multiple'] = '';
         }
 
-        /* ------------------------------------------------------------------
-         * TEXT-LIKE FIELDS
-         * ------------------------------------------------------------------ */
-        if ( in_array( $datatype, [ 'Text', 'Email', 'URL', 'Telephone number' ] ) ) {
+        /* -------------------------------------------
+         * ENUMERATED VALUES (dropdown/categorized lists)
+         * ------------------------------------------- */
+        if ( $property->hasAllowedValues() ) {
+            $clean = array_map( static fn( $v ) => trim( (string)$v ), $property->getAllowedValues() );
+            $clean = array_filter( $clean, static fn( $v ) => $v !== '' );
+            $params['values'] = implode( ',', $clean );
+            return $params; // Enum overrides all other behaviors
+        }
+
+        /* -------------------------------------------
+         * AUTOCOMPLETE SOURCES
+         * ------------------------------------------- */
+        if ( $property->shouldAutocomplete() ) {
+
+            if ( $property->getAllowedCategory() !== null ) {
+                $params['values from category'] = $property->getAllowedCategory();
+                $params['autocomplete'] = 'on';
+                return $params;
+            }
+
+            if ( $property->getAllowedNamespace() !== null ) {
+                $params['values from namespace'] = $property->getAllowedNamespace();
+                $params['autocomplete'] = 'on';
+                return $params;
+            }
+        }
+
+        /* -------------------------------------------
+         * PAGE TYPE with range restriction
+         * ------------------------------------------- */
+        if ( $property->isPageType() && $property->getRangeCategory() !== null ) {
+            $params['values from category'] = $property->getRangeCategory();
+            $params['autocomplete'] = 'on';
+        }
+
+        /* -------------------------------------------
+         * BASIC TEXT FIELDS
+         * ------------------------------------------- */
+        if ( in_array( $datatype, [ 'Text', 'Email', 'URL', 'Telephone number' ], true ) ) {
             $params['size'] = '60';
         }
 
-        /* ------------------------------------------------------------------
-         * TEXTAREA (code blocks)
-         * ------------------------------------------------------------------ */
+        /* -------------------------------------------
+         * TEXTAREA
+         * ------------------------------------------- */
         if ( $datatype === 'Code' ) {
             $params['rows'] = '10';
             $params['cols'] = '80';
         }
 
-        /* ------------------------------------------------------------------
-         * ENUMERATED VALUES (highest priority)
-         * ------------------------------------------------------------------ */
-        if ( $property->hasAllowedValues() ) {
-            // PageForms expects comma-separated list with NO SPACES
-            $params['values'] = implode( ',', array_map( 'trim', $property->getAllowedValues() ) );
-        }
-
-        /* ------------------------------------------------------------------
-         * AUTOCOMPLETE SOURCES (category/namespace)
-         * ------------------------------------------------------------------ */
-        elseif ( $property->shouldAutocomplete() ) {
-            // Autocomplete from category
-            if ( $property->getAllowedCategory() !== null ) {
-                $params['values from category'] = $property->getAllowedCategory();
-                $params['autocomplete'] = 'on';
-            }
-            // Autocomplete from namespace
-            elseif ( $property->getAllowedNamespace() !== null ) {
-                $params['values from namespace'] = $property->getAllowedNamespace();
-                $params['autocomplete'] = 'on';
-            }
-        }
-
-        /* ------------------------------------------------------------------
-         * PAGE / COMBOBOX LOOKUPS (Page-type with rangeCategory)
-         * ------------------------------------------------------------------ */
-        elseif ( $property->isPageType() && $property->getRangeCategory() !== null ) {
-            $params['values from category'] = $property->getRangeCategory();
-            $params['autocomplete'] = 'on';
-        }
-
-        /* ------------------------------------------------------------------
-         * BOOLEAN OVERRIDES
-         * ------------------------------------------------------------------ */
-        if ( $datatype === 'Boolean' ) {
-            // No additional params needed; PF checkbox is simple
-        }
+        /* -------------------------------------------
+         * BOOLEAN (checkbox) needs no parameters
+         * ------------------------------------------- */
 
         return $params;
     }
 
     /* =====================================================================
-     * GENERATE INPUT STRING
+     * FINAL STRING ASSEMBLY
      * ===================================================================== */
 
     /**
-     * Build the PageForms input definition string.
-     * 
-     * Combines the input type and all parameters into a complete PageForms
-     * input definition string suitable for use in {{{field}}} tags.
-     * 
-     * Output format: "input type=<type>|param1=value1|param2=value2|..."
-     * 
-     * Example outputs:
-     * - "input type=text|size=60"
-     * - "input type=dropdown|values=A,B,C|mandatory=true"
-     * - "input type=combobox|values from category=Department|autocomplete=on"
-     * - "input type=tokens|multiple|values from category=Person|autocomplete=on"
-     * 
-     * The mandatory parameter is only added for required fields to avoid
-     * PageForms validation on optional fields.
-     *
-     * @param PropertyModel $property Property to generate definition for
-     * @param bool $isMandatory Whether the category requires this property
-     * @return string PageForms input definition (without surrounding {{{field}}} tags)
+     * Build the PageForms "input type=..." string.
      */
-    public function generateInputDefinition( PropertyModel $property, bool $isMandatory = false ): string {
+    public function generateInputDefinition(
+        PropertyModel $property,
+        bool $isMandatory = false
+    ): string {
 
         $inputType = $this->getInputType( $property );
-        $params = $this->getInputParameters( $property );
+        $params    = $this->getInputParameters( $property );
 
-        // Only set mandatory parameter if field is required
-        // For optional fields, omit the parameter entirely
+        // Only required fields get mandatory validation
         if ( $isMandatory ) {
             $params['mandatory'] = 'true';
         }
 
-        // Build "key=value" segments
-        $paramText = '';
+        // Assemble "|key=value" or "|key" for boolean flags
+        $segments = [];
         foreach ( $params as $key => $value ) {
-            // Handle boolean flags (no value needed, e.g., |multiple)
+
             if ( $value === '' ) {
-                $paramText .= "|$key";
+                // Boolean PF parameters: |multiple
+                $segments[] = $key;
                 continue;
             }
-            
-            // Skip null parameters
+
             if ( $value === null ) {
                 continue;
             }
-            
-            $paramText .= "|$key=$value";
+
+            $segments[] = $key . '=' . $value;
         }
 
-        return "input type=$inputType$paramText";
+        return 'input type=' . $inputType
+            . ( empty($segments) ? '' : '|' . implode( '|', $segments ) );
     }
 }

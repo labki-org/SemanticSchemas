@@ -3,597 +3,352 @@
 namespace MediaWiki\Extension\StructureSync\Generator;
 
 use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
-use MediaWiki\Extension\StructureSync\Store\PageCreator;
 use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
-use MediaWiki\Extension\StructureSync\Util\NamingHelper;
-use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
 use MediaWiki\Extension\StructureSync\Schema\SubobjectModel;
+use MediaWiki\Extension\StructureSync\Store\PageCreator;
+use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
+use MediaWiki\Extension\StructureSync\Util\NamingHelper;
 
 /**
- * TemplateGenerator
- * -----------------
- * Generates two types of templates for each category:
- *   - Semantic templates   → Template:<Category>/semantic
- *   - Dispatcher templates → Template:<Category>
+ * TemplateGenerator (Rewritten 2025)
+ * ----------------------------------
  *
- * Template Naming Conventions:
- * - Semantic: "Template:<CategoryName>/semantic"
- *   Stores SMW property values using {{#set:...}}
- * - Dispatcher: "Template:<CategoryName>"
- *   Coordinates semantic storage and display rendering
- *   Sets default form with {{#default_form:...}}
- * 
- * Architecture:
- * The three-template system (dispatcher, semantic, display) provides:
- * 1. Clean separation of concerns (data vs presentation)
- * 2. Allows display templates to be user-editable
- * 3. Enables automatic regeneration without breaking customizations
- * 
- * Template Flow:
- * Page → Dispatcher → Semantic (stores data) + Display (renders view)
- * 
- * Semantic templates store SMW data using #set.
- * Dispatcher templates wrap semantic + display templates.
+ * Generates:
+ *   - Semantic template: Template:<Category>/semantic
+ *   - Dispatcher template: Template:<Category>
+ *   - Subobject semantic templates: Template:Subobject/<Name>
+ *   - Subobject row templates:      Template:Subobject/<Name>/row
+ *
+ * The rewritten architecture fully matches the rewritten FormGenerator and new
+ * StructureSync Subobject model:
+ *
+ *   - Subobject templates are global: Template:Subobject/<Name>
+ *   - Category templates are not polluted with subobject helpers
+ *   - Display template Template:<Category>/display is user-editable and untouched
+ *   - Dispatcher coordinates three actions:
+ *       * #default_form
+ *       * semantic storage
+ *       * display rendering
+ *       * subobject table sections
  */
-class TemplateGenerator
-{
+class TemplateGenerator {
 
-    /** @var PageCreator */
-    private $pageCreator;
+    private PageCreator $pageCreator;
+    private WikiSubobjectStore $subobjectStore;
 
-    /** @var WikiSubobjectStore */
-    private $subobjectStore;
-
-    /**
-     * @param PageCreator|null $pageCreator
-     * @param WikiSubobjectStore|null $subobjectStore
-     */
-    public function __construct(PageCreator $pageCreator = null, WikiSubobjectStore $subobjectStore = null)
-    {
-        $this->pageCreator = $pageCreator ?? new PageCreator();
-        $this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
+    public function __construct(
+        PageCreator $pageCreator = null,
+        WikiSubobjectStore $subobjectStore = null
+    ) {
+        $this->pageCreator     = $pageCreator     ?? new PageCreator();
+        $this->subobjectStore  = $subobjectStore  ?? new WikiSubobjectStore();
     }
 
-    /**
-     * Sanitize a value to ensure MediaWiki never encounters null.
-     *
-     * @param string|null $value
-     * @return string
-     */
-    private function sanitize(?string $value): string
-    {
-        return $value ?? '';
+    private function s(?string $v): string {
+        return $v ?? '';
     }
 
     /* =====================================================================
-     * SEMANTIC TEMPLATE
+     * SEMANTIC TEMPLATE  (Template:<Category>/semantic)
      * ===================================================================== */
 
-    /**
-     * Generate semantic template wikitext for a category.
-     * 
-     * Creates a template that stores all property values using SMW's {{#set:}}
-     * parser function. Each property gets a parameter that maps to the SMW property.
-     *
-     * Output location:
-     *   Template:<Category>/semantic
-     * 
-     * Generated structure:
-     * - Noinclude header with metadata
-     * - {{#set:...}} block with all properties
-     * - Category annotation
-     *
-     * @param CategoryModel $category Effective (inherited) category
-     * @return string Wikitext content for semantic template
-     * @throws \InvalidArgumentException If category name is empty
-     */
-    public function generateSemanticTemplate(CategoryModel $category): string
-    {
-        if (trim($category->getName()) === '') {
-            throw new \InvalidArgumentException('Category name cannot be empty');
+    public function generateSemanticTemplate( CategoryModel $category ): string {
+
+        $name = trim( $category->getName() );
+        if ($name === '') {
+            throw new \InvalidArgumentException("Category name cannot be empty");
         }
 
-        $properties = $category->getAllProperties();
-        
-        // Note: Empty properties is valid - category might be purely organizational
-        // or inherit all properties from parents
-        
-        sort($properties); // Deterministic output
+        $props = $category->getAllProperties();
+        sort($props);
 
-        $lines = [];
+        $out = [];
+        $out[] = '<noinclude>';
+        $out[] = '<!-- AUTO-GENERATED by StructureSync - DO NOT EDIT MANUALLY -->';
+        $out[] = 'Semantic template for Category:' . $this->s($name);
+        $out[] = '</noinclude><includeonly>';
+        $out[] = '{{#set:';
 
-        /* ------------------------------------------------------------------
-         * NOINCLUDE HEADER
-         * ------------------------------------------------------------------ */
-        $lines[] = '<noinclude>';
-        $lines[] = '<!-- AUTO-GENERATED by StructureSync - DO NOT EDIT MANUALLY -->';
-        $lines[] = '<!-- This semantic template stores SMW data for the category. -->';
-        $lines[] = 'Semantic data template for [[:Category:' . $this->sanitize($category->getName()) . ']].';
-        $lines[] = '</noinclude><includeonly>';
-
-        /* ------------------------------------------------------------------
-         * SMW DATA (#set)
-         * ------------------------------------------------------------------ */
-        $lines[] = '{{#set:';
-
-        foreach ($properties as $property) {
-            $param = $this->sanitize($this->propertyToParameter($property));
-            $propertySafe = $this->sanitize($property);
-            $lines[] = ' | ' . $propertySafe . ' = {{{' . $param . '|}}}';
+        foreach ($props as $p) {
+            $param = NamingHelper::propertyToParameter($p);
+            $out[] = ' | ' . $this->s($p) . ' = {{{' . $this->s($param) . '|}}}';
         }
 
-        $lines[] = '}}';
-        
-        /* ------------------------------------------------------------------
-         * Category assignment (so pages using this template are categorized)
-         * ------------------------------------------------------------------ */
-        // Adding category membership for proper PageForms integration
-        // With $smwgChangePropagationProtection = false, this no longer causes locks
-        $lines[] = '';
-        $lines[] = '[[Category:' . $this->sanitize($category->getName()) . ']]';
+        $out[] = '}}';
+        $out[] = '';
+        $out[] = '[[Category:' . $this->s($name) . ']]';
+        $out[] = '</includeonly>';
 
-        $lines[] = '</includeonly>';
-
-        return implode("\n", $lines);
+        return implode("\n", $out);
     }
 
     /* =====================================================================
-     * DISPATCHER TEMPLATE
+     * DISPATCHER TEMPLATE (Template:<Category>)
      * ===================================================================== */
 
-    /**
-     * Generate dispatcher template wikitext for the category.
-     * 
-     * The dispatcher is the main template that users transclude on pages.
-     * It coordinates the semantic and display templates, ensuring both
-     * data storage and presentation happen correctly.
-     *
-     * Output location:
-     *   Template:<Category>
-     *
-     * Dispatcher template ensures:
-     *   - Default form is set (for "edit with form" link)
-     *   - Semantic template applied (stores data)
-     *   - Display template applied (renders view)
-     * 
-     * Template parameters are passed through to both sub-templates.
-     *
-     * @param CategoryModel $category Effective (inherited) category
-     * @return string Wikitext content for dispatcher template
-     * @throws \InvalidArgumentException If category name is empty
-     */
-    public function generateDispatcherTemplate(CategoryModel $category): string
-    {
-        if (trim($category->getName()) === '') {
-            throw new \InvalidArgumentException('Category name cannot be empty');
+    public function generateDispatcherTemplate( CategoryModel $category ): string {
+
+        $name = trim( $category->getName() );
+        if ($name === '') {
+            throw new \InvalidArgumentException("Category name cannot be empty");
         }
 
-        $properties = $category->getAllProperties();
-        
-        // Note: Empty properties is valid - category might be purely organizational
-        // or inherit all properties from parents
-        
-        sort($properties);
+        $props = $category->getAllProperties();
+        sort($props);
 
-        $name = $this->sanitize($category->getName());
+        $cat = $this->s($name);
 
-        $lines = [];
+        $out = [];
+        $out[] = '<noinclude>';
+        $out[] = '<!-- AUTO-GENERATED by StructureSync - DO NOT EDIT MANUALLY -->';
+        $out[] = 'Dispatcher template for Category:' . $cat;
+        $out[] = '</noinclude><includeonly>';
+        $out[] = '{{#default_form:' . $cat . '}}';
+        $out[] = '';
 
-        /* ------------------------------------------------------------------
-         * NOINCLUDE
-         * ------------------------------------------------------------------ */
-        $lines[] = '<noinclude>';
-        $lines[] = '<!-- AUTO-GENERATED by StructureSync - DO NOT EDIT MANUALLY -->';
-        $lines[] = '<!-- This dispatcher template loads semantic + display templates. -->';
-        $lines[] = 'Dispatcher for [[:Category:' . $name . ']].';
-        $lines[] = '* Semantic: [[Template:' . $name . '/semantic]]';
-        $lines[] = '* Display:  [[Template:' . $name . '/display]]';
-        $lines[] = '</noinclude><includeonly>';
-
-        /* ------------------------------------------------------------------
-         * DEFAULT FORM (for "edit with form" button)
-         * ------------------------------------------------------------------ */
-        $lines[] = '{{#default_form:' . $name . '}}';
-        $lines[] = '';
-
-        /* ------------------------------------------------------------------
-         * SEMANTIC TEMPLATE INCLUDE
-         * ------------------------------------------------------------------ */
-        $lines[] = '{{' . $name . '/semantic';
-        foreach ($properties as $property) {
-            $param = $this->sanitize($this->propertyToParameter($property));
-            $lines[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
+        /* Semantic storage */
+        $out[] = '{{' . $cat . '/semantic';
+        foreach ($props as $p) {
+            $param = NamingHelper::propertyToParameter($p);
+            $out[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
         }
-        $lines[] = '}}';
-        $lines[] = '';
+        $out[] = '}}';
+        $out[] = '';
 
-        /* ------------------------------------------------------------------
-         * DISPLAY TEMPLATE INCLUDE
-         * ------------------------------------------------------------------ */
-
-        $lines[] = '{{' . $name . '/display';
-        foreach ($properties as $property) {
-            $param = $this->sanitize($this->propertyToParameter($property));
-            $lines[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
+        /* Display template */
+        $out[] = '{{' . $cat . '/display';
+        foreach ($props as $p) {
+            $param = NamingHelper::propertyToParameter($p);
+            $out[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
         }
-        $lines[] = '}}';
-        $lines[] = '';
+        $out[] = '}}';
+        $out[] = '';
 
-        /* ------------------------------------------------------------------
-         * SUBOBJECT DISPLAY SECTIONS
-         * ------------------------------------------------------------------ */
-        $subgroupLines = $this->generateSubobjectDisplaySections( $category );
-        if ( !empty( $subgroupLines ) ) {
-            $lines = array_merge( $lines, $subgroupLines );
-        }
-
-        $lines[] = '</includeonly>';
-
-        return implode("\n", $lines);
-    }
-
-
-    /* =====================================================================
-     * TEMPLATE CREATION / UPDATING
-     * ===================================================================== */
-
-    /**
-     * Create or update a template page.
-     * 
-     * Handles the actual page creation/update operation with error handling.
-     *
-     * @param string $templateName  Name without namespace prefix
-     * @param string $content Wikitext content
-     * @return bool True on success, false on failure
-     * @throws \InvalidArgumentException If template name is empty
-     */
-    public function updateTemplate(string $templateName, string $content): bool
-    {
-        if (trim($templateName) === '') {
-            throw new \InvalidArgumentException('Template name cannot be empty');
-        }
-
-        $title = $this->pageCreator->makeTitle($templateName, NS_TEMPLATE);
-        if (!$title) {
-            wfLogWarning("StructureSync: Failed to create Title for template '$templateName'");
-            return false;
-        }
-
-        $summary = 'StructureSync: Auto-generated template';
-        $result = $this->pageCreator->createOrUpdatePage($title, $content, $summary);
-        
-        if (!$result) {
-            wfLogWarning("StructureSync: Failed to save template '$templateName'");
-        }
-        
-        return $result;
-    }
-
-    /**
-     * Create per-subgroup templates for a category.
-     *
-     * @param CategoryModel $category
-     * @return string[] Errors encountered (if any)
-     */
-    private function generateSubgroupTemplates( CategoryModel $category ): array {
-        $errors = [];
-        $subgroups = array_unique(
-            array_merge(
-                $category->getRequiredSubgroups(),
-                $category->getOptionalSubgroups()
-            )
+        /* Subobject Sections */
+        $out = array_merge(
+            $out,
+            $this->generateSubobjectDisplaySections( $category )
         );
 
-        if ( empty( $subgroups ) ) {
-            return $errors;
+        $out[] = '</includeonly>';
+
+        return implode("\n", $out);
+    }
+
+    /* =====================================================================
+     * SUBOBJECT TEMPLATES  (Template:Subobject/<Name>)
+     * ===================================================================== */
+
+    /**
+     * Build semantic template for a subobject:
+     *
+     *     Template:Subobject/<Name>
+     *
+     * Format:
+     *   {{#subobject:
+     *      | Has subgroup type = Subobject:<Name>
+     *      | Property = {{{param}}}
+     *   }}
+     */
+    private function generateSubobjectTemplate( SubobjectModel $sub ): string {
+
+        $name = $this->s( $sub->getName() );
+
+        $out = [];
+        $out[] = '<noinclude>';
+        $out[] = '<!-- AUTO-GENERATED by StructureSync - DO NOT EDIT MANUALLY -->';
+        $out[] = 'Subobject semantic template for Subobject:' . $name;
+        $out[] = '</noinclude><includeonly>';
+
+        $out[] = '{{#subobject:';
+        $out[] = ' | Has subgroup type = Subobject:' . $name;
+
+        $props = array_merge(
+            $sub->getRequiredProperties(),
+            $sub->getOptionalProperties()
+        );
+
+        foreach ($props as $p) {
+            $param = NamingHelper::propertyToParameter($p);
+            $out[] = ' | ' . $this->s($p) . ' = {{{' . $this->s($param) . '|}}}';
         }
 
-        foreach ( $subgroups as $subgroupName ) {
+        $out[] = '}}';
+        $out[] = '</includeonly>';
+
+        return implode("\n", $out);
+    }
+
+    /**
+     * Row template for displaying subobject instances in #ask:
+     *
+     * Template:Subobject/<Name>/row
+     *
+     * Parameters:
+     *   {{{2}}}, {{{3}}}, ... mapped to printouts.
+     */
+    private function generateSubobjectRowTemplate( SubobjectModel $sub ): string {
+
+        $name = $this->s( $sub->getName() );
+        $props = $sub->getAllProperties();
+
+        $out = [];
+        $out[] = '<noinclude>Auto-generated row template for subobject ' . $name . '</noinclude>';
+        $out[] = '<includeonly>';
+        $out[] = '|-';
+
+        $i = 2;
+        foreach ($props as $p) {
+            $out[] = '| {{{' . $i . '|}}}';
+            $i++;
+        }
+
+        $out[] = '</includeonly>';
+
+        return implode("\n", $out);
+    }
+
+    /* =====================================================================
+     * SUBOBJECT DISPLAY
+     * ===================================================================== */
+
+    /**
+     * Build per-subgroup display tables inside the dispatcher template.
+     */
+    private function generateSubobjectDisplaySections( CategoryModel $category ): array {
+
+        $required = $category->getRequiredSubgroups();
+        $optional = $category->getOptionalSubgroups();
+
+        $all = array_unique( array_merge( $required, $optional ) );
+        if (empty($all)) {
+            return [];
+        }
+
+        $out = [];
+
+        foreach ($all as $subName) {
+
+            $sub = $this->subobjectStore->readSubobject( $subName );
+            if (!$sub instanceof SubobjectModel) {
+                wfLogWarning("StructureSync: Missing subobject definition '$subName'");
+                continue;
+            }
+
+            $label = $this->s( $sub->getLabel() ?: $sub->getName() );
+            $props = $sub->getAllProperties();
+            if (empty($props)) {
+                continue;
+            }
+
+            $out[] = '=== ' . $label . ' ===';
+            $out[] = '';
+            $out[] = '{| class="wikitable ss-subobject-table"';
+            $out[] = '|-';
+
+            /* header row */
+            foreach ($props as $p) {
+                $lab = NamingHelper::generatePropertyLabel( $p );
+                $out[] = '! ' . $this->s($lab);
+            }
+
+            /* SMW #ask invocation */
+            $out[] = '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] [[Has subgroup type::Subobject:' . $this->s($subName) . ']]';
+
+            foreach ($props as $p) {
+                $out[] = ' | ?' . $this->s($p);
+            }
+
+            $rowTemplate = 'Subobject/' . $this->s($subName) . '/row';
+
+            $out[] = ' | format=template';
+            $out[] = ' | template=' . $rowTemplate;
+            $out[] = ' | default=<tr><td colspan="' . count($props) . '">No entries yet.</td></tr>';
+            $out[] = '}}';
+            $out[] = '|}';
+            $out[] = '';
+        }
+
+        return $out;
+    }
+
+    /* =====================================================================
+     * PUBLIC: FULL TEMPLATE GENERATION ENTRYPOINT
+     * ===================================================================== */
+
+    public function generateAllTemplates( CategoryModel $category ): array {
+
+        $errors = [];
+        $name   = $category->getName();
+
+        /* Category semantic template */
+        try {
+            $content = $this->generateSemanticTemplate( $category );
+            $this->updateTemplate( $name . '/semantic', $content );
+        } catch (\Exception $e) {
+            $errors[] = "Error generating semantic template for $name: " . $e->getMessage();
+        }
+
+        /* Dispatcher template */
+        try {
+            $content = $this->generateDispatcherTemplate( $category );
+            $this->updateTemplate( $name, $content );
+        } catch (\Exception $e) {
+            $errors[] = "Error generating dispatcher template for $name: " . $e->getMessage();
+        }
+
+        /* Subobject templates */
+        $subs = array_unique(array_merge(
+            $category->getRequiredSubgroups(),
+            $category->getOptionalSubgroups()
+        ));
+
+        foreach ($subs as $subName) {
             try {
-                $subobject = $this->subobjectStore->readSubobject( $subgroupName );
-                if ( !$subobject instanceof SubobjectModel ) {
-                    $errors[] = "Missing subobject definition for '$subgroupName'";
+                $sub = $this->subobjectStore->readSubobject( $subName );
+                if (!$sub instanceof SubobjectModel) {
+                    $errors[] = "Missing subobject '$subName'";
                     continue;
                 }
 
-                $content = $this->generateSubgroupTemplate( $category, $subobject );
-                $templateName = NamingHelper::subgroupTemplateName( $category->getName(), $subgroupName );
-                if ( !$this->updateTemplate( $templateName, $content ) ) {
-                    $errors[] = "Failed to create subgroup template '$templateName'";
-                }
-            } catch ( \Exception $e ) {
-                $errors[] = "Error generating subgroup template for '$subgroupName': " . $e->getMessage();
+                /* semantic template */
+                $content = $this->generateSubobjectTemplate( $sub );
+                $this->updateTemplate( 'Subobject/' . $sub->getName(), $content );
+
+                /* row template */
+                $rowContent = $this->generateSubobjectRowTemplate( $sub );
+                $this->updateTemplate( 'Subobject/' . $sub->getName() . '/row', $rowContent );
+
+            } catch (\Exception $e) {
+                $errors[] = "Error generating templates for subobject '$subName': " . $e->getMessage();
             }
         }
-        
-        // Generate helper templates for displaying subobjects in tables
-        try {
-            $this->generateSubobjectDisplayHelpers( $category );
-        } catch ( \Exception $e ) {
-            $errors[] = "Error generating subobject display helpers: " . $e->getMessage();
-        }
 
-        return $errors;
-    }
-
-    /**
-     * Build wikitext for a subgroup template.
-     *
-     * @param CategoryModel $category
-     * @param SubobjectModel $subobject
-     * @return string
-     */
-    private function generateSubgroupTemplate( CategoryModel $category, SubobjectModel $subobject ): string {
-        $categoryName = $this->sanitize( $category->getName() );
-        $subobjectName = $this->sanitize( $subobject->getName() );
-
-        $lines = [];
-        $lines[] = '<noinclude>';
-        $lines[] = '<!-- AUTO-GENERATED by StructureSync - DO NOT EDIT MANUALLY -->';
-        $lines[] = 'Subobject template for [[:Category:' . $categoryName . ']] using [[Subobject:' . $subobjectName . ']].';
-        $lines[] = '</noinclude><includeonly>';
-        $lines[] = '{{#subobject:';
-        $lines[] = ' | Has subgroup type = Subobject:' . $subobjectName;
-
-        $properties = array_merge(
-            $subobject->getRequiredProperties(),
-            $subobject->getOptionalProperties()
-        );
-
-        foreach ( $properties as $propertyName ) {
-            $param = $this->sanitize( $this->propertyToParameter( $propertyName ) );
-            $lines[] = ' | ' . $this->sanitize( $propertyName ) . ' = {{{' . $param . '|}}}';
-        }
-
-        $lines[] = '}}';
-        $lines[] = '</includeonly>';
-
-        return implode( "\n", $lines );
-    }
-
-    /**
-     * Generate helper templates for displaying subobjects in tables.
-     * 
-     * Creates:
-     * - {Category}/subobject-intro: Empty (table header is in main template)
-     * - {Category}/subobject-outro: Empty
-     * - {Category}/subobject-row-{SubobjectName}: Formats one row for a specific subgroup
-     *
-     * @param CategoryModel $category
-     */
-    private function generateSubobjectDisplayHelpers( CategoryModel $category ): void {
-        $categoryName = $this->sanitize( $category->getName() );
-        
-        $allSubgroups = array_unique(
-            array_merge(
-                $category->getRequiredSubgroups(),
-                $category->getOptionalSubgroups()
-            )
-        );
-        
-        if ( empty( $allSubgroups ) ) {
-            return;
-        }
-        
-        // Intro template (empty - table header is in dispatcher)
-        $introContent = '<noinclude>Helper template for subobject display intro.</noinclude>';
-        $this->updateTemplate( $categoryName . '/subobject-intro', $introContent );
-        
-        // Outro template (empty)
-        $outroContent = '<noinclude>Helper template for subobject display outro.</noinclude>';
-        $this->updateTemplate( $categoryName . '/subobject-outro', $outroContent );
-        
-        // Generate specific row templates for each subgroup
-        foreach ( $allSubgroups as $subgroupName ) {
-            $subobject = $this->subobjectStore->readSubobject( $subgroupName );
-            if ( !$subobject instanceof SubobjectModel ) {
-                continue;
-            }
-            
-            $properties = $subobject->getAllProperties();
-            
-            $rowLines = [];
-            $rowLines[] = '<noinclude>Helper template for subobject display row.</noinclude><includeonly>';
-            $rowLines[] = '|-';
-            
-            // SMW format=template passes the result subject as {{{1}}}.
-            // Printout properties start at {{{2}}}.
-            $paramNum = 2;
-            foreach ( $properties as $propertyName ) {
-                $rowLines[] = '| {{{' . $paramNum . '|}}}';
-                $paramNum++;
-            }
-            
-            $rowLines[] = '</includeonly>';
-            
-            // Template name: {Category}/subobject-row-{SubobjectName}
-            // We sanitize the subobject name to be safe for filenames
-            $safeSubName = str_replace( ' ', '_', $subobject->getName() );
-            $this->updateTemplate( $categoryName . '/subobject-row-' . $safeSubName, implode( "\n", $rowLines ) );
-        }
-    }
-
-    /**
-     * Generate subobject display sections for the dispatcher template.
-     * 
-     * Creates wikitext that queries and displays subobjects in tables.
-     * Uses SMW #ask queries to fetch subobjects by type.
-     *
-     * @param CategoryModel $category
-     * @return array Lines of wikitext
-     */
-    private function generateSubobjectDisplaySections( CategoryModel $category ): array {
-        $lines = [];
-        
-        $allSubgroups = array_unique(
-            array_merge(
-                $category->getRequiredSubgroups(),
-                $category->getOptionalSubgroups()
-            )
-        );
-        
-        if ( empty( $allSubgroups ) ) {
-            return $lines;
-        }
-        
-        foreach ( $allSubgroups as $subgroupName ) {
-            $subobject = $this->subobjectStore->readSubobject( $subgroupName );
-            if ( !$subobject instanceof SubobjectModel ) {
-                continue;
-            }
-            
-            $label = $this->sanitize( $subobject->getLabel() ?: $subobject->getName() );
-            $properties = $subobject->getAllProperties();
-            
-            if ( empty( $properties ) ) {
-                continue;
-            }
-            
-            $lines[] = '=== ' . $label . ' ===';
-            $lines[] = '';
-            
-            // Build wikitext table
-            $lines[] = '{| class="wikitable ss-subgroup-table"';
-            $lines[] = '|-';
-            
-            // Header row
-            foreach ( $properties as $propertyName ) {
-                $propertyLabel = $this->getPropertyLabel( $propertyName );
-                $lines[] = '! ' . $this->sanitize( $propertyLabel );
-            }
-            
-            // Query for subobjects of this type
-            // Use inverse property of "Has subobject" to find subobjects belonging to this page
-            $lines[] = '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] [[Has subgroup type::Subobject:' . $this->sanitize( $subgroupName ) . ']]';
-            
-            // Build printout statements for each property
-            foreach ( $properties as $propertyName ) {
-                $lines[] = ' |?' . $this->sanitize( $propertyName );
-            }
-            
-            // Format as table rows
-            $lines[] = ' |format=template';
-            $safeSubName = str_replace( ' ', '_', $subobject->getName() );
-            $lines[] = ' |template=' . $this->sanitize( $category->getName() ) . '/subobject-row-' . $safeSubName;
-            $lines[] = ' |introtemplate=' . $this->sanitize( $category->getName() ) . '/subobject-intro';
-            $lines[] = ' |outrotemplate=' . $this->sanitize( $category->getName() ) . '/subobject-outro';
-            $lines[] = ' |default=<tr><td colspan="' . count( $properties ) . '">No entries yet.</td></tr>';
-            $lines[] = '}}';
-            
-            $lines[] = '|}';
-            $lines[] = '';
-        }
-        
-        return $lines;
-    }
-
-    /**
-     * Generate semantic + dispatcher templates for a category.
-     * 
-     * This is the main entry point for template generation. It creates both
-     * templates in the correct order and reports any failures.
-     * 
-     * The operation continues even if one template fails, but reports all errors.
-     *
-     * @param CategoryModel $category Category to generate templates for
-     * @return array{success:bool,errors:string[]} Result with overall success and error list
-     */
-    public function generateAllTemplates(CategoryModel $category): array
-    {
-
-        $result = ['success' => true, 'errors' => []];
-        $name = $category->getName();
-
-        try {
-            /* --------------------------------------------------------------
-             * SEMANTIC TEMPLATE
-             * -------------------------------------------------------------- */
-            $semantic = $this->generateSemanticTemplate($category);
-            if (!$this->updateTemplate($name . '/semantic', $semantic)) {
-                $result['success'] = false;
-                $result['errors'][] = "Failed to create semantic template for $name";
-            }
-        } catch (\Exception $e) {
-            $result['success'] = false;
-            $result['errors'][] = "Error generating semantic template for $name: " . $e->getMessage();
-        }
-
-        try {
-            /* --------------------------------------------------------------
-             * DISPATCHER TEMPLATE
-             * -------------------------------------------------------------- */
-            $dispatcher = $this->generateDispatcherTemplate($category);
-            if (!$this->updateTemplate($name, $dispatcher)) {
-                $result['success'] = false;
-                $result['errors'][] = "Failed to create dispatcher template for $name";
-            }
-        } catch (\Exception $e) {
-            $result['success'] = false;
-            $result['errors'][] = "Error generating dispatcher template for $name: " . $e->getMessage();
-        }
-
-        try {
-            $subErrors = $this->generateSubgroupTemplates( $category );
-            if ( !empty( $subErrors ) ) {
-                $result['success'] = false;
-                $result['errors'] = array_merge( $result['errors'], $subErrors );
-            }
-        } catch ( \Exception $e ) {
-            $result['success'] = false;
-            $result['errors'][] = "Error generating subgroup templates for $name: " . $e->getMessage();
-        }
-
-        return $result;
+        return [
+            'success' => empty($errors),
+            'errors'  => $errors
+        ];
     }
 
     /* =====================================================================
-     * UTILITIES
+     * BASIC UPDATE WRAPPER
      * ===================================================================== */
 
-    /**
-     * Convert SMW property names → PageForms parameter names.
-     * 
-     * Delegates to NamingHelper for consistent transformation across all generators.
-     *
-     * @param string $propertyName SMW property name
-     * @return string Normalized parameter name
-     */
-    private function propertyToParameter(string $propertyName): string
-    {
-        return NamingHelper::propertyToParameter($propertyName);
-    }
+    private function updateTemplate( string $name, string $content ): bool {
+        if (trim($name) === '') {
+            throw new \InvalidArgumentException("Template name cannot be empty");
+        }
 
-    /**
-     * Get property label for display.
-     *
-     * @param string $propertyName
-     * @return string
-     */
-    private function getPropertyLabel( string $propertyName ): string {
-        return NamingHelper::generatePropertyLabel( $propertyName );
-    }
+        $title = $this->pageCreator->makeTitle( $name, NS_TEMPLATE );
+        if (!$title) {
+            wfLogWarning("StructureSync: Failed to create Title for template '$name'");
+            return false;
+        }
 
-    /**
-     * Check if semantic template exists.
-     *
-     * @param string $categoryName
-     * @return bool
-     */
-    public function semanticTemplateExists(string $categoryName): bool
-    {
-        $title = $this->pageCreator->makeTitle($categoryName . '/semantic', NS_TEMPLATE);
-        return $title && $this->pageCreator->pageExists($title);
-    }
-
-    /**
-     * Check if dispatcher template exists.
-     *
-     * @param string $categoryName
-     * @return bool
-     */
-    public function dispatcherTemplateExists(string $categoryName): bool
-    {
-        $title = $this->pageCreator->makeTitle($categoryName, NS_TEMPLATE);
-        return $title && $this->pageCreator->pageExists($title);
+        return $this->pageCreator->createOrUpdatePage(
+            $title,
+            $content,
+            'StructureSync: Auto-generated template'
+        );
     }
 }

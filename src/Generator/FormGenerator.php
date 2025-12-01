@@ -11,192 +11,109 @@ use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
 use MediaWiki\Extension\StructureSync\Util\NamingHelper;
 
 /**
- * FormGenerator
- * -------------
- * Generates PageForms forms from an effective (fully-inherited) CategoryModel.
+ * FormGenerator (Rewritten 2025)
+ * ------------------------------
  *
- * Responsibilities:
- *   - Convert Schema → PageForms form wikitext
- *   - Use explicit form sections if defined in schema
- *   - Otherwise (Option C):
- *       * Main section for current category with required/optional split
- *       * Placeholder sections for ancestors (inherited), ready for manual/schema refinement
- *   - Generate PageForms fields with correct input type + required indicator
- *   - Save forms via PageCreator
+ * Clean form generator that converts a CategoryModel (already fully inherited)
+ * into deterministic PageForms markup.
  *
- * Namespace Handling:
- *   - If category has "Has target namespace" property set:
- *       * Adds namespace=<target> parameter to #forminput
- *       * Ensures new pages are created in the correct namespace
- *   - No {{{info}}} block is generated (prevents literal text rendering issues)
- *   - PageForms handles page naming automatically based on namespace parameter
- *
- * NOTE:
- *   - This class should receive the effective CategoryModel (after inheritance),
- *     typically produced by InheritanceResolver::getEffectiveCategory().
- *   - $ancestorChain should be the C3-linearized ancestor list including self.
+ * Key changes:
+ *  - No inheritance placeholder sections.
+ *  - Subobjects use the new namespace-like convention:
+ *        Template:Subobject/<Name>
+ *  - Category dispatcher template assumed to be Template:<CategoryName>.
+ *  - Required/optional property lists rendered simply.
+ *  - No PageForms {{{info}}} block (prevents literal rendering issues).
+ *  - Optional target namespace supported.
+ *  - No hierarchy preview injection; decoupled from JS.
  */
 class FormGenerator {
-    
-    /** @var int Heading level for top-level sections (===) */
-    private const HEADING_LEVEL_TOP = 3;
-    
-    /** @var int Heading level for subsections (====) */
-    private const HEADING_LEVEL_SUB = 4;
 
-    /** @var PageCreator */
-    private $pageCreator;
+    private PageCreator $pageCreator;
+    private WikiPropertyStore $propertyStore;
+    private PropertyInputMapper $inputMapper;
+    private WikiSubobjectStore $subobjectStore;
 
-    /** @var WikiPropertyStore */
-    private $propertyStore;
-
-    /** @var PropertyInputMapper */
-    private $inputMapper;
-
-    /** @var WikiSubobjectStore */
-    private $subobjectStore;
-
-    /**
-     * @param PageCreator|null $pageCreator
-     * @param WikiPropertyStore|null $propertyStore
-     * @param PropertyInputMapper|null $inputMapper
-     */
     public function __construct(
         PageCreator $pageCreator = null,
         WikiPropertyStore $propertyStore = null,
         PropertyInputMapper $inputMapper = null,
         WikiSubobjectStore $subobjectStore = null
     ) {
-        $this->pageCreator   = $pageCreator   ?? new PageCreator();
-        $this->propertyStore = $propertyStore ?? new WikiPropertyStore();
-        $this->inputMapper   = $inputMapper   ?? new PropertyInputMapper();
+        $this->pageCreator    = $pageCreator    ?? new PageCreator();
+        $this->propertyStore  = $propertyStore  ?? new WikiPropertyStore();
+        $this->inputMapper    = $inputMapper    ?? new PropertyInputMapper();
         $this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
     }
 
-    /**
-     * Sanitize a value to ensure MediaWiki never encounters null.
-     *
-     * @param string|null $value
-     * @return string
-     */
-    private function sanitize( ?string $value ): string {
-        return $value ?? '';
+    private function s( ?string $v ): string {
+        return $v ?? '';
     }
 
     /**
-     * Generate complete PageForms wikitext for a category.
-     *
-     * @param CategoryModel $category      Effective (inherited) category
-     * @param string[]      $ancestorChain Optional list of ancestor names including self
-     *
-     * @return string PageForms wikitext
-     * @throws \InvalidArgumentException If category name is empty
+     * Generate the full PageForms form for a category.
      */
-    public function generateForm( CategoryModel $category, array $ancestorChain = [] ): string {
-        
-        if (trim($category->getName()) === '') {
-            throw new \InvalidArgumentException('Category name cannot be empty');
+    public function generateForm( CategoryModel $category ): string {
+
+        $name  = trim( $category->getName() );
+        $label = trim( $category->getLabel() );
+
+        if ( $name === '' ) {
+            throw new \InvalidArgumentException("Category name cannot be empty");
         }
-        
-        if (trim($category->getLabel()) === '') {
-            throw new \InvalidArgumentException('Category label cannot be empty');
+        if ( $label === '' ) {
+            throw new \InvalidArgumentException("Category label cannot be empty");
         }
 
         $lines = [];
 
-        // ------------------------------------------------------------------
-        // NOINCLUDE HEADER
-        // ------------------------------------------------------------------
-        $categoryName = $this->sanitize( $category->getName() );
+        /* ----------------------------------------------------------
+         * <noinclude> header
+         * -------------------------------------------------------- */
         $lines[] = '<noinclude>';
         $lines[] = '<!-- AUTO-GENERATED by StructureSync - DO NOT EDIT MANUALLY -->';
         $lines[] = '<!-- This form is automatically regenerated -->';
-        $lines[] = 'This is the form for editing [[:Category:' . $categoryName . ']] pages.';
-        
-        // Build #forminput with optional namespace parameter
-        $forminputParams = [
-            'form=' . $categoryName,
-            'autocomplete on category=' . $categoryName
+        $lines[] = 'This is the form for editing [[:Category:' . $this->s($name) . ']] pages.';
+
+        $formInput = [
+            'form=' . $this->s($name),
+            'autocomplete on category=' . $this->s($name),
         ];
-        
-        // Add namespace parameter if category has target namespace
+
         if ( $category->getTargetNamespace() !== null ) {
-            $forminputParams[] = 'namespace=' . $this->sanitize( $category->getTargetNamespace() );
+            $formInput[] = 'namespace=' . $this->s( $category->getTargetNamespace() );
         }
-        
-        $lines[] = '{{#forminput:' . implode( '|', $forminputParams ) . '}}';
+
+        $lines[] = '{{#forminput:' . implode('|', $formInput) . '}}';
         $lines[] = '</noinclude><includeonly>';
-        
-        // ------------------------------------------------------------------
-        // Auto-inject hierarchy preview if "Has parent category" is present
-        // ------------------------------------------------------------------
-        $hasParentCategoryField = $this->hasParentCategoryProperty( $category );
-        if ( $hasParentCategoryField ) {
-            $lines[] = '{{#structuresync_load_form_preview:}}';
-        }
         $lines[] = '';
 
-        // ------------------------------------------------------------------
-        // Template binding
-        // ------------------------------------------------------------------
-        $lines[] = '{{{for template|' . $this->sanitize( $category->getName() ) . '}}}';
+        /* ----------------------------------------------------------
+         * Bind to dispatcher template
+         * -------------------------------------------------------- */
+        $lines[] = '{{{for template|' . $this->s($name) . '}}}';
         $lines[] = '';
 
-        // ------------------------------------------------------------------
-        // Determine section strategy
-        // ------------------------------------------------------------------
-        $formSections = $category->getFormSections();
+        /* ----------------------------------------------------------
+         * Required + Optional properties
+         * -------------------------------------------------------- */
+        $lines = array_merge(
+            $lines,
+            $this->generatePropertySections( $category )
+        );
 
-        if ( !empty( $formSections ) ) {
-            // Explicit schema-defined sections
-            foreach ( $formSections as $section ) {
-                $lines = array_merge(
-                    $lines,
-                    $this->generateFormSection( $section, $category )
-                );
-            }
-        } else {
-            // Option C behavior
-            if ( !empty( $ancestorChain ) ) {
-                $lines = array_merge(
-                    $lines,
-                    $this->generateHybridSections( $category, $ancestorChain )
-                );
-            } else {
-                // Simple fallback (no ancestor info)
-                $lines = array_merge(
-                    $lines,
-                    $this->generateSimpleRequiredOptionalSections( $category, self::HEADING_LEVEL_TOP )
-                );
-            }
-        }
-
-        // ------------------------------------------------------------------
-        // End template + page operations
-        // ------------------------------------------------------------------
         $lines[] = '{{{end template}}}';
         $lines[] = '';
 
-        $subgroupSections = $this->generateSubgroupFormBlocks( $category );
-        if ( !empty( $subgroupSections ) ) {
-            $lines = array_merge( $lines, $subgroupSections );
-        }
-        
-        // Add free text section for parent category membership
-        // This becomes static page content, not template code
-        if ( $hasParentCategoryField ) {
-            $lines[] = '<!-- Parent category membership section -->';
-            $lines[] = '{{{standard input|free text|hidden|rows=1|placeholder=Parent categories will be added automatically|id=ss-parent-categories}}}';
-            $lines[] = '';
-        }
-        
-        // Add hierarchy preview container if "Has parent category" is present
-        if ( $hasParentCategoryField ) {
-            $lines[] = "'''Hierarchy Preview:'''";
-            $lines[] = '<div id="ss-form-hierarchy-preview" data-parent-field="parent_category"></div>';
-            $lines[] = '';
-        }
-        
+        /* ----------------------------------------------------------
+         * Subobject sections
+         * -------------------------------------------------------- */
+        $sub = $this->generateSubobjectSections( $category );
+        $lines = array_merge( $lines, $sub );
+
+        /* ----------------------------------------------------------
+         * Summary + Buttons
+         * -------------------------------------------------------- */
         $lines[] = '{{{standard input|summary}}}';
         $lines[] = '';
         $lines[] = '{{{standard input|save}}} '
@@ -205,367 +122,186 @@ class FormGenerator {
                  . '{{{standard input|cancel}}}';
         $lines[] = '</includeonly>';
 
-        return implode( "\n", $lines );
+        return implode("\n", $lines);
     }
 
     /**
-     * Generate a section based on explicit config from the schema.
-     *
-     * @param array        $section  Must include: [ 'name' => string, 'properties' => string[] ]
-     * @param CategoryModel $category
-     * @return array
+     * Required + optional properties
      */
-    private function generateFormSection( array $section, CategoryModel $category ): array {
-
-        $lines = [];
-
-        $name       = $this->sanitize( $section['name'] ?? 'Section' );
-        $properties = $section['properties'] ?? [];
-
-        $lines[] = '=== ' . $name . ' ===';
-        $lines[] = '';
-
-        foreach ( $properties as $propertyName ) {
-            $lines = array_merge(
-                $lines,
-                $this->generateFieldDefinition( (string)$propertyName, $category )
-            );
-        }
-
-        $lines[] = '';
-        return $lines;
-    }
-
-    /**
-     * Option C hybrid behavior:
-     *   - Primary section for the current category with required/optional fields.
-     *   - Placeholder sections for each ancestor (inherited) for future refinement.
-     *
-     * @param CategoryModel $category
-     * @param string[]      $ancestorChain
-     * @return array
-     */
-    private function generateHybridSections( CategoryModel $category, array $ancestorChain ): array {
-
-        $lines = [];
-
-        // Normalize chain: ensure it includes this category name (should be first)
-        $selfName = $category->getName();
-        if ( empty( $ancestorChain ) || reset( $ancestorChain ) !== $selfName ) {
-            array_unshift( $ancestorChain, $selfName );
-        }
-
-        // 1) Main section for this category
-        $lines[] = '=== ' . $this->sanitize( $category->getLabel() ) . ' ===';
-        $lines[] = '';
-
-        $lines = array_merge(
-            $lines,
-            $this->generateSimpleRequiredOptionalSections( $category, self::HEADING_LEVEL_SUB )
-        );
-
-        // 2) Sections for each ancestor (excluding this category)
-        $ancestorsOnly = array_filter(
-            $ancestorChain,
-            static function ( $name ) use ( $selfName ) {
-                return $name !== $selfName;
-            }
-        );
-
-        foreach ( $ancestorsOnly as $ancestorName ) {
-            // Placeholder section; no fields, but clearly indicates inheritance.
-            $ancestorNameSafe = $this->sanitize( $ancestorName );
-            $lines[] = '=== ' . $ancestorNameSafe . ' (inherited) ===';
-            $lines[] = '<!-- This category inherits structural properties from [[' . $ancestorNameSafe . ']]. -->';
-            $lines[] = '<!-- Customize form sections for this ancestor via StructureSync schema (forms.display/forms.config). -->';
-            $lines[] = '';
-        }
-
-        return $lines;
-    }
-
-    /**
-     * Generate required/optional field blocks with a given heading level.
-     *
-     * @param CategoryModel $category
-     * @param int           $headingLevel 3 → "===", 4 → "===="
-     * @return array
-     */
-    private function generateSimpleRequiredOptionalSections( CategoryModel $category, int $headingLevel ): array {
-
-        $lines = [];
-
-        $prefix = str_repeat( '=', $headingLevel );
+    private function generatePropertySections( CategoryModel $category ): array {
         $required = $category->getRequiredProperties();
         $optional = $category->getOptionalProperties();
 
-        // Deterministic ordering
         sort( $required );
         sort( $optional );
 
-        if ( !empty( $required ) ) {
-            $lines[] = "{$prefix} Required Information {$prefix}";
-            $lines[] = '';
-            foreach ( $required as $prop ) {
-                $lines = array_merge(
-                    $lines,
-                    $this->generateFieldDefinition( $prop, $category )
+        $out = [];
+
+        if ( !empty($required) ) {
+            $out[] = '=== Required Information ===';
+            $out[] = '';
+            foreach ( $required as $p ) {
+                $out = array_merge(
+                    $out,
+                    $this->generateField( $p, $category, true )
                 );
             }
-            $lines[] = '';
+            $out[] = '';
         }
 
-        if ( !empty( $optional ) ) {
-            $lines[] = "{$prefix} Additional Information {$prefix}";
-            $lines[] = '';
-            foreach ( $optional as $prop ) {
-                $lines = array_merge(
-                    $lines,
-                    $this->generateFieldDefinition( $prop, $category )
+        if ( !empty($optional) ) {
+            $out[] = '=== Optional Information ===';
+            $out[] = '';
+            foreach ( $optional as $p ) {
+                $out = array_merge(
+                    $out,
+                    $this->generateField( $p, $category, false )
                 );
             }
-            $lines[] = '';
+            $out[] = '';
         }
 
-        return $lines;
+        return $out;
     }
 
     /**
-     * Generate field definition for a specific property.
-     *
-     * @param string        $propertyName
-     * @param CategoryModel $category  Effective category model
-     * @return array
+     * Single PageForms field block
      */
-    private function generateFieldDefinition(
+    private function generateField(
         string $propertyName,
         CategoryModel $category,
-        ?bool $isRequiredOverride = null
+        ?bool $isRequired = null
     ): array {
 
-        $lines = [];
-
-        // Lookup property metadata; fallback to simple Text property
-        $property = $this->propertyStore->readProperty( $propertyName )
+        $prop = $this->propertyStore->readProperty( $propertyName )
             ?: new PropertyModel( $propertyName, [ 'datatype' => 'Text' ] );
 
-        $isRequired = $isRequiredOverride ?? $category->isPropertyRequired( $propertyName );
+        $isReq = $isRequired ?? $category->isPropertyRequired( $propertyName );
 
-        // Input definition
-        $inputDefinition = $this->inputMapper->generateInputDefinition(
-            $property,
-            $isRequired
-        );
+        $input = $this->inputMapper->generateInputDefinition( $prop, $isReq );
+        $param = NamingHelper::propertyToParameter( $propertyName );
 
-        // Get template parameter name and property info
-        $param = $this->propertyToParameter( $propertyName );
-        $propertyNameSafe = $this->sanitize( $property->getName() );
-        $label = $this->sanitize( $property->getLabel() );
+        $label = $this->s( $prop->getLabel() );
+        $safeProp = $this->s( $prop->getName() );
 
-        // Display label above the field
-        $lines[] = "'''" . $label . ":'''";
-
-        // PageForms field syntax: {{{field|param_name|property=PropertyName|input type=...}}}
-        // Note: property= maps to SMW property, and PageForms will use the property's Display label automatically
-        $lines[] = '{{{field|' . $this->sanitize( $param ) . '|property=' . $propertyNameSafe . '|' . $this->sanitize( $inputDefinition ) . '}}}';
-        $lines[] = '';
-
-        return $lines;
+        return [
+            "'''{$label}:'''",
+            '{{{field|' . $param . '|property=' . $safeProp . '|' . $input . '}}}',
+            ''
+        ];
     }
 
     /**
-     * Generate PageForms blocks for each declared subgroup.
-     *
-     * @param CategoryModel $category
-     * @return array
+     * Subobject (repeatable block) sections
      */
-    private function generateSubgroupFormBlocks( CategoryModel $category ): array {
-        $lines = [];
+    private function generateSubobjectSections( CategoryModel $category ): array {
 
-        $subgroupMap = [];
-        foreach ( $category->getRequiredSubgroups() as $required ) {
-            $subgroupMap[$required] = true;
-        }
-        foreach ( $category->getOptionalSubgroups() as $optional ) {
-            if ( !isset( $subgroupMap[$optional] ) ) {
-                $subgroupMap[$optional] = false;
+        $required = $category->getRequiredSubgroups();
+        $optional = $category->getOptionalSubgroups();
+
+        $all = [];
+        foreach ( $required as $n ) { $all[$n] = true; }
+        foreach ( $optional as $n ) {
+            if (!isset($all[$n])) {
+                $all[$n] = false;
             }
         }
 
-        if ( empty( $subgroupMap ) ) {
-            return $lines;
+        if ( empty($all) ) {
+            return [];
         }
 
-        foreach ( $subgroupMap as $subgroupName => $isRequired ) {
-            $subobject = $this->subobjectStore->readSubobject( $subgroupName );
-            if ( !$subobject instanceof SubobjectModel ) {
-                wfLogWarning( "StructureSync: Missing subobject '$subgroupName' referenced by category '{$category->getName()}'" );
+        $out = [];
+
+        foreach ( $all as $subName => $isRequired ) {
+
+            $model = $this->subobjectStore->readSubobject( $subName );
+            if ( !$model instanceof SubobjectModel ) {
+                wfLogWarning("StructureSync: Missing Subobject:$subName in form gen");
                 continue;
             }
 
-            $lines = array_merge(
-                $lines,
-                $this->buildSubgroupFormSection( $category, $subobject, $isRequired )
+            $label = $this->s( $model->getLabel() ?: $model->getName() );
+
+            $out[] = '=== ' . $label . ' ===';
+            $out[] = '';
+
+            /* New convention:
+             * Subobject templates live at:
+             *
+             *     Template:Subobject/<SubobjectName>
+             */
+            $templateName = 'Subobject/' . $this->s( $model->getName() );
+
+            $for = [
+                $templateName,
+                'multiple',
+            ];
+
+            if ( $isRequired ) {
+                $for[] = 'minimum instances=1';
+            }
+
+            $out[] = '{{{for template|' . implode('|', $for) . '}}}';
+
+            /* Render fields */
+            $props = array_merge(
+                $model->getRequiredProperties(),
+                $model->getOptionalProperties()
             );
+
+            foreach ( $props as $p ) {
+                $must = $model->isPropertyRequired( $p );
+                $out = array_merge(
+                    $out,
+                    $this->generateField( $p, $category, $must )
+                );
+            }
+
+            $out[] = '{{{end template}}}';
+            $out[] = '';
         }
 
-        return $lines;
+        return $out;
     }
 
     /**
-     * Build a single subgroup form section.
-     *
-     * @param CategoryModel $category
-     * @param SubobjectModel $subobject
-     * @return array
+     * Save form page.
      */
-    private function buildSubgroupFormSection( CategoryModel $category, SubobjectModel $subobject, bool $isRequired ): array {
-        $lines = [];
-        $label = $this->sanitize( $subobject->getLabel() ?: $subobject->getName() );
+    public function updateForm( string $name, string $content ): bool {
 
-        $lines[] = '=== ' . $label . ' ===';
-        $lines[] = '';
-
-        $templateName = NamingHelper::subgroupTemplateName(
-            $category->getName(),
-            $subobject->getName()
-        );
-
-        $forParams = [
-            $templateName,
-            'multiple',
-            'label=' . $label,
-        ];
-        if ( $isRequired ) {
-            $forParams[] = 'minimum instances=1';
+        if ( trim($name) === '' ) {
+            throw new \InvalidArgumentException("Form name cannot be empty");
         }
 
-        $lines[] = '{{{for template|' . implode( '|', $forParams ) . '}}}';
-
-        $properties = array_merge(
-            $subobject->getRequiredProperties(),
-            $subobject->getOptionalProperties()
-        );
-
-        foreach ( $properties as $propertyName ) {
-            $isRequired = $subobject->isPropertyRequired( $propertyName );
-            $lines = array_merge(
-                $lines,
-                $this->generateFieldDefinition(
-                    $propertyName,
-                    $category,
-                    $isRequired
-                )
-            );
-        }
-
-        $lines[] = '{{{end template}}}';
-        $lines[] = '';
-
-        return $lines;
-    }
-
-    /**
-     * Convert property name → safe PageForms parameter name.
-     * 
-     * Delegates to NamingHelper for consistent transformation across all generators.
-     *
-     * @param string $propertyName SMW property name
-     * @return string Normalized parameter name for PageForms
-     */
-    private function propertyToParameter( string $propertyName ): string {
-        $param = NamingHelper::propertyToParameter($propertyName);
-        
-        // Ensure parameter name is never empty (fallback)
-        if ( empty( $param ) ) {
-            $param = 'value';
-        }
-
-        return $param;
-    }
-
-    /**
-     * Update or create the corresponding Form: page.
-     *
-     * @param string $formName Form name (without namespace)
-     * @param string $content Form wikitext content
-     * @return bool True on success, false on failure
-     * @throws \InvalidArgumentException If form name is empty
-     */
-    public function updateForm( string $formName, string $content ): bool {
-        
-        if (trim($formName) === '') {
-            throw new \InvalidArgumentException('Form name cannot be empty');
-        }
-
-        $title = $this->pageCreator->makeTitle( $formName, \PF_NS_FORM );
-        if ( $title === null ) {
-            wfLogWarning("StructureSync: Failed to create Title for form '$formName'");
+        $title = $this->pageCreator->makeTitle( $name, \PF_NS_FORM );
+        if ( !$title ) {
+            wfLogWarning("StructureSync: Unable to create form title for '$name'");
             return false;
         }
 
-        $summary = 'StructureSync: Auto-generated form';
-        $result = $this->pageCreator->createOrUpdatePage( $title, $content, $summary );
-        
-        if (!$result) {
-            wfLogWarning("StructureSync: Failed to save form '$formName'");
-        }
-        
-        return $result;
+        return $this->pageCreator->createOrUpdatePage(
+            $title,
+            $content,
+            'StructureSync: Auto-generated form'
+        );
     }
 
-    /**
-     * Convenience wrapper to generate + save a form.
-     * 
-     * This combines form generation and page creation into a single operation.
-     *
-     * @param CategoryModel $category Effective (inherited) category
-     * @param string[]      $ancestorChain Optional list of ancestor names
-     * @return bool True on success, false on failure
-     * @throws \InvalidArgumentException If category name/label is invalid
-     */
-    public function generateAndSaveForm(
-        CategoryModel $category,
-        array $ancestorChain = []
-    ): bool {
-
+    public function generateAndSaveForm( CategoryModel $category ): bool {
         try {
-            $wikitext = $this->generateForm( $category, $ancestorChain );
-            return $this->updateForm( $category->getName(), $wikitext );
-        } catch (\Exception $e) {
-            wfLogWarning("StructureSync: Failed to generate/save form for '{$category->getName()}': " . $e->getMessage());
+            $txt = $this->generateForm( $category );
+            return $this->updateForm( $category->getName(), $txt );
+        } catch ( \Exception $e ) {
+            wfLogWarning(
+                "StructureSync: Failed to gen/save form for {$category->getName()}: " .
+                $e->getMessage()
+            );
             return false;
         }
     }
 
-    /**
-     * Determine whether a form exists for a category.
-     *
-     * @param string $categoryName
-     * @return bool
-     */
     public function formExists( string $categoryName ): bool {
-
-        $title = $this->pageCreator->makeTitle( $categoryName, \PF_NS_FORM );
-        return $title && $this->pageCreator->pageExists( $title );
-    }
-
-    /**
-     * Check if a category has "Has parent category" property.
-     * 
-     * This is used to determine if the hierarchy preview should be auto-injected
-     * into the generated form.
-     *
-     * @param CategoryModel $category
-     * @return bool True if "Has parent category" is in required or optional properties
-     */
-    private function hasParentCategoryProperty( CategoryModel $category ): bool {
-        $requiredProps = $category->getRequiredProperties();
-        $optionalProps = $category->getOptionalProperties();
-        
-        // Check if "Has parent category" is in either list
-        // Property names in MediaWiki use spaces, not underscores
-        return in_array( 'Has parent category', $requiredProps, true ) 
-            || in_array( 'Has parent category', $optionalProps, true );
+        $t = $this->pageCreator->makeTitle( $categoryName, \PF_NS_FORM );
+        return $t && $this->pageCreator->pageExists( $t );
     }
 }

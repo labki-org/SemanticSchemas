@@ -8,124 +8,128 @@ use MediaWiki\Extension\StructureSync\Service\CategoryHierarchyService;
 /**
  * ApiStructureSyncHierarchy
  * --------------------------
- * API module for retrieving category hierarchy visualization data.
- * 
- * This is the first API module for the StructureSync extension.
- * 
- * Endpoint: api.php?action=structuresync-hierarchy&category=CategoryName
- * 
- * Returns:
- * {
- *   "structuresync-hierarchy": {
- *     "rootCategory": "Category:CategoryName",
- *     "nodes": {
- *       "Category:CategoryName": {
- *         "title": "Category:CategoryName",
- *         "parents": ["Category:Parent1", ...]
- *       },
- *       ...
- *     },
- *     "inheritedProperties": [
- *       {
- *         "propertyTitle": "Property:Has email",
- *         "sourceCategory": "Category:Person",
- *         "required": true
- *       },
- *       ...
- *     ]
- *   }
- * }
- * 
- * Usage:
- * - Called by frontend JS (ext.structuresync.hierarchy.js)
- * - Used in Special:StructureSync/hierarchy tab
- * - Used in Category page hierarchy displays
- * - Used in PageForms hierarchy preview
+ * Returns category hierarchy data for StructureSync.
+ *
+ * Endpoint:
+ *   api.php?action=structuresync-hierarchy&category=Name
+ *
+ * Supports:
+ *   - Real category lookup
+ *   - Virtual lookup (via ?parents[]=Parent1&parents[]=Parent2)
  */
-class ApiStructureSyncHierarchy extends ApiBase
-{
+class ApiStructureSyncHierarchy extends ApiBase {
+
     /**
      * Execute the API request.
      */
-    public function execute()
-    {
-        $params = $this->extractRequestParams();
-        $categoryName = $params['category'];
-        $parentCategories = $params['parents'] ?? null;
+    public function execute() {
+        $params         = $this->extractRequestParams();
+        $categoryName   = $this->stripPrefix( $params['category'] );
+        $parentList     = $params['parents'] ?? [];
 
-        // Remove "Category:" prefix if present
-        $categoryName = preg_replace('/^Category:/i', '', $categoryName);
+        $service        = new CategoryHierarchyService();
 
-        // Get hierarchy data from service
-        $service = new CategoryHierarchyService();
-        
-        // If parent categories are provided, use virtual mode (for form preview)
-        if ($parentCategories !== null && is_array($parentCategories) && count($parentCategories) > 0) {
-            // Clean up parent category names
-            $cleanParents = array_map(function($parent) {
-                return preg_replace('/^Category:/i', '', trim($parent));
-            }, $parentCategories);
-            $cleanParents = array_filter($cleanParents); // Remove empty strings
-            
-            $hierarchyData = $service->getVirtualHierarchyData($categoryName, array_values($cleanParents));
+        if ( !empty( $parentList ) ) {
+            // Virtual mode: form preview request
+            $cleanParents = $this->sanitizeParentList( $parentList );
+            $data = $service->getVirtualHierarchyData( $categoryName, $cleanParents );
         } else {
-            $hierarchyData = $service->getHierarchyData($categoryName);
+            // Normal mode
+            $data = $service->getHierarchyData( $categoryName );
         }
 
-        // Convert boolean 'required' values to integers for reliable JSON encoding
-        // (MediaWiki API can strip boolean false values)
-        if (isset($hierarchyData['inheritedProperties'])) {
-            foreach ($hierarchyData['inheritedProperties'] as $key => &$prop) {
-                if (isset($prop['required'])) {
-                    $prop['required'] = $prop['required'] ? 1 : 0;
-                }
-            }
-            unset($prop); // Break the reference
-        }
+        // Convert required=true/false → integers (MediaWiki drops boolean false keys)
+        $this->normalizeRequiredFlags( $data );
 
-		if (isset($hierarchyData['inheritedSubgroups'])) {
-			foreach ($hierarchyData['inheritedSubgroups'] as $idx => &$subgroup) {
-				if (isset($subgroup['required'])) {
-					$subgroup['required'] = $subgroup['required'] ? 1 : 0;
-				}
-			}
-			unset($subgroup);
-		}
+        // Add result
+        $this->getResult()->addValue(
+            null,
+            $this->getModuleName(),
+            $data
+        );
+    }
 
-        // Return result
-        $result = $this->getResult();
-        $result->addValue(null, $this->getModuleName(), $hierarchyData);
+    /* =====================================================================
+     * INPUT SANITIZATION
+     * ===================================================================== */
+
+    /**
+     * Strip "Category:" prefix if present.
+     */
+    private function stripPrefix( string $name ): string {
+        return preg_replace( '/^Category:/i', '', trim( $name ) );
     }
 
     /**
-     * Define allowed parameters.
+     * Sanitize parent categories array.
      *
-     * @return array
+     * @param array $parents
+     * @return array Clean, normalized parent names
      */
-    public function getAllowedParams()
-    {
+    private function sanitizeParentList( array $parents ): array {
+        $clean = [];
+
+        foreach ( $parents as $parent ) {
+            if ( !is_string( $parent ) ) {
+                continue;
+            }
+            $p = $this->stripPrefix( $parent );
+            if ( $p !== '' ) {
+                $clean[] = $p;
+            }
+        }
+
+        return $clean;
+    }
+
+    /* =====================================================================
+     * REQUIRED FLAG NORMALIZATION
+     * ===================================================================== */
+
+    /**
+     * Convert required flags from bool → int (1/0) for JSON reliability.
+     */
+    private function normalizeRequiredFlags( array &$data ): void {
+
+        $convertList = function( array &$items, string $key ) {
+            foreach ( $items as &$entry ) {
+                if ( isset( $entry[$key] ) ) {
+                    $entry[$key] = $entry[$key] ? 1 : 0;
+                }
+            }
+            unset( $entry );
+        };
+
+        if ( isset( $data['inheritedProperties'] ) ) {
+            $convertList( $data['inheritedProperties'], 'required' );
+        }
+
+        if ( isset( $data['inheritedSubgroups'] ) ) {
+            $convertList( $data['inheritedSubgroups'], 'required' );
+        }
+    }
+
+    /* =====================================================================
+     * API METADATA
+     * ===================================================================== */
+
+    public function getAllowedParams() {
         return [
             'category' => [
-                self::PARAM_TYPE => 'string',
-                self::PARAM_REQUIRED => true,
-                self::PARAM_HELP_MSG => 'structuresync-api-param-category',
+                self::PARAM_TYPE       => 'string',
+                self::PARAM_REQUIRED   => true,
+                self::PARAM_HELP_MSG   => 'structuresync-api-param-category',
             ],
             'parents' => [
-                self::PARAM_TYPE => 'string',
-                self::PARAM_REQUIRED => false,
-                self::PARAM_ISMULTI => true,
-                self::PARAM_HELP_MSG => 'structuresync-api-param-parents',
+                self::PARAM_TYPE       => 'string',
+                self::PARAM_ISMULTI    => true,
+                self::PARAM_REQUIRED   => false,
+                self::PARAM_HELP_MSG   => 'structuresync-api-param-parents',
             ],
         ];
     }
 
-    /**
-     * Example queries for API help.
-     *
-     * @return array
-     */
-    protected function getExamplesMessages()
-    {
+    protected function getExamplesMessages() {
         return [
             'action=structuresync-hierarchy&category=PhDStudent'
                 => 'apihelp-structuresync-hierarchy-example-1',
@@ -136,24 +140,11 @@ class ApiStructureSyncHierarchy extends ApiBase
         ];
     }
 
-    /**
-     * Indicate that this API module requires read access.
-     *
-     * @return string
-     */
-    public function needsToken()
-    {
-        return false;
+    public function needsToken() {
+        return false; // Read-only public API
     }
 
-    /**
-     * Indicate that GET requests are allowed.
-     *
-     * @return bool
-     */
-    public function isReadMode()
-    {
+    public function isReadMode() {
         return true;
     }
 }
-

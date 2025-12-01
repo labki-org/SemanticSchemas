@@ -9,431 +9,76 @@ use MediaWiki\Title\Title;
 /**
  * WikiPropertyStore
  * ------------------
- * Responsible for reading/writing SMW Property: pages and reconstructing
- * PropertyModel objects from SMW semantic data.
- * 
- * Reading Strategy:
- * -----------------
- * Queries Semantic MediaWiki's data store directly for property metadata.
- * Display templates are still parsed from wikitext since they contain
- * actual template content (not semantic data).
- * 
- * Writing Strategy:
- * -----------------
- * Property metadata is written within HTML comment markers:
- * <!-- StructureSync Start -->
- * ...semantic annotations...
- * <!-- StructureSync End -->
- * 
- * Semantic Properties Read:
- * - Has type (→ datatype)
- * - Display label (→ label)
- * - Allows value (→ allowedValues array)
- * - Has domain and range (→ rangeCategory)
- * - Subproperty of (→ subpropertyOf)
- * - Allows value from category (→ allowedCategory)
- * - Allows value from namespace (→ allowedNamespace)
- * - Has description (→ description)
- * - Has display pattern (→ displayFromProperty)
- * - Allows multiple values (→ allowsMultipleValues)
- * 
- * Semantic Annotations Written:
- * - [[Has type::DataType]]
- * - [[Display label::Label]]
- * - [[Allows value::EnumValue]]
- * - [[Has domain and range::Category:CategoryName]]
- * - [[Subproperty of::PropertyName]]
- * - [[Allows value from category::CategoryName]]
- * - [[Allows value from namespace::NamespaceName]]
- * - [[Has description::...]]
- * - [[Has display pattern::Property:...]]
- * - [[Allows multiple values::true]]
+ * Reads and writes Property: pages as PropertyModel objects.
  *
- * Features:
- * - Normalizes property names (underscores to spaces)
- * - Ensures consistent metadata keys exist (rangeCategory/subpropertyOf)
- * - Adds StructureSync markers for hashing and dirty detection
+ * Fully semantic: NO wikitext parsing.
  */
-class WikiPropertyStore
-{
+class WikiPropertyStore {
 
-    /** Schema content markers - must match PageHashComputer and WikiCategoryStore */
     private const MARKER_START = '<!-- StructureSync Start -->';
-    private const MARKER_END = '<!-- StructureSync End -->';
+    private const MARKER_END   = '<!-- StructureSync End -->';
 
-    /** @var PageCreator */
-    private $pageCreator;
+    private PageCreator $pageCreator;
 
-    public function __construct(PageCreator $pageCreator = null)
-    {
+    public function __construct(PageCreator $pageCreator = null) {
         $this->pageCreator = $pageCreator ?? new PageCreator();
     }
 
-    /* ---------------------------------------------------------------------
-     * READ PROPERTY
-     * --------------------------------------------------------------------- */
+    /* -------------------------------------------------------------------------
+     * PUBLIC API — READ
+     * ------------------------------------------------------------------------- */
 
-    public function readProperty(string $propertyName): ?PropertyModel
-    {
+    public function readProperty(string $propertyName): ?PropertyModel {
 
-        $canonical = $this->normalizePropertyName($propertyName);
+        $canonical = $this->canonicalize($propertyName);
 
-        $title = $this->pageCreator->makeTitle($canonical, \SMW_NS_PROPERTY);
-        if ($title === null || !$this->pageCreator->pageExists($title)) {
+        $title = $this->pageCreator->makeTitle($canonical, SMW_NS_PROPERTY);
+        if (!$title || !$this->pageCreator->pageExists($title)) {
             return null;
         }
 
-        // Query SMW for semantic data instead of parsing wikitext
-        $data = $this->queryPropertyFromSMW($title, $canonical);
+        $data = $this->loadFromSMW($title);
 
-        // Ensure existence of keys
+        // Ensure canonical minimal fields
         $data += [
-            'datatype' => null,
-            'allowedValues' => [],
-            'rangeCategory' => null,
-            'subpropertyOf' => null,
+            'datatype'            => 'Text',
+            'label'               => $canonical,
+            'description'         => '',
+            'allowedValues'       => [],
+            'rangeCategory'       => null,
+            'subpropertyOf'       => null,
+            'allowedCategory'     => null,
+            'allowedNamespace'    => null,
+            'allowsMultipleValues'=> false,
+            'display'             => [],   // Empty canonical display block
         ];
-
-        if (!isset($data['label'])) {
-            $data['label'] = $canonical;
-        }
 
         return new PropertyModel($canonical, $data);
     }
 
-    private function normalizePropertyName(string $name): string
-    {
-        $name = trim($name);
-        $name = preg_replace('/^Property:/i', '', $name);
-        return str_replace('_', ' ', $name);
-    }
+    /* -------------------------------------------------------------------------
+     * PUBLIC API — WRITE
+     * ------------------------------------------------------------------------- */
 
-    /* ---------------------------------------------------------------------
-     * QUERY PROPERTY FROM SMW
-     * --------------------------------------------------------------------- */
+    public function writeProperty(PropertyModel $property): bool {
 
-    /**
-     * Query property metadata from SMW
-     *
-     * Reads semantic properties directly from SMW store instead of parsing wikitext.
-     *
-     * @param \MediaWiki\Title\Title $title Property title
-     * @param string $canonical Canonical property name
-     * @return array Property data array
-     */
-    private function queryPropertyFromSMW(\MediaWiki\Title\Title $title, string $canonical): array
-    {
-        $data = [];
-
-        // Get SMW semantic data for this property page
-        $store = \SMW\StoreFactory::getStore();
-        $subject = \SMW\DIWikiPage::newFromTitle($title);
-        $semanticData = $store->getSemanticData($subject);
-
-        /* Datatype ------------------------------------------------------ */
-        $types = $this->getSMWPropertyValues($semanticData, 'Has type', 'text');
-        if (!empty($types)) {
-            $data['datatype'] = $types[0];
-        }
-
-        /* Allowed values ------------------------------------------------ */
-        $data['allowedValues'] = $this->getSMWPropertyValues($semanticData, 'Allows value', 'text');
-
-        /* Range category ------------------------------------------------ */
-        $ranges = $this->getSMWPropertyValues($semanticData, 'Has domain and range', 'category');
-        if (!empty($ranges)) {
-            $data['rangeCategory'] = $ranges[0];
-        }
-
-        /* Subproperty --------------------------------------------------- */
-        $subprops = $this->getSMWPropertyValues($semanticData, 'Subproperty of', 'property');
-        if (!empty($subprops)) {
-            $data['subpropertyOf'] = $subprops[0];
-        }
-
-        /* Display label ------------------------------------------------- */
-        $labels = $this->getSMWPropertyValues($semanticData, 'Display label', 'text');
-        if (!empty($labels)) {
-            $data['label'] = $labels[0];
-        }
-
-        /* Display pattern (property-to-property template reference) ----- */
-        $patterns = $this->getSMWPropertyValues($semanticData, 'Has display pattern', 'property');
-        if (!empty($patterns)) {
-            $data['displayFromProperty'] = $patterns[0];
-        }
-
-        /* Autocomplete sources (category) ------------------------------- */
-        // Try both property names
-        $allowedCats = $this->getSMWPropertyValues($semanticData, 'Allows value from category', 'text');
-        if (empty($allowedCats)) {
-            $allowedCats = $this->getSMWPropertyValues($semanticData, 'Allows value from', 'category');
-        }
-        if (!empty($allowedCats)) {
-            $data['allowedCategory'] = $allowedCats[0];
-        }
-
-        /* Autocomplete sources (namespace) ------------------------------ */
-        $allowedNS = $this->getSMWPropertyValues($semanticData, 'Allows value from namespace', 'text');
-        if (!empty($allowedNS)) {
-            $data['allowedNamespace'] = $allowedNS[0];
-        }
-
-        /* Description --------------------------------------------------- */
-        $descriptions = $this->getSMWPropertyValues($semanticData, 'Has description', 'text');
-        if (!empty($descriptions)) {
-            $data['description'] = $descriptions[0];
-        }
-
-        /* Allows multiple values ---------------------------------------- */
-        // SMW stores [[Allows multiple values::true]] as a Boolean property
-        try {
-            $allowsProp = \SMW\DIProperty::newFromUserLabel('Allows multiple values');
-            $allowsValues = $semanticData->getPropertyValues($allowsProp);
-            
-            if (!empty($allowsValues)) {
-                foreach ($allowsValues as $dataItem) {
-                    // Check for Boolean type (most common)
-                    if ($dataItem instanceof \SMWDIBoolean) {
-                        if ($dataItem->getBoolean()) {
-                            $data['allowsMultipleValues'] = true;
-                            break;
-                        }
-                    }
-                    // Fallback: check text/string types
-                    elseif ($dataItem instanceof \SMWDIBlob || $dataItem instanceof \SMWDIString) {
-                        $val = strtolower(trim($dataItem->getString()));
-                        if (in_array($val, ['true', 'yes', '1', 't', 'y'])) {
-                            $data['allowsMultipleValues'] = true;
-                            break;
-                        }
-                    }
-                    // Fallback: check numeric types
-                    elseif ($dataItem instanceof \SMWDINumber) {
-                        if ($dataItem->getNumber() > 0) {
-                            $data['allowsMultipleValues'] = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            // Property doesn't exist or error querying - allowsMultipleValues stays false
-        }
-
-        /* Display block (new wiki-editable templates) ------------------- */
-        // For display template, we still need to read from wikitext
-        // as it contains actual template content, not just semantic annotations
-        $content = $this->pageCreator->getPageContent($title);
-        if ($content !== null) {
-            $displayData = $this->parseDisplayBlock($content);
-            if (!empty($displayData)) {
-                $data['display'] = $displayData;
-                // If displayFromProperty is in the Display block, extract it
-                if (isset($displayData['fromProperty'])) {
-                    $data['displayFromProperty'] = $displayData['fromProperty'];
-                }
-            }
-        }
-
-        return $data;
-    }
-
-    /**
-     * Get property values from SMW semantic data
-     *
-     * @param \SMW\SemanticData $semanticData
-     * @param string $propertyName
-     * @param string $type Expected type: 'text', 'property', 'category', or 'page'
-     * @return array
-     */
-    private function getSMWPropertyValues(\SMW\SemanticData $semanticData, string $propertyName, string $type = 'text'): array
-    {
-        try {
-            $property = \SMW\DIProperty::newFromUserLabel($propertyName);
-            $propertyValues = $semanticData->getPropertyValues($property);
-
-            $values = [];
-            foreach ($propertyValues as $dataItem) {
-                $value = $this->extractSMWValue($dataItem, $type);
-                if ($value !== null) {
-                    $values[] = $value;
-                }
-            }
-
-            return $values;
-        } catch (\Exception $e) {
-            // Property doesn't exist or other error
-            return [];
-        }
-    }
-
-    /**
-     * Extract value from SMW DataItem
-     *
-     * @param \SMWDataItem $dataItem
-     * @param string $type Expected type
-     * @return string|null
-     */
-    private function extractSMWValue(\SMWDataItem $dataItem, string $type): ?string
-    {
-        if ($dataItem instanceof \SMW\DIWikiPage) {
-            $title = $dataItem->getTitle();
-            if ($title === null) {
-                return null;
-            }
-
-            switch ($type) {
-                case 'property':
-                    return $title->getNamespace() === \SMW_NS_PROPERTY 
-                        ? $title->getText() 
-                        : null;
-                
-                case 'category':
-                    return $title->getNamespace() === NS_CATEGORY 
-                        ? $title->getText() 
-                        : null;
-                
-                case 'page':
-                    return $title->getPrefixedText();
-                
-                default:
-                    return $title->getText();
-            }
-        } elseif ($dataItem instanceof \SMWDIBlob) {
-            return $dataItem->getString();
-        } elseif ($dataItem instanceof \SMWDIString) {
-            return $dataItem->getString();
-        }
-
-        return null;
-    }
-
-    /* ---------------------------------------------------------------------
-     * DISPLAY TEMPLATE PARSING
-     * 
-     * Note: Display templates contain actual wikitext content (not semantic data),
-     * so they must still be parsed from the page source. This is the only part
-     * that still requires wikitext parsing.
-     * --------------------------------------------------------------------- */
-
-    /**
-     * Parse the Display block within StructureSync markers
-     * 
-     * Returns array with:
-     *   'template' => wikitext template string (or null)
-     *   'type' => display type reference (or null)
-     *   'fromProperty' => property name for pattern reference (or null)
-     */
-    private function parseDisplayBlock(string $content): array
-    {
-        $blockContent = $this->extractDisplaySection($content, self::MARKER_START, self::MARKER_END);
-        
-        if ($blockContent === '') {
-            return [];
-        }
-
-        $result = [];
-
-        // Extract display template section
-        // Look for === Display template === followed by content until next === or end
-        if (
-            preg_match(
-                '/===\s*Display template\s*===\s*\n(.*?)(?=(?:\n===|$))/s',
-                $blockContent,
-                $matches
-            )
-        ) {
-            $template = trim($matches[1]);
-            if ($template !== '') {
-                // Handle {{#tag:pre|...}} wrapper if present
-                if (preg_match('/\{\{#tag:pre\|(.*)\}\}/s', $template, $tagMatch)) {
-                    $result['template'] = trim($tagMatch[1]);
-                } else {
-                    $result['template'] = $template;
-                }
-            }
-        }
-
-        // Extract display type section
-        if (
-            preg_match(
-                '/===\s*Display type\s*===\s*\n([^\n]+)/i',
-                $blockContent,
-                $matches
-            )
-        ) {
-            $type = trim($matches[1]);
-            if ($type !== '' && strtolower($type) !== 'none') {
-                $result['type'] = $type;
-            }
-        }
-
-        // Extract display from property section (property-to-property template reference)
-        if (
-            preg_match(
-                '/===\s*Display from property\s*===\s*\n([^\n]+)/i',
-                $blockContent,
-                $matches
-            )
-        ) {
-            $fromProperty = trim($matches[1]);
-            if ($fromProperty !== '') {
-                // Remove "Property:" prefix if present
-                $fromProperty = preg_replace('/^Property:/i', '', $fromProperty);
-                $result['fromProperty'] = $fromProperty;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Extract content between markers for display parsing
-     *
-     * @param string $content Full page content
-     * @param string $startMarker Start marker
-     * @param string $endMarker End marker
-     * @return string Content between markers, or empty string
-     */
-    private function extractDisplaySection(string $content, string $startMarker, string $endMarker): string
-    {
-        $startPos = strpos($content, $startMarker);
-        $endPos = strpos($content, $endMarker);
-
-        if ($startPos === false || $endPos === false || $endPos <= $startPos) {
-            return '';
-        }
-
-        $blockStart = $startPos + strlen($startMarker);
-        return substr($content, $blockStart, $endPos - $blockStart);
-    }
-
-    /* ---------------------------------------------------------------------
-     * WRITE PROPERTY PAGE CONTENT
-     * --------------------------------------------------------------------- */
-
-    public function writeProperty(PropertyModel $property): bool
-    {
-
-        $title = $this->pageCreator->makeTitle($property->getName(), \SMW_NS_PROPERTY);
-        if ($title === null) {
+        $title = $this->pageCreator->makeTitle($property->getName(), SMW_NS_PROPERTY);
+        if (!$title) {
             return false;
         }
 
-        $existingContent = $this->pageCreator->getPageContent($title) ?? '';
+        $existing = $this->pageCreator->getPageContent($title) ?? '';
 
-        $schemaBlock = $this->generatePropertySchemaBlock($property);
+        $semanticBlock = $this->buildSemanticBlock($property);
 
         $newContent = $this->pageCreator->updateWithinMarkers(
-            $existingContent,
-            $schemaBlock,
+            $existing,
+            $semanticBlock,
             self::MARKER_START,
             self::MARKER_END
         );
 
-        // Tracking category
-        if (strpos($newContent, '[[Category:StructureSync-managed-property]]') === false) {
+        if (!str_contains($newContent, '[[Category:StructureSync-managed-property]]')) {
             $newContent .= "\n[[Category:StructureSync-managed-property]]";
         }
 
@@ -444,93 +89,212 @@ class WikiPropertyStore
         );
     }
 
-    /**
-     * Generate ONLY the metadata block inserted inside StructureSync markers
-     */
-    private function generatePropertySchemaBlock(PropertyModel $property): string
-    {
-
-        $lines = [];
-
-        // Datatype
-        $lines[] = '[[Has type::' . $property->getSMWType() . ']]';
-
-        // Description
-        if ($property->getDescription() !== '') {
-            $lines[] = '[[Has description::' . $property->getDescription() . ']]';
-        }
-
-        // Allows multiple values
-        if ($property->allowsMultipleValues()) {
-            $lines[] = '[[Allows multiple values::true]]';
-        }
-
-        // Display label (only if different from property name)
-        if ($property->getLabel() !== $property->getName()) {
-            $lines[] = '[[Display label::' . $property->getLabel() . ']]';
-        }
-
-        // Allowed values
-        if ($property->hasAllowedValues()) {
-            $lines[] = '';
-            $lines[] = '== Allowed values ==';
-            foreach ($property->getAllowedValues() as $v) {
-                $v = str_replace('|', ' ', $v);
-                $lines[] = "* [[Allows value::$v]]";
-            }
-        }
-
-        // Range category
-        if ($property->getRangeCategory() !== null) {
-            $lines[] = '';
-            $lines[] = '[[Has domain and range::Category:' .
-                $property->getRangeCategory() . ']]';
-        }
-
-        // Subproperty
-        if ($property->getSubpropertyOf() !== null) {
-            $lines[] = '';
-            $lines[] = '[[Subproperty of::' .
-                $property->getSubpropertyOf() . ']]';
-        }
-
-        return implode("\n", $lines);
+    public function propertyExists(string $propertyName): bool {
+        $canonical = $this->canonicalize($propertyName);
+        $t = $this->pageCreator->makeTitle($canonical, SMW_NS_PROPERTY);
+        return $t && $this->pageCreator->pageExists($t);
     }
 
-    /* ---------------------------------------------------------------------
-     * LIST + EXISTENCE
-     * --------------------------------------------------------------------- */
+    public function getAllProperties(): array {
 
-    public function getAllProperties(): array
-    {
+        $out = [];
 
-        $properties = [];
-
-        $lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
-        $dbr = $lb->getConnection(DB_REPLICA);
+        $dbr = MediaWikiServices::getInstance()
+            ->getDBLoadBalancer()
+            ->getConnection(DB_REPLICA);
 
         $res = $dbr->newSelectQueryBuilder()
             ->select('page_title')
             ->from('page')
-            ->where(['page_namespace' => \SMW_NS_PROPERTY])
+            ->where(['page_namespace' => SMW_NS_PROPERTY])
             ->caller(__METHOD__)
             ->fetchResultSet();
 
         foreach ($res as $row) {
             $name = str_replace('_', ' ', $row->page_title);
-            $prop = $this->readProperty($name);
-            if ($prop !== null) {
-                $properties[$name] = $prop;
+
+            $pm = $this->readProperty($name);
+            if ($pm) {
+                $out[$name] = $pm;
             }
         }
 
-        return $properties;
+        return $out;
     }
 
-    public function propertyExists(string $propertyName): bool
-    {
-        $canonical = $this->normalizePropertyName($propertyName);
-        $title = $this->pageCreator->makeTitle($canonical, \SMW_NS_PROPERTY);
-        return $title !== null && $this->pageCreator->pageExists($title);
+    /* -------------------------------------------------------------------------
+     * INTERNAL — LOAD FROM SMW
+     * ------------------------------------------------------------------------- */
+
+    private function loadFromSMW(Title $title): array {
+
+        $store   = \SMW\StoreFactory::getStore();
+        $subject = \SMW\DIWikiPage::newFromTitle($title);
+        $sdata   = $store->getSemanticData($subject);
+
+        $out = [];
+
+        $out['datatype'] = $this->fetchOne($sdata, 'Has type');
+        $out['label'] = $this->fetchOne($sdata, 'Display label');
+        $out['description'] = $this->fetchOne($sdata, 'Has description');
+
+        $out['allowedValues'] =
+            $this->fetchMany($sdata, 'Allows value', 'text');
+
+        $out['rangeCategory'] =
+            $this->fetchOne($sdata, 'Has domain and range', 'category');
+
+        $out['subpropertyOf'] =
+            $this->fetchOne($sdata, 'Subproperty of', 'property');
+
+        $out['allowedCategory'] =
+            $this->fetchOne($sdata, 'Allows value from category', 'text');
+
+        $out['allowedNamespace'] =
+            $this->fetchOne($sdata, 'Allows value from namespace', 'text');
+
+        $out['allowsMultipleValues'] =
+            $this->fetchBoolean($sdata, 'Allows multiple values');
+
+        // Clean null/empty
+        return array_filter(
+            $out,
+            fn($v) => $v !== null && $v !== []
+        );
+    }
+
+    private function fetchOne($sd, string $p, string $type = 'text'): ?string {
+        $vals = $this->fetchMany($sd, $p, $type);
+        return $vals[0] ?? null;
+    }
+
+    private function fetchBoolean($sd, string $prop): bool {
+
+        try {
+            $p = \SMW\DIProperty::newFromUserLabel($prop);
+            $items = $sd->getPropertyValues($p);
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        foreach ($items as $di) {
+            if ($di instanceof \SMWDIBoolean) {
+                return $di->getBoolean();
+            }
+            if ($di instanceof \SMWDINumber) {
+                return $di->getNumber() > 0;
+            }
+            if ($di instanceof \SMWDIBlob || $di instanceof \SMWDIString) {
+                $v = strtolower(trim($di->getString()));
+                if (in_array($v, ['1','true','yes','y','t'], true)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function fetchMany($sd, string $p, string $type = 'text'): array {
+
+        try {
+            $prop = \SMW\DIProperty::newFromUserLabel($p);
+            $items = $sd->getPropertyValues($prop);
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $out = [];
+
+        foreach ($items as $di) {
+            $v = $this->extractValue($di, $type);
+            if ($v !== null) {
+                $out[] = $v;
+            }
+        }
+
+        return $out;
+    }
+
+    private function extractValue($di, string $type): ?string {
+
+        if ($di instanceof \SMW\DIWikiPage) {
+            $t = $di->getTitle();
+            if (!$t) {
+                return null;
+            }
+
+            $text = str_replace('_', ' ', $t->getText());
+
+            return match ($type) {
+                'property' => ($t->getNamespace() === SMW_NS_PROPERTY) ? $text : null,
+                'category' => ($t->getNamespace() === NS_CATEGORY) ? $text : null,
+                'page'     => $t->getPrefixedText(),
+                default    => $text,
+            };
+        }
+
+        if ($di instanceof \SMWDIBlob || $di instanceof \SMWDIString) {
+            return trim($di->getString());
+        }
+
+        return null;
+    }
+
+    /* -------------------------------------------------------------------------
+     * INTERNAL — WRITE SEMANTIC BLOCK
+     * ------------------------------------------------------------------------- */
+
+    private function buildSemanticBlock(PropertyModel $p): string {
+
+        $lines = [];
+
+        // Datatype (required)
+        $lines[] = '[[Has type::' . $p->getSMWType() . ']]';
+
+        if ($p->getDescription() !== '') {
+            $lines[] = '[[Has description::' . $p->getDescription() . ']]';
+        }
+
+        if ($p->allowsMultipleValues()) {
+            $lines[] = '[[Allows multiple values::true]]';
+        }
+
+        // Display label only if differs from canonical name
+        if ($p->getLabel() !== $p->getName()) {
+            $lines[] = '[[Display label::' . $p->getLabel() . ']]';
+        }
+
+        foreach ($p->getAllowedValues() as $v) {
+            $lines[] = '[[Allows value::' . str_replace('|', ' ', $v) . ']]';
+        }
+
+        if ($p->getRangeCategory() !== null) {
+            $lines[] = '[[Has domain and range::Category:' . $p->getRangeCategory() . ']]';
+        }
+
+        if ($p->getSubpropertyOf() !== null) {
+            $lines[] = '[[Subproperty of::' . $p->getSubpropertyOf() . ']]';
+        }
+
+        if ($p->getAllowedCategory() !== null) {
+            $lines[] = '[[Allows value from category::' . $p->getAllowedCategory() . ']]';
+        }
+
+        if ($p->getAllowedNamespace() !== null) {
+            $lines[] = '[[Allows value from namespace::' . $p->getAllowedNamespace() . ']]';
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /* -------------------------------------------------------------------------
+     * CANONICALIZATION
+     * ------------------------------------------------------------------------- */
+
+    private function canonicalize(string $name): string {
+        $name = trim($name);
+        $name = preg_replace('/^Property:/i', '', $name);
+        return str_replace('_', ' ', $name);
     }
 }
