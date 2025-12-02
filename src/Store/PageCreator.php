@@ -118,6 +118,48 @@ class PageCreator {
         }
     }
 
+    /**
+     * Parse a prefixed page name (e.g., "Category:Name", "Property:Name", "Subobject:Name")
+     * and return a Title object.
+     *
+     * @param string $pageName Prefixed page name (e.g., "Category:Something")
+     * @return Title|null
+     */
+    public function titleFromPageName(string $pageName): ?Title {
+        $pageName = trim($pageName);
+        if ($pageName === '') {
+            return null;
+        }
+
+        // Handle prefixed names like "Category:Name", "Property:Name", "Subobject:Name"
+        if (preg_match('/^([^:]+):(.+)$/', $pageName, $matches)) {
+            $prefix = $matches[1];
+            $name = $matches[2];
+
+            // Map prefix to namespace
+            $namespace = null;
+            switch (strtolower($prefix)) {
+                case 'category':
+                    $namespace = NS_CATEGORY;
+                    break;
+                case 'property':
+                    $namespace = defined('SMW_NS_PROPERTY') ? constant('SMW_NS_PROPERTY') : NS_MAIN;
+                    break;
+                case 'subobject':
+                    $namespace = defined('NS_SUBOBJECT') ? constant('NS_SUBOBJECT') : NS_MAIN;
+                    break;
+                default:
+                    // Unknown prefix, try to parse as a regular title
+                    return Title::newFromText($pageName);
+            }
+
+            return $this->makeTitle($name, $namespace);
+        }
+
+        // No prefix, try parsing as a regular title
+        return Title::newFromText($pageName);
+    }
+
     /* =====================================================================
      * DELETE
      * ===================================================================== */

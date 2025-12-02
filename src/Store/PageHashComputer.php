@@ -102,6 +102,36 @@ class PageHashComputer {
 	}
 
 	/**
+	 * Compute hash for a page based on its prefixed name.
+	 * Routes to the appropriate hash method based on page type.
+	 *
+	 * @param string $pageName Prefixed page name (e.g., "Category:Name", "Property:Name", "Subobject:Name")
+	 * @param string $pageContent Full page content
+	 * @return string SHA256 hash (with "sha256:" prefix)
+	 */
+	public function computeHashForPageModel( string $pageName, string $pageContent ): string {
+		// Extract prefix from page name
+		if (preg_match('/^([^:]+):/', $pageName, $matches)) {
+			$prefix = strtolower($matches[1]);
+			
+			switch ($prefix) {
+				case 'category':
+					return $this->computeCategoryHash($pageContent);
+				case 'property':
+					return $this->computePropertyHash($pageContent);
+				case 'subobject':
+					return $this->computeSubobjectHash($pageContent);
+				default:
+					// Unknown type, hash the entire content
+					return $this->hashContent(trim($pageContent));
+			}
+		}
+
+		// No prefix found, hash the entire content
+		return $this->hashContent(trim($pageContent));
+	}
+
+	/**
 	 * Extract content between markers.
 	 *
 	 * @param string $content Full page content

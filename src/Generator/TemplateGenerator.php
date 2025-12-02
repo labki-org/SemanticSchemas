@@ -351,4 +351,16 @@ class TemplateGenerator {
             'StructureSync: Auto-generated template'
         );
     }
+
+    /**
+     * Check if the semantic template exists for a category.
+     *
+     * @param string $categoryName
+     * @return bool
+     */
+    public function semanticTemplateExists( string $categoryName ): bool {
+        $templateName = trim( $categoryName ) . '/semantic';
+        $title = $this->pageCreator->makeTitle( $templateName, NS_TEMPLATE );
+        return $title && $this->pageCreator->pageExists( $title );
+    }
 }
