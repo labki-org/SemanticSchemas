@@ -107,7 +107,7 @@ class NamingHelper
             $clean = substr($clean, 4);
         }
     
-        // Strip "Is " or "Is_" prefix (add this)
+        // Strip "Is " or "Is_" prefix
         if (str_starts_with($clean, 'Is ')) {
             $clean = substr($clean, 3);
         } elseif (str_starts_with($clean, 'Is_')) {
@@ -201,4 +201,3 @@ class NamingHelper
         return str_replace( ' ', '_', $combined );
     }
 }
-

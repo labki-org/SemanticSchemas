@@ -21,17 +21,6 @@ use MediaWiki\Extension\StructureSync\Util\NamingHelper;
  * - Subobject repeatable blocks with minimum instances
  * - Namespace support for page creation
  * - Automatic hierarchy preview (when parent category property detected)
- *
- * Hierarchy Preview Integration:
- * When a category includes a "parent category" property (any property name
- * containing both "parent" and "category"), the generator automatically:
- * 1. Loads the JavaScript module for live preview
- * 2. Injects a hidden free text field for category membership
- * 3. Adds a preview container showing inheritance hierarchy
- * 4. Binds the preview to the parent category form field
- *
- * The preview updates in real-time as users select parent categories,
- * displaying the inheritance tree and inherited properties/subobjects.
  */
 class FormGenerator {
 
@@ -102,44 +91,28 @@ class FormGenerator {
         $lines[] = '';
 
         /* ----------------------------------------------------------
-         * Required + Optional property fields
+         * Property fields in table format
          * -------------------------------------------------------- */
-        $lines = array_merge($lines, $this->generatePropertySections($category));
+        $lines = array_merge($lines, $this->generatePropertyTable($category));
 
         $lines[] = '{{{end template}}}';
         $lines[] = '';
 
         /* ----------------------------------------------------------
          * Hierarchy Preview (if parent category property exists)
-         * 
-         * Automatically injects:
-         * 1. ResourceLoader module for JavaScript functionality
-         * 2. Hidden free text field for category membership tags
-         * 3. Preview container that displays hierarchy tree
-         * 
-         * The preview updates live as users select parent categories,
-         * showing inheritance hierarchy and inherited properties.
          * -------------------------------------------------------- */
         $parentProp = $this->findParentCategoryProperty($category);
         if ($parentProp !== null) {
-
-            // Load the form preview JavaScript module
-            // Must be in <includeonly> so it loads when form is actually used
             $lines[] = '{{#structuresync_load_form_preview:}}';
             $lines[] = '';
 
-            // Convert property name to parameter name for JavaScript field binding
             $parentParam = NamingHelper::propertyToParameter($parentProp);
 
-            // Hidden free text field for automatic category tag injection
-            // JavaScript populates this with [[Category:...]] tags based on selected parents
             $lines[] = '<!-- Auto-populated category membership field -->';
             $lines[] =
                 '{{{standard input|free text|hidden|rows=1|placeholder=Parent categories will be added automatically|id=ss-parent-categories}}}';
             $lines[] = '';
 
-            // Preview container that JavaScript will populate with hierarchy tree
-            // data-parent-field attribute tells JS which form field to watch
             $lines[] = "'''Hierarchy Preview:'''" ;
             $lines[] = '<div id="ss-form-hierarchy-preview" data-parent-field="' . $this->s($parentParam) . '"></div>';
             $lines[] = '';
@@ -149,6 +122,14 @@ class FormGenerator {
          * Subobject sections
          * -------------------------------------------------------- */
         $lines = array_merge($lines, $this->generateSubobjectSections($category));
+
+        /* ----------------------------------------------------------
+         * Free text section
+         * -------------------------------------------------------- */
+        $lines[] = "'''Free text:'''";
+        $lines[] = '';
+        $lines[] = '{{{standard input|free text|rows=10}}}';
+        $lines[] = '';
 
         /* ----------------------------------------------------------
          * Summary + Buttons
@@ -165,32 +146,46 @@ class FormGenerator {
     }
 
     /**
-     * Required + optional sections.
+     * Generate property fields in a table format.
+     * Separates required and optional properties into distinct sections.
      */
-    private function generatePropertySections(CategoryModel $category): array {
+    private function generatePropertyTable(CategoryModel $category): array {
         $required = $category->getRequiredProperties();
         $optional = $category->getOptionalProperties();
 
+        $out = [];
+
+        // Sort both lists alphabetically
+        $required = array_unique($required);
+        $optional = array_unique($optional);
         sort($required);
         sort($optional);
 
-        $out = [];
-
+        // Generate required properties section
         if (!empty($required)) {
-            $out[] = '=== Required Information ===';
+            $out[] = "'''Required fields:'''";
             $out[] = '';
+            $out[] = '{| class="formtable"';
+
             foreach ($required as $prop) {
-                $out = array_merge($out, $this->generateField($prop, $category, true));
+                $out = array_merge($out, $this->generateTableField($prop, $category, true));
             }
+
+            $out[] = '|}';
             $out[] = '';
         }
 
+        // Generate optional properties section
         if (!empty($optional)) {
-            $out[] = '=== Optional Information ===';
+            $out[] = "'''Optional fields:'''";
             $out[] = '';
+            $out[] = '{| class="formtable"';
+
             foreach ($optional as $prop) {
-                $out = array_merge($out, $this->generateField($prop, $category, false));
+                $out = array_merge($out, $this->generateTableField($prop, $category, false));
             }
+
+            $out[] = '|}';
             $out[] = '';
         }
 
@@ -198,9 +193,9 @@ class FormGenerator {
     }
 
     /**
-     * Single PageForms field block.
+     * Generate a table row for a property field with label and description.
      */
-    private function generateField(
+    private function generateTableField(
         string $propertyName,
         CategoryModel $category,
         ?bool $isRequired = null
@@ -209,19 +204,57 @@ class FormGenerator {
         $prop = $this->propertyStore->readProperty($propertyName)
             ?: new PropertyModel($propertyName, [ 'datatype' => 'Text' ]);
 
-        // Determine if property is required
         $isReq = ($isRequired !== null)
             ? $isRequired
             : in_array($propertyName, $category->getRequiredProperties(), true);
 
-        $input = $this->inputMapper->generateInputDefinition($prop, $isReq);
         $param = NamingHelper::propertyToParameter($propertyName);
+        $label = $this->s($prop->getLabel());
+        $description = $this->s($prop->getDescription());
 
-        return [
-            "'''{$prop->getLabel()}:'''",
-            '{{{field|' . $param . '|property=' . $this->s($prop->getName()) . '|' . $input . '}}}',
-            ''
+        // Special handling for "Has Type" property
+        if (strcasecmp($propertyName, 'Has type') === 0) {
+            $input = $this->generateHasTypeInput($isReq);
+        } else {
+            $input = $this->inputMapper->generateInputDefinition($prop, $isReq);
+        }
+
+        $out = [];
+        $out[] = '|-';
+
+        $labelLine = '! ' . $label;
+        if ($isReq) {
+            $labelLine .= '<span style="color:red;"> *</span>';
+        }
+        $labelLine .= ':';
+        if ($description !== '') {
+            $labelLine .= ' <br><p class="pfFieldDescription" style="font-size:0.7em; color:gray;">' 
+                        . htmlspecialchars($description, ENT_QUOTES) 
+                        . '</p>';
+        }
+        $out[] = $labelLine;
+
+        $out[] = '| {{{field|' . $param . '|property=' . $this->s($prop->getName()) . '|' . $input . '}}}';
+
+        return $out;
+    }
+
+    /**
+     * Generate input definition for "Has Type" property with SMW datatypes.
+     */
+    private function generateHasTypeInput(bool $isRequired): string {
+        $datatypes = PropertyModel::getValidDatatypes();
+
+        $params = [
+            'input type=dropdown',
+            'values=' . implode(',', $datatypes)
         ];
+
+        if ($isRequired) {
+            $params[] = 'mandatory=true';
+        }
+
+        return implode('|', $params);
     }
 
     /**
@@ -263,10 +296,20 @@ class FormGenerator {
             }
 
             $out[] = '{{{for template|' . implode('|', $for) . '}}}';
+            $out[] = '';
 
-            foreach (array_merge($model->getRequiredProperties(), $model->getOptionalProperties()) as $p) {
-                $must = $model->isPropertyRequired($p);
-                $out = array_merge($out, $this->generateField($p, $category, $must));
+            // Generate table for subobject properties
+            $subProps = array_merge($model->getRequiredProperties(), $model->getOptionalProperties());
+            if (!empty($subProps)) {
+                $out[] = '{| class="formtable"';
+
+                foreach ($subProps as $p) {
+                    $must = $model->isPropertyRequired($p);
+                    $out = array_merge($out, $this->generateTableField($p, $category, $must));
+                }
+
+                $out[] = '|}';
+                $out[] = '';
             }
 
             $out[] = '{{{end template}}}';
@@ -319,22 +362,6 @@ class FormGenerator {
 
     /**
      * Find the parent category property in a category's schema.
-     * 
-     * Searches for any property name containing both "parent" and "category"
-     * (case-insensitive) in either required or optional properties.
-     * 
-     * Matches common variations:
-     *   - "Has parent category"
-     *   - "Has_parent_category"
-     *   - "Parent category"
-     *   - "Parent categories"
-     *   - Any other combination containing both words
-     * 
-     * This property is used to trigger automatic hierarchy preview functionality
-     * in category creation forms.
-     * 
-     * @param CategoryModel $category The category to check
-     * @return string|null The parent category property name if found, null otherwise
      */
     private function findParentCategoryProperty(CategoryModel $category): ?string {
 

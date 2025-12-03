@@ -32,7 +32,7 @@ class PropertyInputMapper {
         'Email'                 => 'text',
         'Telephone number'      => 'text',
         'Number'                => 'number',
-        'Quantity'              => 'text',       // Could later allow min/max
+        'Quantity'              => 'text',
         'Temperature'           => 'number',
         'Date'                  => 'datepicker',
         'Boolean'               => 'checkbox',
@@ -80,12 +80,6 @@ class PropertyInputMapper {
 
     /**
      * Optional parameters for PageForms input types.
-     *
-     * Returns key/value pairs where values may be empty strings for boolean flags:
-     *   - multiple=""
-     *   - autocomplete="on"
-     *   - values="A,B,C"
-     *   - rows="10"
      */
     public function getInputParameters( PropertyModel $property ): array {
 
@@ -105,8 +99,10 @@ class PropertyInputMapper {
         if ( $property->hasAllowedValues() ) {
             $clean = array_map( static fn( $v ) => trim( (string)$v ), $property->getAllowedValues() );
             $clean = array_filter( $clean, static fn( $v ) => $v !== '' );
-            $params['values'] = implode( ',', $clean );
-            return $params; // Enum overrides all other behaviors
+            if ( !empty( $clean ) ) {
+                $params['values'] = implode( ',', $clean );
+            }
+            return $params;
         }
 
         /* -------------------------------------------
@@ -114,14 +110,16 @@ class PropertyInputMapper {
          * ------------------------------------------- */
         if ( $property->shouldAutocomplete() ) {
 
-            if ( $property->getAllowedCategory() !== null ) {
-                $params['values from category'] = $property->getAllowedCategory();
+            $allowedCategory = $property->getAllowedCategory();
+            if ( $allowedCategory !== null && $allowedCategory !== '' ) {
+                $params['values from category'] = (string)$allowedCategory;
                 $params['autocomplete'] = 'on';
                 return $params;
             }
 
-            if ( $property->getAllowedNamespace() !== null ) {
-                $params['values from namespace'] = $property->getAllowedNamespace();
+            $allowedNamespace = $property->getAllowedNamespace();
+            if ( $allowedNamespace !== null && $allowedNamespace !== '' ) {
+                $params['values from namespace'] = (string)$allowedNamespace;
                 $params['autocomplete'] = 'on';
                 return $params;
             }
@@ -130,9 +128,12 @@ class PropertyInputMapper {
         /* -------------------------------------------
          * PAGE TYPE with range restriction
          * ------------------------------------------- */
-        if ( $property->isPageType() && $property->getRangeCategory() !== null ) {
-            $params['values from category'] = $property->getRangeCategory();
-            $params['autocomplete'] = 'on';
+        if ( $property->isPageType() ) {
+            $rangeCategory = $property->getRangeCategory();
+            if ( $rangeCategory !== null && $rangeCategory !== '' ) {
+                $params['values from category'] = (string)$rangeCategory;
+                $params['autocomplete'] = 'on';
+            }
         }
 
         /* -------------------------------------------
@@ -149,10 +150,6 @@ class PropertyInputMapper {
             $params['rows'] = '10';
             $params['cols'] = '80';
         }
-
-        /* -------------------------------------------
-         * BOOLEAN (checkbox) needs no parameters
-         * ------------------------------------------- */
 
         return $params;
     }
@@ -172,26 +169,31 @@ class PropertyInputMapper {
         $inputType = $this->getInputType( $property );
         $params    = $this->getInputParameters( $property );
 
-        // Only required fields get mandatory validation
+        if ( $inputType === null || $inputType === '' ) {
+            $inputType = 'text';
+        }
+
         if ( $isMandatory ) {
             $params['mandatory'] = 'true';
         }
 
-        // Assemble "|key=value" or "|key" for boolean flags
         $segments = [];
         foreach ( $params as $key => $value ) {
+            $key = (string)$key;
+            if ( $key === '' ) {
+                continue;
+            }
 
+            // Handle boolean flags (empty string value)
             if ( $value === '' ) {
-                // Boolean PF parameters: |multiple
                 $segments[] = $key;
                 continue;
             }
 
-            if ( $value === null ) {
-                continue;
+            $value = (string)$value;
+            if ( $value !== '' ) {
+                $segments[] = $key . '=' . $value;
             }
-
-            $segments[] = $key . '=' . $value;
         }
 
         return 'input type=' . $inputType

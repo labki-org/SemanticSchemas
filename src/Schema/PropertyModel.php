@@ -144,15 +144,24 @@ class PropertyModel {
     }
 
     /**
-     * Normalize and validate SMW datatype.
+     * Get the list of valid SMW datatypes.
+     *
+     * @return string[]
      */
-    private function normalizeDatatype(string $datatype): string {
-        static $valid = [
+    public static function getValidDatatypes(): array {
+        return [
             'Text', 'Page', 'Date', 'Number', 'Email', 'URL', 'Boolean',
             'Code', 'Geographic coordinate', 'Quantity', 'Temperature',
             'Telephone number', 'Annotation URI', 'External identifier',
             'Keyword', 'Monolingual text', 'Record', 'Reference',
         ];
+    }
+
+    /**
+     * Normalize and validate SMW datatype.
+     */
+    private function normalizeDatatype(string $datatype): string {
+        $valid = self::getValidDatatypes();
 
         $lower = strtolower($datatype);
         $validLower = array_map('strtolower', $valid);
