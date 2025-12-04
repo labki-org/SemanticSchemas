@@ -185,6 +185,6 @@ Add custom CSS in MediaWiki:Common.css:
 ## See Also
 
 - [Hierarchy Visualization Guide](hierarchy-visualization.md)
-- [Quick Reference](quick-reference.md)
-- [Main README](../README.md)
+- [Quick Reference](../reference/quick-reference.md)
+- [Main README](../../README.md)
 

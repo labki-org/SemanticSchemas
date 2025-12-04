@@ -7,8 +7,7 @@ use MediaWiki\Extension\StructureSync\Generator\FormGenerator;
 use MediaWiki\Extension\StructureSync\Generator\TemplateGenerator;
 use MediaWiki\Extension\StructureSync\Schema\InheritanceResolver;
 use MediaWiki\Extension\StructureSync\Schema\SchemaComparer;
-use MediaWiki\Extension\StructureSync\Schema\SchemaExporter;
-use MediaWiki\Extension\StructureSync\Schema\SchemaImporter;
+use MediaWiki\Extension\StructureSync\Schema\OntologyInspector;
 use MediaWiki\Extension\StructureSync\Schema\SchemaLoader;
 use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
 use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
@@ -47,11 +46,9 @@ use MediaWiki\Title\Title;
  * Central UI for:
  * --------------
  * - Overview: Dashboard with category status and sync state
- * - Export: Export current schema to JSON/YAML
- * - Import: Import schema from JSON/YAML file or text
  * - Validate: Check wiki state for errors and modifications
  * - Generate: Regenerate templates/forms/displays
- * - Diff: Compare external schema with current wiki schema
+ * - Hierarchy: Visualize category inheritance and subobjects
  * 
  * Architecture:
  * ------------
@@ -179,21 +176,12 @@ class SpecialStructureSync extends SpecialPage
 		$this->showNavigation($action);
 
 		// Dispatch
-		switch ($action) {
-			case 'export':
-				$this->showExport();
-				break;
-			case 'import':
-				$this->showImport();
-				break;
+		switch ( $action ) {
 			case 'validate':
 				$this->showValidate();
 				break;
 			case 'generate':
 				$this->showGenerate();
-				break;
-			case 'diff':
-				$this->showDiff();
 				break;
 			case 'hierarchy':
 				$this->showHierarchy();
@@ -217,14 +205,6 @@ class SpecialStructureSync extends SpecialPage
 				'label' => $this->msg('structuresync-overview')->text(),
 				'subtext' => $this->msg('structuresync-tab-overview-subtext')->text(),
 			],
-			'export' => [
-				'label' => $this->msg('structuresync-export')->text(),
-				'subtext' => $this->msg('structuresync-tab-export-subtext')->text(),
-			],
-			'import' => [
-				'label' => $this->msg('structuresync-import')->text(),
-				'subtext' => $this->msg('structuresync-tab-import-subtext')->text(),
-			],
 			'validate' => [
 				'label' => $this->msg('structuresync-validate')->text(),
 				'subtext' => $this->msg('structuresync-tab-validate-subtext')->text(),
@@ -232,10 +212,6 @@ class SpecialStructureSync extends SpecialPage
 			'generate' => [
 				'label' => $this->msg('structuresync-generate')->text(),
 				'subtext' => $this->msg('structuresync-tab-generate-subtext')->text(),
-			],
-			'diff' => [
-				'label' => $this->msg('structuresync-diff')->text(),
-				'subtext' => $this->msg('structuresync-tab-diff-subtext')->text(),
 			],
 			'hierarchy' => [
 				'label' => $this->msg('structuresync-hierarchy')->text(),
@@ -434,11 +410,6 @@ class SpecialStructureSync extends SpecialPage
 	{
 		return [
 			[
-				'action' => 'import',
-				'label' => $this->msg('structuresync-import')->text(),
-				'description' => $this->msg('structuresync-import-description')->text(),
-			],
-			[
 				'action' => 'generate',
 				'label' => $this->msg('structuresync-generate')->text(),
 				'description' => $this->msg('structuresync-generate-description')->text(),
@@ -447,11 +418,6 @@ class SpecialStructureSync extends SpecialPage
 				'action' => 'validate',
 				'label' => $this->msg('structuresync-validate')->text(),
 				'description' => $this->msg('structuresync-validate-description')->text(),
-			],
-			[
-				'action' => 'diff',
-				'label' => $this->msg('structuresync-diff')->text(),
-				'description' => $this->msg('structuresync-diff-description')->text(),
 			],
 		];
 	}
@@ -474,8 +440,8 @@ class SpecialStructureSync extends SpecialPage
 		$output = $this->getOutput();
 		$output->setPageTitle($this->msg('structuresync-overview')->text());
 
-		$exporter = new SchemaExporter();
-		$stats = $exporter->getStatistics();
+		$inspector = new OntologyInspector();
+		$stats = $inspector->getStatistics();
 		$stateManager = new StateManager();
 		$state = $stateManager->getFullState();
 
@@ -779,410 +745,6 @@ class SpecialStructureSync extends SpecialPage
 	}
 
 	/**
-	 * Export schema (JSON/YAML) and render a preview + download link.
-	 */
-	private function showExport(): void
-	{
-		$output = $this->getOutput();
-		$request = $this->getRequest();
-
-		$output->setPageTitle($this->msg('structuresync-export-title')->text());
-
-		$format = $request->getVal('format', 'json');
-		$download = $request->getBool('download', false);
-
-		$exporter = new SchemaExporter();
-		$schema = $exporter->exportToArray(false);
-		$loader = new SchemaLoader();
-
-		// Handle direct download (no HTML output)
-		if (
-			$request->getVal('action') === 'export' &&
-			$download
-		) {
-			// No CSRF risk here; this is a GET-like download triggered from UI.
-
-			if ($format === 'yaml') {
-				$content = $loader->saveToYaml($schema);
-				$filename = 'schema.yaml';
-				$contentType = 'text/yaml';
-			} else {
-				$content = $loader->saveToJson($schema);
-				$filename = 'schema.json';
-				$contentType = 'application/json';
-			}
-
-			// Log export operation
-			$this->logOperation( 'export', 'Schema export downloaded', [
-				'format' => $format,
-				'filename' => $filename,
-				'size' => strlen( $content ),
-				'categories' => count( $schema['categories'] ?? [] ),
-				'properties' => count( $schema['properties'] ?? [] ),
-			] );
-
-			/** @var WebRequest $request */
-			$response = $request->response();
-			$response->header('Content-Type: ' . $contentType);
-			$response->header('Content-Disposition: attachment; filename="' . $filename . '"');
-			echo $content;
-			// Bypass normal rendering.
-			return;
-		}
-
-		// Prepare schema content for preview
-		if ($format === 'yaml') {
-			$schemaContent = $loader->saveToYaml($schema);
-		} else {
-			$schemaContent = $loader->saveToJson($schema);
-		}
-
-		$downloadUrl = $this->getPageTitle('export')->getLocalURL([
-			'format' => $format,
-			'action' => 'export',
-			'download' => '1'
-		]);
-
-		$form = Html::openElement(
-			'form',
-			[
-				'method' => 'get',
-				'action' => $this->getPageTitle('export')->getLocalURL()
-			]
-		);
-
-		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$form .= Html::element(
-			'label',
-			[],
-			$this->msg('structuresync-export-format')->text()
-		);
-		$form .= Html::openElement('select', [
-			'name' => 'format',
-			'onchange' => 'this.form.submit()'
-		]);
-		$form .= Html::element(
-			'option',
-			[
-				'value' => 'json',
-				'selected' => $format === 'json'
-			],
-			$this->msg('structuresync-export-format-json')->text()
-		);
-		$form .= Html::element(
-			'option',
-			[
-				'value' => 'yaml',
-				'selected' => $format === 'yaml'
-			],
-			$this->msg('structuresync-export-format-yaml')->text()
-		);
-		$form .= Html::closeElement('select');
-		$form .= Html::closeElement('div');
-		$form .= Html::closeElement('form');
-
-		$formCard = Html::rawElement(
-			'div',
-			['class' => 'structuresync-card'],
-			Html::rawElement(
-				'div',
-				['class' => 'structuresync-card-header'],
-				Html::element(
-					'h3',
-					['class' => 'structuresync-card-title'],
-					$this->msg('structuresync-export-title')->text()
-				) .
-				Html::element(
-					'p',
-					['class' => 'structuresync-card-subtitle'],
-					$this->msg('structuresync-export-description')->text()
-				)
-			) .
-			$form .
-			Html::rawElement(
-				'div',
-				['class' => 'structuresync-export-actions'],
-				Html::element(
-					'a',
-					[
-						'href' => $downloadUrl,
-						'class' => 'mw-ui-button mw-ui-progressive'
-					],
-					$this->msg('structuresync-export-download')->text()
-				)
-			)
-		);
-
-		$previewCard = Html::rawElement(
-			'div',
-			['class' => 'structuresync-card'],
-			Html::element(
-				'h3',
-				['class' => 'structuresync-card-title'],
-				$this->msg('structuresync-export-schema-preview')->text()
-			) .
-			Html::rawElement(
-				'div',
-				['class' => 'structuresync-schema-display'],
-				Html::rawElement(
-					'pre',
-					['class' => 'structuresync-schema-content'],
-					Html::element('code', [], $schemaContent)
-				)
-			) .
-			Html::rawElement(
-				'div',
-				['class' => 'structuresync-export-actions'],
-				Html::rawElement(
-					'button',
-					[
-						'type' => 'button',
-						'class' => 'mw-ui-button',
-						'onclick' => 'navigator.clipboard.writeText(' . json_encode($schemaContent) . ').then(() => alert(\'Copied to clipboard\')).catch(() => alert(\'Copy failed\'));'
-					],
-					$this->msg('structuresync-export-copy')->text()
-				)
-			)
-		);
-
-		$output->addHTML(
-			$this->wrapShell($formCard . $previewCard)
-		);
-	}
-
-	/**
-	 * Import schema (JSON/YAML) into wiki.
-	 * This does NOT automatically regenerate artifacts; generation happens
-	 * through the "Generate" step after validation.
-	 */
-	private function showImport(): void
-	{
-		$output = $this->getOutput();
-		$request = $this->getRequest();
-
-		$output->setPageTitle($this->msg('structuresync-import-title')->text());
-
-		// Handle POST
-		if ($request->wasPosted() && $request->getVal('action') === 'import') {
-			if (!$this->getUser()->matchEditToken($request->getVal('token'))) {
-				$output->addHTML(Html::errorBox('Invalid edit token'));
-				return;
-			}
-			$this->processImport();
-			return;
-		}
-
-		$form = Html::openElement('form', [
-			'method' => 'post',
-			'enctype' => 'multipart/form-data',
-			'action' => $this->getPageTitle('import')->getLocalURL()
-		]);
-
-		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$form .= Html::element(
-			'label',
-			[],
-			$this->msg('structuresync-import-file')->text()
-		);
-		$form .= Html::element('input', [
-			'type' => 'file',
-			'name' => 'schemafile',
-			'accept' => '.json,.yaml,.yml'
-		]);
-		$form .= Html::closeElement('div');
-
-		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$form .= Html::element(
-			'label',
-			[],
-			$this->msg('structuresync-import-text')->text()
-		);
-		$form .= Html::element('textarea', [
-			'name' => 'schematext',
-			'rows' => '12',
-			'cols' => '80'
-		], '');
-		$form .= Html::closeElement('div');
-
-		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
-		$form .= Html::check('dryrun', false, ['id' => 'dryrun']);
-		$form .= Html::element(
-			'label',
-			['for' => 'dryrun'],
-			$this->msg('structuresync-import-dryrun')->text()
-		);
-		$form .= Html::closeElement('div');
-
-		$form .= Html::hidden('action', 'import');
-		$form .= Html::hidden('token', $this->getUser()->getEditToken());
-
-		$form .= Html::submitButton(
-			$this->msg('structuresync-import-button')->text(),
-			['class' => 'mw-ui-button mw-ui-progressive']
-		);
-
-		$form .= Html::closeElement('form');
-
-		$helper = Html::rawElement(
-			'div',
-			['class' => 'structuresync-help-card'],
-			Html::element('strong', [], $this->msg('structuresync-import-title')->text()) .
-			Html::openElement('ul') .
-			Html::element('li', [], $this->msg('structuresync-import-description')->text()) .
-			Html::element('li', [], $this->msg('structuresync-import-dryrun')->text()) .
-			Html::element('li', [], $this->msg('structuresync-import-posthint-generate')->text()) .
-			Html::closeElement('ul')
-		);
-
-		$card = Html::rawElement(
-			'div',
-			['class' => 'structuresync-card'],
-			Html::rawElement(
-				'div',
-				['class' => 'structuresync-card-header'],
-				Html::element(
-					'h3',
-					['class' => 'structuresync-card-title'],
-					$this->msg('structuresync-import-title')->text()
-				) .
-				Html::element(
-					'p',
-					['class' => 'structuresync-card-subtitle'],
-					$this->msg('structuresync-import-description')->text()
-				)
-			) .
-			Html::rawElement(
-				'div',
-				['class' => 'structuresync-form-grid'],
-				Html::rawElement('div', [], $form) .
-				Html::rawElement('div', [], $helper)
-			)
-		);
-
-		$output->addHTML($this->wrapShell($card));
-	}
-
-	/**
-	 * Process import POST request.
-	 */
-	private function processImport(): void
-	{
-		$output = $this->getOutput();
-		$request = $this->getRequest();
-
-		// Rate limiting for imports (expensive operation)
-		if ( !$request->getBool( 'dryrun' ) && $this->checkRateLimit( 'import' ) ) {
-			$output->addHTML( Html::errorBox(
-				$this->msg( 'structuresync-ratelimit-exceeded' )
-					->params( self::RATE_LIMIT_PER_HOUR )
-					->text()
-			) );
-			return;
-		}
-
-		$dryRun = $request->getBool('dryrun');
-
-		// Show progress indicator
-		if ( !$dryRun ) {
-			$output->addHTML(
-				Html::rawElement( 'div', [ 'class' => 'structuresync-progress' ],
-					Html::element( 'p', [], $this->msg( 'structuresync-import-inprogress' )->text() )
-				)
-			);
-		}
-
-		try {
-			$loader = new SchemaLoader();
-			$content = null;
-			$source = 'unknown';
-
-			// 1) File upload if present
-			$upload = $request->getUpload('schemafile');
-			if ($upload && $upload->exists() && $upload->getTempName() !== '') {
-				$content = @file_get_contents($upload->getTempName());
-				$source = 'file:' . $upload->getName();
-			}
-
-			// 2) Fallback to textarea
-			if ($content === null || $content === '') {
-				$content = $request->getText('schematext');
-				$source = 'textarea';
-			}
-
-			if ($content === null || trim($content) === '') {
-				$output->addHTML(Html::errorBox(
-					$this->msg( 'structuresync-import-no-schema' )->text()
-				));
-				return;
-			}
-
-			$schema = $loader->loadFromContent($content);
-			$importer = new SchemaImporter();
-
-			// Do not auto-generate artifacts here; generation goes through "Generate".
-			$result = $importer->importFromArray($schema, [
-				'dryRun' => $dryRun,
-				'generateArtifacts' => false,
-			]);
-
-			if ($result['success'] ?? false) {
-				$createdCount = (int) ($result['categoriesCreated'] ?? 0)
-					+ (int) ($result['propertiesCreated'] ?? 0);
-				$updatedCount = (int) ($result['categoriesUpdated'] ?? 0)
-					+ (int) ($result['propertiesUpdated'] ?? 0);
-
-				// Log the operation (only for real imports, not dry runs)
-				if ( !$dryRun ) {
-					$this->logOperation( 'import', 'Schema import completed', [
-						'source' => $source,
-						'created' => $createdCount,
-						'updated' => $updatedCount,
-						'categories' => ( $result['categoriesCreated'] ?? 0 ) + ( $result['categoriesUpdated'] ?? 0 ),
-						'properties' => ( $result['propertiesCreated'] ?? 0 ) + ( $result['propertiesUpdated'] ?? 0 ),
-					] );
-				}
-
-				$message = $this->msg('structuresync-import-success')->text() . '<br>';
-				$message .= $this->msg('structuresync-import-created')
-					->numParams($createdCount)
-					->text() . '<br>';
-				$message .= $this->msg('structuresync-import-updated')
-					->numParams($updatedCount)
-					->text();
-
-				if (!$dryRun) {
-					$message .= '<br>' .
-						$this->msg('structuresync-import-posthint-generate')->text();
-				}
-
-				$output->addHTML(Html::successBox($message));
-			} else {
-				$errors = $result['errors'] ?? ['Unknown import error'];
-				$errorMessage = implode('<br>', array_map( 'htmlspecialchars', $errors ) );
-				
-				// Log failed import
-				$this->logOperation( 'import', 'Schema import failed', [
-					'source' => $source,
-					'dryRun' => $dryRun,
-					'errorCount' => count( $errors ),
-				] );
-				
-				$output->addHTML(Html::errorBox( $errorMessage ));
-			}
-		} catch (\Exception $e) {
-			// Log exception
-			$this->logOperation( 'import', 'Schema import exception: ' . $e->getMessage(), [
-				'exception' => get_class( $e ),
-				'dryRun' => $dryRun,
-			] );
-			
-			$output->addHTML(Html::errorBox(
-				$this->msg( 'structuresync-import-error' )->params( $e->getMessage() )->text()
-			));
-		}
-	}
-
-	/**
 	 * Validate wiki state against expected invariants.
 	 */
 	private function showValidate(): void
@@ -1190,9 +752,8 @@ class SpecialStructureSync extends SpecialPage
 		$output = $this->getOutput();
 		$output->setPageTitle($this->msg('structuresync-validate-title')->text());
 
-		$exporter = new SchemaExporter();
-		$result = $exporter->validateWikiState();
-		$stateManager = new StateManager();
+		$inspector = new OntologyInspector();
+		$result = $inspector->validateWikiState();
 
 		$body = Html::rawElement(
 			'div',
@@ -1651,8 +1212,11 @@ class SpecialStructureSync extends SpecialPage
 			$loader = new SchemaLoader();
 			$fileSchema = $loader->loadFromContent($content);
 
-			$exporter = new SchemaExporter();
-			$wikiSchema = $exporter->exportToArray(false);
+			// NOTE: Diff functionality has been moved to a future schema
+			// management extension. This code path is kept only as a
+			// reference and no longer executes via the UI.
+			$inspector = new OntologyInspector();
+			$wikiSchema = $inspector->validateWikiState();
 
 			$comparer = new SchemaComparer();
 			$diff = $comparer->compare($fileSchema, $wikiSchema);

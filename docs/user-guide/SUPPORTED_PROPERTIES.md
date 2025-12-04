@@ -459,6 +459,6 @@ For properties, display configuration is applied in this priority order:
 ## Related Documentation
 
 - [Display Properties](DISPLAY_PROPERTIES.md) - Detailed guide to display configuration
-- [Quick Reference](quick-reference.md) - Common commands and workflows
-- [Main README](../README.md) - Installation and basic usage
+- [Quick Reference](../reference/quick-reference.md) - Common commands and workflows
+- [Main README](../../README.md) - Installation and basic usage
 

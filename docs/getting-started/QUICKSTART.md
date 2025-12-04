@@ -246,9 +246,9 @@ The display template (`Template:Person/display`) is generated as a stub but **ne
 
 ## Getting Help
 
-- Check `IMPLEMENTATION.md` for technical details
-- See `README.md` for full documentation
-- Review the plan in `structuresync-extension-buil.plan.md`
+- Check [Implementation Summary](../developer/IMPLEMENTATION.md) for technical details
+- See [Main README](../../README.md) for full documentation
+- Review [Architecture Guide](../developer/architecture.md) for technical architecture
 - MediaWiki logs: `debug.log`
 - Extension logs: Look for "StructureSync:" prefix
 

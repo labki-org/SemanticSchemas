@@ -6,13 +6,13 @@ This directory contains scripts to set up a Docker-based MediaWiki test environm
 
 ```bash
 # Set up the test environment (takes 5-10 minutes first time)
-./tests/setup_mw_test_env.sh
+./tests/scripts/setup_mw_test_env.sh
 
 # Populate with test data
-./tests/populate_test_data.sh
+./tests/scripts/populate_test_data.sh
 
 # Or do both in one command
-POPULATE_TEST_DATA=1 ./tests/setup_mw_test_env.sh
+POPULATE_TEST_DATA=1 ./tests/scripts/setup_mw_test_env.sh
 ```
 
 ## What Gets Installed
@@ -93,7 +93,7 @@ cd /var/www/html/w/extensions/StructureSync
 php maintenance/exportOntology.php --format=json
 
 # Import schema
-php maintenance/importOntology.php --input=tests/test-schema.json --dry-run
+php maintenance/importOntology.php --input=tests/fixtures/test-schema.json --dry-run
 
 # Validate ontology
 php maintenance/validateOntology.php --show-warnings
@@ -122,7 +122,7 @@ docker compose down
 ```bash
 # This will delete all data and start fresh
 rm -rf ~/.cache/structuresync/mediawiki-StructureSync-test
-./tests/setup_mw_test_env.sh
+./tests/scripts/setup_mw_test_env.sh
 ```
 
 ### Modify Extension Code
@@ -139,7 +139,7 @@ docker compose restart mediawiki
 ### Port Already in Use
 If port 8889 is busy:
 ```bash
-MW_PORT=8890 ./tests/setup_mw_test_env.sh
+MW_PORT=8890 ./tests/scripts/setup_mw_test_env.sh
 ```
 
 ### Permission Errors
@@ -178,7 +178,7 @@ docker compose down -v
 
 ## Test Schema Example
 
-After running `populate_test_data.sh`, you'll have a test schema at `tests/test-schema.json`:
+After running `populate_test_data.sh`, you'll have a test schema at `tests/fixtures/test-schema.json`:
 
 ```json
 {
@@ -247,9 +247,9 @@ The setup script can be used in CI pipelines:
 ```bash
 # Non-interactive mode
 export CI=1
-./tests/setup_mw_test_env.sh
+./tests/scripts/setup_mw_test_env.sh
 
 # Run tests
-./tests/run_tests.sh  # (if you create test scripts)
+./tests/scripts/run_tests.sh  # (if you create test scripts)
 ```
 

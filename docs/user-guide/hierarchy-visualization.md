@@ -415,10 +415,9 @@ Person appears in the hierarchy but properties are only listed once (C3 lineariz
 
 ## Related Documentation
 
-- [StructureSync Overview](../README.md)
-- [Category Schema Design](category-schema.md) _(if exists)_
-- [Property Definition](property-definition.md) _(if exists)_
-- [Form Generation](form-generation.md) _(if exists)_
+- [StructureSync Overview](../../README.md)
+- [Quick Start Guide](../getting-started/QUICKSTART.md)
+- [Supported Properties](SUPPORTED_PROPERTIES.md)
 
 ---
 
@@ -426,9 +425,9 @@ Person appears in the hierarchy but properties are only listed once (C3 lineariz
 
 For issues, questions, or feature requests:
 
-1. Check the [main README](../README.md)
-2. Review [test examples](../tests/populate_test_data.sh)
-3. Examine the [implementation notes](../IMPLEMENTATION.md)
+1. Check the [main README](../../README.md)
+2. Review [test examples](../../tests/scripts/populate_test_data.sh)
+3. Examine the [implementation notes](../developer/IMPLEMENTATION.md)
 
 ---
 

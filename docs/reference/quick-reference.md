@@ -57,7 +57,7 @@ The properties section has two tabs:
 1. Edit Form:Category
 2. Add: `{{#structuresync_load_form_preview:}}`
 3. Add: `<div id="ss-form-hierarchy-preview"></div>`
-4. See [Form Preview Setup](form-preview-setup.md) for details
+4. See [Form Preview Setup](../user-guide/form-preview-setup.md) for details
 
 ### 4. Export Hierarchy Data
 ```bash
@@ -66,9 +66,9 @@ curl "http://wiki/api.php?action=structuresync-hierarchy&category=NAME&format=js
 
 ## See Also
 
-- [Full Hierarchy Documentation](hierarchy-visualization.md)
-- [Main README](../README.md)
-- [Implementation Notes](../IMPLEMENTATION.md)
+- [Full Hierarchy Documentation](../user-guide/hierarchy-visualization.md)
+- [Main README](../../README.md)
+- [Implementation Notes](../developer/IMPLEMENTATION.md)
 
 ## Subobjects at a Glance
 

@@ -1,111 +1,117 @@
 # StructureSync Documentation
 
-Welcome to the StructureSync documentation!
+Welcome to the StructureSync documentation! This directory contains comprehensive documentation organized by audience and topic.
 
-## Getting Started
+## Documentation Structure
 
-- **[Main README](../README.md)** - Installation and basic usage
-- **[Quick Reference](quick-reference.md)** - Common commands and workflows
-- **[Implementation Notes](../IMPLEMENTATION.md)** - Technical architecture
+### Getting Started
+New to StructureSync? Start here:
 
-## Features
+- **[Quick Start Guide](getting-started/QUICKSTART.md)** - Create your first ontology and start using StructureSync
+- **[Installation Guide](getting-started/installation.md)** - Detailed installation instructions
 
-### Schema Definition
+### User Guide
+For administrators and end users:
 
-- **[Supported Properties](SUPPORTED_PROPERTIES.md)** - Complete reference for all semantic properties
+- **[Supported Properties](user-guide/SUPPORTED_PROPERTIES.md)** - Complete reference for all semantic properties
   - Category properties (inheritance, display, properties, subobjects)
   - Property properties (datatypes, constraints, display configuration)
   - Subobject properties (metadata, required/optional properties)
   - Examples and best practices
 
-- **[Display Properties](DISPLAY_PROPERTIES.md)** - Guide to property display configuration
+- **[Display Properties](user-guide/DISPLAY_PROPERTIES.md)** - Guide to property display configuration
   - Custom display templates
   - Display patterns and types
   - Rendering priority order
 
-### Category Hierarchy Visualization
-
-- **[Hierarchy Visualization Guide](hierarchy-visualization.md)** - Complete guide to visualizing category inheritance
+- **[Hierarchy Visualization Guide](user-guide/hierarchy-visualization.md)** - Complete guide to visualizing category inheritance
   - Using the Special page interface
   - Embedding visualizations in category pages
   - API access for developers
   - Understanding the display
   - Troubleshooting
 
-- **[Form Preview Setup](form-preview-setup.md)** - Add live hierarchy preview to category creation forms
+- **[Form Preview Setup](user-guide/form-preview-setup.md)** - Add live hierarchy preview to category creation forms
   - Dynamic preview as users add parent categories
   - Shows inheritance hierarchy
   - Displays inherited properties count
   - Step-by-step setup instructions
 
-## For Administrators
+### Developer Documentation
+For developers extending StructureSync:
 
-### Schema Management
+- **[Architecture Guide](developer/architecture.md)** - Complete technical architecture documentation
+  - Module structure and organization
+  - Data flow diagrams
+  - Key concepts and design decisions
+  - Extension points
 
-- Export/Import schemas (see [Main README](../README.md))
-- Validate category structures
-- Generate templates and forms
-- Compare schema versions
+- **[Implementation Summary](developer/IMPLEMENTATION.md)** - What has been built and completed
+  - Component overview
+  - Architecture highlights
+  - File structure reference
 
-### Testing
+- **[Contributing Guide](developer/contributing.md)** - How to contribute to StructureSync
+  - Coding standards
+  - Testing requirements
+  - Pull request process
 
-- **[Test Environment Setup](../tests/setup_mw_test_env.sh)** - Set up test environment
-- **[Test Data](../tests/populate_test_data.sh)** - Populate test data with examples
+### Reference
+Quick lookups and common tasks:
 
-## For Developers
+- **[Quick Reference](reference/quick-reference.md)** - Common commands and workflows
 
-### Architecture
+### Maintenance
+For system administrators:
 
-The extension follows MediaWiki best practices:
+- **[Maintenance Tasks](maintenance/RUN_JOBS.md)** - Maintenance job commands and scripts
 
-- **Backend Services**: PHP services for hierarchy resolution (`CategoryHierarchyService`)
-- **API Modules**: RESTful API endpoints (`ApiStructureSyncHierarchy`)
-- **Frontend Components**: ResourceLoader modules for UI
-- **Parser Functions**: WikiText integration (`{{#structuresync_hierarchy:}}`)
+## Quick Links
 
-### Key Components
+### For Administrators
 
-```
-src/
-├── Api/                    # API modules
-│   └── ApiStructureSyncHierarchy.php
-├── Service/                # Business logic services
-│   └── CategoryHierarchyService.php
-├── Schema/                 # Schema models and resolvers
-│   ├── CategoryModel.php
-│   └── InheritanceResolver.php
-├── Parser/                 # Parser functions
-│   └── DisplayParserFunctions.php
-└── Special/                # Special pages
-    └── SpecialStructureSync.php
-```
+- [Schema Management](../README.md#usage) - Export/Import schemas
+- [Validation](../README.md#validate) - Check schema consistency
+- [Template Generation](../README.md#generate) - Regenerate templates and forms
+- [Schema Comparison](../README.md#diff) - Compare schema versions
 
-### Extending
+### For Developers
 
-To add new features:
+- [Architecture Overview](developer/architecture.md) - Understand the codebase structure
+- [Extension Points](developer/architecture.md#extension-points) - How to extend StructureSync
+- [API Documentation](user-guide/hierarchy-visualization.md#api-usage) - API endpoints and usage
+- [Testing Guide](../tests/README.md) - Set up and run tests
 
-1. **Backend**: Create services in `src/Service/`
-2. **API**: Add API modules in `src/Api/`
-3. **Frontend**: Add ResourceLoader modules in `resources/`
-4. **Register**: Update `extension.json`
+## Finding Documentation
 
-## Contributing
+### By Task
 
-When contributing, please:
+- **Installing StructureSync** → [Getting Started](getting-started/QUICKSTART.md#installation)
+- **Creating a category** → [Quick Start](getting-started/QUICKSTART.md#creating-your-first-ontology)
+- **Visualizing hierarchy** → [Hierarchy Visualization](user-guide/hierarchy-visualization.md)
+- **Customizing display** → [Display Properties](user-guide/DISPLAY_PROPERTIES.md)
+- **Exporting schema** → [Main README](../README.md#maintenance-scripts)
+- **Understanding architecture** → [Architecture Guide](developer/architecture.md)
 
-1. Follow MediaWiki coding conventions
-2. Add tests for new features
-3. Update documentation
-4. Test with multiple browsers
-5. Verify no linter errors
+### By Audience
+
+- **New users** → Start with [Quick Start Guide](getting-started/QUICKSTART.md)
+- **Administrators** → See [User Guide](user-guide/) section
+- **Developers** → See [Developer Documentation](developer/) section
+- **System admins** → See [Maintenance](maintenance/) section
+
+## Related Resources
+
+- **[Main README](../README.md)** - Extension overview and installation
+- **[Test Environment Setup](../tests/README.md)** - Set up test environment
+- **[Implementation Notes](developer/IMPLEMENTATION.md)** - Technical details
 
 ## Need Help?
 
-- Check the [troubleshooting section](hierarchy-visualization.md#troubleshooting)
-- Review [test examples](../tests/populate_test_data.sh)
-- Check [implementation notes](../IMPLEMENTATION.md)
+- Check the [troubleshooting section](user-guide/hierarchy-visualization.md#troubleshooting)
+- Review [test examples](../tests/scripts/populate_test_data.sh)
+- Check [implementation notes](developer/IMPLEMENTATION.md)
 
 ---
 
 **Note**: This documentation is for StructureSync version 0.1.0 and later.
-

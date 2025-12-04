@@ -17,27 +17,14 @@ StructureSync is a MediaWiki extension that treats Categories and Properties as 
 
 ## Installation
 
-1. Clone this repository to your MediaWiki `extensions` directory:
-   ```bash
-   cd extensions/
-   git clone https://github.com/yourrepo/StructureSync.git
-   ```
+For detailed installation instructions, see the [Installation Guide](docs/getting-started/installation.md).
 
-2. Install Composer dependencies:
-   ```bash
-   cd StructureSync
-   composer install --no-dev
-   ```
+Quick start:
 
-3. Add to your `LocalSettings.php`:
-   ```php
-   wfLoadExtension( 'StructureSync' );
-   ```
-
-4. Run the update script:
-   ```bash
-   php maintenance/update.php
-   ```
+1. Clone to your MediaWiki `extensions` directory
+2. Install Composer dependencies: `composer install --no-dev`
+3. Add `wfLoadExtension( 'StructureSync' );` to `LocalSettings.php`
+4. Run `php maintenance/update.php`
 
 ## Configuration
 
@@ -70,7 +57,7 @@ The visualization shows:
 - All inherited properties grouped by source category
 - Visual distinction between required (red) and optional (green) properties
 
-📖 **[Complete Hierarchy Documentation](docs/hierarchy-visualization.md)**
+📖 **[Complete Hierarchy Documentation](docs/user-guide/hierarchy-visualization.md)**
 
 ### Maintenance Scripts
 
@@ -189,8 +176,25 @@ Categories can have multiple parents. Property inheritance uses:
 
 This extension is licensed under GPL-3.0-or-later. See LICENSE file for details.
 
+## Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+- **[Getting Started](docs/getting-started/QUICKSTART.md)** - Create your first ontology
+- **[User Guide](docs/user-guide/)** - Complete guides for administrators
+  - [Supported Properties](docs/user-guide/SUPPORTED_PROPERTIES.md)
+  - [Display Properties](docs/user-guide/DISPLAY_PROPERTIES.md)
+  - [Hierarchy Visualization](docs/user-guide/hierarchy-visualization.md)
+- **[Developer Documentation](docs/developer/)** - For contributors and extenders
+  - [Architecture Guide](docs/developer/architecture.md)
+  - [Contributing Guide](docs/developer/contributing.md)
+- **[Reference](docs/reference/)** - Quick reference and lookup
+
+See the [Documentation Index](docs/README.md) for a complete overview.
+
 ## Support
 
 - Report issues on GitHub
 - Documentation: https://www.mediawiki.org/wiki/Extension:StructureSync
+- Check the [troubleshooting section](docs/user-guide/hierarchy-visualization.md#troubleshooting)
 

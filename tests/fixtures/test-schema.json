@@ -1,0 +1,1156 @@
+{
+    "schemaVersion": "1.0",
+    "categories": {
+        "Category": {
+            "parents": [],
+            "label": "Category",
+            "description": "Defines the structure of all Categories used within the wiki.",
+            "properties": {
+                "required": [
+                    "Has description",
+                    "Has label"
+                ],
+                "optional": [
+                    "Has target namespace",
+                    "Has parent category",
+                    "Has required property",
+                    "Has optional property",
+                    "Has required subgroup",
+                    "Has optional subgroup",
+                    "Has display section"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Basic Information",
+                        "properties": [
+                            "Has description",
+                            "Has label"
+                        ]
+                    },
+                    {
+                        "name": "Category Structure",
+                        "properties": [
+                            "Has parent category",
+                            "Has required property",
+                            "Has optional property",
+                            "Has required subgroup",
+                            "Has optional subgroup"
+                        ]
+                    },
+                    {
+                        "name": "Display Sections",
+                        "properties": [
+                            "Has display section"
+                        ]
+                    }
+                ]
+            },
+            "targetNamespace": "Category"
+        },
+        "Department": {
+            "parents": [],
+            "label": "Department",
+            "description": "An academic department within an institution.",
+            "properties": {
+                "required": [
+                    "Has full name"
+                ],
+                "optional": [
+                    "Has website"
+                ]
+            }
+        },
+        "EmptyCategory": {
+            "parents": [],
+            "label": "EmptyCategory",
+            "description": "A category with no properties (for testing).",
+            "properties": {
+                "required": [],
+                "optional": []
+            }
+        },
+        "Faculty": {
+            "parents": [
+                "Person"
+            ],
+            "label": "Faculty",
+            "description": "Faculty member.",
+            "properties": {
+                "required": [
+                    "Has institution",
+                    "Has department"
+                ],
+                "optional": [
+                    "Has research interests",
+                    "Has publication count",
+                    "Has h index",
+                    "Has room number"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Academic Information",
+                        "properties": [
+                            "Has room number",
+                            "Has institution",
+                            "Has department"
+                        ]
+                    },
+                    {
+                        "name": "Research",
+                        "properties": [
+                            "Has research interests",
+                            "Has publication count",
+                            "Has h index"
+                        ]
+                    }
+                ]
+            }
+        },
+        "GraduateStudent": {
+            "parents": [
+                "Person",
+                "LabMember"
+            ],
+            "label": "GraduateStudent",
+            "description": "A graduate student in the lab.",
+            "properties": {
+                "required": [
+                    "Has advisor",
+                    "Has academic level"
+                ],
+                "optional": [
+                    "Has research interests",
+                    "Has cohort year",
+                    "Has thesis title"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Academic Information",
+                        "properties": [
+                            "Has cohort year",
+                            "Has advisor",
+                            "Has academic level",
+                            "Has thesis title"
+                        ]
+                    },
+                    {
+                        "name": "Research",
+                        "properties": [
+                            "Has research interests"
+                        ]
+                    }
+                ]
+            }
+        },
+        "Lab": {
+            "parents": [
+                "Organization"
+            ],
+            "label": "Lab",
+            "description": "A research lab or group.",
+            "properties": {
+                "required": [
+                    "Has lab"
+                ],
+                "optional": [
+                    "Has website",
+                    "Has code repository",
+                    "Has research area"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Research",
+                        "properties": [
+                            "Has research area"
+                        ]
+                    }
+                ]
+            }
+        },
+        "LabMember": {
+            "parents": [],
+            "label": "LabMember",
+            "description": "A member of the lab.",
+            "properties": {
+                "required": [
+                    "Has start date",
+                    "Has lab role"
+                ],
+                "optional": [
+                    "Has biography",
+                    "Has end date",
+                    "Has active status"
+                ]
+            }
+        },
+        "MastersStudent": {
+            "parents": [
+                "GraduateStudent"
+            ],
+            "label": "MastersStudent",
+            "description": "A masters student.",
+            "properties": {
+                "required": [],
+                "optional": [
+                    "Has thesis title"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Masters Information",
+                        "properties": [
+                            "Has thesis title"
+                        ]
+                    }
+                ]
+            }
+        },
+        "Organization": {
+            "parents": [],
+            "label": "Organization",
+            "description": "An organization or institution.",
+            "properties": {
+                "required": [
+                    "Has full name"
+                ],
+                "optional": [
+                    "Has website",
+                    "Has geographic location"
+                ]
+            }
+        },
+        "PI": {
+            "parents": [
+                "LabMember",
+                "Faculty"
+            ],
+            "label": "PI",
+            "description": "A principal investigator (lab head).",
+            "properties": {
+                "required": [
+                    "Has lab"
+                ],
+                "optional": [
+                    "Has orcid"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Lab Information",
+                        "properties": [
+                            "Has lab"
+                        ]
+                    }
+                ]
+            }
+        },
+        "Person": {
+            "parents": [],
+            "label": "Person",
+            "description": "A person in our organization.",
+            "properties": {
+                "required": [
+                    "Has full name",
+                    "Has email"
+                ],
+                "optional": [
+                    "Has biography",
+                    "Has phone",
+                    "Has website",
+                    "Has birth date"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Contact Information",
+                        "properties": [
+                            "Has email",
+                            "Has phone",
+                            "Has website"
+                        ]
+                    },
+                    {
+                        "name": "Biography",
+                        "properties": [
+                            "Has biography"
+                        ]
+                    }
+                ]
+            }
+        },
+        "PhDStudent": {
+            "parents": [
+                "GraduateStudent"
+            ],
+            "label": "PhDStudent",
+            "description": "A PhD student in the lab.",
+            "properties": {
+                "required": [],
+                "optional": [
+                    "Has degree",
+                    "Has thesis title"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "PhD Information",
+                        "properties": [
+                            "Has degree",
+                            "Has thesis title"
+                        ]
+                    }
+                ]
+            }
+        },
+        "Postdoc": {
+            "parents": [
+                "Person",
+                "LabMember"
+            ],
+            "label": "Postdoc",
+            "description": "A postdoctoral researcher in the lab.",
+            "properties": {
+                "required": [
+                    "Has start date",
+                    "Has lab"
+                ],
+                "optional": [
+                    "Has research interests",
+                    "Has end date",
+                    "Has publication count"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Research",
+                        "properties": [
+                            "Has research interests",
+                            "Has publication count"
+                        ]
+                    }
+                ]
+            }
+        },
+        "Project": {
+            "parents": [],
+            "label": "Project",
+            "description": "A research project.",
+            "properties": {
+                "required": [
+                    "Has full name"
+                ],
+                "optional": [
+                    "Has start date",
+                    "Has end date",
+                    "Has research area"
+                ]
+            }
+        },
+        "Publication": {
+            "parents": [],
+            "label": "Publication",
+            "description": "A research publication.",
+            "properties": {
+                "required": [
+                    "Has full name",
+                    "Has publication date"
+                ],
+                "optional": [
+                    "Has website",
+                    "Has keywords"
+                ]
+            },
+            "subgroups": {
+                "required": [
+                    "PublicationAuthor"
+                ],
+                "optional": []
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Publication Details",
+                        "properties": [
+                            "Has publication date",
+                            "Has keywords"
+                        ]
+                    }
+                ]
+            }
+        },
+        "SimpleCategory": {
+            "parents": [],
+            "label": "SimpleCategory",
+            "description": "A simple category for testing.",
+            "properties": {
+                "required": [
+                    "Has full name"
+                ],
+                "optional": []
+            }
+        },
+        "Student": {
+            "parents": [
+                "Person"
+            ],
+            "label": "Student",
+            "description": "A student.",
+            "properties": {
+                "required": [
+                    "Has advisor",
+                    "Has academic level"
+                ],
+                "optional": [
+                    "Has cohort year",
+                    "Has degree"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Academic Information",
+                        "properties": [
+                            "Has cohort year",
+                            "Has advisor",
+                            "Has academic level"
+                        ]
+                    }
+                ]
+            }
+        },
+        "Undergraduate": {
+            "parents": [
+                "Student"
+            ],
+            "label": "Undergraduate",
+            "description": "An undergraduate student.",
+            "properties": {
+                "required": [],
+                "optional": [
+                    "Has employment status"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "Student Information",
+                        "properties": [
+                            "Has employment status"
+                        ]
+                    }
+                ]
+            }
+        },
+        "UserProfile": {
+            "parents": [],
+            "label": "UserProfile",
+            "description": "A user profile page (created in User namespace).",
+            "properties": {
+                "required": [
+                    "Has full name",
+                    "Has email"
+                ],
+                "optional": [
+                    "Has biography",
+                    "Has website"
+                ]
+            },
+            "display": {
+                "sections": [
+                    {
+                        "name": "User Information",
+                        "properties": [
+                            "Has full name",
+                            "Has email",
+                            "Has website"
+                        ]
+                    }
+                ]
+            },
+            "targetNamespace": "User"
+        }
+    },
+    "properties": {
+        "Allows multiple values": {
+            "datatype": "Text",
+            "label": "Allows multiple values",
+            "description": "Indicates whether a property can have multiple values.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Email": {
+            "datatype": "Text",
+            "label": "Email",
+            "description": "Display pattern for rendering email addresses.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Foaf:homepage": {
+            "datatype": "Text",
+            "label": "Foaf:homepage",
+            "description": "",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Foaf:knows": {
+            "datatype": "Text",
+            "label": "Foaf:knows",
+            "description": "",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Foaf:name": {
+            "datatype": "Text",
+            "label": "Foaf:name",
+            "description": "",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has academic level": {
+            "datatype": "Text",
+            "label": "Academic Level",
+            "description": "Academic level or degree status.",
+            "allowedValues": [
+                "Undergraduate",
+                "Masters",
+                "PhD",
+                "Postdoc",
+                "Faculty"
+            ],
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has active status": {
+            "datatype": "Text",
+            "label": "Has active status",
+            "description": "Whether the person is currently active.",
+            "display": {
+                "type": "Boolean",
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has advisor": {
+            "datatype": "Text",
+            "label": "Advisor",
+            "description": "Academic advisor or supervisor.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has author": {
+            "datatype": "Text",
+            "label": "Has author",
+            "description": "Author referenced by a publication.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowedCategory": "Person",
+            "allowsMultipleValues": false
+        },
+        "Has author order": {
+            "datatype": "Text",
+            "label": "Has author order",
+            "description": "Ordering index for publication authors.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has biography": {
+            "datatype": "Text",
+            "label": "Has biography",
+            "description": "Biography or description text.",
+            "display": {
+                "type": null,
+                "template": "<div class=\"bio-block\" style=\"background: #f9f9f9; padding: 10px; border-left: 3px solid #0066cc; margin: 10px 0;\"><div class=\"bio-label\" style=\"font-weight: bold; color: #0066cc; margin-bottom: 5px;\">Biography</div><div class=\"bio-value\" style=\"white-space: pre-wrap;\">{{{value}}}</div></div>",
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has birth date": {
+            "datatype": "Text",
+            "label": "Has birth date",
+            "description": "Date of birth.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has code repository": {
+            "datatype": "Text",
+            "label": "Has code repository",
+            "description": "URL to code repository (GitHub, GitLab, etc.).",
+            "display": {
+                "type": "URL",
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has cohort year": {
+            "datatype": "Text",
+            "label": "Has cohort year",
+            "description": "Year of cohort or class.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has collaborator": {
+            "datatype": "Text",
+            "label": "Has collaborator",
+            "description": "Research collaborators.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": true
+        },
+        "Has degree": {
+            "datatype": "Text",
+            "label": "Has degree",
+            "description": "Academic degree obtained.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has department": {
+            "datatype": "Text",
+            "label": "Department",
+            "description": "Department affiliation.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowedCategory": "Department",
+            "allowsMultipleValues": true
+        },
+        "Has description": {
+            "datatype": "Text",
+            "label": "Has description",
+            "description": "A description of a property or category.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has display pattern": {
+            "datatype": "Text",
+            "label": "Has display pattern",
+            "description": "References another property to use its display template as a pattern.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowedNamespace": "Property",
+            "allowsMultipleValues": false
+        },
+        "Has display section": {
+            "datatype": "Text",
+            "label": "Has display section",
+            "description": "Display section configuration for organizing how properties are shown on a page.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": true
+        },
+        "Has display template": {
+            "datatype": "Text",
+            "label": "Has display template",
+            "description": "Defines a custom HTML/wikitext template for displaying this property's value. Use {{{value}}} as placeholder.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has display type": {
+            "datatype": "Text",
+            "label": "Has display type",
+            "description": "Controls how a property is rendered (e.g. Email, URL, Image).",
+            "allowedValues": [
+                "Email",
+                "URL",
+                "Image",
+                "Boolean",
+                "Page",
+                "Text"
+            ],
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has email": {
+            "datatype": "Text",
+            "label": "Email",
+            "description": "Email address.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": "Email"
+            },
+            "allowsMultipleValues": false
+        },
+        "Has employment status": {
+            "datatype": "Text",
+            "label": "Has employment status",
+            "description": "Employment or appointment status.",
+            "allowedValues": [
+                "Full-time",
+                "Part-time",
+                "Contract",
+                "Volunteer"
+            ],
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has end date": {
+            "datatype": "Text",
+            "label": "End Date",
+            "description": "End date (graduation, departure, etc.).",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has full name": {
+            "datatype": "Text",
+            "label": "Full Name",
+            "description": "The full name of a person.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has geographic location": {
+            "datatype": "Text",
+            "label": "Has geographic location",
+            "description": "Geographic coordinates (lat, lon).",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has h index": {
+            "datatype": "Text",
+            "label": "H Index",
+            "description": "H-index metric.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has institution": {
+            "datatype": "Text",
+            "label": "Institution",
+            "description": "Institutional affiliation.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has keywords": {
+            "datatype": "Text",
+            "label": "Has keywords",
+            "description": "Research keywords.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": true
+        },
+        "Has lab": {
+            "datatype": "Text",
+            "label": "Lab",
+            "description": "Lab or research group affiliation.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has lab role": {
+            "datatype": "Text",
+            "label": "Has lab role",
+            "description": "Role in the lab.",
+            "allowedValues": [
+                "PI",
+                "Lab Manager",
+                "Postdoc",
+                "Graduate Student",
+                "Undergraduate",
+                "Research Assistant",
+                "Visitor"
+            ],
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has label": {
+            "datatype": "Text",
+            "label": "Has label",
+            "description": "A human-readable label for display purposes.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has office location": {
+            "datatype": "Text",
+            "label": "Has office location",
+            "description": "Office or workspace location.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has optional property": {
+            "datatype": "Text",
+            "label": "Has optional property",
+            "description": "Properties that may optionally be filled in for pages of this category.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": true
+        },
+        "Has optional subgroup": {
+            "datatype": "Text",
+            "label": "Has optional subgroup",
+            "description": "Declares an optional subgroup (Subobject page) for a category.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowedNamespace": "Subobject",
+            "allowsMultipleValues": true
+        },
+        "Has orcid": {
+            "datatype": "Text",
+            "label": "Has orcid",
+            "description": "ORCID identifier (e.g., 0000-0000-0000-0000).",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has parent category": {
+            "datatype": "Text",
+            "label": "Has parent category",
+            "description": "Specifies parent categories for inheritance in the category hierarchy.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": true
+        },
+        "Has phone": {
+            "datatype": "Text",
+            "label": "Has phone",
+            "description": "Phone number.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has public profile": {
+            "datatype": "Text",
+            "label": "Has public profile",
+            "description": "Whether profile is publicly visible.",
+            "display": {
+                "type": "Boolean",
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has publication count": {
+            "datatype": "Text",
+            "label": "Publication Count",
+            "description": "Number of publications.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has publication date": {
+            "datatype": "Text",
+            "label": "Has publication date",
+            "description": "Date of publication.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has required property": {
+            "datatype": "Text",
+            "label": "Has required property",
+            "description": "Properties that must be filled in for pages of this category.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": true
+        },
+        "Has required subgroup": {
+            "datatype": "Text",
+            "label": "Has required subgroup",
+            "description": "Declares a required subgroup (Subobject page) for a category.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowedNamespace": "Subobject",
+            "allowsMultipleValues": true
+        },
+        "Has research area": {
+            "datatype": "Text",
+            "label": "Has research area",
+            "description": "Primary research area.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has research interests": {
+            "datatype": "Text",
+            "label": "Research Interests",
+            "description": "Research interests and expertise areas.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has room number": {
+            "datatype": "Text",
+            "label": "Has room number",
+            "description": "Office or room number.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has start date": {
+            "datatype": "Text",
+            "label": "Start Date",
+            "description": "Start date (employment, enrollment, etc.).",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has subgroup type": {
+            "datatype": "Text",
+            "label": "Has subgroup type",
+            "description": "Identifies which Subobject schema a stored subobject instance conforms to.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowedNamespace": "Subobject",
+            "allowsMultipleValues": false
+        },
+        "Has target namespace": {
+            "datatype": "Text",
+            "label": "Has target namespace",
+            "description": "The namespace where pages created by this category's form should be placed (e.g., User, Project, Help).",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has thesis title": {
+            "datatype": "Text",
+            "label": "Has thesis title",
+            "description": "Title of thesis or dissertation.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Has website": {
+            "datatype": "Text",
+            "label": "Has website",
+            "description": "Personal or lab website URL.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": "URL"
+            },
+            "allowsMultipleValues": false
+        },
+        "Is co-first author": {
+            "datatype": "Text",
+            "label": "Is co-first author",
+            "description": "Marks whether the author is co-first.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Is corresponding author": {
+            "datatype": "Text",
+            "label": "Is corresponding author",
+            "description": "Marks whether the author is corresponding.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "Owl:differentFrom": {
+            "datatype": "Text",
+            "label": "Owl:differentFrom",
+            "description": "",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        },
+        "URL": {
+            "datatype": "Text",
+            "label": "URL",
+            "description": "Display pattern for rendering website URLs.",
+            "display": {
+                "type": null,
+                "template": null,
+                "fromProperty": null
+            },
+            "allowsMultipleValues": false
+        }
+    },
+    "subobjects": {
+        "PublicationAuthor": {
+            "label": "PublicationAuthor",
+            "description": "Captures publication author entries (repeatable).",
+            "properties": {
+                "required": [
+                    "Has author",
+                    "Has author order"
+                ],
+                "optional": [
+                    "Is co-first author",
+                    "Is corresponding author"
+                ]
+            }
+        }
+    }
+}

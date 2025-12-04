@@ -1,0 +1,200 @@
+<?php
+
+namespace MediaWiki\Extension\StructureSync\Schema;
+
+use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
+use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
+use MediaWiki\Extension\StructureSync\Store\StateManager;
+use MediaWiki\Extension\StructureSync\Store\PageHashComputer;
+use MediaWiki\Extension\StructureSync\Store\PageCreator;
+
+/**
+ * OntologyInspector
+ * -----------------
+ * Minimal runtime helper used by:
+ *   - Overview tab (statistics)
+ *   - Validate tab (schema validation + hash-based dirty detection)
+ *
+ * All external schema import/export responsibilities are handled by
+ * legacy code and will move to a separate extension.
+ */
+class OntologyInspector {
+
+	private WikiCategoryStore $categoryStore;
+	private WikiPropertyStore $propertyStore;
+	private WikiSubobjectStore $subobjectStore;
+
+	private StateManager $stateManager;
+	private PageHashComputer $hashComputer;
+	private PageCreator $pageCreator;
+
+	public function __construct(
+		WikiCategoryStore $categoryStore = null,
+		WikiPropertyStore $propertyStore = null,
+		WikiSubobjectStore $subobjectStore = null,
+		StateManager $stateManager = null,
+		PageHashComputer $hashComputer = null,
+		PageCreator $pageCreator = null
+	) {
+		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
+		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
+		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
+
+		$this->stateManager = $stateManager ?? new StateManager();
+		$this->hashComputer = $hashComputer ?? new PageHashComputer();
+		$this->pageCreator = $pageCreator ?? new PageCreator();
+	}
+
+	/**
+	 * Build a plain schema array from the current wiki state.
+	 * Used internally by validateWikiState().
+	 *
+	 * @return array
+	 */
+	private function buildSchemaArray(): array {
+		$categories = $this->categoryStore->getAllCategories();
+		$properties = $this->propertyStore->getAllProperties();
+		$subobjects = $this->subobjectStore->getAllSubobjects();
+
+		ksort( $categories );
+		ksort( $properties );
+		ksort( $subobjects );
+
+		$schema = [
+			'categories' => [],
+			'properties' => [],
+			'subobjects' => [],
+		];
+
+		foreach ( $categories as $name => $model ) {
+			$schema['categories'][$name] = $model->toArray();
+		}
+
+		foreach ( $properties as $name => $model ) {
+			$schema['properties'][$name] = $model->toArray();
+		}
+
+		foreach ( $subobjects as $name => $model ) {
+			$schema['subobjects'][$name] = $model->toArray();
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Gather statistics about the current ontology.
+	 *
+	 * @return array{
+	 *   categoryCount:int,
+	 *   propertyCount:int,
+	 *   subobjectCount:int,
+	 *   categoriesWithParents:int,
+	 *   categoriesWithProperties:int,
+	 *   categoriesWithDisplay:int,
+	 *   categoriesWithForms:int,
+	 *   categoriesWithSubobjects:int
+	 * }
+	 */
+	public function getStatistics(): array {
+		$categories = $this->categoryStore->getAllCategories();
+		$properties = $this->propertyStore->getAllProperties();
+		$subobjects = $this->subobjectStore->getAllSubobjects();
+
+		$stats = [
+			'categoryCount'            => count( $categories ),
+			'propertyCount'            => count( $properties ),
+			'subobjectCount'           => count( $subobjects ),
+			'categoriesWithParents'    => 0,
+			'categoriesWithProperties' => 0,
+			'categoriesWithDisplay'    => 0,
+			'categoriesWithForms'      => 0,
+			'categoriesWithSubobjects' => 0,
+		];
+
+		foreach ( $categories as $cat ) {
+			if ( $cat->getParents() ) {
+				$stats['categoriesWithParents']++;
+			}
+
+			if ( $cat->getAllProperties() ) {
+				$stats['categoriesWithProperties']++;
+			}
+
+			if ( $cat->getDisplaySections() ) {
+				$stats['categoriesWithDisplay']++;
+			}
+
+			if ( $cat->getFormConfig() ) {
+				$stats['categoriesWithForms']++;
+			}
+
+			if ( $cat->getRequiredSubobjects() || $cat->getOptionalSubobjects() ) {
+				$stats['categoriesWithSubobjects']++;
+			}
+		}
+
+		return $stats;
+	}
+
+	/**
+	 * Validate wiki ontology via SchemaValidator + hash tracking.
+	 *
+	 * @return array{errors:array,warnings:array,modifiedPages:array}
+	 */
+	public function validateWikiState(): array {
+		$schema = $this->buildSchemaArray();
+		$validator = new SchemaValidator();
+
+		$errors = $validator->validateSchema( $schema );
+		$warnings = $validator->generateWarnings( $schema );
+		$modified = [];
+
+		$stored = $this->stateManager->getPageHashes();
+		if ( !$stored ) {
+			return [
+				'errors'        => $errors,
+				'warnings'      => $warnings,
+				'modifiedPages' => [],
+			];
+		}
+
+		$current = [];
+		foreach ( $stored as $pageName => $hashInfo ) {
+			$title = $this->pageCreator->titleFromPageName( $pageName );
+			if ( !$title || !$title->exists() ) {
+				$modified[] = $pageName;
+				continue;
+			}
+
+			$content = $this->pageCreator->getPageContent( $title );
+			if ( $content === null ) {
+				continue;
+			}
+
+			$current[$pageName] = $this->hashComputer->computeHashForPageModel(
+				$pageName,
+				$content
+			);
+		}
+
+		$modified = array_merge(
+			$modified,
+			$this->stateManager->comparePageHashes( $current )
+		);
+
+		if ( $modified ) {
+			$this->stateManager->updateCurrentHashes( $current );
+			$this->stateManager->setDirty( true );
+			$warnings[] = 'Pages modified outside StructureSync: ' . implode( ', ', $modified );
+		}
+
+		return [
+			'errors'        => $errors,
+			'warnings'      => $warnings,
+			'modifiedPages' => $modified,
+		];
+	}
+}
+
+

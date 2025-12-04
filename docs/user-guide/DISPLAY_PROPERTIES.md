@@ -150,7 +150,7 @@ Email
 ### Files Modified
 
 - `src/Store/WikiPropertyStore.php` - Reads display properties from SMW
-- `tests/populate_test_data.sh` - Creates meta-properties and examples
+- `tests/scripts/populate_test_data.sh` - Creates meta-properties and examples
 - `src/Display/DisplayRenderer.php` - Already correctly implements the rendering logic
 
 ## Testing
