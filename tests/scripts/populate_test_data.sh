@@ -86,158 +86,7 @@ echo "==> Creating test properties..."
 # ==========================================
 # Core Meta-Properties
 # ==========================================
-echo "  - Core meta-properties..."
-
-# Create Has description property first (used for describing all properties and categories)
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has description' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Text]]
-[[Has description::A description of a property or category.]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-# Create Allows multiple values property
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Allows multiple values' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Boolean]]
-[[Has description::Indicates whether a property can have multiple values.]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-# Create Has target namespace property
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has target namespace' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Text]]
-[[Has description::The namespace where pages created by this category's form should be placed (e.g., User, Project, Help).]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-# Create Has parent category property
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has parent category' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Page]]
-[[Has description::Specifies parent categories for inheritance in the category hierarchy.]]
-[[Allows multiple values::true]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-# Create Has required property property
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has required property' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Page]]
-[[Has description::Properties that must be filled in for pages of this category.]]
-[[Allows multiple values::true]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-# Create Has optional property property
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has optional property' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Page]]
-[[Has description::Properties that may optionally be filled in for pages of this category.]]
-[[Allows multiple values::true]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-# Create Has required subobject property
-create_property "Has required subobject" "Declares a required subobject (Subobject page) for a category." "Page" "[[Allows value from namespace::Subobject]]
-[[Allows multiple values::true]]"
-
-# Create Has optional subobject property
-create_property "Has optional subobject" "Declares an optional subobject (Subobject page) for a category." "Page" "[[Allows value from namespace::Subobject]]
-[[Allows multiple values::true]]"
-
-# Create Has subobject type property (stored on individual subobjects)
-create_property "Has subobject type" "Identifies which Subobject schema a stored subobject instance conforms to." "Page" "[[Allows value from namespace::Subobject]]"
-
-# Create Has display section property
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has display section' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Text]]
-[[Has description::Display section configuration for organizing how properties are shown on a page.]]
-[[Allows multiple values::true]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-# Create Has label property
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has label' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Text]]
-[[Has description::A human-readable label for display purposes.]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-# Create display configuration meta-properties
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has display template' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Text]]
-[[Has description::Defines a custom HTML/wikitext template for displaying this property's value. Use {{{value}}} as placeholder.]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has display type' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Text]]
-[[Has description::Specifies the display type for rendering (e.g., Email, URL, Image, Boolean).]]
-[[Allows value::Email]]
-[[Allows value::URL]]
-[[Allows value::Image]]
-[[Allows value::Boolean]]
-[[Allows value::none]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:Has display pattern' <<'PROPEOF'
-<!-- StructureSync Start -->
-[[Has type::Page]]
-[[Has description::References another property to use its display template as a pattern.]]
-[[Allows value from namespace::Property]]
-<!-- StructureSync End -->
-
-[[Category:Properties]]
-PROPEOF
-"
-
-# ==========================================
-# Meta-Properties
-# ==========================================
-echo "  - Display meta-properties..."
-create_property "Has display type" "Controls how a property is rendered (e.g. Email, URL, Image)." "Text" "[[Allows value::Email]]
-[[Allows value::URL]]
-[[Allows value::Image]]
-[[Allows value::Boolean]]
-[[Allows value::Page]]
-[[Allows value::Text]]"
+echo "  - Core meta-properties (created by extension-config.json)..."
 
 # ==========================================
 # Property Type 1: Text Properties
@@ -369,8 +218,7 @@ echo "==> Creating test categories with schema..."
 echo "  - Base categories..."
 
 # Base Person category (simple base category with basic schema)
-create_category "Person" "<!-- StructureSync Start -->
-[[Has description::A person in our organization.]]
+create_category "Person" "[[Has description::A person in our organization.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
@@ -392,12 +240,10 @@ create_category "Person" "<!-- StructureSync Start -->
 {{#subobject:display_section_1
 |Has display section name=Biography
 |Has display section property=Property:Has biography
-}}
-<!-- StructureSync End -->"
+}}"
 
 # LabMember category (base category for lab members)
-create_category "LabMember" "<!-- StructureSync Start -->
-[[Has description::A member of the lab.]]
+create_category "LabMember" "[[Has description::A member of the lab.]]
 
 === Required Properties ===
 [[Has required property::Property:Has lab role]]
@@ -406,24 +252,20 @@ create_category "LabMember" "<!-- StructureSync Start -->
 === Optional Properties ===
 [[Has optional property::Property:Has biography]]
 [[Has optional property::Property:Has end date]]
-[[Has optional property::Property:Has active status]]
-<!-- StructureSync End -->"
+[[Has optional property::Property:Has active status]]"
 
 # Organization category (base category, no parents)
-create_category "Organization" "<!-- StructureSync Start -->
-[[Has description::An organization or institution.]]
+create_category "Organization" "[[Has description::An organization or institution.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
 
 === Optional Properties ===
 [[Has optional property::Property:Has website]]
-[[Has optional property::Property:Has geographic location]]
-<!-- StructureSync End -->"
+[[Has optional property::Property:Has geographic location]]"
 
 # Lab category (inherits from Organization)
-create_category "Lab" "<!-- StructureSync Start -->
-[[Has description::A research lab or group.]]
+create_category "Lab" "[[Has description::A research lab or group.]]
 
 [[Has parent category::Category:Organization]]
 
@@ -439,13 +281,11 @@ create_category "Lab" "<!-- StructureSync Start -->
 |Has display section name=Research
 |Has display section property=Property:Has research area
 }}
-<!-- StructureSync End -->
 
 [[Category:Organization]]"
 
 # Publication category (standalone category)
-create_category "Publication" "<!-- StructureSync Start -->
-[[Has description::A research publication.]]
+create_category "Publication" "[[Has description::A research publication.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
@@ -462,26 +302,22 @@ create_category "Publication" "<!-- StructureSync Start -->
 |Has display section name=Publication Details
 |Has display section property=Property:Has publication date
 |Has display section property=Property:Has keywords
-}}
-<!-- StructureSync End -->"
+}}"
 
 echo "  - Subobject definitions..."
 
-create_subobject "PublicationAuthor" "<!-- StructureSync Start -->
-[[Has description::Captures publication author entries (repeatable).]]
+create_subobject "PublicationAuthor" "[[Has description::Captures publication author entries (repeatable).]]
 
 [[Has required property::Property:Has author]]
 [[Has required property::Property:Has author order]]
 
 [[Has optional property::Property:Is corresponding author]]
 [[Has optional property::Property:Is co-first author]]
-<!-- StructureSync End -->
 
 [[Category:StructureSync-managed]]"
 
 # Project category (base category)
-create_category "Project" "<!-- StructureSync Start -->
-[[Has description::A research project.]]
+create_category "Project" "[[Has description::A research project.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
@@ -489,14 +325,12 @@ create_category "Project" "<!-- StructureSync Start -->
 === Optional Properties ===
 [[Has optional property::Property:Has start date]]
 [[Has optional property::Property:Has end date]]
-[[Has optional property::Property:Has research area]]
-<!-- StructureSync End -->"
+[[Has optional property::Property:Has research area]]"
 
 echo "  - Single inheritance hierarchies..."
 
 # Faculty category (inherits from Person only)
-create_category "Faculty" "<!-- StructureSync Start -->
-[[Has description::Faculty member.]]
+create_category "Faculty" "[[Has description::Faculty member.]]
 
 [[Has parent category::Category:Person]]
 
@@ -523,13 +357,11 @@ create_category "Faculty" "<!-- StructureSync Start -->
 |Has display section property=Property:Has publication count
 |Has display section property=Property:Has h index
 }}
-<!-- StructureSync End -->
 
 [[Category:Person]]"
 
 # Student category (base for all students, inherits from Person)
-create_category "Student" "<!-- StructureSync Start -->
-[[Has description::A student.]]
+create_category "Student" "[[Has description::A student.]]
 
 [[Has parent category::Category:Person]]
 
@@ -547,13 +379,11 @@ create_category "Student" "<!-- StructureSync Start -->
 |Has display section property=Property:Has academic level
 |Has display section property=Property:Has cohort year
 }}
-<!-- StructureSync End -->
 
 [[Category:Person]]"
 
 # Undergraduate category (inherits from Student, single inheritance chain)
-create_category "Undergraduate" "<!-- StructureSync Start -->
-[[Has description::An undergraduate student.]]
+create_category "Undergraduate" "[[Has description::An undergraduate student.]]
 
 [[Has parent category::Category:Student]]
 
@@ -564,15 +394,13 @@ create_category "Undergraduate" "<!-- StructureSync Start -->
 |Has display section name=Student Information
 |Has display section property=Property:Has employment status
 }}
-<!-- StructureSync End -->
 
 [[Category:Student]]"
 
 echo "  - Multiple inheritance hierarchies..."
 
 # GraduateStudent category (multiple inheritance: Person + LabMember)
-create_category "GraduateStudent" "<!-- StructureSync Start -->
-[[Has description::A graduate student in the lab.]]
+create_category "GraduateStudent" "[[Has description::A graduate student in the lab.]]
 
 [[Has parent category::Category:Person]]
 [[Has parent category::Category:LabMember]]
@@ -598,14 +426,12 @@ create_category "GraduateStudent" "<!-- StructureSync Start -->
 |Has display section name=Research
 |Has display section property=Property:Has research interests
 }}
-<!-- StructureSync End -->
 
 [[Category:Person]]
 [[Category:LabMember]]"
 
 # Postdoc category (multiple inheritance: Person + LabMember)
-create_category "Postdoc" "<!-- StructureSync Start -->
-[[Has description::A postdoctoral researcher in the lab.]]
+create_category "Postdoc" "[[Has description::A postdoctoral researcher in the lab.]]
 
 [[Has parent category::Category:Person]]
 [[Has parent category::Category:LabMember]]
@@ -624,14 +450,12 @@ create_category "Postdoc" "<!-- StructureSync Start -->
 |Has display section property=Property:Has research interests
 |Has display section property=Property:Has publication count
 }}
-<!-- StructureSync End -->
 
 [[Category:Person]]
 [[Category:LabMember]]"
 
 # PI category (Principal Investigator, inherits from Faculty + LabMember)
-create_category "PI" "<!-- StructureSync Start -->
-[[Has description::A principal investigator (lab head).]]
+create_category "PI" "[[Has description::A principal investigator (lab head).]]
 
 [[Has parent category::Category:Faculty]]
 [[Has parent category::Category:LabMember]]
@@ -646,7 +470,6 @@ create_category "PI" "<!-- StructureSync Start -->
 |Has display section name=Lab Information
 |Has display section property=Property:Has lab
 }}
-<!-- StructureSync End -->
 
 [[Category:Faculty]]
 [[Category:LabMember]]"
@@ -654,8 +477,7 @@ create_category "PI" "<!-- StructureSync Start -->
 echo "  - Deep hierarchy examples..."
 
 # PhDStudent category (deep inheritance: Person -> Student -> GraduateStudent + LabMember)
-create_category "PhDStudent" "<!-- StructureSync Start -->
-[[Has description::A PhD student in the lab.]]
+create_category "PhDStudent" "[[Has description::A PhD student in the lab.]]
 
 [[Has parent category::Category:GraduateStudent]]
 
@@ -668,13 +490,11 @@ create_category "PhDStudent" "<!-- StructureSync Start -->
 |Has display section property=Property:Has thesis title
 |Has display section property=Property:Has degree
 }}
-<!-- StructureSync End -->
 
 [[Category:GraduateStudent]]"
 
 # MastersStudent category (deep inheritance: Person -> Student -> GraduateStudent)
-create_category "MastersStudent" "<!-- StructureSync Start -->
-[[Has description::A masters student.]]
+create_category "MastersStudent" "[[Has description::A masters student.]]
 
 [[Has parent category::Category:GraduateStudent]]
 
@@ -685,15 +505,13 @@ create_category "MastersStudent" "<!-- StructureSync Start -->
 |Has display section name=Masters Information
 |Has display section property=Property:Has thesis title
 }}
-<!-- StructureSync End -->
 
 [[Category:GraduateStudent]]"
 
 echo "  - Namespace targeting categories..."
 
 # UserProfile category (uses target namespace)
-create_category "UserProfile" "<!-- StructureSync Start -->
-[[Has description::A user profile page (created in User namespace).]]
+create_category "UserProfile" "[[Has description::A user profile page (created in User namespace).]]
 [[Has target namespace::User]]
 
 === Required Properties ===
@@ -709,64 +527,18 @@ create_category "UserProfile" "<!-- StructureSync Start -->
 |Has display section property=Property:Has full name
 |Has display section property=Property:Has email
 |Has display section property=Property:Has website
-}}
-<!-- StructureSync End -->"
-
-# Category category (meta-category for defining categories themselves)
-create_category "Category" "<!-- StructureSync Start -->
-[[Has description::Defines the structure of all Categories used within the wiki.]]
-[[Has target namespace::Category]]
-
-=== Required Properties ===
-[[Has required property::Property:Has label]]
-[[Has required property::Property:Has description]]
-
-=== Optional Properties ===
-[[Has optional property::Property:Has parent category]]
-[[Has optional property::Property:Has target namespace]]
-[[Has optional property::Property:Has required property]]
-[[Has optional property::Property:Has optional property]]
-[[Has optional property::Property:Has required subobject]]
-[[Has optional property::Property:Has optional subobject]]
-[[Has optional property::Property:Has display section]]
-
-{{#subobject:display_section_0
-|Has display section name=Basic Information
-|Has display section property=Property:Has label
-|Has display section property=Property:Has description
-}}
-
-{{#subobject:display_section_1
-|Has display section name=Category Structure
-|Has display section property=Property:Has parent category
-|Has display section property=Property:Has required property
-|Has display section property=Property:Has optional property
-|Has display section property=Property:Has required subobject
-|Has display section property=Property:Has optional subobject
-}}
-
-{{#subobject:display_section_2
-|Has display section name=Display Sections
-|Has display section property=Property:Has display section
-}}
-<!-- StructureSync End -->
-
-[[Category:StructureSync]]"
+}}"
 
 echo "  - Edge case categories..."
 
 # EmptyCategory (category with no properties defined)
-create_category "EmptyCategory" "<!-- StructureSync Start -->
-[[Has description::A category with no properties (for testing).]]
-<!-- StructureSync End -->"
+create_category "EmptyCategory" "[[Has description::A category with no properties (for testing).]]"
 
 # SimpleCategory (category with minimal schema)
-create_category "SimpleCategory" "<!-- StructureSync Start -->
-[[Has description::A simple category for testing.]]
+create_category "SimpleCategory" "[[Has description::A simple category for testing.]]
 
 === Required Properties ===
-[[Has required property::Property:Has full name]]
-<!-- StructureSync End -->"
+[[Has required property::Property:Has full name]]"
 
 echo ""
 echo "==> Refreshing Semantic MediaWiki data (before form generation)..."
@@ -794,15 +566,13 @@ PAGEOF
 echo "  - Creating Department category for autocomplete demo..."
 
 # Create Department category (for autocomplete demonstration)
-create_category "Department" "<!-- StructureSync Start -->
-[[Has description::An academic department within an institution.]]
+create_category "Department" "[[Has description::An academic department within an institution.]]
 
 === Required Properties ===
 [[Has required property::Property:Has full name]]
 
-=== Optional Properties ===
-[[Has optional property::Property:Has website]]
-<!-- StructureSync End -->"
+=== Optional Properties ==
+[[Has optional property::Property:Has website]]"
 
 echo "  - Creating department pages for autocomplete demo..."
 
@@ -1016,12 +786,6 @@ create_page "Protein_Folding_Project" "{{Project
 [[Category:Project]]"
 
 echo ""
-echo "==> Exporting test schema..."
-docker compose exec -T mediawiki php extensions/StructureSync/maintenance/exportOntology.php \
-    --format=json \
-    --output=/var/www/html/w/extensions/StructureSync/tests/test-schema.json
-
-echo ""
 echo "==> Refreshing Semantic MediaWiki data..."
 echo "This may take a minute as SMW re-parses all pages to extract properties..."
 docker compose exec -T mediawiki php extensions/SemanticMediaWiki/maintenance/rebuildData.php -f --skip-properties --report-runtime
@@ -1034,7 +798,7 @@ echo ""
 echo "Created:"
 echo ""
 echo "PROPERTIES (35+):"
-echo "  - Meta: Has description, Allows multiple values, Has target namespace, Has parent category, Has required property, Has optional property, Has display section, Has label"
+echo "  - Meta: Display label, Has description, Allows multiple values, Has target namespace, Has parent category, Has required property, Has optional property, Has required subobject, Has optional subobject"
 echo "  - Text: Has full name, Has biography, Has research interests, Has office location"
 echo "  - Contact: Has email, Has phone, Has website, Has orcid"
 echo "  - Date/Time: Has birth date, Has start date, Has end date, Has publication date"
@@ -1129,29 +893,24 @@ echo "   - Use Form:Person to create a new person"
 echo "   - Use Form:GraduateStudent to create a new graduate student"
 echo "   - Test form validation for required properties"
 echo ""
-echo "8. IMPORT/EXPORT:"
-echo "   - Export schema at Special:StructureSync/export"
-echo "   - Import exported schema at Special:StructureSync/import"
-echo "   - Verify schema round-trip"
-echo ""
-echo "9. VALIDATION:"
+echo "8. VALIDATION:"
 echo "   - Run validation at Special:StructureSync/validate"
 echo "   - Check for missing templates, forms, or inconsistencies"
 echo ""
-echo "10. DIFF:"
+echo "9. DIFF:"
 echo "    - Use Special:StructureSync/diff to compare schemas"
 echo "    - Test with modified schema files"
 echo ""
-echo "11. EDGE CASES:"
+echo "10. EDGE CASES:"
 echo "    - View EmptyCategory (no properties)"
 echo "    - View SimpleCategory (minimal schema)"
 echo "    - Test categories with many properties (Faculty)"
 echo ""
-echo "12. GENERATE:"
+echo "11. GENERATE:"
 echo "    - Use Special:StructureSync/generate to regenerate artifacts"
 echo "    - Test category-specific generation"
 echo ""
-echo "13. HIERARCHY VISUALIZATION:"
+echo "12. HIERARCHY VISUALIZATION:"
 echo "    - Visit Special:StructureSync/hierarchy"
 echo "    - Enter 'PhDStudent' to see 4-level inheritance"
 echo "    - Check that inherited properties show source categories"

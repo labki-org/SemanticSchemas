@@ -618,40 +618,31 @@ class SpecialStructureSync extends SpecialPage
 		$storedHashes = $stateManager->getPageHashes();
 		$modifiedPages = [];
 
-		// Check each category and its properties
-		foreach ($categories as $category) {
+		// Check each category and its properties using schema-based hashes
+		foreach ( $categories as $category ) {
 			$categoryName = $category->getName();
 			$pageName = "Category:$categoryName";
 
-			$title = $pageCreator->makeTitle($categoryName, NS_CATEGORY);
-			if ($title && $title->exists()) {
-				$content = $pageCreator->getPageContent($title);
-				if ($content !== null) {
-					$currentHash = $hashComputer->computeCategoryHash($content);
-					$storedHash = $storedHashes[$pageName]['generated'] ?? '';
-					if ($storedHash !== '' && $currentHash !== $storedHash) {
-						$modifiedPages[$pageName] = true;
-					}
-				}
+			$currentHash = $hashComputer->computeCategoryModelHash( $category );
+			$storedHash = $storedHashes[$pageName]['generated'] ?? '';
+			if ( $storedHash !== '' && $currentHash !== $storedHash ) {
+				$modifiedPages[$pageName] = true;
 			}
 
 			// Check all properties used by this category
 			$allProperties = $category->getAllProperties();
-			foreach ($allProperties as $propertyName) {
+			foreach ( $allProperties as $propertyName ) {
 				$propPageName = "Property:$propertyName";
-				if (isset($modifiedPages[$propPageName])) {
+				if ( isset( $modifiedPages[$propPageName] ) ) {
 					continue; // Already checked
 				}
 
-				$propTitle = $pageCreator->makeTitle($propertyName, $this->getPropertyNamespace());
-				if ($propTitle && $propTitle->exists()) {
-					$propContent = $pageCreator->getPageContent($propTitle);
-					if ($propContent !== null) {
-						$currentHash = $hashComputer->computePropertyHash($propContent);
-						$storedHash = $storedHashes[$propPageName]['generated'] ?? '';
-						if ($storedHash !== '' && $currentHash !== $storedHash) {
-							$modifiedPages[$propPageName] = true;
-						}
+				$propModel = $propertyStore->readProperty( $propertyName );
+				if ( $propModel ) {
+					$currentHash = $hashComputer->computePropertyModelHash( $propModel );
+					$storedHash = $storedHashes[$propPageName]['generated'] ?? '';
+					if ( $storedHash !== '' && $currentHash !== $storedHash ) {
+						$modifiedPages[$propPageName] = true;
 					}
 				}
 			}
@@ -1030,49 +1021,31 @@ class SpecialStructureSync extends SpecialPage
 				}
 			}
 
-			// Compute and store hashes for all generated pages
+			// Compute and store hashes for all generated pages (schema-based)
 			$pageHashes = [];
 
-			// Hash all categories (StructureSync section only)
+			// Hash all categories
 			$allCategories = $categoryStore->getAllCategories();
-			foreach ($allCategories as $category) {
+			foreach ( $allCategories as $category ) {
 				$categoryName = $category->getName();
-				$title = $pageCreator->makeTitle($categoryName, NS_CATEGORY);
-				if ($title && $title->exists()) {
-					$content = $pageCreator->getPageContent($title);
-					if ($content !== null) {
-						$hash = $hashComputer->computeCategoryHash($content);
-						$pageHashes["Category:$categoryName"] = $hash;
-					}
-				}
+				$hash = $hashComputer->computeCategoryModelHash( $category );
+				$pageHashes["Category:$categoryName"] = $hash;
 			}
 
-			// Hash all properties (full page)
+			// Hash all properties
 			$allProperties = $propertyStore->getAllProperties();
-			foreach ($allProperties as $property) {
+			foreach ( $allProperties as $property ) {
 				$propertyName = $property->getName();
-				$title = $pageCreator->makeTitle($propertyName, $this->getPropertyNamespace());
-				if ($title && $title->exists()) {
-					$content = $pageCreator->getPageContent($title);
-					if ($content !== null) {
-						$hash = $hashComputer->computePropertyHash($content);
-						$pageHashes["Property:$propertyName"] = $hash;
-					}
-				}
+				$hash = $hashComputer->computePropertyModelHash( $property );
+				$pageHashes["Property:$propertyName"] = $hash;
 			}
 
 			// Hash all subobjects
 			$allSubobjects = $subobjectStore->getAllSubobjects();
 			foreach ( $allSubobjects as $subobject ) {
 				$subobjectName = $subobject->getName();
-				$title = $pageCreator->makeTitle( $subobjectName, NS_SUBOBJECT );
-				if ( $title && $title->exists() ) {
-					$content = $pageCreator->getPageContent( $title );
-					if ( $content !== null ) {
-						$hash = $hashComputer->computeSubobjectHash( $content );
-						$pageHashes["Subobject:$subobjectName"] = $hash;
-					}
-				}
+				$hash = $hashComputer->computeSubobjectModelHash( $subobject );
+				$pageHashes["Subobject:$subobjectName"] = $hash;
 			}
 
 			// Store hashes and clear dirty flag

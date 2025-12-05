@@ -161,21 +161,47 @@ class OntologyInspector {
 
 		$current = [];
 		foreach ( $stored as $pageName => $hashInfo ) {
-			$title = $this->pageCreator->titleFromPageName( $pageName );
-			if ( !$title || !$title->exists() ) {
+			// Page names are stored as "Category:Name", "Property:Name", "Subobject:Name"
+			if ( !preg_match( '/^([^:]+):(.+)$/', $pageName, $m ) ) {
 				$modified[] = $pageName;
 				continue;
 			}
 
-			$content = $this->pageCreator->getPageContent( $title );
-			if ( $content === null ) {
-				continue;
-			}
+			$prefix = strtolower( $m[1] );
+			$name = $m[2];
 
-			$current[$pageName] = $this->hashComputer->computeHashForPageModel(
-				$pageName,
-				$content
-			);
+			switch ( $prefix ) {
+				case 'category':
+					$model = $this->categoryStore->readCategory( $name );
+					if ( !$model ) {
+						$modified[] = $pageName;
+						continue 2;
+					}
+					$current[$pageName] = $this->hashComputer->computeCategoryModelHash( $model );
+					break;
+
+				case 'property':
+					$model = $this->propertyStore->readProperty( $name );
+					if ( !$model ) {
+						$modified[] = $pageName;
+						continue 2;
+					}
+					$current[$pageName] = $this->hashComputer->computePropertyModelHash( $model );
+					break;
+
+				case 'subobject':
+					$model = $this->subobjectStore->readSubobject( $name );
+					if ( !$model ) {
+						$modified[] = $pageName;
+						continue 2;
+					}
+					$current[$pageName] = $this->hashComputer->computeSubobjectModelHash( $model );
+					break;
+
+				default:
+					$modified[] = $pageName;
+					continue 2;
+			}
 		}
 
 		$modified = array_merge(

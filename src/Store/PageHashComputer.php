@@ -3,6 +3,12 @@
 namespace MediaWiki\Extension\StructureSync\Store;
 
 use MediaWiki\Title\Title;
+use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
+use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
+use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
+use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
+use MediaWiki\Extension\StructureSync\Schema\SubobjectModel;
 
 /**
  * PageHashComputer
@@ -34,124 +40,97 @@ use MediaWiki\Title\Title;
  */
 class PageHashComputer {
 
-    /** @var PageCreator */
-    private $pageCreator;
+	/** @var WikiCategoryStore */
+	private $categoryStore;
 
-    /** Schema content markers - must match WikiCategoryStore and WikiPropertyStore */
-    private const MARKER_START = '<!-- StructureSync Start -->';
-    private const MARKER_END = '<!-- StructureSync End -->';
+	/** @var WikiPropertyStore */
+	private $propertyStore;
+
+	/** @var WikiSubobjectStore */
+	private $subobjectStore;
 
 	/**
-	 * @param PageCreator|null $pageCreator
+	 * @param WikiCategoryStore|null $categoryStore
+	 * @param WikiPropertyStore|null $propertyStore
+	 * @param WikiSubobjectStore|null $subobjectStore
 	 */
-	public function __construct( PageCreator $pageCreator = null ) {
-		$this->pageCreator = $pageCreator ?? new PageCreator();
+	public function __construct(
+		WikiCategoryStore $categoryStore = null,
+		WikiPropertyStore $propertyStore = null,
+		WikiSubobjectStore $subobjectStore = null
+	) {
+		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
+		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
+		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
 	}
 
 	/**
-	 * Compute hash for a Category page (only StructureSync section).
+	 * Compute hash for a CategoryModel based on canonical schema fields.
 	 *
-	 * @param string $pageContent Full page content
-	 * @return string SHA256 hash (with "sha256:" prefix)
-	 */
-	public function computeCategoryHash( string $pageContent ): string {
-		$section = $this->extractSchemaSection(
-			$pageContent,
-			self::MARKER_START,
-			self::MARKER_END
-		);
-
-		// Normalize: trim whitespace for consistent hashing
-		$section = trim( $section );
-		return $this->hashContent( $section );
-	}
-
-	/**
-	 * Compute hash for a Property page (only StructureSync section).
-	 *
-	 * @param string $pageContent Full page content
-	 * @return string SHA256 hash (with "sha256:" prefix)
-	 */
-	public function computePropertyHash( string $pageContent ): string {
-		$section = $this->extractSchemaSection(
-			$pageContent,
-			self::MARKER_START,
-			self::MARKER_END
-		);
-
-		// Normalize: trim whitespace for consistent hashing
-		$section = trim( $section );
-		return $this->hashContent( $section );
-	}
-
-	/**
-	 * Compute hash for a Subobject page (only StructureSync section).
-	 *
-	 * @param string $pageContent
+	 * @param CategoryModel $category
 	 * @return string
 	 */
-	public function computeSubobjectHash( string $pageContent ): string {
-		$section = $this->extractSchemaSection(
-			$pageContent,
-			self::MARKER_START,
-			self::MARKER_END
-		);
-
-		$section = trim( $section );
-		return $this->hashContent( $section );
+	public function computeCategoryModelHash( CategoryModel $category ): string {
+		return $this->computeSchemaHash( $category->toArray() );
 	}
 
 	/**
-	 * Compute hash for a page based on its prefixed name.
-	 * Routes to the appropriate hash method based on page type.
+	 * Compute hash for a PropertyModel based on canonical schema fields.
+	 *
+	 * @param PropertyModel $property
+	 * @return string
+	 */
+	public function computePropertyModelHash( PropertyModel $property ): string {
+		return $this->computeSchemaHash( $property->toArray() );
+	}
+
+	/**
+	 * Compute hash for a SubobjectModel based on canonical schema fields.
+	 *
+	 * @param SubobjectModel $subobject
+	 * @return string
+	 */
+	public function computeSubobjectModelHash( SubobjectModel $subobject ): string {
+		return $this->computeSchemaHash( $subobject->toArray() );
+	}
+
+	/**
+	 * Compute hash for a schema-managed page based on its prefixed name.
+	 * Routes to the appropriate model-based hash method.
 	 *
 	 * @param string $pageName Prefixed page name (e.g., "Category:Name", "Property:Name", "Subobject:Name")
-	 * @param string $pageContent Full page content
 	 * @return string SHA256 hash (with "sha256:" prefix)
 	 */
-	public function computeHashForPageModel( string $pageName, string $pageContent ): string {
+	public function computeHashForPageModel( string $pageName ): string {
 		// Extract prefix from page name
 		if (preg_match('/^([^:]+):/', $pageName, $matches)) {
 			$prefix = strtolower($matches[1]);
+			$name = substr($pageName, strlen($matches[0]));
 			
 			switch ($prefix) {
 				case 'category':
-					return $this->computeCategoryHash($pageContent);
+					$cat = $this->categoryStore->readCategory( $name );
+					return $cat instanceof CategoryModel
+						? $this->computeCategoryModelHash( $cat )
+						: $this->hashContent( '' );
 				case 'property':
-					return $this->computePropertyHash($pageContent);
+					$prop = $this->propertyStore->readProperty( $name );
+					return $prop instanceof PropertyModel
+						? $this->computePropertyModelHash( $prop )
+						: $this->hashContent( '' );
 				case 'subobject':
-					return $this->computeSubobjectHash($pageContent);
+					$sub = $this->subobjectStore->readSubobject( $name );
+					return $sub instanceof SubobjectModel
+						? $this->computeSubobjectModelHash( $sub )
+						: $this->hashContent( '' );
 				default:
-					// Unknown type, hash the entire content
-					return $this->hashContent(trim($pageContent));
+					// Unknown type, fall through and hash empty
+					return $this->hashContent( '' );
 			}
 		}
 
-		// No prefix found, hash the entire content
-		return $this->hashContent(trim($pageContent));
-	}
-
-	/**
-	 * Extract content between markers.
-	 *
-	 * @param string $content Full page content
-	 * @param string $startMarker Start marker
-	 * @param string $endMarker End marker
-	 * @return string Extracted section, or empty string if markers not found
-	 */
-	public function extractSchemaSection( string $content, string $startMarker, string $endMarker ): string {
-		$startPos = strpos( $content, $startMarker );
-		$endPos = strpos( $content, $endMarker );
-
-		if ( $startPos === false || $endPos === false || $endPos <= $startPos ) {
-			return '';
-		}
-
-		// Extract content between markers (excluding the markers themselves)
-		$startPos += strlen( $startMarker );
-		$section = substr( $content, $startPos, $endPos - $startPos );
-
-		return $section;
+		// No prefix found, hash empty
+		return $this->hashContent( '' );
 	}
 
 	/**

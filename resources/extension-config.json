@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "1.0",
+  "categories": {
+    "Category": {
+      "parents": [],
+      "label": "Category",
+      "description": "Defines the schema metadata for categories managed by StructureSync.",
+      "targetNamespace": "Category",
+      "properties": {
+        "required": [
+          "Has description"
+        ],
+        "optional": [
+          "Display label",
+          "Has target namespace",
+          "Has parent category",
+          "Has required property",
+          "Has optional property",
+          "Has required subobject",
+          "Has optional subobject",
+          "Has display format",
+          "Has display header property"
+        ]
+      },
+      "subobjects": {
+        "required": [],
+        "optional": []
+      }
+    }
+  },
+  "subobjects": {},
+  "properties": {
+    "Display label": {
+      "datatype": "Text",
+      "label": "Display label",
+      "description": "Human-readable label used for display instead of the internal name.",
+      "allowsMultipleValues": false
+    },
+    "Has description": {
+      "datatype": "Text",
+      "label": "Has description",
+      "description": "Description text explaining the purpose of the category, property, or subobject.",
+      "allowsMultipleValues": false
+    },
+    "Has target namespace": {
+      "datatype": "Text",
+      "label": "Has target namespace",
+      "description": "Target namespace where pages of this category are created (e.g., Main, User).",
+      "allowsMultipleValues": false
+    },
+    "Has parent category": {
+      "datatype": "Page",
+      "label": "Has parent category",
+      "description": "Parent categories for inheritance in the category hierarchy.",
+      "allowedNamespace": "Category",
+      "allowsMultipleValues": true
+    },
+    "Has required property": {
+      "datatype": "Page",
+      "label": "Has required property",
+      "description": "Properties that must be filled in for pages of this category or subobject.",
+      "allowedNamespace": "Property",
+      "allowsMultipleValues": true
+    },
+    "Has optional property": {
+      "datatype": "Page",
+      "label": "Has optional property",
+      "description": "Properties that may optionally be filled in for pages of this category or subobject.",
+      "allowedNamespace": "Property",
+      "allowsMultipleValues": true
+    },
+    "Has required subobject": {
+      "datatype": "Page",
+      "label": "Has required subobject",
+      "description": "Subobjects that must be present on pages in this category.",
+      "allowedNamespace": "Subobject",
+      "allowsMultipleValues": true
+    },
+    "Has optional subobject": {
+      "datatype": "Page",
+      "label": "Has optional subobject",
+      "description": "Subobjects that may be present on pages in this category.",
+      "allowedNamespace": "Subobject",
+      "allowsMultipleValues": true
+    },
+    "Has display format": {
+      "datatype": "Text",
+      "label": "Has display format",
+      "description": "Controls how properties are rendered in the display template.",
+      "allowedValues": [
+        "Sections",
+        "Table",
+        "Side infobox",
+        "Plain text"
+      ],
+      "allowsMultipleValues": false
+    },
+    "Has display header property": {
+      "datatype": "Page",
+      "label": "Has display header property",
+      "description": "Properties to display prominently in the header of the page.",
+      "allowedNamespace": "Property",
+      "allowsMultipleValues": true
+    },
+    "Has display section name": {
+      "datatype": "Text",
+      "label": "Has display section name",
+      "description": "Name of a display section used in inline subobjects.",
+      "allowsMultipleValues": false
+    },
+    "Has display section property": {
+      "datatype": "Page",
+      "label": "Has display section property",
+      "description": "Properties included in a given display section.",
+      "allowedNamespace": "Property",
+      "allowsMultipleValues": true
+    },
+    "Allows value": {
+      "datatype": "Text",
+      "label": "Allows value",
+      "description": "Enumerated allowed value for a property.",
+      "allowsMultipleValues": true
+    },
+    "Allows multiple values": {
+      "datatype": "Boolean",
+      "label": "Allows multiple values",
+      "description": "Whether the property itself can have multiple values.",
+      "allowsMultipleValues": false
+    },
+    "Has domain and range": {
+      "datatype": "Page",
+      "label": "Has domain and range",
+      "description": "For page-type properties, restricts values to pages in a given category.",
+      "allowedNamespace": "Category",
+      "allowsMultipleValues": false
+    },
+    "Subproperty of": {
+      "datatype": "Page",
+      "label": "Subproperty of",
+      "description": "Marks this property as a subproperty of another property.",
+      "allowedNamespace": "Property",
+      "allowsMultipleValues": false
+    },
+    "Allows value from category": {
+      "datatype": "Text",
+      "label": "Allows value from category",
+      "description": "For autocomplete, restricts value suggestions to a given category.",
+      "allowsMultipleValues": false
+    },
+    "Allows value from namespace": {
+      "datatype": "Text",
+      "label": "Allows value from namespace",
+      "description": "For autocomplete, restricts value suggestions to a given namespace.",
+      "allowsMultipleValues": false
+    },
+    "Has display template": {
+      "datatype": "Text",
+      "label": "Has display template",
+      "description": "Custom HTML/wikitext template for rendering a property value.",
+      "allowsMultipleValues": false
+    },
+    "Has display type": {
+      "datatype": "Text",
+      "label": "Has display type",
+      "description": "Built-in display type for rendering property values.",
+      "allowedValues": [
+        "Email",
+        "URL",
+        "Image",
+        "Boolean",
+        "none"
+      ],
+      "allowsMultipleValues": false
+    },
+    "Has display pattern": {
+      "datatype": "Page",
+      "label": "Has display pattern",
+      "description": "References another property whose display template should be reused.",
+      "allowedNamespace": "Property",
+      "allowsMultipleValues": false
+    },
+    "Has subobject type": {
+      "datatype": "Page",
+      "label": "Has subobject type",
+      "description": "Identifies which Subobject schema a stored subobject instance conforms to.",
+      "allowedNamespace": "Subobject",
+      "allowsMultipleValues": false
+    }
+  }
+}
+
+
