@@ -112,8 +112,6 @@ class DisplayStubGenerator
         }
 
         $content .= "|}\n";
-        $content .= "\n";
-        $content .= "{{#structuresync_hierarchy:" . $category->getName() . "}}\n";
         $content .= "</includeonly><noinclude>[[Category:StructureSync-managed-display]]</noinclude>";
 
         return $content;

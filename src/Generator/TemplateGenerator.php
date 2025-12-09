@@ -125,6 +125,10 @@ class TemplateGenerator
             $this->generateSubobjectDisplaySections($category)
         );
 
+        /* Hierarchy Widget (Bottom of page) */
+        $out[] = '';
+        $out[] = '{{#structuresync_hierarchy:' . $cat . '}}';
+
         $out[] = '</includeonly>';
 
         return implode("\n", $out);
