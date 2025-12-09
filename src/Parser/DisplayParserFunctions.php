@@ -23,9 +23,11 @@ use PPFrame;
  *   - Load form preview modules
  *   - Provide clean HTML-safe outputs
  */
-class DisplayParserFunctions {
+class DisplayParserFunctions
+{
 
-    public function __construct() {
+    public function __construct()
+    {
         // No dependencies needed
     }
 
@@ -33,7 +35,8 @@ class DisplayParserFunctions {
      * REGISTRATION
      * ===================================================================== */
 
-    public static function onParserFirstCallInit(Parser $parser): void {
+    public static function onParserFirstCallInit(Parser $parser): void
+    {
 
         $instance = new self();
 
@@ -56,11 +59,12 @@ class DisplayParserFunctions {
      * HELPER UTILITIES
      * ===================================================================== */
 
-    private function htmlReturn(string $html): array {
+    private function htmlReturn(string $html): array
+    {
         return [
             $html,
             'noparse' => true,
-            'isHTML'  => true
+            'isHTML' => true
         ];
     }
 
@@ -68,14 +72,21 @@ class DisplayParserFunctions {
      * CATEGORY HIERARCHY UI
      * ===================================================================== */
 
-    public function renderHierarchy(Parser $parser, PPFrame $frame, array $args) {
+    public function renderHierarchy(Parser $parser, PPFrame $frame, array $args)
+    {
 
-        $title = $parser->getTitle();
-        if (!$title || $title->getNamespace() !== NS_CATEGORY) {
-            return '';
+        // Argument 0: Optional Category Name (e.g. "Person")
+        // If provided, we force display for that category regardless of the current page.
+        $category = isset($args[0]) ? trim($frame->expand($args[0])) : null;
+
+        if (!$category) {
+            // Fallback: Infer from current page title if in Category namespace
+            $title = $parser->getTitle();
+            if (!$title || $title->getNamespace() !== NS_CATEGORY) {
+                return '';
+            }
+            $category = $title->getText();
         }
-
-        $category = $title->getText();
 
         $output = $parser->getOutput();
         $output->addModules(['ext.structuresync.hierarchy']);
@@ -85,8 +96,8 @@ class DisplayParserFunctions {
         $html = Html::rawElement(
             'div',
             [
-                'id'            => $id,
-                'class'         => 'ss-hierarchy-block mw-collapsible',
+                'id' => $id,
+                'class' => 'ss-hierarchy-block mw-collapsible',
                 'data-category' => $category
             ],
             Html::element('p', [], wfMessage('structuresync-hierarchy-loading')->text())
@@ -99,7 +110,8 @@ class DisplayParserFunctions {
      * FORM PREVIEW MODULE
      * ===================================================================== */
 
-    public function loadFormPreview(Parser $parser, PPFrame $frame, array $args): array {
+    public function loadFormPreview(Parser $parser, PPFrame $frame, array $args): array
+    {
 
         $output = $parser->getOutput();
         $output->addModules(['ext.structuresync.hierarchy.formpreview']);

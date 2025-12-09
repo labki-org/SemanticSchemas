@@ -46,7 +46,8 @@
 	],
 	"Hooks": {
 		"SetupAfterCache": "MediaWiki\\Extension\\StructureSync\\Hooks\\StructureSyncSetupHooks::onSetupAfterCache",
-		"LoadExtensionSchemaUpdates": "MediaWiki\\Extension\\StructureSync\\Hooks\\StructureSyncSetupHooks::onLoadExtensionSchemaUpdates"
+		"LoadExtensionSchemaUpdates": "MediaWiki\\Extension\\StructureSync\\Hooks\\StructureSyncSetupHooks::onLoadExtensionSchemaUpdates",
+		"ParserFirstCallInit": "MediaWiki\\Extension\\StructureSync\\Parser\\DisplayParserFunctions::onParserFirstCallInit"
 	},
 	"AutoloadClasses": {
 		"MediaWiki\\Extension\\StructureSync\\Hooks\\StructureSyncSetupHooks": "src/Hooks/StructureSyncSetupHooks.php"
