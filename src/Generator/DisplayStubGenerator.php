@@ -217,9 +217,9 @@ class DisplayStubGenerator
      * @param CategoryModel $category
      * @return bool
      */
-    public function displayStubExists(CategoryModel $category): bool
+    public function displayStubExists(string $categoryName): bool
     {
-        $title = $this->pageCreator->makeTitle($category->getName() . "/display", NS_TEMPLATE);
+        $title = $this->pageCreator->makeTitle($categoryName . "/display", NS_TEMPLATE);
         return $title && $this->pageCreator->pageExists($title);
     }
 }
