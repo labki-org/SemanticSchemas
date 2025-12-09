@@ -24,11 +24,26 @@
       },
       "subobjects": {
         "required": [],
-        "optional": []
+        "optional": [
+          "Display section"
+        ]
       }
     }
   },
-  "subobjects": {},
+  "subobjects": {
+    "Display section": {
+      "label": "Display section",
+      "description": "Defines a section for property grouping in display templates.",
+      "properties": {
+        "required": [
+          "Has display section name"
+        ],
+        "optional": [
+          "Has display section property"
+        ]
+      }
+    }
+  },
   "properties": {
     "Display label": {
       "datatype": "Text",
@@ -93,10 +108,11 @@
     "Has display format": {
       "datatype": "Text",
       "label": "Has display format",
-      "description": "Format for the display template (e.g. table, sidebox).",
+      "description": "Format for the display template (e.g. table, sidebox, sections).",
       "allowedValues": [
         "table",
-        "sidebox"
+        "sidebox",
+        "sections"
       ],
       "allowsMultipleValues": false
     },

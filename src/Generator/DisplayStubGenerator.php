@@ -95,6 +95,10 @@ class DisplayStubGenerator
             return $this->generateSideboxWikitext($category);
         }
 
+        if ($format === 'sections') {
+            return $this->generateSectionsWikitext($category);
+        }
+
         // Default to table
         return $this->generateTableWikitext($category);
     }
@@ -128,10 +132,63 @@ class DisplayStubGenerator
         return $content;
     }
 
-    private function generatePropertyRows(CategoryModel $category): string
+    private function generateSectionsWikitext(CategoryModel $category): string
+    {
+        $content = "<includeonly>\n";
+        $content .= "{| class=\"wikitable source-structuresync-sections\" style=\"width: 100%;\"\n";
+
+        $sections = $category->getDisplaySections();
+
+        // Convert sections to map to track used properties
+        $usedProperties = [];
+
+        foreach ($sections as $section) {
+            $name = $section['name'];
+            $props = $section['properties'];
+
+            // Section Header
+            $content .= "|-\n";
+            $content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | " . $name . "\n";
+
+            // Section Properties
+            $content .= $this->generatePropertyRows($category, $props);
+
+            foreach ($props as $p) {
+                $usedProperties[$p] = true;
+            }
+        }
+
+        // Catch-all for properties NOT in any section
+        $allProps = $category->getAllProperties();
+        $remaining = [];
+        foreach ($allProps as $p) {
+            if (!isset($usedProperties[$p])) {
+                $remaining[] = $p;
+            }
+        }
+
+        if (!empty($remaining)) {
+            $content .= "|-\n";
+            $content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | Other Properties\n";
+            $content .= $this->generatePropertyRows($category, $remaining);
+        }
+
+        $content .= "|}\n";
+        $content .= "</includeonly><noinclude>[[Category:StructureSync-managed-display]]</noinclude>";
+
+        return $content;
+    }
+
+    /**
+     * Generate table rows for a list of properties.
+     * Default to all category properties if $properties is null.
+     */
+    private function generatePropertyRows(CategoryModel $category, ?array $properties = null): string
     {
         $out = "";
-        foreach ($category->getAllProperties() as $propName) {
+        $targetProperties = $properties ?? $category->getAllProperties();
+
+        foreach ($targetProperties as $propName) {
             $property = $this->propertyStore->readProperty($propName);
             if ($property) {
                 $label = $property->getLabel();
