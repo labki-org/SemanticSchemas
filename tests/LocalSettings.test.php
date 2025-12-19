@@ -13,6 +13,7 @@ wfLoadExtension('SemanticExtraSpecialProperties');
 
 // Core/Utility Extensions
 wfLoadExtension('PageForms');
+wfLoadExtension('ParserFunctions');
 wfLoadExtension('Maps');
 wfLoadExtension('Mermaid');
 wfLoadExtension('Bootstrap');
@@ -23,12 +24,13 @@ wfLoadExtension('PageSchemas');
 wfLoadExtension('Lockdown');
 
 // Load StructureSync
-// Load StructureSync
 wfLoadExtension('StructureSync', '/mw-user-extensions/StructureSync/extension.json');
 
 // Configuration
 $wgDebugLogGroups['structuresync'] = '/var/log/mediawiki/structuresync.log';
 $wgShowExceptionDetails = true;
+$wgDebugDumpSql = false;
+$wgDebugLogFile = '/var/log/mediawiki/debug.log'; // Send other logs to file instead of stdout
 
 // SMW Configuration (from old script)
 enableSemantics('localhost');
@@ -38,26 +40,26 @@ $smwgAutoSetupStore = false;
 $smwgQMaxInlineLimit = 500;
 
 // PageForms Configuration
-// $wgPageFormsAllowCreateInRestrictedNamespaces = true;
-// $wgPageFormsLinkAllRedLinksToForms = true;
-// $wgPageFormsFormCacheType = CACHE_NONE;
-// $wgNamespacesWithSemanticLinks[NS_CATEGORY] = true;
+$wgPageFormsAllowCreateInRestrictedNamespaces = true;
+$wgPageFormsLinkAllRedLinksToForms = true;
+$wgPageFormsFormCacheType = CACHE_NONE;
+$wgNamespacesWithSemanticLinks[NS_CATEGORY] = true;
 
 // Cache
 $wgCacheDirectory = "$IP/cache-structuresync";
 
 // Example Hook for PageForms on Category
-// $wgHooks['SkinTemplateNavigation::Universal'][] = function ($skin, &$links) {
-//     $title = $skin->getTitle();
-//     if ($title && $title->inNamespace(NS_CATEGORY) && $title->exists()) {
-//         $form = "Category";
-//         $links['views']['formedit'] = [
-//             'class' => false,
-//             'text' => "Edit with form",
-//             'href' => SpecialPage::getTitleFor("FormEdit", $form . "/" . $title->getPrefixedText())->getLocalURL(),
-//         ];
-//     }
-// };
+$wgHooks['SkinTemplateNavigation::Universal'][] = function ($skin, &$links) {
+    $title = $skin->getTitle();
+    if ($title && $title->inNamespace(NS_CATEGORY) && $title->exists()) {
+        $form = "Category";
+        $links['views']['formedit'] = [
+            'class' => false,
+            'text' => "Edit with form",
+            'href' => SpecialPage::getTitleFor("FormEdit", $form . "/" . $title->getPrefixedText())->getLocalURL(),
+        ];
+    }
+};
 
 // skin
 wfLoadSkin('Citizen');

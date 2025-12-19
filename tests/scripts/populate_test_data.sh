@@ -9,19 +9,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-get_cache_dir() {
-    case "$(uname -s)" in
-        Darwin*) echo "$HOME/Library/Caches/structuresync" ;;
-        MINGW*|MSYS*|CYGWIN*)
-            local appdata="${LOCALAPPDATA:-$HOME/AppData/Local}"
-            echo "$appdata/structuresync"
-            ;;
-        *) echo "${XDG_CACHE_HOME:-$HOME/.cache}/structuresync" ;;
-    esac
-}
-
-CACHE_BASE="$(get_cache_dir)"
-MW_DIR="${MW_DIR:-$CACHE_BASE/mediawiki-StructureSync-test}"
+REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+MW_DIR="${MW_DIR:-$REPO_ROOT}"
 
 if [ ! -d "$MW_DIR" ]; then
     echo "ERROR: MediaWiki directory not found at: $MW_DIR"
