@@ -1,10 +1,10 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Schema;
+namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
-use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
-use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
-use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 
 /**
  * ExtensionConfigInstaller
@@ -16,7 +16,8 @@ use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
  * This is a minimal, internal helper that reuses the canonical
  * schema models + Wiki*Store classes, and writes via PageCreator.
  */
-class ExtensionConfigInstaller {
+class ExtensionConfigInstaller
+{
 
     private SchemaLoader $loader;
     private SchemaValidator $validator;
@@ -54,9 +55,10 @@ class ExtensionConfigInstaller {
      *   }
      * }
      */
-    public function applyFromFile( string $filePath ): array {
-        $schema = $this->loader->loadFromFile( $filePath );
-        return $this->applySchema( $schema );
+    public function applyFromFile(string $filePath): array
+    {
+        $schema = $this->loader->loadFromFile($filePath);
+        return $this->applySchema($schema);
     }
 
     /**
@@ -68,8 +70,9 @@ class ExtensionConfigInstaller {
      * @param array $schema
      * @return array See applyFromFile()
      */
-    public function applySchema( array $schema ): array {
-        $validation = $this->validator->validateSchemaWithSeverity( $schema );
+    public function applySchema(array $schema): array
+    {
+        $validation = $this->validator->validateSchemaWithSeverity($schema);
 
         $result = [
             'errors' => $validation['errors'],
@@ -82,7 +85,7 @@ class ExtensionConfigInstaller {
         ];
 
         // Do not write anything if the schema is invalid.
-        if ( $validation['errors'] ) {
+        if ($validation['errors']) {
             return $result;
         }
 
@@ -91,23 +94,23 @@ class ExtensionConfigInstaller {
         $subobjects = $schema['subobjects'] ?? [];
 
         // 1. Properties
-        foreach ( $properties as $name => $data ) {
-            $model = new PropertyModel( $name, $data ?? [] );
-            $ok = $this->propertyStore->writeProperty( $model );
+        foreach ($properties as $name => $data) {
+            $model = new PropertyModel($name, $data ?? []);
+            $ok = $this->propertyStore->writeProperty($model);
             $result['applied']['properties'][$name] = $ok;
         }
 
         // 2. Subobjects
-        foreach ( $subobjects as $name => $data ) {
-            $model = new SubobjectModel( $name, $data ?? [] );
-            $ok = $this->subobjectStore->writeSubobject( $model );
+        foreach ($subobjects as $name => $data) {
+            $model = new SubobjectModel($name, $data ?? []);
+            $ok = $this->subobjectStore->writeSubobject($model);
             $result['applied']['subobjects'][$name] = $ok;
         }
 
         // 3. Categories
-        foreach ( $categories as $name => $data ) {
-            $model = new CategoryModel( $name, $data ?? [] );
-            $ok = $this->categoryStore->writeCategory( $model );
+        foreach ($categories as $name => $data) {
+            $model = new CategoryModel($name, $data ?? []);
+            $ok = $this->categoryStore->writeCategory($model);
             $result['applied']['categories'][$name] = $ok;
         }
 

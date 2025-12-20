@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Store;
+namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
@@ -15,9 +15,10 @@ use MediaWiki\User\User;
  * PageCreator
  * -----------
  * Safe creation, update, deletion, and reading of wiki pages.
- * All StructureSync writing operations flow through this class.
+ * All SemanticSchemas writing operations flow through this class.
  */
-class PageCreator {
+class PageCreator
+{
 
     /** @var User */
     private User $user;
@@ -25,8 +26,9 @@ class PageCreator {
     /** @var WikiPageFactory */
     private WikiPageFactory $wikiPageFactory;
 
-    public function __construct(?User $user = null) {
-        $this->user = $user ?? User::newSystemUser( 'StructureSync', [ 'steal' => true ] );
+    public function __construct(?User $user = null)
+    {
+        $this->user = $user ?? User::newSystemUser('SemanticSchemas', ['steal' => true]);
         $services = MediaWikiServices::getInstance();
         $this->wikiPageFactory = $services->getWikiPageFactory();
     }
@@ -41,7 +43,8 @@ class PageCreator {
     /**
      * Get the last error message from a failed operation.
      */
-    public function getLastError(): ?string {
+    public function getLastError(): ?string
+    {
         return $this->lastError;
     }
 
@@ -55,7 +58,8 @@ class PageCreator {
      *
      * @return bool
      */
-    public function createOrUpdatePage(Title $title, string $content, string $summary, int $flags = 0): bool {
+    public function createOrUpdatePage(Title $title, string $content, string $summary, int $flags = 0): bool
+    {
         $this->lastError = null;
         try {
             $wikiPage = $this->wikiPageFactory->newFromTitle($title);
@@ -65,36 +69,36 @@ class PageCreator {
             $updater->setContent(SlotRecord::MAIN, $contentObj);
 
             $revRecord = $updater->saveRevision(
-				CommentStoreComment::newUnsavedComment($summary),
-				$flags
-			);
-			
-			// MW 1.36+: saveRevision() throws on failure and returns RevisionRecord on success.
-			if ( $revRecord === null ) {
-				$status = $updater->getStatus();
-				$errors = $status->getErrors();
-				$errorMsg = $errors ? $status->getMessage()->text() : 'Unknown error';
-				
-				// "No change" is not really an error - the page already has the correct content
-				if ( stripos( $errorMsg, 'no change was made' ) !== false ) {
-					wfDebugLog( 'structuresync', "No change needed: " . $title->getPrefixedText() );
-					return true;
-				}
-				
-				$this->lastError = $errorMsg;
-				wfLogWarning("StructureSync: Failed to save '{$title->getPrefixedText()}': {$errorMsg}");
-				wfDebugLog( 'structuresync', "SAVE RETURNED NULL: " . $title->getPrefixedText() . " - " . $errorMsg );
-				return false;
-			}
-			
-			wfDebugLog( 'structuresync', "Successfully saved: " . $title->getPrefixedText() );
-			return true;
-			
+                CommentStoreComment::newUnsavedComment($summary),
+                $flags
+            );
+
+            // MW 1.36+: saveRevision() throws on failure and returns RevisionRecord on success.
+            if ($revRecord === null) {
+                $status = $updater->getStatus();
+                $errors = $status->getErrors();
+                $errorMsg = $errors ? $status->getMessage()->text() : 'Unknown error';
+
+                // "No change" is not really an error - the page already has the correct content
+                if (stripos($errorMsg, 'no change was made') !== false) {
+                    wfDebugLog('semanticschemas', "No change needed: " . $title->getPrefixedText());
+                    return true;
+                }
+
+                $this->lastError = $errorMsg;
+                wfLogWarning("SemanticSchemas: Failed to save '{$title->getPrefixedText()}': {$errorMsg}");
+                wfDebugLog('semanticschemas', "SAVE RETURNED NULL: " . $title->getPrefixedText() . " - " . $errorMsg);
+                return false;
+            }
+
+            wfDebugLog('semanticschemas', "Successfully saved: " . $title->getPrefixedText());
+            return true;
+
 
         } catch (\Exception $e) {
             $this->lastError = $e->getMessage();
-            wfLogWarning("StructureSync: Exception saving '{$title->getPrefixedText()}': " . $e->getMessage());
-            wfDebugLog( 'structuresync', "SAVE EXCEPTION: " . $title->getPrefixedText() . " - " . $e->getMessage() . "\nStack: " . $e->getTraceAsString() );
+            wfLogWarning("SemanticSchemas: Exception saving '{$title->getPrefixedText()}': " . $e->getMessage());
+            wfDebugLog('semanticschemas', "SAVE EXCEPTION: " . $title->getPrefixedText() . " - " . $e->getMessage() . "\nStack: " . $e->getTraceAsString());
             return false;
         }
     }
@@ -103,11 +107,13 @@ class PageCreator {
      * PAGE EXISTENCE & READ
      * ===================================================================== */
 
-    public function pageExists(Title $title): bool {
+    public function pageExists(Title $title): bool
+    {
         return $title->exists();
     }
 
-    public function getPageContent(Title $title): ?string {
+    public function getPageContent(Title $title): ?string
+    {
         if (!$title->exists()) {
             return null;
         }
@@ -123,7 +129,7 @@ class PageCreator {
             return $contentObj?->serialize() ?? null;
 
         } catch (\Exception $e) {
-            wfLogWarning("StructureSync: Failed reading page '{$title->getPrefixedText()}': " . $e->getMessage());
+            wfLogWarning("SemanticSchemas: Failed reading page '{$title->getPrefixedText()}': " . $e->getMessage());
             return null;
         }
     }
@@ -135,7 +141,8 @@ class PageCreator {
     /**
      * Construct a safe Title.
      */
-    public function makeTitle(string $text, int $namespace): ?Title {
+    public function makeTitle(string $text, int $namespace): ?Title
+    {
         $text = trim($text);
         if ($text === '') {
             return null;
@@ -144,7 +151,7 @@ class PageCreator {
         try {
             return Title::makeTitleSafe($namespace, $text);
         } catch (\Exception $e) {
-            wfLogWarning("StructureSync: Title creation failed for '$text': " . $e->getMessage());
+            wfLogWarning("SemanticSchemas: Title creation failed for '$text': " . $e->getMessage());
             return null;
         }
     }
@@ -156,7 +163,8 @@ class PageCreator {
      * @param string $pageName Prefixed page name (e.g., "Category:Something")
      * @return Title|null
      */
-    public function titleFromPageName(string $pageName): ?Title {
+    public function titleFromPageName(string $pageName): ?Title
+    {
         $pageName = trim($pageName);
         if ($pageName === '') {
             return null;
@@ -198,7 +206,8 @@ class PageCreator {
     /**
      * Delete a page if it exists.
      */
-    public function deletePage(Title $title, string $reason): bool {
+    public function deletePage(Title $title, string $reason): bool
+    {
         if (!$title->exists()) {
             return true;
         }
@@ -211,14 +220,14 @@ class PageCreator {
             $status = $deletePage->deleteUnsafe($reason);
 
             if (!$status->isOK()) {
-                wfLogWarning("StructureSync: Failed deleting '{$title->getPrefixedText()}': " . $status->getMessage(false));
+                wfLogWarning("SemanticSchemas: Failed deleting '{$title->getPrefixedText()}': " . $status->getMessage(false));
                 return false;
             }
 
             return true;
 
         } catch (\Exception $e) {
-            wfLogWarning("StructureSync: Exception deleting '{$title->getPrefixedText()}': " . $e->getMessage());
+            wfLogWarning("SemanticSchemas: Exception deleting '{$title->getPrefixedText()}': " . $e->getMessage());
             return false;
         }
     }
@@ -235,17 +244,17 @@ class PageCreator {
     ): string {
 
         $startPos = strpos($content, $startMarker);
-        $endPos   = strpos($content, $endMarker);
+        $endPos = strpos($content, $endMarker);
 
         if ($startPos !== false && $endPos !== false && $endPos > $startPos) {
             $before = substr($content, 0, $startPos + strlen($startMarker));
-            $after  = substr($content, $endPos);
+            $after = substr($content, $endPos);
 
             return rtrim($before) . "\n\n" . trim($newText) . "\n\n" . ltrim($after);
         }
 
         // Append markers
-        $out  = rtrim($content) . "\n\n";
+        $out = rtrim($content) . "\n\n";
         $out .= $startMarker . "\n";
         $out .= trim($newText) . "\n";
         $out .= $endMarker . "\n";

@@ -20,8 +20,8 @@ sleep 20
 # export MW_DIR="$REPO_ROOT"
 # bash "$SCRIPT_DIR/populate_test_data.sh"
 
-echo "==> Running StructureSync Config Installer..."
-docker compose exec wiki php /mw-user-extensions/StructureSync/maintenance/installConfig.php
+echo "==> Running SemanticSchemas Config Installer..."
+docker compose exec wiki php /mw-user-extensions/SemanticSchemas/maintenance/installConfig.php
 
 # echo "==> Running SMW setupStore (manual trigger)..."
 # docker compose exec wiki php extensions/SemanticMediaWiki/maintenance/setupStore.php --nochecks

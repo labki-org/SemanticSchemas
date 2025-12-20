@@ -1,5 +1,5 @@
 /**
- * StructureSync Hierarchy Form Preview Styles
+ * SemanticSchemas Hierarchy Form Preview Styles
  * =============================================
  * Styles for the dynamic hierarchy preview in category creation forms.
  */
@@ -59,7 +59,7 @@
 }
 
 /* Virtual (new) category styling */
-.ss-preview-node-virtual > .ss-preview-node-label {
+.ss-preview-node-virtual>.ss-preview-node-label {
 	background: #fff3cd;
 	border-color: #ffc107;
 	font-weight: 600;
@@ -207,17 +207,16 @@
 	#ss-form-hierarchy-preview {
 		padding: 1em;
 	}
-	
+
 	.ss-preview-wrapper {
 		gap: 1em;
 	}
-	
+
 	.ss-preview-section {
 		padding: 0.75em;
 	}
-	
+
 	.ss-preview-tree-nested {
 		margin-left: 1em;
 	}
 }
-

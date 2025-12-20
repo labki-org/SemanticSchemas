@@ -1,8 +1,8 @@
-# StructureSync Source Code Documentation
+# SemanticSchemas Source Code Documentation
 
 ## Overview
 
-StructureSync is a MediaWiki extension that provides schema-driven ontology management for Semantic MediaWiki (SMW) and PageForms. It treats schema definitions as the source of truth and generates wiki pages (categories, properties, forms, templates) as compiled artifacts.
+SemanticSchemas is a MediaWiki extension that provides schema-driven ontology management for Semantic MediaWiki (SMW) and PageForms. It treats schema definitions as the source of truth and generates wiki pages (categories, properties, forms, templates) as compiled artifacts.
 
 ## Architecture
 
@@ -57,8 +57,8 @@ Key Features:
 MediaWiki parser function integration.
 
 - **DisplayParserFunctions**: Registers and handles custom parser functions
-  - `{{#StructureSyncRenderAllProperties:Category}}`
-  - `{{#StructureSyncRenderSection:Category|Section}}`
+  - `{{#SemanticSchemasRenderAllProperties:Category}}`
+  - `{{#SemanticSchemasRenderSection:Category|Section}}`
 
 Key Features:
 - Argument validation and error handling
@@ -94,7 +94,7 @@ Key Features:
 
 Administrative UI for schema management.
 
-- **SpecialStructureSync**: Central control panel (Special:StructureSync)
+- **SpecialSemanticSchemas**: Central control panel (Special:SemanticSchemas)
 
 Features:
 - Overview dashboard with status indicators
@@ -115,7 +115,7 @@ Persistence layer for reading/writing wiki pages.
 - **WikiPropertyStore**: Reads/writes Property pages with semantic annotations
 - **PageCreator**: Low-level page creation and update
 - **PageHashComputer**: Computes hashes for dirty detection
-- **StateManager**: Manages sync state in MediaWiki:StructureSyncState.json
+- **StateManager**: Manages sync state in MediaWiki:SemanticSchemasState.json
 
 Key Features:
 - Marker-based section management
@@ -175,7 +175,7 @@ Dispatcher Template
     ↓
 Semantic Template (stores data) + Display Template (renders view)
     ↓
-DisplayParserFunctions (#StructureSyncRenderAllProperties)
+DisplayParserFunctions (#SemanticSchemasRenderAllProperties)
     ↓
 DisplaySpecBuilder (build spec with inheritance)
     ↓
@@ -188,7 +188,7 @@ HTML Output
 
 ### Inheritance
 
-StructureSync uses **C3 linearization** (same as Python's Method Resolution Order) for consistent multiple inheritance:
+SemanticSchemas uses **C3 linearization** (same as Python's Method Resolution Order) for consistent multiple inheritance:
 
 - **Monotonicity**: Superclasses appear after subclasses
 - **Local Precedence**: Parent order is respected
@@ -227,12 +227,12 @@ Sections are inherited and merged by name. Child sections override parent sectio
 
 ### State Tracking
 
-StructureSync tracks two types of state:
+SemanticSchemas tracks two types of state:
 
 1. **Dirty Flag**: Set when schema is imported but artifacts not yet generated
 2. **Page Hashes**: SHA256 hashes of generated content to detect external modifications
 
-State is stored in `MediaWiki:StructureSyncState.json`.
+State is stored in `MediaWiki:SemanticSchemasState.json`.
 
 ## Naming Conventions
 
@@ -406,13 +406,13 @@ See inline TODO comments in code for specific improvement opportunities:
 - Add transaction support for atomic imports
 - Implement async job queue for large operations
 - Add schema version migration support
-- Extract SpecialStructureSync table rendering to separate class
+- Extract SpecialSemanticSchemas table rendering to separate class
 - Add progress callbacks for long operations
 - Implement caching for frequently accessed properties
 
 ## Contributing
 
-When contributing to StructureSync:
+When contributing to SemanticSchemas:
 
 1. Follow existing code style and patterns
 2. Add PHPDoc comments for all public methods

@@ -1,6 +1,6 @@
 # Supported Semantic Properties
 
-This document outlines all semantic properties supported by StructureSync for Categories, Properties, and Subobjects. These properties are used to define schema metadata and control behavior.
+This document outlines all semantic properties supported by SemanticSchemas for Categories, Properties, and Subobjects. These properties are used to define schema metadata and control behavior.
 
 ## Categories
 
@@ -133,7 +133,7 @@ Display sections are defined using subobjects with the following structure:
 ```wiki
 Category:Person
 ----
-<!-- StructureSync Start -->
+<!-- SemanticSchemas Start -->
 [[Display label::Person]]
 [[Has description::Represents a person in the system]]
 [[Has parent category::Category:Entity]]
@@ -156,7 +156,7 @@ Category:Person
 |Has display section property=Property:Has title
 |Has display section property=Property:Has department
 }}
-<!-- StructureSync End -->
+<!-- SemanticSchemas End -->
 ```
 
 ---
@@ -293,13 +293,13 @@ Property pages support the following semantic properties to define their schema:
 ```wiki
 Property:Has email
 ----
-<!-- StructureSync Start -->
+<!-- SemanticSchemas Start -->
 [[Has type::Email]]
 [[Display label::Email Address]]
 [[Has description::Primary email address for contact]]
 [[Allows multiple values::false]]
 [[Has display type::Email]]
-<!-- StructureSync End -->
+<!-- SemanticSchemas End -->
 ```
 
 ---
@@ -354,7 +354,7 @@ Subobject pages support the following semantic properties to define their schema
 ```wiki
 Subobject:Publication
 ----
-<!-- StructureSync Start -->
+<!-- SemanticSchemas Start -->
 [[Display label::Publication]]
 [[Has description::A publication or research paper]]
 [[Has required property::Property:Has title]]
@@ -362,7 +362,7 @@ Subobject:Publication
 [[Has optional property::Property:Has DOI]]
 [[Has optional property::Property:Has abstract]]
 [[Has optional property::Property:Has journal]]
-<!-- StructureSync End -->
+<!-- SemanticSchemas End -->
 ```
 
 ---
@@ -416,18 +416,18 @@ Subobject:Publication
 
 ## Notes
 
-### StructureSync Markers
+### SemanticSchemas Markers
 
-All schema metadata should be placed between StructureSync markers:
+All schema metadata should be placed between SemanticSchemas markers:
 
 ```wiki
-<!-- StructureSync Start -->
+<!-- SemanticSchemas Start -->
 [[Property::Value]]
-<!-- StructureSync End -->
+<!-- SemanticSchemas End -->
 ```
 
 This ensures that:
-- StructureSync can identify and manage the metadata
+- SemanticSchemas can identify and manage the metadata
 - User-added content outside the markers is preserved
 - The metadata can be updated programmatically
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Schema;
+namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
 
@@ -15,7 +15,8 @@ use InvalidArgumentException;
  *
  * There is no inheritance or subtype merging.
  */
-class SubobjectModel {
+class SubobjectModel
+{
 
     private string $name;
     private string $label;
@@ -31,7 +32,8 @@ class SubobjectModel {
      * CONSTRUCTOR
      * ---------------------------------------------------------------------- */
 
-    public function __construct(string $name, array $data = []) {
+    public function __construct(string $name, array $data = [])
+    {
 
         /* -------------------- Name -------------------- */
         $name = trim($name);
@@ -47,7 +49,7 @@ class SubobjectModel {
 
         /* -------------------- Label -------------------- */
         $rawLabel = $data['label'] ?? $name;
-        $cleanLabel = trim((string)$rawLabel);
+        $cleanLabel = trim((string) $rawLabel);
 
         if ($cleanLabel === '') {
             // Normalize to a generated human-readable form
@@ -58,7 +60,7 @@ class SubobjectModel {
 
         /* -------------------- Description -------------------- */
         $this->description = isset($data['description'])
-            ? trim((string)$data['description'])
+            ? trim((string) $data['description'])
             : '';
 
         /* -------------------- Properties -------------------- */
@@ -94,10 +96,11 @@ class SubobjectModel {
      * NORMALIZATION
      * ---------------------------------------------------------------------- */
 
-    private static function normalizeList(array $list): array {
+    private static function normalizeList(array $list): array
+    {
         $clean = [];
         foreach ($list as $v) {
-            $v = trim((string)$v);
+            $v = trim((string) $v);
             if ($v !== '' && !in_array($v, $clean, true)) {
                 $clean[] = $v;
             }
@@ -109,7 +112,8 @@ class SubobjectModel {
      * Auto-generate a human-readable label.
      * Mirrors PropertyModel label generation logic.
      */
-    private function autoGenerateLabel(string $name): string {
+    private function autoGenerateLabel(string $name): string
+    {
         $clean = preg_replace('/^Has[_ ]+/i', '', $name);
         $clean = str_replace('_', ' ', $clean);
         return ucwords($clean);
@@ -119,30 +123,36 @@ class SubobjectModel {
      * ACCESSORS
      * ---------------------------------------------------------------------- */
 
-    public function getName(): string {
+    public function getName(): string
+    {
         return $this->name;
     }
 
-    public function getLabel(): string {
+    public function getLabel(): string
+    {
         return $this->label;
     }
 
-    public function getDescription(): string {
+    public function getDescription(): string
+    {
         return $this->description;
     }
 
     /** @return string[] */
-    public function getRequiredProperties(): array {
+    public function getRequiredProperties(): array
+    {
         return $this->requiredProperties;
     }
 
     /** @return string[] */
-    public function getOptionalProperties(): array {
+    public function getOptionalProperties(): array
+    {
         return $this->optionalProperties;
     }
 
     /** @return string[] */
-    public function getAllProperties(): array {
+    public function getAllProperties(): array
+    {
         return array_values(
             array_unique(
                 array_merge($this->requiredProperties, $this->optionalProperties)
@@ -150,11 +160,13 @@ class SubobjectModel {
         );
     }
 
-    public function isPropertyRequired(string $prop): bool {
+    public function isPropertyRequired(string $prop): bool
+    {
         return in_array($prop, $this->requiredProperties, true);
     }
 
-    public function isPropertyOptional(string $prop): bool {
+    public function isPropertyOptional(string $prop): bool
+    {
         return in_array($prop, $this->optionalProperties, true);
     }
 
@@ -162,7 +174,8 @@ class SubobjectModel {
      * EXPORT
      * ---------------------------------------------------------------------- */
 
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return [
             'label' => $this->label,
             'description' => $this->description,

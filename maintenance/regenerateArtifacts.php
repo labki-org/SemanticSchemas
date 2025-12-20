@@ -1,13 +1,13 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Maintenance;
+namespace MediaWiki\Extension\SemanticSchemas\Maintenance;
 
 use Maintenance;
-use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
-use MediaWiki\Extension\StructureSync\Generator\TemplateGenerator;
-use MediaWiki\Extension\StructureSync\Generator\FormGenerator;
-use MediaWiki\Extension\StructureSync\Generator\DisplayStubGenerator;
-use MediaWiki\Extension\StructureSync\Schema\InheritanceResolver;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
+use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
+use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
+use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 
 $IP = getenv('MW_INSTALL_PATH');
 if ($IP === false) {
@@ -30,7 +30,7 @@ class RegenerateArtifacts extends Maintenance
 		$this->addDescription('Regenerate templates and forms for categories');
 		$this->addOption('category', 'Regenerate artifacts for a specific category', false, true);
 		$this->addOption('generate-display', 'Generate or update display templates (includes parent displays)', false, false);
-		$this->requireExtension('StructureSync');
+		$this->requireExtension('SemanticSchemas');
 	}
 
 	public function execute()
@@ -71,7 +71,7 @@ class RegenerateArtifacts extends Maintenance
 	/**
 	 * Regenerate artifacts for a single category
 	 *
-	 * @param \MediaWiki\Extension\StructureSync\Schema\CategoryModel $category
+	 * @param \MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel $category
 	 * @param TemplateGenerator $templateGenerator
 	 * @param FormGenerator $formGenerator
 	 * @param DisplayStubGenerator $displayGenerator

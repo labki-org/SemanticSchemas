@@ -26,11 +26,11 @@ wfLoadExtension('MsUpload');
 wfLoadExtension('PageSchemas');
 wfLoadExtension('Lockdown');
 
-// Load StructureSync
-wfLoadExtension('StructureSync', '/mw-user-extensions/StructureSync/extension.json');
+// Load SemanticSchemas
+wfLoadExtension('SemanticSchemas', '/mw-user-extensions/SemanticSchemas/extension.json');
 
 // Configuration
-$wgDebugLogGroups['structuresync'] = '/var/log/mediawiki/structuresync.log';
+$wgDebugLogGroups['semanticschemas'] = '/var/log/mediawiki/semanticschemas.log';
 $wgShowExceptionDetails = true;
 $wgDebugDumpSql = false;
 $wgDebugLogFile = '/var/log/mediawiki/debug.log'; // Send other logs to file instead of stdout
@@ -49,7 +49,7 @@ $wgPageFormsFormCacheType = CACHE_NONE;
 $wgNamespacesWithSemanticLinks[NS_CATEGORY] = true;
 
 // Cache
-$wgCacheDirectory = "$IP/cache-structuresync";
+$wgCacheDirectory = "$IP/cache-semanticschemas";
 
 // Example Hook for PageForms on Category
 $wgHooks['SkinTemplateNavigation::Universal'][] = function ($skin, &$links) {

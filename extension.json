@@ -1,11 +1,11 @@
 {
-	"name": "StructureSync",
+	"name": "SemanticSchemas",
 	"version": "0.1.0",
 	"author": [
 		"Your Name"
 	],
-	"url": "https://www.mediawiki.org/wiki/Extension:StructureSync",
-	"descriptionmsg": "structuresync-desc",
+	"url": "https://www.mediawiki.org/wiki/Extension:SemanticSchemas",
+	"descriptionmsg": "semanticschemas-desc",
 	"license-name": "GPL-3.0-or-later",
 	"type": "semantic",
 	"requires": {
@@ -17,12 +17,12 @@
 	},
 	"load_composer_autoloader": false,
 	"MessagesDirs": {
-		"StructureSync": [
+		"SemanticSchemas": [
 			"i18n"
 		]
 	},
 	"ExtensionMessagesFiles": {
-		"StructureSyncAlias": "StructureSync.alias.php"
+		"SemanticSchemasAlias": "SemanticSchemas.alias.php"
 	},
 	"namespaces": [
 		{
@@ -45,34 +45,34 @@
 		"NS_SUBOBJECT"
 	],
 	"Hooks": {
-		"SetupAfterCache": "MediaWiki\\Extension\\StructureSync\\Hooks\\StructureSyncSetupHooks::onSetupAfterCache",
-		"LoadExtensionSchemaUpdates": "MediaWiki\\Extension\\StructureSync\\Hooks\\StructureSyncSetupHooks::onLoadExtensionSchemaUpdates",
-		"ParserFirstCallInit": "MediaWiki\\Extension\\StructureSync\\Parser\\DisplayParserFunctions::onParserFirstCallInit"
+		"SetupAfterCache": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks::onSetupAfterCache",
+		"LoadExtensionSchemaUpdates": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks::onLoadExtensionSchemaUpdates",
+		"ParserFirstCallInit": "MediaWiki\\Extension\\SemanticSchemas\\Parser\\DisplayParserFunctions::onParserFirstCallInit"
 	},
 	"AutoloadClasses": {
-		"MediaWiki\\Extension\\StructureSync\\Hooks\\StructureSyncSetupHooks": "src/Hooks/StructureSyncSetupHooks.php"
+		"MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks": "src/Hooks/SemanticSchemasSetupHooks.php"
 	},
 	"AutoloadNamespaces": {
-		"MediaWiki\\Extension\\StructureSync\\": "src/"
+		"MediaWiki\\Extension\\SemanticSchemas\\": "src/"
 	},
 	"ResourceModules": {
-		"ext.structuresync.styles": {
+		"ext.semanticschemas.styles": {
 			"styles": [
-				"resources/ext.structuresync.styles.css"
+				"resources/ext.semanticschemas.styles.css"
 			],
 			"localBasePath": "",
-			"remoteExtPath": "StructureSync",
+			"remoteExtPath": "SemanticSchemas",
 			"targets": [
 				"desktop",
 				"mobile"
 			]
 		},
-		"ext.structuresync.hierarchy": {
+		"ext.semanticschemas.hierarchy": {
 			"scripts": [
-				"resources/ext.structuresync.hierarchy.js"
+				"resources/ext.semanticschemas.hierarchy.js"
 			],
 			"styles": [
-				"resources/ext.structuresync.hierarchy.css"
+				"resources/ext.semanticschemas.hierarchy.css"
 			],
 			"dependencies": [
 				"mediawiki.api",
@@ -80,43 +80,43 @@
 				"jquery"
 			],
 			"messages": [
-				"structuresync-hierarchy-no-data",
-				"structuresync-hierarchy-no-properties",
-				"structuresync-hierarchy-loading",
-				"structuresync-hierarchy-error",
-				"structuresync-hierarchy-no-category",
-				"structuresync-hierarchy-tree-title",
-				"structuresync-hierarchy-props-title",
-				"structuresync-hierarchy-subobjects-title",
-				"structuresync-hierarchy-source-category",
-				"structuresync-hierarchy-properties",
-				"structuresync-hierarchy-subobject-name",
-				"structuresync-hierarchy-required-state",
-				"structuresync-hierarchy-unknown-category",
-				"structuresync-hierarchy-unnamed-property",
-				"structuresync-hierarchy-required",
-				"structuresync-hierarchy-optional"
+				"semanticschemas-hierarchy-no-data",
+				"semanticschemas-hierarchy-no-properties",
+				"semanticschemas-hierarchy-loading",
+				"semanticschemas-hierarchy-error",
+				"semanticschemas-hierarchy-no-category",
+				"semanticschemas-hierarchy-tree-title",
+				"semanticschemas-hierarchy-props-title",
+				"semanticschemas-hierarchy-subobjects-title",
+				"semanticschemas-hierarchy-source-category",
+				"semanticschemas-hierarchy-properties",
+				"semanticschemas-hierarchy-subobject-name",
+				"semanticschemas-hierarchy-required-state",
+				"semanticschemas-hierarchy-unknown-category",
+				"semanticschemas-hierarchy-unnamed-property",
+				"semanticschemas-hierarchy-required",
+				"semanticschemas-hierarchy-optional"
 			],
 			"localBasePath": "",
-			"remoteExtPath": "StructureSync",
+			"remoteExtPath": "SemanticSchemas",
 			"targets": [
 				"desktop",
 				"mobile"
 			]
 		},
-		"ext.structuresync.hierarchy.formpreview": {
+		"ext.semanticschemas.hierarchy.formpreview": {
 			"scripts": [
-				"resources/ext.structuresync.hierarchy.formpreview.js"
+				"resources/ext.semanticschemas.hierarchy.formpreview.js"
 			],
 			"styles": [
-				"resources/ext.structuresync.hierarchy.formpreview.css"
+				"resources/ext.semanticschemas.hierarchy.formpreview.css"
 			],
 			"dependencies": [
 				"mediawiki.api",
 				"jquery"
 			],
 			"localBasePath": "",
-			"remoteExtPath": "StructureSync",
+			"remoteExtPath": "SemanticSchemas",
 			"targets": [
 				"desktop",
 				"mobile"
@@ -124,25 +124,25 @@
 		}
 	},
 	"APIModules": {
-		"structuresync-hierarchy": "MediaWiki\\Extension\\StructureSync\\Api\\ApiStructureSyncHierarchy"
+		"semanticschemas-hierarchy": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasHierarchy"
 	},
 	"SpecialPages": {
-		"StructureSync": "MediaWiki\\Extension\\StructureSync\\Special\\SpecialStructureSync"
+		"SemanticSchemas": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialSemanticSchemas"
 	},
 	"LogTypes": [
-		"structuresync"
+		"semanticschemas"
 	],
 	"LogNames": {
-		"structuresync": "structuresync-log-name"
+		"semanticschemas": "semanticschemas-log-name"
 	},
 	"LogHeaders": {
-		"structuresync": "structuresync-log-header"
+		"semanticschemas": "semanticschemas-log-header"
 	},
 	"LogActionsHandlers": {
-		"structuresync/generate": "LogFormatter"
+		"semanticschemas/generate": "LogFormatter"
 	},
 	"MaintenanceScripts": {
-		"StructureSync:InstallConfig": "maintenance/installConfig.php"
+		"SemanticSchemas:InstallConfig": "maintenance/installConfig.php"
 	},
 	"manifest_version": 2
 }

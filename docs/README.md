@@ -1,13 +1,13 @@
-# StructureSync Documentation
+# SemanticSchemas Documentation
 
-Welcome to the StructureSync documentation! This directory contains comprehensive documentation organized by audience and topic.
+Welcome to the SemanticSchemas documentation! This directory contains comprehensive documentation organized by audience and topic.
 
 ## Documentation Structure
 
 ### Getting Started
-New to StructureSync? Start here:
+New to SemanticSchemas? Start here:
 
-- **[Quick Start Guide](getting-started/QUICKSTART.md)** - Create your first ontology and start using StructureSync
+- **[Quick Start Guide](getting-started/QUICKSTART.md)** - Create your first ontology and start using SemanticSchemas
 - **[Installation Guide](getting-started/installation.md)** - Detailed installation instructions
 
 ### User Guide
@@ -38,7 +38,7 @@ For administrators and end users:
   - Step-by-step setup instructions
 
 ### Developer Documentation
-For developers extending StructureSync:
+For developers extending SemanticSchemas:
 
 - **[Architecture Guide](developer/architecture.md)** - Complete technical architecture documentation
   - Module structure and organization
@@ -51,7 +51,7 @@ For developers extending StructureSync:
   - Architecture highlights
   - File structure reference
 
-- **[Contributing Guide](developer/contributing.md)** - How to contribute to StructureSync
+- **[Contributing Guide](developer/contributing.md)** - How to contribute to SemanticSchemas
   - Coding standards
   - Testing requirements
   - Pull request process
@@ -78,7 +78,7 @@ For system administrators:
 ### For Developers
 
 - [Architecture Overview](developer/architecture.md) - Understand the codebase structure
-- [Extension Points](developer/architecture.md#extension-points) - How to extend StructureSync
+- [Extension Points](developer/architecture.md#extension-points) - How to extend SemanticSchemas
 - [API Documentation](user-guide/hierarchy-visualization.md#api-usage) - API endpoints and usage
 - [Testing Guide](../tests/README.md) - Set up and run tests
 
@@ -86,7 +86,7 @@ For system administrators:
 
 ### By Task
 
-- **Installing StructureSync** → [Getting Started](getting-started/QUICKSTART.md#installation)
+- **Installing SemanticSchemas** → [Getting Started](getting-started/QUICKSTART.md#installation)
 - **Creating a category** → [Quick Start](getting-started/QUICKSTART.md#creating-your-first-ontology)
 - **Visualizing hierarchy** → [Hierarchy Visualization](user-guide/hierarchy-visualization.md)
 - **Customizing display** → [Display Properties](user-guide/DISPLAY_PROPERTIES.md)
@@ -114,4 +114,4 @@ For system administrators:
 
 ---
 
-**Note**: This documentation is for StructureSync version 0.1.0 and later.
+**Note**: This documentation is for SemanticSchemas version 0.1.0 and later.

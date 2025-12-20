@@ -1,16 +1,16 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Hooks;
+namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
-use MediaWiki\Extension\StructureSync\Schema\ExtensionConfigInstaller;
+use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 
 /**
- * StructureSyncSetupHooks
+ * SemanticSchemasSetupHooks
  * 
- * Extension setup hooks for StructureSync that configure MediaWiki and SMW
+ * Extension setup hooks for SemanticSchemas that configure MediaWiki and SMW
  * for proper operation with our custom namespaces.
  */
-class StructureSyncSetupHooks
+class SemanticSchemasSetupHooks
 {
 
 	/**

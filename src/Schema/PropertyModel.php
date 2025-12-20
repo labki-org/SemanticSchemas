@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Schema;
+namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
 
@@ -191,7 +191,7 @@ class PropertyModel
         // Fallback with logging
         if (function_exists('wfLogWarning')) {
             wfLogWarning(
-                "StructureSync: Unknown datatype '{$datatype}' for property '{$this->name}'. Defaulting to 'Text'."
+                "SemanticSchemas: Unknown datatype '{$datatype}' for property '{$this->name}'. Defaulting to 'Text'."
             );
         }
 

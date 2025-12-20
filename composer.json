@@ -1,5 +1,5 @@
 {
-	"name": "mediawiki/structure-sync",
+	"name": "mediawiki/semantic-schemas",
 	"type": "mediawiki-extension",
 	"description": "Manages MediaWiki Categories and Properties as an ontology backbone with schema export/import and automatic template/form generation",
 	"keywords": [
@@ -26,7 +26,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"MediaWiki\\Extension\\StructureSync\\": "src/"
+			"MediaWiki\\Extension\\SemanticSchemas\\": "src/"
 		},
 		"files": [
 			"src/Util/SMWStubs.php"
@@ -34,7 +34,7 @@
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"MediaWiki\\Extension\\StructureSync\\Tests\\": "tests/phpunit/"
+			"MediaWiki\\Extension\\SemanticSchemas\\Tests\\": "tests/phpunit/"
 		}
 	},
 	"scripts": {

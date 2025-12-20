@@ -1,6 +1,6 @@
-# StructureSync Source Code
+# SemanticSchemas Source Code
 
-This directory contains the StructureSync extension source code.
+This directory contains the SemanticSchemas extension source code.
 
 ## Documentation
 

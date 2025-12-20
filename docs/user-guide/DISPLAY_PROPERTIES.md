@@ -65,12 +65,12 @@ When rendering a property value, the system checks in this order:
 ```wiki
 Property:Has biography
 ----
-<!-- StructureSync Start -->
+<!-- SemanticSchemas Start -->
 [[Has type::Text]]
 [[Has description::Biography or description text.]]
 [[Has display template::<div class="bio-block" style="background: #f9f9f9; padding: 10px; border-left: 3px solid #0066cc; margin: 10px 0;"><div class="bio-label" style="font-weight: bold; color: #0066cc; margin-bottom: 5px;">Biography</div><div class="bio-value" style="white-space: pre-wrap;">{{{value}}}</div></div>]]
 [[Has display type::none]]
-<!-- StructureSync End -->
+<!-- SemanticSchemas End -->
 ```
 
 ### Example 2: Email Pattern Property
@@ -78,12 +78,12 @@ Property:Has biography
 ```wiki
 Property:Email
 ----
-<!-- StructureSync Start -->
+<!-- SemanticSchemas Start -->
 [[Has type::Text]]
 [[Has description::Display pattern for rendering email addresses.]]
 [[Has display template::[mailto:{{{value}}} {{{value}}}] ]]
 [[Has display type::none]]
-<!-- StructureSync End -->
+<!-- SemanticSchemas End -->
 
 [[Category:Display Patterns]]
 ```
@@ -93,12 +93,12 @@ Property:Email
 ```wiki
 Property:Has email
 ----
-<!-- StructureSync Start -->
+<!-- SemanticSchemas Start -->
 [[Has type::Email]]
 [[Has description::Email address.]]
 [[Display label::Email]]
 [[Has display pattern::Property:Email]]
-<!-- StructureSync End -->
+<!-- SemanticSchemas End -->
 ```
 
 ### Example 4: Using Built-in Display Type
@@ -106,11 +106,11 @@ Property:Has email
 ```wiki
 Property:Has active status
 ----
-<!-- StructureSync Start -->
+<!-- SemanticSchemas Start -->
 [[Has type::Boolean]]
 [[Has description::Whether the person is currently active.]]
 [[Has display type::Boolean]]
-<!-- StructureSync End -->
+<!-- SemanticSchemas End -->
 ```
 
 ## Migration from Wikitext Sections

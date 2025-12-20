@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Schema;
+namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
 use RuntimeException;
@@ -16,7 +16,8 @@ use RuntimeException;
  * This class never mutates CategoryModel instances; it only constructs
  * new combined models.
  */
-class InheritanceResolver {
+class InheritanceResolver
+{
 
     /** @var array<string,CategoryModel> */
     private array $categoryMap;
@@ -27,7 +28,8 @@ class InheritanceResolver {
     /**
      * @param array<string,CategoryModel> $categoryMap
      */
-    public function __construct(array $categoryMap) {
+    public function __construct(array $categoryMap)
+    {
         foreach ($categoryMap as $name => $model) {
             if (!$model instanceof CategoryModel) {
                 throw new InvalidArgumentException(
@@ -48,7 +50,8 @@ class InheritanceResolver {
      * Index 0 = most specific (the category itself)
      * Last    = root-most ancestor
      */
-    public function getAncestors(string $categoryName): array {
+    public function getAncestors(string $categoryName): array
+    {
 
         if (isset($this->ancestorCache[$categoryName])) {
             return $this->ancestorCache[$categoryName];
@@ -56,7 +59,7 @@ class InheritanceResolver {
 
         // Unknown → standalone
         if (!isset($this->categoryMap[$categoryName])) {
-            return [ $categoryName ];
+            return [$categoryName];
         }
 
         $linear = $this->c3Linearization($categoryName, []);
@@ -73,7 +76,8 @@ class InheritanceResolver {
      *   child.mergeWithParent(parent)
      *   Then merge the result with the next parent in lineage.
      */
-    public function getEffectiveCategory(string $categoryName): CategoryModel {
+    public function getEffectiveCategory(string $categoryName): CategoryModel
+    {
 
         if (!isset($this->categoryMap[$categoryName])) {
             return new CategoryModel($categoryName);
@@ -103,7 +107,8 @@ class InheritanceResolver {
     /**
      * Validate inheritance and return error messages.
      */
-    public function validateInheritance(): array {
+    public function validateInheritance(): array
+    {
         $errors = [];
 
         foreach (array_keys($this->categoryMap) as $name) {
@@ -121,7 +126,8 @@ class InheritanceResolver {
     /**
      * Whether A is an ancestor of B.
      */
-    public function isAncestorOf(string $categoryA, string $categoryB): bool {
+    public function isAncestorOf(string $categoryA, string $categoryB): bool
+    {
         return in_array($categoryA, $this->getAncestors($categoryB), true);
     }
 
@@ -129,7 +135,8 @@ class InheritanceResolver {
      * C3 LINEARIZATION
      * ---------------------------------------------------------------------- */
 
-    private function c3Linearization(string $categoryName, array $visiting): array {
+    private function c3Linearization(string $categoryName, array $visiting): array
+    {
 
         // Cycle detection
         if (in_array($categoryName, $visiting, true)) {
@@ -140,14 +147,14 @@ class InheritanceResolver {
         }
 
         if (!isset($this->categoryMap[$categoryName])) {
-            return [ $categoryName ];
+            return [$categoryName];
         }
 
         $category = $this->categoryMap[$categoryName];
-        $parents  = $category->getParents();
+        $parents = $category->getParents();
 
         if ($parents === []) {
-            return [ $categoryName ];
+            return [$categoryName];
         }
 
         $visiting[] = $categoryName;
@@ -157,7 +164,7 @@ class InheritanceResolver {
             $linearizations[] = $this->c3Linearization($p, $visiting);
         }
 
-        $merged = $this->c3Merge(array_merge($linearizations, [ $parents ]));
+        $merged = $this->c3Merge(array_merge($linearizations, [$parents]));
 
         array_unshift($merged, $categoryName);
         return $merged;
@@ -168,7 +175,8 @@ class InheritanceResolver {
      *
      * @param array<int,string[]> $sequences
      */
-    private function c3Merge(array $sequences): array {
+    private function c3Merge(array $sequences): array
+    {
 
         $output = [];
 
@@ -196,7 +204,8 @@ class InheritanceResolver {
      * UTILITIES
      * ---------------------------------------------------------------------- */
 
-    private function allEmpty(array $sequences): bool {
+    private function allEmpty(array $sequences): bool
+    {
         foreach ($sequences as $seq) {
             if ($seq !== []) {
                 return false;
@@ -208,7 +217,8 @@ class InheritanceResolver {
     /**
      * A valid head must not appear in any tail position of any sequence.
      */
-    private function findC3Head(array $sequences): ?string {
+    private function findC3Head(array $sequences): ?string
+    {
 
         foreach ($sequences as $seq) {
             if ($seq === []) {

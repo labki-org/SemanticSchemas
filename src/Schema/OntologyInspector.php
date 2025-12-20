@@ -1,13 +1,13 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Schema;
+namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
-use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
-use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
-use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
-use MediaWiki\Extension\StructureSync\Store\StateManager;
-use MediaWiki\Extension\StructureSync\Store\PageHashComputer;
-use MediaWiki\Extension\StructureSync\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
+use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
+use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
+use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 
 /**
  * OntologyInspector
@@ -19,7 +19,8 @@ use MediaWiki\Extension\StructureSync\Store\PageCreator;
  * All external schema import/export responsibilities are handled by
  * legacy code and will move to a separate extension.
  */
-class OntologyInspector {
+class OntologyInspector
+{
 
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
@@ -52,14 +53,15 @@ class OntologyInspector {
 	 *
 	 * @return array
 	 */
-	private function buildSchemaArray(): array {
+	private function buildSchemaArray(): array
+	{
 		$categories = $this->categoryStore->getAllCategories();
 		$properties = $this->propertyStore->getAllProperties();
 		$subobjects = $this->subobjectStore->getAllSubobjects();
 
-		ksort( $categories );
-		ksort( $properties );
-		ksort( $subobjects );
+		ksort($categories);
+		ksort($properties);
+		ksort($subobjects);
 
 		$schema = [
 			'categories' => [],
@@ -67,15 +69,15 @@ class OntologyInspector {
 			'subobjects' => [],
 		];
 
-		foreach ( $categories as $name => $model ) {
+		foreach ($categories as $name => $model) {
 			$schema['categories'][$name] = $model->toArray();
 		}
 
-		foreach ( $properties as $name => $model ) {
+		foreach ($properties as $name => $model) {
 			$schema['properties'][$name] = $model->toArray();
 		}
 
-		foreach ( $subobjects as $name => $model ) {
+		foreach ($subobjects as $name => $model) {
 			$schema['subobjects'][$name] = $model->toArray();
 		}
 
@@ -96,40 +98,41 @@ class OntologyInspector {
 	 *   categoriesWithSubobjects:int
 	 * }
 	 */
-	public function getStatistics(): array {
+	public function getStatistics(): array
+	{
 		$categories = $this->categoryStore->getAllCategories();
 		$properties = $this->propertyStore->getAllProperties();
 		$subobjects = $this->subobjectStore->getAllSubobjects();
 
 		$stats = [
-			'categoryCount'            => count( $categories ),
-			'propertyCount'            => count( $properties ),
-			'subobjectCount'           => count( $subobjects ),
-			'categoriesWithParents'    => 0,
+			'categoryCount' => count($categories),
+			'propertyCount' => count($properties),
+			'subobjectCount' => count($subobjects),
+			'categoriesWithParents' => 0,
 			'categoriesWithProperties' => 0,
-			'categoriesWithDisplay'    => 0,
-			'categoriesWithForms'      => 0,
+			'categoriesWithDisplay' => 0,
+			'categoriesWithForms' => 0,
 			'categoriesWithSubobjects' => 0,
 		];
 
-		foreach ( $categories as $cat ) {
-			if ( $cat->getParents() ) {
+		foreach ($categories as $cat) {
+			if ($cat->getParents()) {
 				$stats['categoriesWithParents']++;
 			}
 
-			if ( $cat->getAllProperties() ) {
+			if ($cat->getAllProperties()) {
 				$stats['categoriesWithProperties']++;
 			}
 
-			if ( $cat->getDisplaySections() ) {
+			if ($cat->getDisplaySections()) {
 				$stats['categoriesWithDisplay']++;
 			}
 
-			if ( $cat->getFormConfig() ) {
+			if ($cat->getFormConfig()) {
 				$stats['categoriesWithForms']++;
 			}
 
-			if ( $cat->getRequiredSubobjects() || $cat->getOptionalSubobjects() ) {
+			if ($cat->getRequiredSubobjects() || $cat->getOptionalSubobjects()) {
 				$stats['categoriesWithSubobjects']++;
 			}
 		}
@@ -142,60 +145,61 @@ class OntologyInspector {
 	 *
 	 * @return array{errors:array,warnings:array,modifiedPages:array}
 	 */
-	public function validateWikiState(): array {
+	public function validateWikiState(): array
+	{
 		$schema = $this->buildSchemaArray();
 		$validator = new SchemaValidator();
 
-		$errors = $validator->validateSchema( $schema );
-		$warnings = $validator->generateWarnings( $schema );
+		$errors = $validator->validateSchema($schema);
+		$warnings = $validator->generateWarnings($schema);
 		$modified = [];
 
 		$stored = $this->stateManager->getPageHashes();
-		if ( !$stored ) {
+		if (!$stored) {
 			return [
-				'errors'        => $errors,
-				'warnings'      => $warnings,
+				'errors' => $errors,
+				'warnings' => $warnings,
 				'modifiedPages' => [],
 			];
 		}
 
 		$current = [];
-		foreach ( $stored as $pageName => $hashInfo ) {
+		foreach ($stored as $pageName => $hashInfo) {
 			// Page names are stored as "Category:Name", "Property:Name", "Subobject:Name"
-			if ( !preg_match( '/^([^:]+):(.+)$/', $pageName, $m ) ) {
+			if (!preg_match('/^([^:]+):(.+)$/', $pageName, $m)) {
 				$modified[] = $pageName;
 				continue;
 			}
 
-			$prefix = strtolower( $m[1] );
+			$prefix = strtolower($m[1]);
 			$name = $m[2];
 
-			switch ( $prefix ) {
+			switch ($prefix) {
 				case 'category':
-					$model = $this->categoryStore->readCategory( $name );
-					if ( !$model ) {
+					$model = $this->categoryStore->readCategory($name);
+					if (!$model) {
 						$modified[] = $pageName;
 						continue 2;
 					}
-					$current[$pageName] = $this->hashComputer->computeCategoryModelHash( $model );
+					$current[$pageName] = $this->hashComputer->computeCategoryModelHash($model);
 					break;
 
 				case 'property':
-					$model = $this->propertyStore->readProperty( $name );
-					if ( !$model ) {
+					$model = $this->propertyStore->readProperty($name);
+					if (!$model) {
 						$modified[] = $pageName;
 						continue 2;
 					}
-					$current[$pageName] = $this->hashComputer->computePropertyModelHash( $model );
+					$current[$pageName] = $this->hashComputer->computePropertyModelHash($model);
 					break;
 
 				case 'subobject':
-					$model = $this->subobjectStore->readSubobject( $name );
-					if ( !$model ) {
+					$model = $this->subobjectStore->readSubobject($name);
+					if (!$model) {
 						$modified[] = $pageName;
 						continue 2;
 					}
-					$current[$pageName] = $this->hashComputer->computeSubobjectModelHash( $model );
+					$current[$pageName] = $this->hashComputer->computeSubobjectModelHash($model);
 					break;
 
 				default:
@@ -206,18 +210,18 @@ class OntologyInspector {
 
 		$modified = array_merge(
 			$modified,
-			$this->stateManager->comparePageHashes( $current )
+			$this->stateManager->comparePageHashes($current)
 		);
 
-		if ( $modified ) {
-			$this->stateManager->updateCurrentHashes( $current );
-			$this->stateManager->setDirty( true );
-			$warnings[] = 'Pages modified outside StructureSync: ' . implode( ', ', $modified );
+		if ($modified) {
+			$this->stateManager->updateCurrentHashes($current);
+			$this->stateManager->setDirty(true);
+			$warnings[] = 'Pages modified outside SemanticSchemas: ' . implode(', ', $modified);
 		}
 
 		return [
-			'errors'        => $errors,
-			'warnings'      => $warnings,
+			'errors' => $errors,
+			'warnings' => $warnings,
 			'modifiedPages' => $modified,
 		];
 	}

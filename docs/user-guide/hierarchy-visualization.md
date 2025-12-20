@@ -1,6 +1,6 @@
 # Category Hierarchy Visualization
 
-The StructureSync extension provides a powerful hierarchy visualization feature that shows category inheritance trees and inherited properties. This helps you understand how properties flow through your category structure.
+The SemanticSchemas extension provides a powerful hierarchy visualization feature that shows category inheritance trees and inherited properties. This helps you understand how properties flow through your category structure.
 
 ## Table of Contents
 
@@ -34,9 +34,9 @@ The easiest way to visualize category hierarchies is through the dedicated Speci
 
 ### Access
 
-Navigate to: **Special:StructureSync/hierarchy**
+Navigate to: **Special:SemanticSchemas/hierarchy**
 
-Or click the **"Hierarchy"** tab from any Special:StructureSync page.
+Or click the **"Hierarchy"** tab from any Special:SemanticSchemas page.
 
 ### Steps
 
@@ -54,7 +54,7 @@ Or click the **"Hierarchy"** tab from any Special:StructureSync page.
 You can also link directly to a specific category:
 
 ```
-Special:StructureSync/hierarchy?category=PhDStudent
+Special:SemanticSchemas/hierarchy?category=PhDStudent
 ```
 
 This is useful for:
@@ -70,7 +70,7 @@ The hierarchy visualization is **automatically included** in all generated categ
 
 ### Automatic Inclusion
 
-When StructureSync generates or updates artifacts via `Special:StructureSync/regenerate`, the hierarchy parser function is automatically added to:
+When SemanticSchemas generates or updates artifacts via `Special:SemanticSchemas/regenerate`, the hierarchy parser function is automatically added to:
 
 **`Template:<Category>/display`** - The display template for each category
 
@@ -83,7 +83,7 @@ If you want to add it to other pages or customize its position:
 #### Syntax
 
 ```wiki
-{{#structuresync_hierarchy:}}
+{{#semanticschemas_hierarchy:}}
 ```
 
 #### Usage
@@ -96,7 +96,7 @@ If you want to add it to other pages or customize its position:
 This category defines Faculty members in our organization.
 
 == Category Hierarchy ==
-{{#structuresync_hierarchy:}}
+{{#semanticschemas_hierarchy:}}
 
 == Pages in this Category ==
 <!-- Normal category content continues -->
@@ -110,7 +110,7 @@ The hierarchy visualization will automatically appear, showing the inheritance t
 
 - **Automatic detection**: The parser function automatically detects which category page it's on
 - **Collapsible**: The section is collapsible by default (using MediaWiki's `mw-collapsible` class)
-- **No parameters needed**: Simply add `{{#structuresync_hierarchy:}}` - it figures out the rest
+- **No parameters needed**: Simply add `{{#semanticschemas_hierarchy:}}` - it figures out the rest
 
 ### Where to Add
 
@@ -126,7 +126,7 @@ Common locations for the parser function:
 The Faculty category represents teaching and research faculty members.
 
 == Structure ==
-{{#structuresync_hierarchy:}}
+{{#semanticschemas_hierarchy:}}
 
 == Requirements ==
 All Faculty pages must include:
@@ -147,28 +147,28 @@ For developers and advanced users, the hierarchy data is available via MediaWiki
 ### Endpoint
 
 ```
-api.php?action=structuresync-hierarchy&category=CATEGORYNAME&format=json
+api.php?action=semanticschemas-hierarchy&category=CATEGORYNAME&format=json
 ```
 
 ### Parameters
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `action` | Yes | Must be `structuresync-hierarchy` |
+| `action` | Yes | Must be `semanticschemas-hierarchy` |
 | `category` | Yes | Category name (with or without "Category:" prefix) |
 | `format` | No | Response format: `json` (default), `jsonfm`, `xml`, etc. |
 
 ### Example Request
 
 ```bash
-curl "http://your-wiki.org/api.php?action=structuresync-hierarchy&category=Faculty&format=json"
+curl "http://your-wiki.org/api.php?action=semanticschemas-hierarchy&category=Faculty&format=json"
 ```
 
 ### Response Structure
 
 ```json
 {
-  "structuresync-hierarchy": {
+  "semanticschemas-hierarchy": {
     "rootCategory": "Category:Faculty",
     "nodes": {
       "Category:Faculty": {
@@ -335,16 +335,16 @@ Person appears in the hierarchy but properties are only listed once (C3 lineariz
 1. **Hard refresh your browser**: Press `Ctrl+Shift+R` (Windows/Linux) or `Cmd+Shift+R` (Mac)
 2. **Check category exists**: Verify the category page exists on your wiki
 3. **Check browser console**: Open Developer Tools (F12) and check for JavaScript errors
-4. **Verify extension is loaded**: Go to `Special:Version` and confirm StructureSync is listed
+4. **Verify extension is loaded**: Go to `Special:Version` and confirm SemanticSchemas is listed
 
 ### Parser Function Not Working
 
-**Problem**: `{{#structuresync_hierarchy:}}` shows as plain text
+**Problem**: `{{#semanticschemas_hierarchy:}}` shows as plain text
 
 **Solutions:**
 1. **Check namespace**: Parser function only works on Category namespace pages
 2. **Clear parser cache**: Add `?action=purge` to the URL
-3. **Verify installation**: Ensure the magic word is registered in `StructureSync.alias.php`
+3. **Verify installation**: Ensure the magic word is registered in `SemanticSchemas.alias.php`
 
 ### Properties Not Showing Colors
 
@@ -352,7 +352,7 @@ Person appears in the hierarchy but properties are only listed once (C3 lineariz
 
 **Solutions:**
 1. **Hard refresh**: Clear browser cache
-2. **Check CSS loading**: Verify `ext.structuresync.hierarchy.css` is loaded in page source
+2. **Check CSS loading**: Verify `ext.semanticschemas.hierarchy.css` is loaded in page source
 3. **Check browser compatibility**: Use a modern browser (Chrome, Firefox, Safari, Edge)
 
 ### API Returns Empty Data
@@ -415,7 +415,7 @@ Person appears in the hierarchy but properties are only listed once (C3 lineariz
 
 ## Related Documentation
 
-- [StructureSync Overview](../../README.md)
+- [SemanticSchemas Overview](../../README.md)
 - [Quick Start Guide](../getting-started/QUICKSTART.md)
 - [Supported Properties](SUPPORTED_PROPERTIES.md)
 
@@ -432,5 +432,5 @@ For issues, questions, or feature requests:
 ---
 
 **Last Updated**: November 2024
-**Extension Version**: StructureSync 0.1.0
+**Extension Version**: SemanticSchemas 0.1.0
 

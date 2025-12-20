@@ -1,22 +1,22 @@
-# StructureSync Quick Reference
+# SemanticSchemas Quick Reference
 
-Quick reference guide for common tasks with StructureSync.
+Quick reference guide for common tasks with SemanticSchemas.
 
 ## Hierarchy Visualization
 
 ### View Hierarchy in Special Page
 ```
-Special:StructureSync/hierarchy?category=CategoryName
+Special:SemanticSchemas/hierarchy?category=CategoryName
 ```
 
 ### Embed in Category Page
 ```wiki
-{{#structuresync_hierarchy:}}
+{{#semanticschemas_hierarchy:}}
 ```
 
 ### API Call
 ```bash
-curl "http://wiki.example.org/api.php?action=structuresync-hierarchy&category=Faculty&format=json"
+curl "http://wiki.example.org/api.php?action=semanticschemas-hierarchy&category=Faculty&format=json"
 ```
 
 ## Property Views
@@ -38,7 +38,7 @@ The properties section has two tabs:
 ## Common Workflows
 
 ### 1. Understand a Category Structure
-1. Go to `Special:StructureSync/hierarchy`
+1. Go to `Special:SemanticSchemas/hierarchy`
 2. Enter category name (e.g., "PhDStudent")
 3. Review inheritance tree and properties
 
@@ -47,7 +47,7 @@ The properties section has two tabs:
 
 **Manual**: To add elsewhere:
 1. Edit any page
-2. Add: `{{#structuresync_hierarchy:}}`
+2. Add: `{{#semanticschemas_hierarchy:}}`
 3. Save and view the embedded visualization
 
 ### 3. Add Form Preview (Auto or Manual)
@@ -55,13 +55,13 @@ The properties section has two tabs:
 
 **Manual**:
 1. Edit Form:Category
-2. Add: `{{#structuresync_load_form_preview:}}`
+2. Add: `{{#semanticschemas_load_form_preview:}}`
 3. Add: `<div id="ss-form-hierarchy-preview"></div>`
 4. See [Form Preview Setup](../user-guide/form-preview-setup.md) for details
 
 ### 4. Export Hierarchy Data
 ```bash
-curl "http://wiki/api.php?action=structuresync-hierarchy&category=NAME&format=json" > hierarchy.json
+curl "http://wiki/api.php?action=semanticschemas-hierarchy&category=NAME&format=json" > hierarchy.json
 ```
 
 ## See Also
@@ -95,5 +95,5 @@ curl "http://wiki/api.php?action=structuresync-hierarchy&category=NAME&format=js
    }}
    ```
 4. **Display output**
-   - Generated `Template:Publication/display` will automatically list subobject tables via `{{#StructureSyncRenderAllProperties:}}`.
+   - Generated `Template:Publication/display` will automatically list subobject tables via `{{#SemanticSchemasRenderAllProperties:}}`.
 

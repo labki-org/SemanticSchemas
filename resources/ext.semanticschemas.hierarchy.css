@@ -1,5 +1,5 @@
 /**
- * StructureSync Hierarchy Visualization — Optimized Styles
+ * SemanticSchemas Hierarchy Visualization — Optimized Styles
  * --------------------------------------------------------
  * Behavior and appearance are identical to the original.
  * Redundant rules removed, spacing normalized, and selectors simplified.
@@ -9,7 +9,7 @@
    Layout utilities
    ======================================================== */
 
-   .ss-hierarchy-loading {
+.ss-hierarchy-loading {
 	opacity: 0.6;
 }
 
@@ -26,7 +26,7 @@
 	margin-top: 0;
 }
 
-.ss-hierarchy-section > h3 {
+.ss-hierarchy-section>h3 {
 	margin: 0 0 0.5em 0;
 	padding-bottom: 0.25em;
 	font-size: 1.2em;
@@ -110,7 +110,7 @@
 	background: linear-gradient(to bottom, #a2a9b1 0%, transparent 100%);
 }
 
-.ss-hierarchy-tree-nested > li::before {
+.ss-hierarchy-tree-nested>li::before {
 	content: "";
 	position: absolute;
 	left: -1.5em;
@@ -120,24 +120,24 @@
 }
 
 /* Parent category emphasis */
-.ss-hierarchy-has-children > .ss-hierarchy-node-content > a {
+.ss-hierarchy-has-children>.ss-hierarchy-node-content>a {
 	font-weight: 600;
 }
 
 /* Highlight root */
-.ss-hierarchy-tree > li:first-child > .ss-hierarchy-node-content {
+.ss-hierarchy-tree>li:first-child>.ss-hierarchy-node-content {
 	background-color: #f0f7ff;
 	padding: 0.5em 0.75em;
 	border-left: 3px solid #0645ad;
 	font-weight: 600;
 }
 
-.ss-hierarchy-tree > li:first-child > .ss-hierarchy-node-content > a {
+.ss-hierarchy-tree>li:first-child>.ss-hierarchy-node-content>a {
 	font-size: 1.05em;
 	color: #0645ad;
 }
 
-.ss-hierarchy-collapsed > .ss-hierarchy-tree-nested {
+.ss-hierarchy-collapsed>.ss-hierarchy-tree-nested {
 	display: none;
 }
 
@@ -424,15 +424,18 @@
 	.ss-prop-list-by-type {
 		grid-template-columns: 1fr;
 	}
+
 	.ss-prop-tabs {
 		flex-direction: column;
 		border-bottom: none;
 	}
+
 	.ss-prop-tab {
 		border-radius: 4px;
 		border: 1px solid #a2a9b1;
 		top: 0;
 	}
+
 	.ss-prop-tab-active {
 		border: 2px solid #0645ad;
 	}

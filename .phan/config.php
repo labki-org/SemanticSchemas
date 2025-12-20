@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Phan configuration for StructureSync
+ * Phan configuration for SemanticSchemas
  */
 
 $cfg = require __DIR__ . '/../vendor/mediawiki/mediawiki-phan-config/src/config.php';
@@ -25,7 +25,7 @@ $cfg['exclude_analysis_directory_list'] = array_merge(
 	]
 );
 
-$cfg['analyzed_file_extensions'] = [ 'php' ];
+$cfg['analyzed_file_extensions'] = ['php'];
 
 return $cfg;
 

@@ -1,11 +1,11 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Util;
+namespace MediaWiki\Extension\SemanticSchemas\Util;
 
 /**
  * NamingHelper
  * ------------
- * Shared utility functions for name transformations across StructureSync.
+ * Shared utility functions for name transformations across SemanticSchemas.
  * 
  * This class consolidates naming logic that was previously duplicated across:
  * - FormGenerator
@@ -99,24 +99,24 @@ class NamingHelper
     public static function generatePropertyLabel(string $propertyName): string
     {
         $clean = $propertyName;
-    
+
         // Strip "Has " or "Has_" prefix
         if (str_starts_with($clean, 'Has ')) {
             $clean = substr($clean, 4);
         } elseif (str_starts_with($clean, 'Has_')) {
             $clean = substr($clean, 4);
         }
-    
+
         // Strip "Is " or "Is_" prefix
         if (str_starts_with($clean, 'Is ')) {
             $clean = substr($clean, 3);
         } elseif (str_starts_with($clean, 'Is_')) {
             $clean = substr($clean, 3);
         }
-    
+
         $clean = str_replace('_', ' ', $clean);
         return ucwords($clean);
-    }    
+    }
 
     /**
      * Sanitize a value to ensure it's never null.
@@ -193,11 +193,12 @@ class NamingHelper
      * @param string $subobjectName
      * @return string
      */
-    public static function subobjectTemplateName( string $categoryName, string $subobjectName ): string {
-        $base = trim( $categoryName );
-        $sub = trim( $subobjectName );
+    public static function subobjectTemplateName(string $categoryName, string $subobjectName): string
+    {
+        $base = trim($categoryName);
+        $sub = trim($subobjectName);
         $combined = $base . '_' . $sub;
 
-        return str_replace( ' ', '_', $combined );
+        return str_replace(' ', '_', $combined);
     }
 }

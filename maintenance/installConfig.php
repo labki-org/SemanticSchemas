@@ -1,9 +1,9 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Maintenance;
+namespace MediaWiki\Extension\SemanticSchemas\Maintenance;
 
 use Maintenance;
-use MediaWiki\Extension\StructureSync\Schema\ExtensionConfigInstaller;
+use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 
 $IP = getenv('MW_INSTALL_PATH');
 if ($IP === false) {
@@ -21,13 +21,13 @@ class InstallConfig extends Maintenance
     public function __construct()
     {
         parent::__construct();
-        $this->addDescription('Install StructureSync configuration (Categories, Properties, etc.)');
-        $this->requireExtension('StructureSync');
+        $this->addDescription('Install SemanticSchemas configuration (Categories, Properties, etc.)');
+        $this->requireExtension('SemanticSchemas');
     }
 
     public function execute()
     {
-        $this->output("Installing StructureSync configuration...\n");
+        $this->output("Installing SemanticSchemas configuration...\n");
 
         // Locate the bundled config file relative to the extension root.
         $root = dirname(__DIR__, 1);

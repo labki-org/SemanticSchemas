@@ -1,6 +1,6 @@
-# StructureSync Test Environment
+# SemanticSchemas Test Environment
 
-This directory contains the configuration and scripts for running a local MediaWiki development environment for StructureSync, built on top of the [**Labki Platform**](https://github.com/labki-org/labki-platform).
+This directory contains the configuration and scripts for running a local MediaWiki development environment for SemanticSchemas, built on top of the [**Labki Platform**](https://github.com/labki-org/labki-platform).
 
 ## Prerequisites
 
@@ -39,12 +39,12 @@ Once running, access the wiki at:
 The environment configuration is controlled by **`tests/LocalSettings.test.php`**.
 
 This file is mounted into the container at `/mw-config/LocalSettings.user.php` and is automatically included by the platform. Use this file to:
-- Enable/Disable `StructureSync` (`wfLoadExtension(...)`).
+- Enable/Disable `SemanticSchemas` (`wfLoadExtension(...)`).
 - Change extension settings.
 - Configure debugging.
 
 > [!NOTE]
-> StructureSync requires `load_composer_autoloader` to be **false** in `extension.json` to reside peacefully with the platform dependencies.
+> SemanticSchemas requires `load_composer_autoloader` to be **false** in `extension.json` to reside peacefully with the platform dependencies.
 
 ## Common Operations
 
@@ -61,5 +61,5 @@ bash tests/scripts/populate_test_data.sh
 
 ### Check Extension Status
 ```bash
-docker compose exec wiki php maintenance/run.php eval 'echo ExtensionRegistry::getInstance()->isLoaded("StructureSync") ? "Loaded" : "Not Loaded";'
+docker compose exec wiki php maintenance/run.php eval 'echo ExtensionRegistry::getInstance()->isLoaded("SemanticSchemas") ? "Loaded" : "Not Loaded";'
 ```

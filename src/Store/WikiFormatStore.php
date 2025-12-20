@@ -1,8 +1,8 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Store;
+namespace MediaWiki\Extension\SemanticSchemas\Store;
 
-use MediaWiki\Extension\StructureSync\Schema\FormatModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FormatModel;
 use MediaWiki\Title\Title;
 
 /**

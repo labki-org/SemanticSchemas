@@ -1,8 +1,8 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Store;
+namespace MediaWiki\Extension\SemanticSchemas\Store;
 
-use MediaWiki\Extension\StructureSync\Schema\PropertyModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 
@@ -16,8 +16,8 @@ use MediaWiki\Title\Title;
 class WikiPropertyStore
 {
 
-    private const MARKER_START = '<!-- StructureSync Start -->';
-    private const MARKER_END = '<!-- StructureSync End -->';
+    private const MARKER_START = '<!-- SemanticSchemas Start -->';
+    private const MARKER_END = '<!-- SemanticSchemas End -->';
 
     private PageCreator $pageCreator;
 
@@ -82,14 +82,14 @@ class WikiPropertyStore
             self::MARKER_END
         );
 
-        if (!str_contains($newContent, '[[Category:StructureSync-managed-property]]')) {
-            $newContent .= "\n[[Category:StructureSync-managed-property]]";
+        if (!str_contains($newContent, '[[Category:SemanticSchemas-managed-property]]')) {
+            $newContent .= "\n[[Category:SemanticSchemas-managed-property]]";
         }
 
         return $this->pageCreator->createOrUpdatePage(
             $title,
             $newContent,
-            "StructureSync: Update property metadata"
+            "SemanticSchemas: Update property metadata"
         );
     }
 

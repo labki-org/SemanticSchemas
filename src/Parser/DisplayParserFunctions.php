@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Parser;
+namespace MediaWiki\Extension\SemanticSchemas\Parser;
 
 use MediaWiki\Html\Html;
 use Parser;
@@ -9,10 +9,10 @@ use PPFrame;
 /**
  * DisplayParserFunctions (Redesigned 2025)
  * -----------------------------------------
- * Registers StructureSync's parser functions:
+ * Registers SemanticSchemas's parser functions:
  *
- *   {{#structuresync_hierarchy:}}
- *   {{#structuresync_load_form_preview:}}
+ *   {{#semanticschemas_hierarchy:}}
+ *   {{#semanticschemas_load_form_preview:}}
  *
  * The old rendering parser functions have been removed since
  * display templates are now static wikitext that directly calls
@@ -42,14 +42,14 @@ class DisplayParserFunctions
 
         // Category hierarchy UI
         $parser->setFunctionHook(
-            'structuresync_hierarchy',
+            'semanticschemas_hierarchy',
             [$instance, 'renderHierarchy'],
             SFH_OBJECT_ARGS
         );
 
         // Form preview JS loader
         $parser->setFunctionHook(
-            'structuresync_load_form_preview',
+            'semanticschemas_load_form_preview',
             [$instance, 'loadFormPreview'],
             SFH_OBJECT_ARGS
         );
@@ -89,7 +89,7 @@ class DisplayParserFunctions
         }
 
         $output = $parser->getOutput();
-        $output->addModules(['ext.structuresync.hierarchy']);
+        $output->addModules(['ext.semanticschemas.hierarchy']);
 
         $id = 'ss-category-hierarchy-' . md5($category);
 
@@ -100,7 +100,7 @@ class DisplayParserFunctions
                 'class' => 'ss-hierarchy-block mw-collapsible',
                 'data-category' => $category
             ],
-            Html::element('p', [], wfMessage('structuresync-hierarchy-loading')->text())
+            Html::element('p', [], wfMessage('semanticschemas-hierarchy-loading')->text())
         );
 
         return $this->htmlReturn($html);
@@ -114,12 +114,12 @@ class DisplayParserFunctions
     {
 
         $output = $parser->getOutput();
-        $output->addModules(['ext.structuresync.hierarchy.formpreview']);
+        $output->addModules(['ext.semanticschemas.hierarchy.formpreview']);
 
         // Ensure loading order in <head>
         $output->addHeadItem(
-            'structuresync-formpreview-loader',
-            Html::inlineScript('mw.loader.using("ext.structuresync.hierarchy.formpreview");')
+            'semanticschemas-formpreview-loader',
+            Html::inlineScript('mw.loader.using("ext.semanticschemas.hierarchy.formpreview");')
         );
 
         return ['', 'noparse' => false, 'isHTML' => false];

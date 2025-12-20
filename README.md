@@ -1,6 +1,6 @@
-# StructureSync
+# SemanticSchemas
 
-StructureSync is a MediaWiki extension that treats Categories and Properties as an ontology backbone, providing:
+SemanticSchemas is a MediaWiki extension that treats Categories and Properties as an ontology backbone, providing:
 
 - Schema management for categories, properties, and repeatable subobjects
 - Automatic template and form generation
@@ -23,8 +23,8 @@ Quick start:
 
 1. Clone to your MediaWiki `extensions` directory
 2. Install Composer dependencies: `composer install --no-dev`
-3. Add `wfLoadExtension( 'StructureSync' );` to `LocalSettings.php`
-4. Run `php maintenance/run.php StructureSync:InstallConfig` to install necessary pages
+3. Add `wfLoadExtension( 'SemanticSchemas' );` to `LocalSettings.php`
+4. Run `php maintenance/run.php SemanticSchemas:InstallConfig` to install necessary pages
 5. Run `php maintenance/update.php`
 
 ## Configuration
@@ -35,7 +35,7 @@ No configuration is required for basic usage. The extension works out of the box
 
 ### Special Page
 
-Access the main interface at `Special:StructureSync` which provides:
+Access the main interface at `Special:SemanticSchemas` which provides:
 
 - **Overview**: View all categories and their status
 - **Export**: Export your ontology schema to JSON or YAML
@@ -47,11 +47,11 @@ Access the main interface at `Special:StructureSync` which provides:
 
 ### Category Hierarchy Visualization
 
-StructureSync provides powerful tools to visualize category inheritance:
+SemanticSchemas provides powerful tools to visualize category inheritance:
 
-- **Special:StructureSync/hierarchy**: Interactive hierarchy viewer
-- **Parser function**: `{{#structuresync_hierarchy:}}` to embed on category pages
-- **API endpoint**: `api.php?action=structuresync-hierarchy&category=NAME`
+- **Special:SemanticSchemas/hierarchy**: Interactive hierarchy viewer
+- **Parser function**: `{{#semanticschemas_hierarchy:}}` to embed on category pages
+- **API endpoint**: `api.php?action=semanticschemas-hierarchy&category=NAME`
 
 The visualization shows:
 - Complete inheritance tree with parent/grandparent relationships
@@ -64,22 +64,22 @@ The visualization shows:
 
 #### Export Schema
 ```bash
-php extensions/StructureSync/maintenance/exportOntology.php --format=json --output=schema.json
+php extensions/SemanticSchemas/maintenance/exportOntology.php --format=json --output=schema.json
 ```
 
 #### Import Schema
 ```bash
-php extensions/StructureSync/maintenance/importOntology.php --input=schema.json
+php extensions/SemanticSchemas/maintenance/importOntology.php --input=schema.json
 ```
 
 #### Validate
 ```bash
-php extensions/StructureSync/maintenance/validateOntology.php
+php extensions/SemanticSchemas/maintenance/validateOntology.php
 ```
 
 #### Regenerate Artifacts
 ```bash
-php extensions/StructureSync/maintenance/regenerateArtifacts.php --category=Person
+php extensions/SemanticSchemas/maintenance/regenerateArtifacts.php --category=Person
 ```
 
 ## Schema Format
@@ -141,7 +141,7 @@ Subobjects live in the `Subobject:` namespace. They define structured, repeatabl
 
 ## SMW Property Vocabulary
 
-StructureSync uses these SMW properties to store schema metadata on wiki pages:
+SemanticSchemas uses these SMW properties to store schema metadata on wiki pages:
 
 - **Has parent category** (Type: Page) - Links to parent categories
 - **Has required property** (Type: Page) - Required properties for this category
@@ -157,7 +157,7 @@ StructureSync uses these SMW properties to store schema metadata on wiki pages:
 
 ## Generated Artifacts
 
-For each category, StructureSync generates:
+For each category, SemanticSchemas generates:
 
 1. **Template:{Category}/semantic** - Stores semantic data (auto-generated, always overwritten)
 2. **Template:{Category}** - Dispatcher template (auto-generated, always overwritten)
@@ -196,6 +196,6 @@ See the [Documentation Index](docs/README.md) for a complete overview.
 ## Support
 
 - Report issues on GitHub
-- Documentation: https://www.mediawiki.org/wiki/Extension:StructureSync
+- Documentation: https://www.mediawiki.org/wiki/Extension:SemanticSchemas
 - Check the [troubleshooting section](docs/user-guide/hierarchy-visualization.md#troubleshooting)
 

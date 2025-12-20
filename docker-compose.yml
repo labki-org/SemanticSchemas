@@ -12,7 +12,7 @@ services:
       MW_ADMIN_PASS: dockerpass
       MW_DISABLE_PLATFORM_EXTENSIONS: 1
     volumes:
-      - ./:/mw-user-extensions/StructureSync
+      - ./:/mw-user-extensions/SemanticSchemas
       - ./tests/LocalSettings.test.php:/mw-config/LocalSettings.user.php
     depends_on:
       - db

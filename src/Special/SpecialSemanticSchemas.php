@@ -1,29 +1,29 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Special;
+namespace MediaWiki\Extension\SemanticSchemas\Special;
 
-use MediaWiki\Extension\StructureSync\Generator\DisplayStubGenerator;
-use MediaWiki\Extension\StructureSync\Generator\FormGenerator;
-use MediaWiki\Extension\StructureSync\Generator\TemplateGenerator;
-use MediaWiki\Extension\StructureSync\Schema\InheritanceResolver;
-use MediaWiki\Extension\StructureSync\Schema\SchemaComparer;
-use MediaWiki\Extension\StructureSync\Schema\OntologyInspector;
-use MediaWiki\Extension\StructureSync\Schema\SchemaLoader;
-use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
-use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
-use MediaWiki\Extension\StructureSync\Store\WikiSubobjectStore;
-use MediaWiki\Extension\StructureSync\Store\StateManager;
-use MediaWiki\Extension\StructureSync\Store\PageHashComputer;
-use MediaWiki\Extension\StructureSync\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
+use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
+use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
+use MediaWiki\Extension\SemanticSchemas\Schema\SchemaComparer;
+use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
+use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
+use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
+use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
+use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Html\Html;
 use MediaWiki\Request\WebRequest;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
 
 /**
- * SpecialStructureSync
+ * SpecialSemanticSchemas
  * --------------------
- * Central administrative UI for StructureSync schema management.
+ * Central administrative UI for SemanticSchemas schema management.
  * 
  * File Size Note:
  * --------------
@@ -75,18 +75,18 @@ use MediaWiki\Title\Title;
  * - State caching reduces repeated inheritance resolution
  * - Rate limiting prevents server overload
  */
-class SpecialStructureSync extends SpecialPage
+class SpecialSemanticSchemas extends SpecialPage
 {
 
 	/** @var int Rate limit: max operations per hour per user */
 	private const RATE_LIMIT_PER_HOUR = 20;
 
 	/** @var string Cache key for rate limiting */
-	private const RATE_LIMIT_CACHE_PREFIX = 'structuresync-ratelimit';
+	private const RATE_LIMIT_CACHE_PREFIX = 'semanticschemas-ratelimit';
 
 	public function __construct()
 	{
-		parent::__construct('StructureSync', 'editinterface');
+		parent::__construct('SemanticSchemas', 'editinterface');
 	}
 
 	/**
@@ -103,7 +103,7 @@ class SpecialStructureSync extends SpecialPage
 		$user = $this->getUser();
 
 		// Exempt sysops from rate limiting
-		if ($user->isAllowed('structuresync-bypass-ratelimit') || $user->isAllowed('protect')) {
+		if ($user->isAllowed('semanticschemas-bypass-ratelimit') || $user->isAllowed('protect')) {
 			return false;
 		}
 
@@ -133,7 +133,7 @@ class SpecialStructureSync extends SpecialPage
 	 */
 	private function logOperation(string $action, string $details, array $params = []): void
 	{
-		$logEntry = new \ManualLogEntry('structuresync', $action);
+		$logEntry = new \ManualLogEntry('semanticschemas', $action);
 		$logEntry->setPerformer($this->getUser());
 		$logEntry->setTarget($this->getPageTitle());
 		$logEntry->setComment($details);
@@ -156,20 +156,20 @@ class SpecialStructureSync extends SpecialPage
 		// Dependency checks
 		if (!defined('SMW_VERSION')) {
 			$output->addHTML(Html::errorBox(
-				$this->msg('structuresync-error-no-smw')->parse()
+				$this->msg('semanticschemas-error-no-smw')->parse()
 			));
 			return;
 		}
 
 		if (!defined('PF_VERSION')) {
 			$output->addHTML(Html::errorBox(
-				$this->msg('structuresync-error-no-pageforms')->parse()
+				$this->msg('semanticschemas-error-no-pageforms')->parse()
 			));
 			return;
 		}
 
 		// Add ResourceLoader styles
-		$output->addModuleStyles('ext.structuresync.styles');
+		$output->addModuleStyles('ext.semanticschemas.styles');
 
 		// Determine action from subpage
 		$action = $subPage ?: 'overview';
@@ -196,7 +196,7 @@ class SpecialStructureSync extends SpecialPage
 	}
 
 	/**
-	 * Navigation tabs for Special:StructureSync
+	 * Navigation tabs for Special:SemanticSchemas
 	 *
 	 * @param string $currentAction
 	 */
@@ -204,20 +204,20 @@ class SpecialStructureSync extends SpecialPage
 	{
 		$tabs = [
 			'overview' => [
-				'label' => $this->msg('structuresync-overview')->text(),
-				'subtext' => $this->msg('structuresync-tab-overview-subtext')->text(),
+				'label' => $this->msg('semanticschemas-overview')->text(),
+				'subtext' => $this->msg('semanticschemas-tab-overview-subtext')->text(),
 			],
 			'validate' => [
-				'label' => $this->msg('structuresync-validate')->text(),
-				'subtext' => $this->msg('structuresync-tab-validate-subtext')->text(),
+				'label' => $this->msg('semanticschemas-validate')->text(),
+				'subtext' => $this->msg('semanticschemas-tab-validate-subtext')->text(),
 			],
 			'generate' => [
-				'label' => $this->msg('structuresync-generate')->text(),
-				'subtext' => $this->msg('structuresync-tab-generate-subtext')->text(),
+				'label' => $this->msg('semanticschemas-generate')->text(),
+				'subtext' => $this->msg('semanticschemas-tab-generate-subtext')->text(),
 			],
 			'hierarchy' => [
-				'label' => $this->msg('structuresync-hierarchy')->text(),
-				'subtext' => $this->msg('structuresync-tab-hierarchy-subtext')->text(),
+				'label' => $this->msg('semanticschemas-hierarchy')->text(),
+				'subtext' => $this->msg('semanticschemas-tab-hierarchy-subtext')->text(),
 			],
 		];
 
@@ -229,22 +229,22 @@ class SpecialStructureSync extends SpecialPage
 				'a',
 				[
 					'href' => $url,
-					'class' => 'structuresync-tab' . ($isActive ? ' is-active' : ''),
+					'class' => 'semanticschemas-tab' . ($isActive ? ' is-active' : ''),
 					'aria-current' => $isActive ? 'page' : null,
 				],
-				Html::rawElement('span', ['class' => 'structuresync-tab-label'], $data['label']) .
-				Html::rawElement('span', ['class' => 'structuresync-tab-subtext'], $data['subtext'])
+				Html::rawElement('span', ['class' => 'semanticschemas-tab-label'], $data['label']) .
+				Html::rawElement('span', ['class' => 'semanticschemas-tab-subtext'], $data['subtext'])
 			);
 		}
 
 		$nav = Html::rawElement(
 			'nav',
-			['class' => 'structuresync-tabs', 'role' => 'tablist'],
+			['class' => 'semanticschemas-tabs', 'role' => 'tablist'],
 			$links
 		);
 
 		$this->getOutput()->addHTML(
-			Html::rawElement('div', ['class' => 'structuresync-shell'], $nav)
+			Html::rawElement('div', ['class' => 'semanticschemas-shell'], $nav)
 		);
 	}
 
@@ -256,7 +256,7 @@ class SpecialStructureSync extends SpecialPage
 	 */
 	private function wrapShell(string $html): string
 	{
-		return Html::rawElement('div', ['class' => 'structuresync-shell'], $html);
+		return Html::rawElement('div', ['class' => 'semanticschemas-shell'], $html);
 	}
 
 	/**
@@ -269,14 +269,14 @@ class SpecialStructureSync extends SpecialPage
 	 */
 	private function renderStatCard(string $label, string $value, string $subtext = ''): string
 	{
-		$body = Html::rawElement('div', ['class' => 'structuresync-stat-label'], $label) .
-			Html::rawElement('div', ['class' => 'structuresync-stat-value'], $value);
+		$body = Html::rawElement('div', ['class' => 'semanticschemas-stat-label'], $label) .
+			Html::rawElement('div', ['class' => 'semanticschemas-stat-value'], $value);
 
 		if ($subtext !== '') {
-			$body .= Html::rawElement('p', ['class' => 'structuresync-stat-subtext'], $subtext);
+			$body .= Html::rawElement('p', ['class' => 'semanticschemas-stat-subtext'], $subtext);
 		}
 
-		return Html::rawElement('div', ['class' => 'structuresync-stat-card'], $body);
+		return Html::rawElement('div', ['class' => 'semanticschemas-stat-card'], $body);
 	}
 
 	/**
@@ -288,7 +288,7 @@ class SpecialStructureSync extends SpecialPage
 	private function formatTimestamp(?string $timestamp): string
 	{
 		if ($timestamp === null || trim($timestamp) === '') {
-			return $this->msg('structuresync-label-not-available')->text();
+			return $this->msg('semanticschemas-label-not-available')->text();
 		}
 
 		$ts = wfTimestamp(TS_MW, $timestamp);
@@ -309,7 +309,7 @@ class SpecialStructureSync extends SpecialPage
 	private function formatSchemaHash(?string $hash): string
 	{
 		if ($hash === null || $hash === '') {
-			return $this->msg('structuresync-label-not-available')->text();
+			return $this->msg('semanticschemas-label-not-available')->text();
 		}
 
 		return substr($hash, 0, 10) . '…';
@@ -334,7 +334,7 @@ class SpecialStructureSync extends SpecialPage
 	): string {
 		return Html::rawElement(
 			'span',
-			['class' => 'structuresync-badge ' . ($state ? $trueClass : $falseClass)],
+			['class' => 'semanticschemas-badge ' . ($state ? $trueClass : $falseClass)],
 			$state ? $labelWhenTrue : $labelWhenFalse
 		);
 	}
@@ -360,7 +360,7 @@ class SpecialStructureSync extends SpecialPage
 	): string {
 		$badge = Html::rawElement(
 			'span',
-			['class' => 'structuresync-badge ' . ($state ? $trueClass : $falseClass)],
+			['class' => 'semanticschemas-badge ' . ($state ? $trueClass : $falseClass)],
 			$state ? $labelWhenTrue : $labelWhenFalse
 		);
 
@@ -372,7 +372,7 @@ class SpecialStructureSync extends SpecialPage
 			'a',
 			[
 				'href' => $title->getLocalURL(),
-				'class' => 'structuresync-inline-link'
+				'class' => 'semanticschemas-inline-link'
 			],
 			$badge
 		);
@@ -413,13 +413,13 @@ class SpecialStructureSync extends SpecialPage
 		return [
 			[
 				'action' => 'generate',
-				'label' => $this->msg('structuresync-generate')->text(),
-				'description' => $this->msg('structuresync-generate-description')->text(),
+				'label' => $this->msg('semanticschemas-generate')->text(),
+				'description' => $this->msg('semanticschemas-generate-description')->text(),
 			],
 			[
 				'action' => 'validate',
-				'label' => $this->msg('structuresync-validate')->text(),
-				'description' => $this->msg('structuresync-validate-description')->text(),
+				'label' => $this->msg('semanticschemas-validate')->text(),
+				'description' => $this->msg('semanticschemas-validate-description')->text(),
 			],
 		];
 	}
@@ -440,7 +440,7 @@ class SpecialStructureSync extends SpecialPage
 	private function showOverview(): void
 	{
 		$output = $this->getOutput();
-		$output->setPageTitle($this->msg('structuresync-overview')->text());
+		$output->setPageTitle($this->msg('semanticschemas-overview')->text());
 
 		$inspector = new OntologyInspector();
 		$stats = $inspector->getStatistics();
@@ -454,32 +454,32 @@ class SpecialStructureSync extends SpecialPage
 		$sourceSchemaHash = $state['sourceSchemaHash'] ?? null;
 
 		$statusMessage = $isDirty
-			? $this->msg('structuresync-status-out-of-sync')->text()
-			: $this->msg('structuresync-status-in-sync')->text();
+			? $this->msg('semanticschemas-status-out-of-sync')->text()
+			: $this->msg('semanticschemas-status-in-sync')->text();
 
 		$hero = Html::rawElement(
 			'div',
-			['class' => 'structuresync-hero'],
+			['class' => 'semanticschemas-hero'],
 			Html::rawElement(
 				'div',
 				[],
 				Html::element(
 					'h1',
 					[],
-					$this->msg('structuresync')->text() . ' — ' . $this->msg('structuresync-overview')->text()
+					$this->msg('semanticschemas')->text() . ' — ' . $this->msg('semanticschemas-overview')->text()
 				) .
 				Html::element(
 					'p',
 					[],
-					$this->msg('structuresync-overview-hero-description')->text()
+					$this->msg('semanticschemas-overview-hero-description')->text()
 				)
 			) .
 			Html::rawElement(
 				'div',
-				['class' => 'structuresync-hero-status'],
+				['class' => 'semanticschemas-hero-status'],
 				Html::rawElement(
 					'span',
-					['class' => 'structuresync-status-chip ' . ($isDirty ? 'is-dirty' : 'is-clean')],
+					['class' => 'semanticschemas-status-chip ' . ($isDirty ? 'is-dirty' : 'is-clean')],
 					$statusMessage
 				) .
 				($isDirty
@@ -489,7 +489,7 @@ class SpecialStructureSync extends SpecialPage
 							'href' => $this->getPageTitle('generate')->getLocalURL(),
 							'class' => 'mw-ui-button mw-ui-progressive'
 						],
-						$this->msg('structuresync-status-generate-link')->text()
+						$this->msg('semanticschemas-status-generate-link')->text()
 					)
 					: '')
 			)
@@ -502,32 +502,32 @@ class SpecialStructureSync extends SpecialPage
 
 		$summaryGrid = Html::rawElement(
 			'div',
-			['class' => 'structuresync-summary-grid'],
+			['class' => 'semanticschemas-summary-grid'],
 			$this->renderStatCard(
-				$this->msg('structuresync-label-categories')->text(),
+				$this->msg('semanticschemas-label-categories')->text(),
 				$lang->formatNum($categoryCount),
-				$this->msg('structuresync-categories-count')->numParams($categoryCount)->text()
+				$this->msg('semanticschemas-categories-count')->numParams($categoryCount)->text()
 			) .
 			$this->renderStatCard(
-				$this->msg('structuresync-label-properties')->text(),
+				$this->msg('semanticschemas-label-properties')->text(),
 				$lang->formatNum($propertyCount),
-				$this->msg('structuresync-properties-count')->numParams($propertyCount)->text()
+				$this->msg('semanticschemas-properties-count')->numParams($propertyCount)->text()
 			) .
 			$this->renderStatCard(
-				$this->msg('structuresync-label-subobjects')->text(),
+				$this->msg('semanticschemas-label-subobjects')->text(),
 				$lang->formatNum($subobjectCount),
-				$this->msg('structuresync-subobjects-count')->numParams($subobjectCount)->text()
+				$this->msg('semanticschemas-subobjects-count')->numParams($subobjectCount)->text()
 			) .
 			$this->renderStatCard(
-				$this->msg('structuresync-label-last-change')->text(),
+				$this->msg('semanticschemas-label-last-change')->text(),
 				$this->formatTimestamp($lastChange)
 			) .
 			$this->renderStatCard(
-				$this->msg('structuresync-label-last-generation')->text(),
+				$this->msg('semanticschemas-label-last-generation')->text(),
 				$this->formatTimestamp($lastGenerated)
 			) .
 			$this->renderStatCard(
-				$this->msg('structuresync-label-schema-hash')->text(),
+				$this->msg('semanticschemas-label-schema-hash')->text(),
 				$this->formatSchemaHash($sourceSchemaHash)
 			)
 		);
@@ -538,7 +538,7 @@ class SpecialStructureSync extends SpecialPage
 				'a',
 				[
 					'href' => $this->getPageTitle($action['action'])->getLocalURL(),
-					'class' => 'structuresync-quick-action'
+					'class' => 'semanticschemas-quick-action'
 				],
 				Html::element('strong', [], $action['label']) .
 				Html::rawElement('span', [], $action['description'])
@@ -547,42 +547,42 @@ class SpecialStructureSync extends SpecialPage
 
 		$quickActionsCard = Html::rawElement(
 			'div',
-			['class' => 'structuresync-card'],
+			['class' => 'semanticschemas-card'],
 			Html::rawElement(
 				'div',
-				['class' => 'structuresync-card-header'],
+				['class' => 'semanticschemas-card-header'],
 				Html::element(
 					'h3',
-					['class' => 'structuresync-card-title'],
-					$this->msg('structuresync-overview-quick-actions')->text()
+					['class' => 'semanticschemas-card-title'],
+					$this->msg('semanticschemas-overview-quick-actions')->text()
 				) .
 				Html::element(
 					'p',
-					['class' => 'structuresync-card-subtitle'],
-					$this->msg('structuresync-overview-quick-actions-subtitle')->text()
+					['class' => 'semanticschemas-card-subtitle'],
+					$this->msg('semanticschemas-overview-quick-actions-subtitle')->text()
 				)
 			) .
-			Html::rawElement('div', ['class' => 'structuresync-quick-actions'], $quickActions)
+			Html::rawElement('div', ['class' => 'semanticschemas-quick-actions'], $quickActions)
 		);
 
 		$categoryCard = Html::rawElement(
 			'div',
-			['class' => 'structuresync-card'],
+			['class' => 'semanticschemas-card'],
 			Html::rawElement(
 				'div',
-				['class' => 'structuresync-card-header'],
+				['class' => 'semanticschemas-card-header'],
 				Html::element(
 					'h3',
-					['class' => 'structuresync-card-title'],
-					$this->msg('structuresync-overview-summary')->text()
+					['class' => 'semanticschemas-card-title'],
+					$this->msg('semanticschemas-overview-summary')->text()
 				) .
 				Html::element(
 					'p',
-					['class' => 'structuresync-card-subtitle'],
-					$this->msg('structuresync-overview-categories-subtitle')->text()
+					['class' => 'semanticschemas-card-subtitle'],
+					$this->msg('semanticschemas-overview-categories-subtitle')->text()
 				)
 			) .
-			Html::rawElement('div', ['class' => 'structuresync-table-wrapper'], $this->getCategoryStatusTable())
+			Html::rawElement('div', ['class' => 'semanticschemas-table-wrapper'], $this->getCategoryStatusTable())
 		);
 
 		$content = $hero . $summaryGrid . $quickActionsCard . $categoryCard;
@@ -611,8 +611,8 @@ class SpecialStructureSync extends SpecialPage
 		if (empty($categories)) {
 			return Html::rawElement(
 				'div',
-				['class' => 'structuresync-empty-state'],
-				$this->msg('structuresync-overview-no-categories')->text()
+				['class' => 'semanticschemas-empty-state'],
+				$this->msg('semanticschemas-overview-no-categories')->text()
 			);
 		}
 
@@ -652,7 +652,7 @@ class SpecialStructureSync extends SpecialPage
 
 		$html = Html::openElement(
 			'table',
-			['class' => 'wikitable sortable structuresync-table']
+			['class' => 'wikitable sortable semanticschemas-table']
 		);
 
 		$html .= Html::openElement('thead');
@@ -663,7 +663,7 @@ class SpecialStructureSync extends SpecialPage
 		$html .= Html::element('th', [], 'Template');
 		$html .= Html::element('th', [], 'Form');
 		$html .= Html::element('th', [], 'Display');
-		$html .= Html::element('th', [], $this->msg('structuresync-status-modified-outside')->text());
+		$html .= Html::element('th', [], $this->msg('semanticschemas-status-modified-outside')->text());
 		$html .= Html::closeElement('tr');
 		$html .= Html::closeElement('thead');
 
@@ -693,8 +693,8 @@ class SpecialStructureSync extends SpecialPage
 				[],
 				$this->renderBadgeLink(
 					$templateGenerator->semanticTemplateExists($name),
-					$this->msg('structuresync-badge-available')->text(),
-					$this->msg('structuresync-badge-missing')->text(),
+					$this->msg('semanticschemas-badge-available')->text(),
+					$this->msg('semanticschemas-badge-missing')->text(),
 					$this->getTemplateTitle($name)
 				)
 			);
@@ -703,8 +703,8 @@ class SpecialStructureSync extends SpecialPage
 				[],
 				$this->renderBadgeLink(
 					$formGenerator->formExists($name),
-					$this->msg('structuresync-badge-available')->text(),
-					$this->msg('structuresync-badge-missing')->text(),
+					$this->msg('semanticschemas-badge-available')->text(),
+					$this->msg('semanticschemas-badge-missing')->text(),
 					$this->getFormTitle($name)
 				)
 			);
@@ -713,8 +713,8 @@ class SpecialStructureSync extends SpecialPage
 				[],
 				$this->renderBadgeLink(
 					$displayGenerator->displayStubExists($name),
-					$this->msg('structuresync-badge-available')->text(),
-					$this->msg('structuresync-badge-missing')->text(),
+					$this->msg('semanticschemas-badge-available')->text(),
+					$this->msg('semanticschemas-badge-missing')->text(),
 					$this->getDisplayTitle($name)
 				)
 			);
@@ -723,8 +723,8 @@ class SpecialStructureSync extends SpecialPage
 				[],
 				$this->renderBadge(
 					!$isModified,
-					$this->msg('structuresync-badge-clean')->text(),
-					$this->msg('structuresync-badge-review')->text(),
+					$this->msg('semanticschemas-badge-clean')->text(),
+					$this->msg('semanticschemas-badge-review')->text(),
 					'is-ok',
 					'is-alert'
 				)
@@ -743,35 +743,35 @@ class SpecialStructureSync extends SpecialPage
 	private function showValidate(): void
 	{
 		$output = $this->getOutput();
-		$output->setPageTitle($this->msg('structuresync-validate-title')->text());
+		$output->setPageTitle($this->msg('semanticschemas-validate-title')->text());
 
 		$inspector = new OntologyInspector();
 		$result = $inspector->validateWikiState();
 
 		$body = Html::rawElement(
 			'div',
-			['class' => 'structuresync-card-header'],
+			['class' => 'semanticschemas-card-header'],
 			Html::element(
 				'h3',
-				['class' => 'structuresync-card-title'],
-				$this->msg('structuresync-validate-title')->text()
+				['class' => 'semanticschemas-card-title'],
+				$this->msg('semanticschemas-validate-title')->text()
 			) .
 			Html::element(
 				'p',
-				['class' => 'structuresync-card-subtitle'],
-				$this->msg('structuresync-validate-description')->text()
+				['class' => 'semanticschemas-card-subtitle'],
+				$this->msg('semanticschemas-validate-description')->text()
 			)
 		);
 
 		if (empty($result['errors'])) {
 			$body .= Html::successBox(
-				$this->msg('structuresync-validate-success')->text()
+				$this->msg('semanticschemas-validate-success')->text()
 			);
 		} else {
 			$body .= Html::element(
 				'h3',
 				[],
-				$this->msg('structuresync-validate-errors')->text()
+				$this->msg('semanticschemas-validate-errors')->text()
 			);
 			$body .= Html::openElement('ul');
 			foreach ($result['errors'] as $error) {
@@ -784,7 +784,7 @@ class SpecialStructureSync extends SpecialPage
 			$body .= Html::element(
 				'h3',
 				[],
-				$this->msg('structuresync-validate-warnings')->text()
+				$this->msg('semanticschemas-validate-warnings')->text()
 			);
 			$body .= Html::openElement('ul');
 			foreach ($result['warnings'] as $warning) {
@@ -798,7 +798,7 @@ class SpecialStructureSync extends SpecialPage
 			$body .= Html::element(
 				'h3',
 				[],
-				$this->msg('structuresync-validate-modified-pages')
+				$this->msg('semanticschemas-validate-modified-pages')
 					->numParams(count($modifiedPages))
 					->text()
 			);
@@ -811,7 +811,7 @@ class SpecialStructureSync extends SpecialPage
 
 		$output->addHTML(
 			$this->wrapShell(
-				Html::rawElement('div', ['class' => 'structuresync-card'], $body)
+				Html::rawElement('div', ['class' => 'semanticschemas-card'], $body)
 			)
 		);
 	}
@@ -824,7 +824,7 @@ class SpecialStructureSync extends SpecialPage
 		$output = $this->getOutput();
 		$request = $this->getRequest();
 
-		$output->setPageTitle($this->msg('structuresync-generate-title')->text());
+		$output->setPageTitle($this->msg('semanticschemas-generate-title')->text());
 
 		if ($request->wasPosted() && $request->getVal('action') === 'generate') {
 			if (!$this->getUser()->matchEditToken($request->getVal('token'))) {
@@ -843,17 +843,17 @@ class SpecialStructureSync extends SpecialPage
 			'action' => $this->getPageTitle('generate')->getLocalURL()
 		]);
 
-		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
+		$form .= Html::openElement('div', ['class' => 'semanticschemas-form-group']);
 		$form .= Html::element(
 			'label',
 			[],
-			$this->msg('structuresync-generate-category')->text()
+			$this->msg('semanticschemas-generate-category')->text()
 		);
 		$form .= Html::openElement('select', ['name' => 'category']);
 		$form .= Html::element(
 			'option',
 			['value' => ''],
-			$this->msg('structuresync-generate-all')->text()
+			$this->msg('semanticschemas-generate-all')->text()
 		);
 		foreach ($categories as $category) {
 			$name = $category->getName();
@@ -866,7 +866,7 @@ class SpecialStructureSync extends SpecialPage
 		$form .= Html::closeElement('select');
 		$form .= Html::closeElement('div');
 
-		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
+		$form .= Html::openElement('div', ['class' => 'semanticschemas-form-group']);
 		$form .= Html::element('input', [
 			'type' => 'checkbox',
 			'name' => 'generate-display',
@@ -880,7 +880,7 @@ class SpecialStructureSync extends SpecialPage
 		);
 		$form .= Html::element(
 			'p',
-			['class' => 'structuresync-form-help', 'style' => 'margin-top: 0.25em; color: #72777d; font-size: 0.85em;'],
+			['class' => 'semanticschemas-form-help', 'style' => 'margin-top: 0.25em; color: #72777d; font-size: 0.85em;'],
 			"Warning: This replaces any manual customizations to the display structure."
 		);
 		$form .= Html::closeElement('div');
@@ -889,7 +889,7 @@ class SpecialStructureSync extends SpecialPage
 		$form .= Html::hidden('token', $this->getUser()->getEditToken());
 
 		$form .= Html::submitButton(
-			$this->msg('structuresync-generate-button')->text(),
+			$this->msg('semanticschemas-generate-button')->text(),
 			['class' => 'mw-ui-button mw-ui-progressive']
 		);
 
@@ -897,35 +897,35 @@ class SpecialStructureSync extends SpecialPage
 
 		$helper = Html::rawElement(
 			'div',
-			['class' => 'structuresync-help-card'],
-			Html::element('strong', [], $this->msg('structuresync-generate-title')->text()) .
+			['class' => 'semanticschemas-help-card'],
+			Html::element('strong', [], $this->msg('semanticschemas-generate-title')->text()) .
 			Html::openElement('ul') .
-			Html::element('li', [], $this->msg('structuresync-generate-description')->text()) .
-			Html::element('li', [], $this->msg('structuresync-generate-tip')->text()) .
-			Html::element('li', [], $this->msg('structuresync-status-modified-outside')->text()) .
+			Html::element('li', [], $this->msg('semanticschemas-generate-description')->text()) .
+			Html::element('li', [], $this->msg('semanticschemas-generate-tip')->text()) .
+			Html::element('li', [], $this->msg('semanticschemas-status-modified-outside')->text()) .
 			Html::closeElement('ul')
 		);
 
 		$card = Html::rawElement(
 			'div',
-			['class' => 'structuresync-card'],
+			['class' => 'semanticschemas-card'],
 			Html::rawElement(
 				'div',
-				['class' => 'structuresync-card-header'],
+				['class' => 'semanticschemas-card-header'],
 				Html::element(
 					'h3',
-					['class' => 'structuresync-card-title'],
-					$this->msg('structuresync-generate-title')->text()
+					['class' => 'semanticschemas-card-title'],
+					$this->msg('semanticschemas-generate-title')->text()
 				) .
 				Html::element(
 					'p',
-					['class' => 'structuresync-card-subtitle'],
-					$this->msg('structuresync-generate-description')->text()
+					['class' => 'semanticschemas-card-subtitle'],
+					$this->msg('semanticschemas-generate-description')->text()
 				)
 			) .
 			Html::rawElement(
 				'div',
-				['class' => 'structuresync-form-grid'],
+				['class' => 'semanticschemas-form-grid'],
 				Html::rawElement('div', [], $form) .
 				Html::rawElement('div', [], $helper)
 			)
@@ -948,7 +948,7 @@ class SpecialStructureSync extends SpecialPage
 		// Rate limiting for generation (expensive operation)
 		if ($this->checkRateLimit('generate')) {
 			$output->addHTML(Html::errorBox(
-				$this->msg('structuresync-ratelimit-exceeded')
+				$this->msg('semanticschemas-ratelimit-exceeded')
 					->params(self::RATE_LIMIT_PER_HOUR)
 					->text()
 			));
@@ -967,7 +967,7 @@ class SpecialStructureSync extends SpecialPage
 				$output->addHTML(
 					Html::element(
 						'div',
-						['class' => 'structuresync-progress-item'],
+						['class' => 'semanticschemas-progress-item'],
 						'Property template details:'
 					)
 				);
@@ -975,7 +975,7 @@ class SpecialStructureSync extends SpecialPage
 					$output->addHTML(
 						Html::element(
 							'div',
-							['class' => 'structuresync-progress-item'],
+							['class' => 'semanticschemas-progress-item'],
 							'    ' . $detail
 						)
 					);
@@ -992,16 +992,16 @@ class SpecialStructureSync extends SpecialPage
 
 			if (empty($categories)) {
 				$output->addHTML(Html::errorBox(
-					$this->msg('structuresync-generate-no-categories')->text()
+					$this->msg('semanticschemas-generate-no-categories')->text()
 				));
 				return;
 			}
 
 			$progressContainerOpen = true;
 			$output->addHTML(
-				Html::openElement('div', ['class' => 'structuresync-progress']) .
-				Html::element('p', [], $this->msg('structuresync-generate-inprogress')->text()) .
-				Html::openElement('div', ['class' => 'structuresync-progress-log'])
+				Html::openElement('div', ['class' => 'semanticschemas-progress']) .
+				Html::element('p', [], $this->msg('semanticschemas-generate-inprogress')->text()) .
+				Html::openElement('div', ['class' => 'semanticschemas-progress-log'])
 			);
 
 			// Build map for inheritance resolution
@@ -1038,8 +1038,8 @@ class SpecialStructureSync extends SpecialPage
 				$output->addHTML(
 					Html::element(
 						'div',
-						['class' => 'structuresync-progress-item'],
-						$this->msg('structuresync-generate-processing')->params($name)->text()
+						['class' => 'semanticschemas-progress-item'],
+						$this->msg('semanticschemas-generate-processing')->params($name)->text()
 					)
 				);
 
@@ -1060,7 +1060,7 @@ class SpecialStructureSync extends SpecialPage
 					$successCount++;
 				} catch (\Exception $e) {
 					// Log error but continue with other categories
-					wfLogWarning("StructureSync generate failed for category '$name': " . $e->getMessage());
+					wfLogWarning("SemanticSchemas generate failed for category '$name': " . $e->getMessage());
 				}
 			}
 
@@ -1115,7 +1115,7 @@ class SpecialStructureSync extends SpecialPage
 
 			$output->addHTML(
 				Html::successBox(
-					$this->msg('structuresync-generate-success')
+					$this->msg('semanticschemas-generate-success')
 						->numParams($successCount, $totalCount)
 						->text()
 				)
@@ -1134,7 +1134,7 @@ class SpecialStructureSync extends SpecialPage
 			]);
 
 			$output->addHTML(Html::errorBox(
-				$this->msg('structuresync-generate-error')->params($e->getMessage())->text()
+				$this->msg('semanticschemas-generate-error')->params($e->getMessage())->text()
 			));
 		}
 	}
@@ -1147,7 +1147,7 @@ class SpecialStructureSync extends SpecialPage
 		$output = $this->getOutput();
 		$request = $this->getRequest();
 
-		$output->setPageTitle($this->msg('structuresync-diff-title')->text());
+		$output->setPageTitle($this->msg('semanticschemas-diff-title')->text());
 
 		if ($request->wasPosted() && $request->getVal('action') === 'diff') {
 			if (!$this->getUser()->matchEditToken($request->getVal('token'))) {
@@ -1164,11 +1164,11 @@ class SpecialStructureSync extends SpecialPage
 			'action' => $this->getPageTitle('diff')->getLocalURL()
 		]);
 
-		$form .= Html::openElement('div', ['class' => 'structuresync-form-group']);
+		$form .= Html::openElement('div', ['class' => 'semanticschemas-form-group']);
 		$form .= Html::element(
 			'label',
 			[],
-			$this->msg('structuresync-diff-file')->text()
+			$this->msg('semanticschemas-diff-file')->text()
 		);
 		$form .= Html::element('textarea', [
 			'name' => 'schematext',
@@ -1181,7 +1181,7 @@ class SpecialStructureSync extends SpecialPage
 		$form .= Html::hidden('token', $this->getUser()->getEditToken());
 
 		$form .= Html::submitButton(
-			$this->msg('structuresync-diff-button')->text(),
+			$this->msg('semanticschemas-diff-button')->text(),
 			['class' => 'mw-ui-button mw-ui-progressive']
 		);
 
@@ -1189,19 +1189,19 @@ class SpecialStructureSync extends SpecialPage
 
 		$card = Html::rawElement(
 			'div',
-			['class' => 'structuresync-card'],
+			['class' => 'semanticschemas-card'],
 			Html::rawElement(
 				'div',
-				['class' => 'structuresync-card-header'],
+				['class' => 'semanticschemas-card-header'],
 				Html::element(
 					'h3',
-					['class' => 'structuresync-card-title'],
-					$this->msg('structuresync-diff-title')->text()
+					['class' => 'semanticschemas-card-title'],
+					$this->msg('semanticschemas-diff-title')->text()
 				) .
 				Html::element(
 					'p',
-					['class' => 'structuresync-card-subtitle'],
-					$this->msg('structuresync-diff-description')->text()
+					['class' => 'semanticschemas-card-subtitle'],
+					$this->msg('semanticschemas-diff-description')->text()
 				)
 			) .
 			$form
@@ -1257,10 +1257,10 @@ class SpecialStructureSync extends SpecialPage
 	{
 		$output = $this->getOutput();
 		$request = $this->getRequest();
-		$output->setPageTitle($this->msg('structuresync-hierarchy-title')->text());
+		$output->setPageTitle($this->msg('semanticschemas-hierarchy-title')->text());
 
 		// Add the hierarchy module
-		$output->addModules('ext.structuresync.hierarchy');
+		$output->addModules('ext.semanticschemas.hierarchy');
 
 		// Form for category selection
 		$form = Html::openElement('form', [
@@ -1278,7 +1278,7 @@ class SpecialStructureSync extends SpecialPage
 		// Category input field
 		$form .= Html::element('label', [
 			'for' => 'ss-hierarchy-category-input',
-		], $this->msg('structuresync-hierarchy-category-label')->text());
+		], $this->msg('semanticschemas-hierarchy-category-label')->text());
 
 		$categoryValue = $request->getText('category', '');
 		$form .= Html::element('input', [
@@ -1293,7 +1293,7 @@ class SpecialStructureSync extends SpecialPage
 		$form .= Html::element('button', [
 			'type' => 'submit',
 			'class' => 'mw-ui-button mw-ui-progressive',
-		], $this->msg('structuresync-hierarchy-show-button')->text());
+		], $this->msg('semanticschemas-hierarchy-show-button')->text());
 
 		$form .= Html::closeElement('form');
 
@@ -1311,19 +1311,19 @@ class SpecialStructureSync extends SpecialPage
 		// Build the card
 		$card = Html::rawElement(
 			'div',
-			['class' => 'structuresync-card'],
+			['class' => 'semanticschemas-card'],
 			Html::rawElement(
 				'div',
-				['class' => 'structuresync-card-header'],
+				['class' => 'semanticschemas-card-header'],
 				Html::element(
 					'h3',
-					['class' => 'structuresync-card-title'],
-					$this->msg('structuresync-hierarchy-title')->text()
+					['class' => 'semanticschemas-card-title'],
+					$this->msg('semanticschemas-hierarchy-title')->text()
 				) .
 				Html::element(
 					'p',
-					['class' => 'structuresync-card-subtitle'],
-					$this->msg('structuresync-hierarchy-tree-title')->text()
+					['class' => 'semanticschemas-card-subtitle'],
+					$this->msg('semanticschemas-hierarchy-tree-title')->text()
 				)
 			) .
 			$form .

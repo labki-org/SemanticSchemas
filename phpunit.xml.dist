@@ -8,7 +8,7 @@
 		 failOnRisky="true"
 		 failOnWarning="true">
 	<testsuites>
-		<testsuite name="StructureSync">
+		<testsuite name="SemanticSchemas">
 			<directory>tests/phpunit</directory>
 		</testsuite>
 	</testsuites>

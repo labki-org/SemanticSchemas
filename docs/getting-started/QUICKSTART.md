@@ -1,18 +1,18 @@
-# StructureSync Quick Start Guide
+# SemanticSchemas Quick Start Guide
 
 ## Installation
 
 1. **Install the extension:**
    ```bash
    cd /path/to/mediawiki/extensions/
-   git clone [your-repo] StructureSync
-   cd StructureSync
+   git clone [your-repo] SemanticSchemas
+   cd SemanticSchemas
    composer install --no-dev
    ```
 
 2. **Enable in LocalSettings.php:**
    ```php
-   wfLoadExtension( 'StructureSync' );
+   wfLoadExtension( 'SemanticSchemas' );
    ```
 
 3. **Update database:**
@@ -46,7 +46,7 @@ This is the person's email address.
 ```
 A person in our organization.
 
-<!-- StructureSync Schema Start -->
+<!-- SemanticSchemas Schema Start -->
 === Required Properties ===
 [[Has required property::Property:Has full name]]
 [[Has required property::Property:Has email]]
@@ -58,19 +58,19 @@ A person in our organization.
 |Has display section name=Details
 |Has display section property=Property:Has email
 }}
-<!-- StructureSync Schema End -->
+<!-- SemanticSchemas Schema End -->
 ```
 
 ### Step 3: Generate Templates and Forms
 
 **Via Special Page:**
-1. Go to `Special:StructureSync/generate`
+1. Go to `Special:SemanticSchemas/generate`
 2. Select "Person" category
 3. Click "Generate"
 
 **Via CLI:**
 ```bash
-php extensions/StructureSync/maintenance/regenerateArtifacts.php --category=Person --generate-display
+php extensions/SemanticSchemas/maintenance/regenerateArtifacts.php --category=Person --generate-display
 ```
 
 This creates:
@@ -82,14 +82,14 @@ This creates:
 ### Step 4: Export Your Schema
 
 **Via Special Page:**
-1. Go to `Special:StructureSync/export`
+1. Go to `Special:SemanticSchemas/export`
 2. Select format (JSON or YAML)
 3. Click "Generate Schema"
 4. Download file
 
 **Via CLI:**
 ```bash
-php extensions/StructureSync/maintenance/exportOntology.php --format=json --output=schema.json
+php extensions/SemanticSchemas/maintenance/exportOntology.php --format=json --output=schema.json
 ```
 
 ## Working with Multiple Inheritance
@@ -100,13 +100,13 @@ Create a category with multiple parents:
 ```
 A graduate student.
 
-<!-- StructureSync Schema Start -->
+<!-- SemanticSchemas Schema Start -->
 [[Has parent category::Category:Person]]
 [[Has parent category::Category:LabMember]]
 
 === Required Properties ===
 [[Has required property::Property:Has advisor]]
-<!-- StructureSync Schema End -->
+<!-- SemanticSchemas Schema End -->
 ```
 
 GraduateStudent will inherit all properties from both Person and LabMember, plus add its own required property "Has advisor".
@@ -115,7 +115,7 @@ GraduateStudent will inherit all properties from both Person and LabMember, plus
 
 1. **Export current state:**
    ```bash
-   php extensions/StructureSync/maintenance/exportOntology.php --format=json --output=production-schema.json
+   php extensions/SemanticSchemas/maintenance/exportOntology.php --format=json --output=production-schema.json
    ```
 
 2. **Edit schema file:**
@@ -142,17 +142,17 @@ GraduateStudent will inherit all properties from both Person and LabMember, plus
 
 3. **Validate before import:**
    ```bash
-   php extensions/StructureSync/maintenance/validateOntology.php --schema=production-schema.json
+   php extensions/SemanticSchemas/maintenance/validateOntology.php --schema=production-schema.json
    ```
 
 4. **Dry run to preview:**
    ```bash
-   php extensions/StructureSync/maintenance/importOntology.php --input=production-schema.json --dry-run
+   php extensions/SemanticSchemas/maintenance/importOntology.php --input=production-schema.json --dry-run
    ```
 
 5. **Import for real:**
    ```bash
-   php extensions/StructureSync/maintenance/importOntology.php --input=production-schema.json
+   php extensions/SemanticSchemas/maintenance/importOntology.php --input=production-schema.json
    ```
 
 ## Common Tasks
@@ -167,7 +167,7 @@ Add to the category page:
 
 Then regenerate artifacts:
 ```bash
-php extensions/StructureSync/maintenance/regenerateArtifacts.php --category=Person
+php extensions/SemanticSchemas/maintenance/regenerateArtifacts.php --category=Person
 ```
 
 **Option 2: Via Schema**
@@ -178,7 +178,7 @@ php extensions/StructureSync/maintenance/regenerateArtifacts.php --category=Pers
 ### Validate Your Ontology
 
 ```bash
-php extensions/StructureSync/maintenance/validateOntology.php --show-warnings
+php extensions/SemanticSchemas/maintenance/validateOntology.php --show-warnings
 ```
 
 Check for:
@@ -189,7 +189,7 @@ Check for:
 
 ### Compare Schema with Wiki State
 
-Via Special:StructureSync/diff:
+Via Special:SemanticSchemas/diff:
 1. Upload or paste schema
 2. See differences
 3. Apply if desired
@@ -250,7 +250,7 @@ The display template (`Template:Person/display`) is generated as a stub but **ne
 - See [Main README](../../README.md) for full documentation
 - Review [Architecture Guide](../developer/architecture.md) for technical architecture
 - MediaWiki logs: `debug.log`
-- Extension logs: Look for "StructureSync:" prefix
+- Extension logs: Look for "SemanticSchemas:" prefix
 
 ## Example Schema
 

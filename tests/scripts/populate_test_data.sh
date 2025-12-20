@@ -3,8 +3,8 @@
 set -euo pipefail
 
 #
-# StructureSync — Populate comprehensive test data script
-# This script creates a diverse set of test data for manual testing of StructureSync
+# SemanticSchemas — Populate comprehensive test data script
+# This script creates a diverse set of test data for manual testing of SemanticSchemas
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,11 +32,11 @@ create_property() {
     local extra="$4"  # Additional annotations (optional)
     
     docker compose exec -T wiki bash -c "php maintenance/edit.php -b 'Property:$name' <<'PROPEOF'
-<!-- StructureSync Start -->
+<!-- SemanticSchemas Start -->
 [[Has type::$type]]
 [[Has description::$description]]
 $extra
-<!-- StructureSync End -->
+<!-- SemanticSchemas End -->
 
 [[Category:Properties]]
 PROPEOF
@@ -66,7 +66,7 @@ SUBEOF
 }
 
 echo "=========================================="
-echo "Creating comprehensive test data for StructureSync"
+echo "Creating comprehensive test data for SemanticSchemas"
 echo "=========================================="
 echo ""
 
@@ -293,7 +293,7 @@ create_subobject "PublicationAuthor" "[[Has description::Captures publication au
 [[Has optional property::Property:Is corresponding author]]
 [[Has optional property::Property:Is co-first author]]
 
-[[Category:StructureSync-managed]]"
+[[Category:SemanticSchemas-managed]]"
 
 # Project category (base category)
 create_category "Project" "[[Has description::A research project.]]
@@ -526,7 +526,7 @@ docker compose exec -T wiki php extensions/SemanticMediaWiki/maintenance/rebuild
 
 echo ""
 echo "==> Generating templates and forms..."
-docker compose exec -T wiki php /mw-user-extensions/StructureSync/maintenance/regenerateArtifacts.php --generate-display
+docker compose exec -T wiki php /mw-user-extensions/SemanticSchemas/maintenance/regenerateArtifacts.php --generate-display
 
 echo ""
 echo "==> Creating example pages..."
@@ -871,9 +871,9 @@ echo "TESTING SCENARIOS"
 echo "========================================"
 echo ""
 echo "1. OVERVIEW & EXPORT:"
-echo "   - Visit Special:StructureSync to see the overview"
+echo "   - Visit Special:SemanticSchemas to see the overview"
 echo "   - Check category hierarchy and property inheritance"
-echo "   - Export schema via Special:StructureSync/export"
+echo "   - Export schema via Special:SemanticSchemas/export"
 echo ""
 echo "2. SINGLE INHERITANCE:"
 echo "   - View Faculty category (Person -> Faculty)"
@@ -907,11 +907,11 @@ echo "   - Use Form:GraduateStudent to create a new graduate student"
 echo "   - Test form validation for required properties"
 echo ""
 echo "8. VALIDATION:"
-echo "   - Run validation at Special:StructureSync/validate"
+echo "   - Run validation at Special:SemanticSchemas/validate"
 echo "   - Check for missing templates, forms, or inconsistencies"
 echo ""
 echo "9. DIFF:"
-echo "    - Use Special:StructureSync/diff to compare schemas"
+echo "    - Use Special:SemanticSchemas/diff to compare schemas"
 echo "    - Test with modified schema files"
 echo ""
 echo "10. EDGE CASES:"
@@ -920,11 +920,11 @@ echo "    - View SimpleCategory (minimal schema)"
 echo "    - Test categories with many properties (Faculty)"
 echo ""
 echo "11. GENERATE:"
-echo "    - Use Special:StructureSync/generate to regenerate artifacts"
+echo "    - Use Special:SemanticSchemas/generate to regenerate artifacts"
 echo "    - Test category-specific generation"
 echo ""
 echo "12. HIERARCHY VISUALIZATION:"
-echo "    - Visit Special:StructureSync/hierarchy"
+echo "    - Visit Special:SemanticSchemas/hierarchy"
 echo "    - Enter 'PhDStudent' to see 4-level inheritance"
 echo "    - Check that inherited properties show source categories"
 echo "    - Test 'GraduateStudent' for multiple inheritance (Person + LabMember)"
@@ -933,7 +933,7 @@ echo "    - Verify required properties have red background, optional have green"
 echo "    - Click on category/property links to navigate to their pages"
 echo ""
 echo "14. CATEGORY PAGE HIERARCHY:"
-echo "    - Add {{#structuresync_hierarchy:}} to a Category page"
+echo "    - Add {{#semanticschemas_hierarchy:}} to a Category page"
 echo "    - Example: Edit Category:GraduateStudent and add the parser function"
 echo "    - View the category page to see embedded hierarchy visualization"
 echo ""

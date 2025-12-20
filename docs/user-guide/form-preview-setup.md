@@ -12,16 +12,16 @@ The preview updates automatically as users add or change parent categories.
 
 ## Automatic Setup (Recommended)
 
-**Good news!** If your category schema includes `Has parent category` as a property (required or optional), the hierarchy preview is **automatically injected** when forms are regenerated via `Special:StructureSync/regenerate`.
+**Good news!** If your category schema includes `Has parent category` as a property (required or optional), the hierarchy preview is **automatically injected** when forms are regenerated via `Special:SemanticSchemas/regenerate`.
 
 When `FormGenerator` detects that a category has the `Has parent category` property, it will automatically:
-1. Add `{{#structuresync_load_form_preview:}}` to load the module
+1. Add `{{#semanticschemas_load_form_preview:}}` to load the module
 2. Add the preview container `<div>` with proper configuration
 3. Position the preview after the form fields
 
 **To enable automatic injection:**
 - Ensure your category has `[[Has required property::Property:Has parent category]]` or `[[Has optional property::Property:Has parent category]]`
-- Regenerate forms via `Special:StructureSync` → "Regenerate" tab
+- Regenerate forms via `Special:SemanticSchemas` → "Regenerate" tab
 
 If automatic injection works for your use case, you can skip the manual setup below!
 
@@ -52,7 +52,7 @@ Add this to the `<noinclude>` section of your form:
 
 ```wiki
 <noinclude>
-{{#invoke:ResourceLoader|load|ext.structuresync.hierarchy.formpreview}}
+{{#invoke:ResourceLoader|load|ext.semanticschemas.hierarchy.formpreview}}
 </noinclude>
 ```
 
@@ -60,7 +60,7 @@ Alternatively, add it via JavaScript in MediaWiki:Common.js:
 ```javascript
 // Load on Form:Category page
 if (mw.config.get('wgCanonicalNamespace') === 'Form' && mw.config.get('wgTitle') === 'Category') {
-    mw.loader.load('ext.structuresync.hierarchy.formpreview');
+    mw.loader.load('ext.semanticschemas.hierarchy.formpreview');
 }
 ```
 
@@ -129,7 +129,7 @@ The preview module automatically detects fields with these patterns:
 
 1. **User types parent categories**: In the "Parents" field (comma-separated or one per line)
 2. **JavaScript watches for changes**: Detects input with 500ms debounce
-3. **API call is made**: `action=structuresync-hierarchy&category=NewCategory&parents=Parent1|Parent2`
+3. **API call is made**: `action=semanticschemas-hierarchy&category=NewCategory&parents=Parent1|Parent2`
 4. **Preview updates**: Shows hierarchy tree and inherited properties count
 
 ## Features
@@ -180,7 +180,7 @@ Add custom CSS in MediaWiki:Common.css:
 
 ### No properties shown
 - This is normal if parent categories have no properties defined
-- Check parent categories have StructureSync schema annotations
+- Check parent categories have SemanticSchemas schema annotations
 
 ## See Also
 

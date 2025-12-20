@@ -1,8 +1,8 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Store;
+namespace MediaWiki\Extension\SemanticSchemas\Store;
 
-use MediaWiki\Extension\StructureSync\Schema\SubobjectModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 
@@ -15,8 +15,8 @@ use MediaWiki\Title\Title;
  */
 class WikiSubobjectStore {
 
-    private const MARKER_START = '<!-- StructureSync Start -->';
-    private const MARKER_END   = '<!-- StructureSync End -->';
+    private const MARKER_START = '<!-- SemanticSchemas Start -->';
+    private const MARKER_END   = '<!-- SemanticSchemas End -->';
 
     private PageCreator $pageCreator;
 
@@ -180,14 +180,14 @@ class WikiSubobjectStore {
         );
 
         // Tracking category
-        if (!str_contains($newContent, '[[Category:StructureSync-managed-subobject]]')) {
-            $newContent .= "\n[[Category:StructureSync-managed-subobject]]";
+        if (!str_contains($newContent, '[[Category:SemanticSchemas-managed-subobject]]')) {
+            $newContent .= "\n[[Category:SemanticSchemas-managed-subobject]]";
         }
 
         return $this->pageCreator->createOrUpdatePage(
             $title,
             $newContent,
-            'StructureSync: Update subobject schema metadata'
+            'SemanticSchemas: Update subobject schema metadata'
         );
     }
 

@@ -1,13 +1,13 @@
 # Running MediaWiki Jobs
 
-This document explains how to run MediaWiki maintenance jobs, particularly useful for StructureSync operations.
+This document explains how to run MediaWiki maintenance jobs, particularly useful for SemanticSchemas operations.
 
 ## Running Jobs in Test Environment
 
 If you're using the Docker-based test environment, you can run jobs with:
 
 ```bash
-cd ~/.cache/structuresync/mediawiki-StructureSync-test/
+cd ~/.cache/semanticschemas/mediawiki-SemanticSchemas-test/
 docker compose exec wiki php maintenance/runJobs.php --wait
 ```
 

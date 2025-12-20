@@ -4,7 +4,7 @@
     "Category": {
       "parents": [],
       "label": "Category",
-      "description": "Defines the schema metadata for categories managed by StructureSync.",
+      "description": "Defines the schema metadata for categories managed by SemanticSchemas.",
       "targetNamespace": "Category",
       "properties": {
         "required": [

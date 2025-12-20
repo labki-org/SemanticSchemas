@@ -1,10 +1,10 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Generator;
+namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
-use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
-use MediaWiki\Extension\StructureSync\Store\PageCreator;
-use MediaWiki\Extension\StructureSync\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 
 /**
  * Generates static display templates for Categories.
@@ -74,7 +74,7 @@ class DisplayStubGenerator
         $this->pageCreator->createOrUpdatePage(
             $title,
             $content,
-            "StructureSync: Update static display template for $categoryName"
+            "SemanticSchemas: Update static display template for $categoryName"
         );
 
         return $title->getPrefixedText();
@@ -91,7 +91,7 @@ class DisplayStubGenerator
         $format = $category->getDisplayFormat();
 
         if ($format === 'sidebox') {
-            wfDebugLog('StructureSync', 'Generating sidebox display for ' . $category->getName());
+            wfDebugLog('SemanticSchemas', 'Generating sidebox display for ' . $category->getName());
             return $this->generateSideboxWikitext($category);
         }
 
@@ -106,13 +106,13 @@ class DisplayStubGenerator
     private function generateTableWikitext(CategoryModel $category): string
     {
         $content = "<includeonly>\n";
-        $content .= "{| class=\"wikitable source-structuresync\"\n";
+        $content .= "{| class=\"wikitable source-semanticschemas\"\n";
         $content .= "! Property !! Value\n";
 
         $content .= $this->generatePropertyRows($category);
 
         $content .= "|}\n";
-        $content .= "</includeonly><noinclude>[[Category:StructureSync-managed-display]]</noinclude>";
+        $content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
         return $content;
     }
@@ -121,13 +121,13 @@ class DisplayStubGenerator
     {
         // Infobox style: floated right, distinct styling
         $content = "<includeonly>\n";
-        $content .= "{| class=\"wikitable source-structuresync-sidebox\" style=\"float: right; clear: right; margin: 0 0 1em 1em; width: 300px; background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);\"\n";
+        $content .= "{| class=\"wikitable source-semanticschemas-sidebox\" style=\"float: right; clear: right; margin: 0 0 1em 1em; width: 300px; background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);\"\n";
         $content .= "|+ style=\"font-size: 120%; font-weight: bold; background-color: #eaecf0;\" | " . $category->getLabel() . "\n";
 
         $content .= $this->generatePropertyRows($category);
 
         $content .= "|}\n";
-        $content .= "</includeonly><noinclude>[[Category:StructureSync-managed-display]]</noinclude>";
+        $content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
         return $content;
     }
@@ -135,7 +135,7 @@ class DisplayStubGenerator
     private function generateSectionsWikitext(CategoryModel $category): string
     {
         $content = "<includeonly>\n";
-        $content .= "{| class=\"wikitable source-structuresync-sections\" style=\"width: 100%;\"\n";
+        $content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
 
         $sections = $category->getDisplaySections();
 
@@ -174,7 +174,7 @@ class DisplayStubGenerator
         }
 
         $content .= "|}\n";
-        $content .= "</includeonly><noinclude>[[Category:StructureSync-managed-display]]</noinclude>";
+        $content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
         return $content;
     }

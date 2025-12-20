@@ -1,10 +1,10 @@
 <?php
 
-namespace MediaWiki\Extension\StructureSync\Service;
+namespace MediaWiki\Extension\SemanticSchemas\Service;
 
-use MediaWiki\Extension\StructureSync\Schema\CategoryModel;
-use MediaWiki\Extension\StructureSync\Schema\InheritanceResolver;
-use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
+use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 
 /**
  * CategoryHierarchyService
@@ -19,12 +19,14 @@ use MediaWiki\Extension\StructureSync\Store\WikiCategoryStore;
  *   - Parser-function rendering
  *   - Form preview when creating new categories
  */
-class CategoryHierarchyService {
+class CategoryHierarchyService
+{
 
     /** @var WikiCategoryStore */
     private WikiCategoryStore $categoryStore;
 
-    public function __construct(?WikiCategoryStore $categoryStore = null) {
+    public function __construct(?WikiCategoryStore $categoryStore = null)
+    {
         $this->categoryStore = $categoryStore ?? new WikiCategoryStore();
     }
 
@@ -38,15 +40,16 @@ class CategoryHierarchyService {
      * @param string $categoryName Category name (no namespace)
      * @return array
      */
-    public function getHierarchyData(string $categoryName): array {
+    public function getHierarchyData(string $categoryName): array
+    {
 
         $fullName = "Category:$categoryName";
 
         $result = [
-            'rootCategory'        => $fullName,
-            'nodes'               => [],
+            'rootCategory' => $fullName,
+            'nodes' => [],
             'inheritedProperties' => [],
-            'inheritedSubobjects'  => [],
+            'inheritedSubobjects' => [],
         ];
 
         $allCategories = $this->categoryStore->getAllCategories();
@@ -59,7 +62,7 @@ class CategoryHierarchyService {
             return $result; // Category does not exist in wiki
         }
 
-        $resolver  = new InheritanceResolver($allCategories);
+        $resolver = new InheritanceResolver($allCategories);
         $ancestors = $resolver->getAncestors($categoryName);
 
         // Build node graph
@@ -95,22 +98,23 @@ class CategoryHierarchyService {
      * @param string[] $parentNames   Parents (no namespace)
      * @return array
      */
-    public function getVirtualHierarchyData(string $categoryName, array $parentNames): array {
+    public function getVirtualHierarchyData(string $categoryName, array $parentNames): array
+    {
 
         $fullName = "Category:$categoryName";
 
         $result = [
-            'rootCategory'        => $fullName,
-            'nodes'               => [],
+            'rootCategory' => $fullName,
+            'nodes' => [],
             'inheritedProperties' => [],
-            'inheritedSubobjects'  => [],
+            'inheritedSubobjects' => [],
         ];
 
         $allCategories = $this->categoryStore->getAllCategories();
         if (empty($allCategories)) {
             // No existing categories → standalone root
             $result['nodes'][$fullName] = [
-                'title'   => $fullName,
+                'title' => $fullName,
                 'parents' => [],
             ];
             return $result;
@@ -123,7 +127,7 @@ class CategoryHierarchyService {
 
         // Virtual root node
         $result['nodes'][$fullName] = [
-            'title'   => $fullName,
+            'title' => $fullName,
             'parents' => array_map(fn($p) => "Category:$p", $parents),
         ];
 
@@ -179,7 +183,7 @@ class CategoryHierarchyService {
         );
 
         $nodes[$full] = [
-            'title'   => $full,
+            'title' => $full,
             'parents' => $parents,
         ];
 
@@ -198,7 +202,7 @@ class CategoryHierarchyService {
         array $all
     ): array {
         $output = [];
-        $seen   = [];
+        $seen = [];
 
         foreach ($resolver->getAncestors($name) as $ancestor) {
             $model = $all[$ancestor] ?? null;
@@ -211,9 +215,9 @@ class CategoryHierarchyService {
             foreach ($model->getRequiredProperties() as $p) {
                 if (!isset($seen[$p])) {
                     $output[] = [
-                        'propertyTitle'  => "Property:$p",
+                        'propertyTitle' => "Property:$p",
                         'sourceCategory' => $source,
-                        'required'       => true,
+                        'required' => true,
                     ];
                     $seen[$p] = true;
                 }
@@ -222,9 +226,9 @@ class CategoryHierarchyService {
             foreach ($model->getOptionalProperties() as $p) {
                 if (!isset($seen[$p])) {
                     $output[] = [
-                        'propertyTitle'  => "Property:$p",
+                        'propertyTitle' => "Property:$p",
                         'sourceCategory' => $source,
-                        'required'       => false,
+                        'required' => false,
                     ];
                     $seen[$p] = true;
                 }
@@ -244,7 +248,7 @@ class CategoryHierarchyService {
         array $all
     ): array {
         $output = [];
-        $seen   = [];
+        $seen = [];
 
         foreach ($resolver->getAncestors($name) as $ancestor) {
             $model = $all[$ancestor] ?? null;
@@ -257,9 +261,9 @@ class CategoryHierarchyService {
             foreach ($model->getRequiredSubobjects() as $sg) {
                 if (!isset($seen[$sg])) {
                     $output[] = [
-                        'subobjectTitle'  => "Subobject:$sg",
+                        'subobjectTitle' => "Subobject:$sg",
                         'sourceCategory' => $source,
-                        'required'       => 1,
+                        'required' => 1,
                     ];
                     $seen[$sg] = true;
                 }
@@ -268,9 +272,9 @@ class CategoryHierarchyService {
             foreach ($model->getOptionalSubobjects() as $sg) {
                 if (!isset($seen[$sg])) {
                     $output[] = [
-                        'subobjectTitle'  => "Subobject:$sg",
+                        'subobjectTitle' => "Subobject:$sg",
                         'sourceCategory' => $source,
-                        'required'       => 0,
+                        'required' => 0,
                     ];
                     $seen[$sg] = true;
                 }
@@ -294,7 +298,7 @@ class CategoryHierarchyService {
         }
 
         $output = [];
-        $seen   = [];
+        $seen = [];
 
         $resolver = new InheritanceResolver($all);
 
@@ -310,9 +314,9 @@ class CategoryHierarchyService {
                 foreach ($model->getRequiredProperties() as $p) {
                     if (!isset($seen[$p])) {
                         $output[] = [
-                            'propertyTitle'  => "Property:$p",
+                            'propertyTitle' => "Property:$p",
                             'sourceCategory' => $source,
-                            'required'       => true,
+                            'required' => true,
                         ];
                         $seen[$p] = true;
                     }
@@ -321,9 +325,9 @@ class CategoryHierarchyService {
                 foreach ($model->getOptionalProperties() as $p) {
                     if (!isset($seen[$p])) {
                         $output[] = [
-                            'propertyTitle'  => "Property:$p",
+                            'propertyTitle' => "Property:$p",
                             'sourceCategory' => $source,
-                            'required'       => false,
+                            'required' => false,
                         ];
                         $seen[$p] = true;
                     }
@@ -353,7 +357,7 @@ class CategoryHierarchyService {
         }
 
         $output = [];
-        $seen   = [];
+        $seen = [];
 
         $resolver = new InheritanceResolver($all);
 
@@ -369,9 +373,9 @@ class CategoryHierarchyService {
                 foreach ($model->getRequiredSubobjects() as $sg) {
                     if (!isset($seen[$sg])) {
                         $output[] = [
-                            'subobjectTitle'  => "Subobject:$sg",
+                            'subobjectTitle' => "Subobject:$sg",
                             'sourceCategory' => $source,
-                            'required'       => 1,
+                            'required' => 1,
                         ];
                         $seen[$sg] = true;
                     }
@@ -380,9 +384,9 @@ class CategoryHierarchyService {
                 foreach ($model->getOptionalSubobjects() as $sg) {
                     if (!isset($seen[$sg])) {
                         $output[] = [
-                            'subobjectTitle'  => "Subobject:$sg",
+                            'subobjectTitle' => "Subobject:$sg",
                             'sourceCategory' => $source,
-                            'required'       => 0,
+                            'required' => 0,
                         ];
                         $seen[$sg] = true;
                     }

@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide provides detailed installation instructions for StructureSync.
+This guide provides detailed installation instructions for SemanticSchemas.
 
 ## Requirements
 
@@ -17,7 +17,7 @@ Clone this repository to your MediaWiki `extensions` directory:
 
 ```bash
 cd extensions/
-git clone https://github.com/yourrepo/StructureSync.git
+git clone https://github.com/yourrepo/SemanticSchemas.git
 ```
 
 ### Step 2: Install Composer Dependencies
@@ -25,7 +25,7 @@ git clone https://github.com/yourrepo/StructureSync.git
 Install PHP dependencies via Composer:
 
 ```bash
-cd StructureSync
+cd SemanticSchemas
 composer install --no-dev
 ```
 
@@ -34,7 +34,7 @@ composer install --no-dev
 Add the following line to your `LocalSettings.php`:
 
 ```php
-wfLoadExtension( 'StructureSync' );
+wfLoadExtension( 'SemanticSchemas' );
 ```
 
 ### Step 4: Run Database Updates
@@ -53,8 +53,8 @@ No configuration is required for basic usage. The extension works out of the box
 
 To verify the installation was successful:
 
-1. Visit `Special:Version` and confirm StructureSync is listed
-2. Visit `Special:StructureSync` to access the main interface
+1. Visit `Special:Version` and confirm SemanticSchemas is listed
+2. Visit `Special:SemanticSchemas` to access the main interface
 3. Check that SemanticMediaWiki and PageForms are also installed and enabled
 
 ## Troubleshooting
@@ -70,7 +70,7 @@ To verify the installation was successful:
 If you see errors about missing dependencies:
 
 ```bash
-cd extensions/StructureSync
+cd extensions/SemanticSchemas
 composer install --no-dev
 ```
 
