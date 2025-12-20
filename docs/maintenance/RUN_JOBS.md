@@ -8,7 +8,7 @@ If you're using the Docker-based test environment, you can run jobs with:
 
 ```bash
 cd ~/.cache/structuresync/mediawiki-StructureSync-test/
-docker compose exec mediawiki php maintenance/runJobs.php --wait
+docker compose exec wiki php maintenance/runJobs.php --wait
 ```
 
 ### What This Does

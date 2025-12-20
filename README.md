@@ -24,7 +24,8 @@ Quick start:
 1. Clone to your MediaWiki `extensions` directory
 2. Install Composer dependencies: `composer install --no-dev`
 3. Add `wfLoadExtension( 'StructureSync' );` to `LocalSettings.php`
-4. Run `php maintenance/update.php`
+4. Run `php maintenance/run.php StructureSync:InstallConfig` to install necessary pages
+5. Run `php maintenance/update.php`
 
 ## Configuration
 

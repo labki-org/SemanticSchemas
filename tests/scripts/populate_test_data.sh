@@ -9,19 +9,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-get_cache_dir() {
-    case "$(uname -s)" in
-        Darwin*) echo "$HOME/Library/Caches/structuresync" ;;
-        MINGW*|MSYS*|CYGWIN*)
-            local appdata="${LOCALAPPDATA:-$HOME/AppData/Local}"
-            echo "$appdata/structuresync"
-            ;;
-        *) echo "${XDG_CACHE_HOME:-$HOME/.cache}/structuresync" ;;
-    esac
-}
-
-CACHE_BASE="$(get_cache_dir)"
-MW_DIR="${MW_DIR:-$CACHE_BASE/mediawiki-StructureSync-test}"
+REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+MW_DIR="${MW_DIR:-$REPO_ROOT}"
 
 if [ ! -d "$MW_DIR" ]; then
     echo "ERROR: MediaWiki directory not found at: $MW_DIR"
@@ -33,7 +22,7 @@ cd "$MW_DIR"
 
 # Ensure cache directory is writable (fix for LocalisationCache warnings)
 echo "==> Ensuring cache directory permissions..."
-docker compose exec -T mediawiki bash -c "mkdir -p /tmp/my_wiki && chmod 777 /tmp/my_wiki" 2>/dev/null || true
+docker compose exec -T wiki bash -c "mkdir -p /tmp/my_wiki && chmod 777 /tmp/my_wiki" 2>/dev/null || true
 
 # Helper function to create a property
 create_property() {
@@ -42,7 +31,7 @@ create_property() {
     local type="$3"
     local extra="$4"  # Additional annotations (optional)
     
-    docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Property:$name' <<'PROPEOF'
+    docker compose exec -T wiki bash -c "php maintenance/edit.php -b 'Property:$name' <<'PROPEOF'
 <!-- StructureSync Start -->
 [[Has type::$type]]
 [[Has description::$description]]
@@ -59,7 +48,7 @@ create_category() {
     local name="$1"
     local content="$2"
     
-    docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Category:$name' <<'CATEOF'
+    docker compose exec -T wiki bash -c "php maintenance/edit.php -b 'Category:$name' <<'CATEOF'
 $content
 CATEOF
 "
@@ -70,7 +59,7 @@ create_subobject() {
     local name="$1"
     local content="$2"
     
-    docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b 'Subobject:$name' <<'SUBEOF'
+    docker compose exec -T wiki bash -c "php maintenance/edit.php -b 'Subobject:$name' <<'SUBEOF'
 $content
 SUBEOF
 "
@@ -533,11 +522,11 @@ create_category "SimpleCategory" "[[Has description::A simple category for testi
 echo ""
 echo "==> Refreshing Semantic MediaWiki data (before form generation)..."
 echo "This ensures all semantic properties are parsed and available for template/form generation..."
-docker compose exec -T mediawiki php extensions/SemanticMediaWiki/maintenance/rebuildData.php -f --skip-properties --report-runtime
+docker compose exec -T wiki php extensions/SemanticMediaWiki/maintenance/rebuildData.php -f --skip-properties --report-runtime
 
 echo ""
 echo "==> Generating templates and forms..."
-docker compose exec -T mediawiki php extensions/StructureSync/maintenance/regenerateArtifacts.php --generate-display
+docker compose exec -T wiki php /mw-user-extensions/StructureSync/maintenance/regenerateArtifacts.php --generate-display
 
 echo ""
 echo "==> Creating example pages..."
@@ -547,7 +536,7 @@ create_page() {
     local name="$1"
     local content="$2"
     
-    docker compose exec -T mediawiki bash -c "php maintenance/edit.php -b '$name' <<'PAGEOF'
+    docker compose exec -T wiki bash -c "php maintenance/edit.php -b '$name' <<'PAGEOF'
 $content
 PAGEOF
 "

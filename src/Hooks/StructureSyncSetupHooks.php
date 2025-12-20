@@ -10,7 +10,8 @@ use MediaWiki\Extension\StructureSync\Schema\ExtensionConfigInstaller;
  * Extension setup hooks for StructureSync that configure MediaWiki and SMW
  * for proper operation with our custom namespaces.
  */
-class StructureSyncSetupHooks {
+class StructureSyncSetupHooks
+{
 
 	/**
 	 * Hook: SetupAfterCache
@@ -23,12 +24,13 @@ class StructureSyncSetupHooks {
 	 * have semantic annotations enabled. Without this, SMW won't parse [[Property::value]]
 	 * annotations on Subobject: pages.
 	 */
-	public static function onSetupAfterCache() {
+	public static function onSetupAfterCache()
+	{
 		global $smwgNamespacesWithSemanticLinks;
-		
+
 		// Enable semantic annotations in the Subobject namespace
 		// This allows Subobject pages to use [[Has required property::...]] and similar
-		if ( defined( 'NS_SUBOBJECT' ) ) {
+		if (defined('NS_SUBOBJECT')) {
 			$smwgNamespacesWithSemanticLinks[NS_SUBOBJECT] = true;
 		}
 	}
@@ -44,26 +46,17 @@ class StructureSyncSetupHooks {
 	 * @param mixed $updater DatabaseUpdater (not used directly)
 	 * @return bool
 	 */
-	public static function onLoadExtensionSchemaUpdates( $updater ): bool {
-		// Locate the bundled config file relative to the extension root.
-		$root = dirname( __DIR__, 2 );
-		$configPath = $root . '/resources/extension-config.json';
-
-		if ( !file_exists( $configPath ) ) {
-			return true;
-		}
-
-		$installer = new ExtensionConfigInstaller();
-		$result = $installer->applyFromFile( $configPath );
-
-		// Log validation errors, if any, but don't fail the schema update run.
-		if ( !empty( $result['errors'] ) && function_exists( 'wfLogWarning' ) ) {
-			foreach ( $result['errors'] as $msg ) {
-				wfLogWarning( "StructureSync extension-config error: $msg" );
-			}
-		}
+	public static function onLoadExtensionSchemaUpdates($updater): bool
+	{
+		// Note: We deliberately DO NOT run the installer here anymore.
+		// Doing so causes transaction conflicts ("Uncommitted DB writes") because
+		// we are inside a transaction started by update.php, and constructing
+		// Categories/Properties triggers complex SMW updates that expect a clean state.
+		//
+		// Instead, use maintenance/installConfig.php to run this manually.
 
 		return true;
 	}
+
 }
 
