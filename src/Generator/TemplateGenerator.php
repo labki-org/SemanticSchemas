@@ -4,8 +4,10 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
@@ -22,13 +24,16 @@ class TemplateGenerator
 
     private PageCreator $pageCreator;
     private WikiSubobjectStore $subobjectStore;
+    private WikiPropertyStore $propertyStore;
 
     public function __construct(
         ?PageCreator $pageCreator = null,
-        ?WikiSubobjectStore $subobjectStore = null
+        ?WikiSubobjectStore $subobjectStore = null,
+        ?WikiPropertyStore $propertyStore = null
     ) {
         $this->pageCreator = $pageCreator ?? new PageCreator();
         $this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
+        $this->propertyStore = $propertyStore ?? new WikiPropertyStore();
     }
 
     /* =====================================================================
@@ -37,6 +42,11 @@ class TemplateGenerator
 
     /**
      * Generate content for the semantic template.
+     *
+     * For Page-type properties with allowedNamespace (e.g., Property, Category),
+     * this method generates template logic to prepend the namespace prefix to values.
+     * This ensures SMW correctly interprets them as page references rather than
+     * plain text, which is required for proper semantic querying.
      *
      * @param CategoryModel $category
      * @return string
@@ -60,7 +70,8 @@ class TemplateGenerator
 
         foreach ($props as $p) {
             $param = NamingHelper::propertyToParameter($p);
-            $out[] = ' | ' . ($p ?? '') . ' = {{{' . ($param ?? '') . '|}}}';
+            $valueExpr = $this->generatePropertyValueExpression($p, $param);
+            $out[] = ' | ' . ($p ?? '') . ' = ' . $valueExpr;
         }
 
         $out[] = '}}';
@@ -69,6 +80,47 @@ class TemplateGenerator
         $out[] = '</includeonly>';
 
         return implode("\n", $out);
+    }
+
+    /**
+     * Generate the value expression for a property in a semantic template.
+     *
+     * For Page-type properties with allowedNamespace, this adds the namespace
+     * prefix to ensure SMW correctly interprets values as page references.
+     * For multi-value properties, uses #arraymap to prefix each value.
+     *
+     * @param string $propertyName The SMW property name
+     * @param string $param The template parameter name
+     * @return string The wikitext expression for the value
+     */
+    private function generatePropertyValueExpression(string $propertyName, string $param): string
+    {
+        // Try to look up the property definition
+        $propModel = $this->propertyStore->readProperty($propertyName);
+
+        // If no property definition or not a Page type with namespace, use simple passthrough
+        if (!$propModel instanceof PropertyModel) {
+            return '{{{' . $param . '|}}}';
+        }
+
+        $allowedNamespace = $propModel->getAllowedNamespace();
+
+        // Not a Page type with namespace restriction - simple passthrough
+        if (!$propModel->isPageType() || $allowedNamespace === null || $allowedNamespace === '') {
+            return '{{{' . $param . '|}}}';
+        }
+
+        // Page-type property with allowedNamespace - need to prefix values
+        if ($propModel->allowsMultipleValues()) {
+            // Multi-value: use #arraymap to prefix each comma-separated value
+            // The inner #if prevents prefixing empty items after trimming
+            // Format: {{#arraymap:{{{param|}}}|,|@@item@@|{{#if:@@item@@|Namespace:@@item@@}}|,}}
+            return '{{#arraymap:{{{' . $param . '|}}}|,|@@item@@|{{#if:@@item@@|' . $allowedNamespace . ':@@item@@}}|,}}';
+        }
+
+        // Single value: use #if to conditionally prefix (avoids "Namespace:" for empty values)
+        // Format: {{#if:{{{param|}}}|Namespace:{{{param|}}}|}}
+        return '{{#if:{{{' . $param . '|}}}|' . $allowedNamespace . ':{{{' . $param . '|}}}|}}';
     }
 
     /* =====================================================================
@@ -158,7 +210,8 @@ class TemplateGenerator
 
         foreach ($props as $p) {
             $param = NamingHelper::propertyToParameter($p);
-            $out[] = ' | ' . ($p ?? '') . ' = {{{' . ($param ?? '') . '|}}}';
+            $valueExpr = $this->generatePropertyValueExpression($p, $param);
+            $out[] = ' | ' . ($p ?? '') . ' = ' . $valueExpr;
         }
 
         $out[] = '}}';

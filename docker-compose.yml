@@ -17,6 +17,32 @@ services:
     depends_on:
       - db
 
+  jobrunner:
+    image: ghcr.io/labki-org/labki-platform:latest
+    environment:
+      MW_DB_HOST: db
+      MW_DB_NAME: labki
+      MW_DB_USER: labki
+      MW_DB_PASSWORD: labki_pass
+      MW_DISABLE_PLATFORM_EXTENSIONS: 1
+    volumes:
+      - ./:/mw-user-extensions/SemanticSchemas
+      - ./tests/LocalSettings.test.php:/mw-config/LocalSettings.user.php
+    depends_on:
+      - db
+      - wiki
+    command: >
+      bash -c "
+        echo 'Waiting for wiki to be ready...' &&
+        sleep 10 &&
+        echo 'Starting job runner...' &&
+        while true; do
+          php /var/www/html/maintenance/runJobs.php --wait --maxjobs=10;
+          sleep 1;
+        done
+      "
+    restart: unless-stopped
+
   db:
     image: mariadb:10.11
     environment:
