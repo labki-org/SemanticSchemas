@@ -112,7 +112,7 @@ jobs:
         MW_DB_USER: labki
         MW_DB_PASSWORD: labki_pass
         MW_ADMIN_USER: Admin
-        MW_ADMIN_PASS: testpass
+        MW_ADMIN_PASS: CITestPassword123!
         MW_SKIP_EXTERNAL_DEPENDENCIES: 1
 
     steps:
