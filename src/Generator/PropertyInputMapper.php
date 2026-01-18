@@ -19,187 +19,181 @@ use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
  * Produces PageForms definitions suitable for:
  *   {{{field|MyField|property=Has something|input type=dropdown|values=A,B}}}
  */
-class PropertyInputMapper
-{
+class PropertyInputMapper {
 
-    /* =====================================================================
-     * MAPPING: SMW Datatype → Default PageForms Input Type
-     * ===================================================================== */
+	/* =====================================================================
+	 * MAPPING: SMW Datatype → Default PageForms Input Type
+	 * ===================================================================== */
 
-    /** @var array<string,string> */
-    private static array $datatypeMap = [
-        'Text' => 'text',
-        'URL' => 'text',
-        'Email' => 'text',
-        'Telephone number' => 'text',
-        'Number' => 'number',
-        'Quantity' => 'text',
-        'Temperature' => 'number',
-        'Date' => 'datepicker',
-        'Boolean' => 'checkbox',
-        'Code' => 'textarea',
-        'Geographic coordinate' => 'text',
-    ];
+	/** @var array<string,string> */
+	private static array $datatypeMap = [
+		'Text' => 'text',
+		'URL' => 'text',
+		'Email' => 'text',
+		'Telephone number' => 'text',
+		'Number' => 'number',
+		'Quantity' => 'text',
+		'Temperature' => 'number',
+		'Date' => 'datepicker',
+		'Boolean' => 'checkbox',
+		'Code' => 'textarea',
+		'Geographic coordinate' => 'text',
+	];
 
-    /* =====================================================================
-     * HIGH-LEVEL INPUT TYPE LOGIC
-     * ===================================================================== */
+	/* =====================================================================
+	 * HIGH-LEVEL INPUT TYPE LOGIC
+	 * ===================================================================== */
 
-    /**
-     * Resolve the PageForms input type in strict priority order.
-     */
-    public function getInputType(PropertyModel $property): string
-    {
+	/**
+	 * Resolve the PageForms input type in strict priority order.
+	 */
+	public function getInputType( PropertyModel $property ): string {
+		// (1) Multiple values → tokens
+		if ( $property->allowsMultipleValues() ) {
+			return 'tokens';
+		}
 
-        // (1) Multiple values → tokens
-        if ($property->allowsMultipleValues()) {
-            return 'tokens';
-        }
+		// (2) Enum values → dropdown
+		if ( $property->hasAllowedValues() ) {
+			return 'dropdown';
+		}
 
-        // (2) Enum values → dropdown
-        if ($property->hasAllowedValues()) {
-            return 'dropdown';
-        }
+		// (3) Autocomplete source → combobox
+		if ( $property->shouldAutocomplete() ) {
+			return 'combobox';
+		}
 
-        // (3) Autocomplete source → combobox
-        if ($property->shouldAutocomplete()) {
-            return 'combobox';
-        }
+		// (4) Page-type property → combobox
+		if ( $property->isPageType() ) {
+			return 'combobox';
+		}
 
-        // (4) Page-type property → combobox
-        if ($property->isPageType()) {
-            return 'combobox';
-        }
+		// (5) Fallback to datatype mapping
+		$datatype = $property->getDatatype();
+		return self::$datatypeMap[$datatype] ?? 'text';
+	}
 
-        // (5) Fallback to datatype mapping
-        $datatype = $property->getDatatype();
-        return self::$datatypeMap[$datatype] ?? 'text';
-    }
+	/* =====================================================================
+	 * PARAMETER LOGIC
+	 * ===================================================================== */
 
-    /* =====================================================================
-     * PARAMETER LOGIC
-     * ===================================================================== */
+	/**
+	 * Optional parameters for PageForms input types.
+	 */
+	public function getInputParameters( PropertyModel $property ): array {
+		$params = [];
+		$datatype = $property->getDatatype();
 
-    /**
-     * Optional parameters for PageForms input types.
-     */
-    public function getInputParameters(PropertyModel $property): array
-    {
+		/* -------------------------------------------
+		 * MULTIPLE VALUES
+		 * ------------------------------------------- */
+		if ( $property->allowsMultipleValues() ) {
+			$params['multiple'] = '';
+		}
 
-        $params = [];
-        $datatype = $property->getDatatype();
+		/* -------------------------------------------
+		 * ENUMERATED VALUES (dropdown/categorized lists)
+		 * ------------------------------------------- */
+		if ( $property->hasAllowedValues() ) {
+			$clean = array_map( static fn ( $v ) => trim( (string)$v ), $property->getAllowedValues() );
+			$clean = array_filter( $clean, static fn ( $v ) => $v !== '' );
+			if ( !empty( $clean ) ) {
+				$params['values'] = implode( ',', $clean );
+			}
+			return $params;
+		}
 
-        /* -------------------------------------------
-         * MULTIPLE VALUES
-         * ------------------------------------------- */
-        if ($property->allowsMultipleValues()) {
-            $params['multiple'] = '';
-        }
+		/* -------------------------------------------
+		 * AUTOCOMPLETE SOURCES
+		 * ------------------------------------------- */
+		if ( $property->shouldAutocomplete() ) {
 
-        /* -------------------------------------------
-         * ENUMERATED VALUES (dropdown/categorized lists)
-         * ------------------------------------------- */
-        if ($property->hasAllowedValues()) {
-            $clean = array_map(static fn($v) => trim((string) $v), $property->getAllowedValues());
-            $clean = array_filter($clean, static fn($v) => $v !== '');
-            if (!empty($clean)) {
-                $params['values'] = implode(',', $clean);
-            }
-            return $params;
-        }
+			$allowedCategory = $property->getAllowedCategory();
+			if ( $allowedCategory !== null && $allowedCategory !== '' ) {
+				$params['values from category'] = (string)$allowedCategory;
+				$params['autocomplete'] = 'on';
+				return $params;
+			}
 
-        /* -------------------------------------------
-         * AUTOCOMPLETE SOURCES
-         * ------------------------------------------- */
-        if ($property->shouldAutocomplete()) {
+			$allowedNamespace = $property->getAllowedNamespace();
+			if ( $allowedNamespace !== null && $allowedNamespace !== '' ) {
+				$params['values from namespace'] = (string)$allowedNamespace;
+				$params['autocomplete'] = 'on';
+				return $params;
+			}
+		}
 
-            $allowedCategory = $property->getAllowedCategory();
-            if ($allowedCategory !== null && $allowedCategory !== '') {
-                $params['values from category'] = (string) $allowedCategory;
-                $params['autocomplete'] = 'on';
-                return $params;
-            }
+		/* -------------------------------------------
+		 * PAGE TYPE with range restriction
+		 * ------------------------------------------- */
+		if ( $property->isPageType() ) {
+			$rangeCategory = $property->getRangeCategory();
+			if ( $rangeCategory !== null && $rangeCategory !== '' ) {
+				$params['values from category'] = (string)$rangeCategory;
+				$params['autocomplete'] = 'on';
+			}
+		}
 
-            $allowedNamespace = $property->getAllowedNamespace();
-            if ($allowedNamespace !== null && $allowedNamespace !== '') {
-                $params['values from namespace'] = (string) $allowedNamespace;
-                $params['autocomplete'] = 'on';
-                return $params;
-            }
-        }
+		/* -------------------------------------------
+		 * BASIC TEXT FIELDS
+		 * ------------------------------------------- */
+		if ( in_array( $datatype, [ 'Text', 'Email', 'URL', 'Telephone number' ], true ) ) {
+			$params['size'] = '60';
+		}
 
-        /* -------------------------------------------
-         * PAGE TYPE with range restriction
-         * ------------------------------------------- */
-        if ($property->isPageType()) {
-            $rangeCategory = $property->getRangeCategory();
-            if ($rangeCategory !== null && $rangeCategory !== '') {
-                $params['values from category'] = (string) $rangeCategory;
-                $params['autocomplete'] = 'on';
-            }
-        }
+		/* -------------------------------------------
+		 * TEXTAREA
+		 * ------------------------------------------- */
+		if ( $datatype === 'Code' ) {
+			$params['rows'] = '10';
+			$params['cols'] = '80';
+		}
 
-        /* -------------------------------------------
-         * BASIC TEXT FIELDS
-         * ------------------------------------------- */
-        if (in_array($datatype, ['Text', 'Email', 'URL', 'Telephone number'], true)) {
-            $params['size'] = '60';
-        }
+		return $params;
+	}
 
-        /* -------------------------------------------
-         * TEXTAREA
-         * ------------------------------------------- */
-        if ($datatype === 'Code') {
-            $params['rows'] = '10';
-            $params['cols'] = '80';
-        }
+	/* =====================================================================
+	 * FINAL STRING ASSEMBLY
+	 * ===================================================================== */
 
-        return $params;
-    }
+	/**
+	 * Build the PageForms "input type=..." string.
+	 */
+	public function generateInputDefinition(
+		PropertyModel $property,
+		bool $isMandatory = false
+	): string {
+		$inputType = $this->getInputType( $property );
+		$params = $this->getInputParameters( $property );
 
-    /* =====================================================================
-     * FINAL STRING ASSEMBLY
-     * ===================================================================== */
+		if ( $inputType === null || $inputType === '' ) {
+			$inputType = 'text';
+		}
 
-    /**
-     * Build the PageForms "input type=..." string.
-     */
-    public function generateInputDefinition(
-        PropertyModel $property,
-        bool $isMandatory = false
-    ): string {
+		if ( $isMandatory ) {
+			$params['mandatory'] = 'true';
+		}
 
-        $inputType = $this->getInputType($property);
-        $params = $this->getInputParameters($property);
+		$segments = [];
+		foreach ( $params as $key => $value ) {
+			$key = (string)$key;
+			if ( $key === '' ) {
+				continue;
+			}
 
-        if ($inputType === null || $inputType === '') {
-            $inputType = 'text';
-        }
+			// Handle boolean flags (empty string value)
+			if ( $value === '' ) {
+				$segments[] = $key;
+				continue;
+			}
 
-        if ($isMandatory) {
-            $params['mandatory'] = 'true';
-        }
+			$value = (string)$value;
+			if ( $value !== '' ) {
+				$segments[] = $key . '=' . $value;
+			}
+		}
 
-        $segments = [];
-        foreach ($params as $key => $value) {
-            $key = (string) $key;
-            if ($key === '') {
-                continue;
-            }
-
-            // Handle boolean flags (empty string value)
-            if ($value === '') {
-                $segments[] = $key;
-                continue;
-            }
-
-            $value = (string) $value;
-            if ($value !== '') {
-                $segments[] = $key . '=' . $value;
-            }
-        }
-
-        return 'input type=' . $inputType
-            . (empty($segments) ? '' : '|' . implode('|', $segments));
-    }
+		return 'input type=' . $inputType
+			. ( empty( $segments ) ? '' : '|' . implode( '|', $segments ) );
+	}
 }

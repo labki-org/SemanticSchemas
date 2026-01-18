@@ -83,6 +83,7 @@
 	"semanticschemas-generate-processing": "Processing category: $1",
 	"semanticschemas-generate-no-categories": "No matching categories found.",
 	"semanticschemas-generate-error": "Generation failed: $1",
+	"semanticschemas-generate-category-error": "Failed to generate artifacts for category '$1': $2",
 	"semanticschemas-diff-title": "Diff Schema",
 	"semanticschemas-diff-description": "Compare a schema file with the current wiki state",
 	"semanticschemas-diff-file": "Upload or paste schema:",

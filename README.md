@@ -60,25 +60,24 @@ The visualization shows:
 
 📖 **[Complete Hierarchy Documentation](docs/user-guide/hierarchy-visualization.md)**
 
-### Maintenance Scripts
+### Schema Operations
 
-#### Export Schema
-```bash
-php extensions/SemanticSchemas/maintenance/exportOntology.php --format=json --output=schema.json
-```
+Export, import, and validation operations are available through the **Special:SemanticSchemas** page in the wiki interface:
 
-#### Import Schema
-```bash
-php extensions/SemanticSchemas/maintenance/importOntology.php --input=schema.json
-```
+- **Export**: Navigate to Special:SemanticSchemas → Export tab
+- **Import**: Navigate to Special:SemanticSchemas → Import tab
+- **Validate**: Navigate to Special:SemanticSchemas → Validate tab
+- **Generate**: Navigate to Special:SemanticSchemas → Generate tab
 
-#### Validate
-```bash
-php extensions/SemanticSchemas/maintenance/validateOntology.php
-```
+#### Maintenance Scripts
 
-#### Regenerate Artifacts
+For command-line operations:
+
 ```bash
+# Regenerate templates and forms for all categories
+php extensions/SemanticSchemas/maintenance/regenerateArtifacts.php
+
+# Regenerate for a specific category
 php extensions/SemanticSchemas/maintenance/regenerateArtifacts.php --category=Person
 ```
 

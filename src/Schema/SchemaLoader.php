@@ -20,244 +20,228 @@ use Symfony\Component\Yaml\Yaml;
  *   ✓ Gzip input/output support
  *   ✓ Canonical empty-schema generator
  */
-class SchemaLoader
-{
+class SchemaLoader {
 
-    private const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+	private const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-    /* -------------------------------------------------------------------------
-     * LOADING FROM STRINGS
-     * ---------------------------------------------------------------------- */
+	/* -------------------------------------------------------------------------
+	 * LOADING FROM STRINGS
+	 * ---------------------------------------------------------------------- */
 
-    public function loadFromJson(string $json): array
-    {
-        if (trim($json) === '') {
-            throw new RuntimeException('Empty JSON content');
-        }
+	public function loadFromJson( string $json ): array {
+		if ( trim( $json ) === '' ) {
+			throw new RuntimeException( 'Empty JSON content' );
+		}
 
-        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+		$data = json_decode( $json, true, 512, JSON_THROW_ON_ERROR );
 
-        if (!is_array($data)) {
-            throw new RuntimeException('JSON decoded to non-array structure');
-        }
+		if ( !is_array( $data ) ) {
+			throw new RuntimeException( 'JSON decoded to non-array structure' );
+		}
 
-        return $data;
-    }
+		return $data;
+	}
 
-    public function loadFromYaml(string $yaml): array
-    {
-        if (trim($yaml) === '') {
-            throw new RuntimeException('Empty YAML content');
-        }
+	public function loadFromYaml( string $yaml ): array {
+		if ( trim( $yaml ) === '' ) {
+			throw new RuntimeException( 'Empty YAML content' );
+		}
 
-        try {
-            $data = Yaml::parse($yaml);
-        } catch (\Throwable $e) {
-            throw new RuntimeException('Invalid YAML: ' . $e->getMessage());
-        }
+		try {
+			$data = Yaml::parse( $yaml );
+		} catch ( \Throwable $e ) {
+			throw new RuntimeException( 'Invalid YAML: ' . $e->getMessage() );
+		}
 
-        if (!is_array($data)) {
-            throw new RuntimeException('YAML parsed to non-array structure');
-        }
+		if ( !is_array( $data ) ) {
+			throw new RuntimeException( 'YAML parsed to non-array structure' );
+		}
 
-        return $data;
-    }
+		return $data;
+	}
 
-    /* -------------------------------------------------------------------------
-     * SAVING TO STRINGS
-     * ---------------------------------------------------------------------- */
+	/* -------------------------------------------------------------------------
+	 * SAVING TO STRINGS
+	 * ---------------------------------------------------------------------- */
 
-    public function saveToJson(array $schema): string
-    {
-        return json_encode(
-            $schema,
-            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE
-        ) ?: '{}';
-    }
+	public function saveToJson( array $schema ): string {
+		return json_encode(
+			$schema,
+			\JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE
+		) ?: '{}';
+	}
 
-    public function saveToYaml(array $schema): string
-    {
-        return Yaml::dump($schema, 4, 2);
-    }
+	public function saveToYaml( array $schema ): string {
+		return Yaml::dump( $schema, 4, 2 );
+	}
 
-    /* -------------------------------------------------------------------------
-     * AUTO-DETECT FORMAT FROM STRING CONTENT
-     * ---------------------------------------------------------------------- */
+	/* -------------------------------------------------------------------------
+	 * AUTO-DETECT FORMAT FROM STRING CONTENT
+	 * ---------------------------------------------------------------------- */
 
-    public function detectFormat(string $content): string
-    {
-        $trim = ltrim($content);
+	public function detectFormat( string $content ): string {
+		$trim = ltrim( $content );
 
-        if ($trim === '') {
-            return 'yaml'; // empty JSON is invalid
-        }
+		if ( $trim === '' ) {
+			return 'yaml'; // empty JSON is invalid
+		}
 
-        $first = $trim[0];
+		$first = $trim[0];
 
-        // JSON begins with { or [
-        return ($first === '{' || $first === '[') ? 'json' : 'yaml';
-    }
+		// JSON begins with { or [
+		return ( $first === '{' || $first === '[' ) ? 'json' : 'yaml';
+	}
 
-    public function loadFromContent(string $content): array
-    {
-        if (trim($content) === '') {
-            throw new RuntimeException('Schema content is empty');
-        }
+	public function loadFromContent( string $content ): array {
+		if ( trim( $content ) === '' ) {
+			throw new RuntimeException( 'Schema content is empty' );
+		}
 
-        $format = $this->detectFormat($content);
+		$format = $this->detectFormat( $content );
 
-        if ($format === 'json') {
-            try {
-                return $this->loadFromJson($content);
-            } catch (RuntimeException $e) {
-                // Allow fallback to YAML in ambiguous cases
-                return $this->loadFromYaml($content);
-            }
-        }
+		if ( $format === 'json' ) {
+			try {
+				return $this->loadFromJson( $content );
+			} catch ( RuntimeException $e ) {
+				// Allow fallback to YAML in ambiguous cases
+				return $this->loadFromYaml( $content );
+			}
+		}
 
-        return $this->loadFromYaml($content);
-    }
+		return $this->loadFromYaml( $content );
+	}
 
-    /* -------------------------------------------------------------------------
-     * LOADING FROM FILES
-     * ---------------------------------------------------------------------- */
+	/* -------------------------------------------------------------------------
+	 * LOADING FROM FILES
+	 * ---------------------------------------------------------------------- */
 
-    public function loadFromFile(string $filePath): array
-    {
-        if (!is_file($filePath)) {
-            throw new RuntimeException("File not found: $filePath");
-        }
+	public function loadFromFile( string $filePath ): array {
+		if ( !is_file( $filePath ) ) {
+			throw new RuntimeException( "File not found: $filePath" );
+		}
 
-        $size = filesize($filePath);
-        if ($size === false) {
-            throw new RuntimeException("Unable to read file size: $filePath");
-        }
+		$size = filesize( $filePath );
+		if ( $size === false ) {
+			throw new RuntimeException( "Unable to read file size: $filePath" );
+		}
 
-        $limit = defined('MW_PHPUNIT_TEST')
-            ? self::MAX_FILE_SIZE * 10
-            : self::MAX_FILE_SIZE;
+		$limit = defined( 'MW_PHPUNIT_TEST' )
+			? self::MAX_FILE_SIZE * 10
+			: self::MAX_FILE_SIZE;
 
-        if ($size > $limit) {
-            throw new RuntimeException(
-                sprintf(
-                    'Schema file is too large: %.1fMB (max allowed %.1fMB)',
-                    $size / 1048576,
-                    $limit / 1048576
-                )
-            );
-        }
+		if ( $size > $limit ) {
+			throw new RuntimeException(
+				sprintf(
+					'Schema file is too large: %.1fMB (max allowed %.1fMB)',
+					$size / 1048576,
+					$limit / 1048576
+				)
+			);
+		}
 
-        $raw = file_get_contents($filePath);
-        if ($raw === false) {
-            throw new RuntimeException("Failed to read file: $filePath");
-        }
+		$raw = file_get_contents( $filePath );
+		if ( $raw === false ) {
+			throw new RuntimeException( "Failed to read file: $filePath" );
+		}
 
-        if ($this->isGzipFile($filePath)) {
-            $raw = gzdecode($raw);
-            if ($raw === false) {
-                throw new RuntimeException("Failed to decompress gzip file: $filePath");
-            }
-        }
+		if ( $this->isGzipFile( $filePath ) ) {
+			$raw = gzdecode( $raw );
+			if ( $raw === false ) {
+				throw new RuntimeException( "Failed to decompress gzip file: $filePath" );
+			}
+		}
 
-        return $this->loadFromContent($raw);
-    }
+		return $this->loadFromContent( $raw );
+	}
 
-    /* -------------------------------------------------------------------------
-     * SAVING TO FILES
-     * ---------------------------------------------------------------------- */
+	/* -------------------------------------------------------------------------
+	 * SAVING TO FILES
+	 * ---------------------------------------------------------------------- */
 
-    public function saveToFile(array $schema, string $filePath): bool
-    {
+	public function saveToFile( array $schema, string $filePath ): bool {
+		$ext = strtolower( pathinfo( $filePath, PATHINFO_EXTENSION ) );
+		if ( $ext === 'json' ) {
+			$content = $this->saveToJson( $schema );
+		} elseif ( $ext === 'yaml' || $ext === 'yml' ) {
+			$content = $this->saveToYaml( $schema );
+		} else {
+			// default to JSON
+			$content = $this->saveToJson( $schema );
+		}
 
-        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-        if ($ext === 'json') {
-            $content = $this->saveToJson($schema);
-        } elseif ($ext === 'yaml' || $ext === 'yml') {
-            $content = $this->saveToYaml($schema);
-        } else {
-            // default to JSON
-            $content = $this->saveToJson($schema);
-        }
+		if ( file_put_contents( $filePath, $content ) === false ) {
+			throw new RuntimeException( "Failed to write schema to: $filePath" );
+		}
 
-        if (file_put_contents($filePath, $content) === false) {
-            throw new RuntimeException("Failed to write schema to: $filePath");
-        }
+		return true;
+	}
 
-        return true;
-    }
+	/**
+	 * Save schema to file with optional gzip compression.
+	 */
+	public function saveToFileCompressed( array $schema, string $filePath, bool $gzip = true ): bool {
+		$ext = strtolower( pathinfo( $filePath, PATHINFO_EXTENSION ) );
+		$content = $this->saveToJson( $schema ); // default format
 
-    /**
-     * Save schema to file with optional gzip compression.
-     */
-    public function saveToFileCompressed(array $schema, string $filePath, bool $gzip = true): bool
-    {
+		if ( in_array( $ext, [ 'yaml', 'yml' ], true ) ) {
+			$content = $this->saveToYaml( $schema );
+		}
 
-        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-        $content = $this->saveToJson($schema); // default format
+		if ( $gzip ) {
+			$gz = gzencode( $content, 9 );
+			if ( $gz === false ) {
+				throw new RuntimeException( "Failed to gzip-compress schema" );
+			}
+			$content = $gz;
+		}
 
-        if (in_array($ext, ['yaml', 'yml'], true)) {
-            $content = $this->saveToYaml($schema);
-        }
+		if ( file_put_contents( $filePath, $content ) === false ) {
+			throw new RuntimeException( "Failed to write file: $filePath" );
+		}
 
-        if ($gzip) {
-            $gz = gzencode($content, 9);
-            if ($gz === false) {
-                throw new RuntimeException("Failed to gzip-compress schema");
-            }
-            $content = $gz;
-        }
+		return true;
+	}
 
-        if (file_put_contents($filePath, $content) === false) {
-            throw new RuntimeException("Failed to write file: $filePath");
-        }
+	/* -------------------------------------------------------------------------
+	 * STRUCTURE HELPERS
+	 * ---------------------------------------------------------------------- */
 
-        return true;
-    }
+	public function createEmptySchema(): array {
+		return [
+			'schemaVersion' => '1.0',
+			'categories' => [],
+			'properties' => [],
+			'subobjects' => [],
+		];
+	}
 
-    /* -------------------------------------------------------------------------
-     * STRUCTURE HELPERS
-     * ---------------------------------------------------------------------- */
+	public function hasValidStructure( array $schema ): bool {
+		return isset( $schema['schemaVersion'] )
+			&& is_array( $schema['categories'] ?? null )
+			&& is_array( $schema['properties'] ?? null )
+			&& is_array( $schema['subobjects'] ?? null );
+	}
 
-    public function createEmptySchema(): array
-    {
-        return [
-            'schemaVersion' => '1.0',
-            'categories' => [],
-            'properties' => [],
-            'subobjects' => [],
-        ];
-    }
+	/* -------------------------------------------------------------------------
+	 * INTERNAL HELPERS
+	 * ---------------------------------------------------------------------- */
 
-    public function hasValidStructure(array $schema): bool
-    {
-        return isset($schema['schemaVersion'])
-            && is_array($schema['categories'] ?? null)
-            && is_array($schema['properties'] ?? null)
-            && is_array($schema['subobjects'] ?? null);
-    }
+	/**
+	 * Test whether the file begins with gzip magic bytes.
+	 */
+	private function isGzipFile( string $filePath ): bool {
+		$fh = fopen( $filePath, 'rb' );
+		if ( $fh === false ) {
+			return false;
+		}
 
-    /* -------------------------------------------------------------------------
-     * INTERNAL HELPERS
-     * ---------------------------------------------------------------------- */
+		$bytes = fread( $fh, 2 );
+		fclose( $fh );
 
-    /**
-     * Test whether the file begins with gzip magic bytes.
-     */
-    private function isGzipFile(string $filePath): bool
-    {
+		if ( $bytes === false || strlen( $bytes ) < 2 ) {
+			return false;
+		}
 
-        $fh = fopen($filePath, 'rb');
-        if ($fh === false) {
-            return false;
-        }
-
-        $bytes = fread($fh, 2);
-        fclose($fh);
-
-        if ($bytes === false || strlen($bytes) < 2) {
-            return false;
-        }
-
-        return ord($bytes[0]) === 0x1f && ord($bytes[1]) === 0x8b;
-    }
+		return ord( $bytes[0] ) === 0x1f && ord( $bytes[1] ) === 0x8b;
+	}
 }

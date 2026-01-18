@@ -29,9 +29,11 @@ namespace SMW {
 					public function getNamespace() {
 						return 0;
 					}
+
 					public function getText() {
 						return '';
 					}
+
 					public function getPrefixedText() {
 						return '';
 					}
@@ -115,4 +117,3 @@ namespace {
 		define( 'SMW_NS_PROPERTY', 102 );
 	}
 }
-

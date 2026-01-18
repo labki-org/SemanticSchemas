@@ -16,210 +16,201 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
  * This "Generation-Time Resolution" replaces the older dynamic runtime system,
  * ensuring reliability, cacheability, and compatibility with the standard MediaWiki parser.
  */
-class DisplayStubGenerator
-{
+class DisplayStubGenerator {
 
-    private PageCreator $pageCreator;
-    private WikiPropertyStore $propertyStore;
+	private PageCreator $pageCreator;
+	private WikiPropertyStore $propertyStore;
 
-    public function __construct(
-        ?PageCreator $pageCreator = null,
-        ?WikiPropertyStore $propertyStore = null
-    ) {
-        $this->pageCreator = $pageCreator ?? new PageCreator();
-        $this->propertyStore = $propertyStore ?? new WikiPropertyStore($this->pageCreator);
-    }
+	public function __construct(
+		?PageCreator $pageCreator = null,
+		?WikiPropertyStore $propertyStore = null
+	) {
+		$this->pageCreator = $pageCreator ?? new PageCreator();
+		$this->propertyStore = $propertyStore ?? new WikiPropertyStore( $this->pageCreator );
+	}
 
-    /**
-     * Generate and save the display template stub.
-     *
-     * @param CategoryModel $category
-     * @return array Result array with keys: 'created' (bool), 'updated' (bool), 'message' (string)
-     */
-    public function generateOrUpdateDisplayStub(CategoryModel $category): array
-    {
-        $titleText = $this->generateDisplayContent($category);
-        if ($titleText === '') {
-            return [
-                'created' => false,
-                'updated' => false,
-                'message' => 'Failed to generate content or title.'
-            ];
-        }
+	/**
+	 * Generate and save the display template stub.
+	 *
+	 * @param CategoryModel $category
+	 * @return array Result array with keys: 'created' (bool), 'updated' (bool), 'message' (string)
+	 */
+	public function generateOrUpdateDisplayStub( CategoryModel $category ): array {
+		$titleText = $this->generateDisplayContent( $category );
+		if ( $titleText === '' ) {
+			return [
+				'created' => false,
+				'updated' => false,
+				'message' => 'Failed to generate content or title.'
+			];
+		}
 
-        return [
-            'created' => true,
-            'updated' => true,
-            'message' => "Display stub updated: $titleText"
-        ];
-    }
+		return [
+			'created' => true,
+			'updated' => true,
+			'message' => "Display stub updated: $titleText"
+		];
+	}
 
-    /**
-     * Internal generation logic.
-     *
-     * @param CategoryModel $category
-     * @return string The prefixed title string of the generated page, or empty string on failure.
-     */
-    private function generateDisplayContent(CategoryModel $category): string
-    {
-        $categoryName = $category->getName();
-        // Use NS_TEMPLATE constant
-        $title = $this->pageCreator->makeTitle("$categoryName/display", NS_TEMPLATE);
-        if (!$title) {
-            return '';
-        }
+	/**
+	 * Internal generation logic.
+	 *
+	 * @param CategoryModel $category
+	 * @return string The prefixed title string of the generated page, or empty string on failure.
+	 */
+	private function generateDisplayContent( CategoryModel $category ): string {
+		$categoryName = $category->getName();
+		// Use NS_TEMPLATE constant
+		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
+		if ( !$title ) {
+			return '';
+		}
 
-        $content = $this->buildWikitext($category);
+		$content = $this->buildWikitext( $category );
 
-        $this->pageCreator->createOrUpdatePage(
-            $title,
-            $content,
-            "SemanticSchemas: Update static display template for $categoryName"
-        );
+		$this->pageCreator->createOrUpdatePage(
+			$title,
+			$content,
+			"SemanticSchemas: Update static display template for $categoryName"
+		);
 
-        return $title->getPrefixedText();
-    }
+		return $title->getPrefixedText();
+	}
 
-    /**
-     * Construct the wikitext content for the display template.
-     *
-     * @param CategoryModel $category
-     * @return string
-     */
-    private function buildWikitext(CategoryModel $category): string
-    {
-        $format = $category->getDisplayFormat();
+	/**
+	 * Construct the wikitext content for the display template.
+	 *
+	 * @param CategoryModel $category
+	 * @return string
+	 */
+	private function buildWikitext( CategoryModel $category ): string {
+		$format = $category->getDisplayFormat();
 
-        if ($format === 'sidebox') {
-            wfDebugLog('SemanticSchemas', 'Generating sidebox display for ' . $category->getName());
-            return $this->generateSideboxWikitext($category);
-        }
+		if ( $format === 'sidebox' ) {
+			wfDebugLog( 'SemanticSchemas', 'Generating sidebox display for ' . $category->getName() );
+			return $this->generateSideboxWikitext( $category );
+		}
 
-        if ($format === 'sections') {
-            return $this->generateSectionsWikitext($category);
-        }
+		if ( $format === 'sections' ) {
+			return $this->generateSectionsWikitext( $category );
+		}
 
-        // Default to table
-        return $this->generateTableWikitext($category);
-    }
+		// Default to table
+		return $this->generateTableWikitext( $category );
+	}
 
-    private function generateTableWikitext(CategoryModel $category): string
-    {
-        $content = "<includeonly>\n";
-        $content .= "{| class=\"wikitable source-semanticschemas\"\n";
-        $content .= "! Property !! Value\n";
+	private function generateTableWikitext( CategoryModel $category ): string {
+		$content = "<includeonly>\n";
+		$content .= "{| class=\"wikitable source-semanticschemas\"\n";
+		$content .= "! Property !! Value\n";
 
-        $content .= $this->generatePropertyRows($category);
+		$content .= $this->generatePropertyRows( $category );
 
-        $content .= "|}\n";
-        $content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
+		$content .= "|}\n";
+		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
-        return $content;
-    }
+		return $content;
+	}
 
-    private function generateSideboxWikitext(CategoryModel $category): string
-    {
-        // Infobox style: floated right, distinct styling
-        $content = "<includeonly>\n";
-        $content .= "{| class=\"wikitable source-semanticschemas-sidebox\" style=\"float: right; clear: right; margin: 0 0 1em 1em; width: 300px; background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);\"\n";
-        $content .= "|+ style=\"font-size: 120%; font-weight: bold; background-color: #eaecf0;\" | " . $category->getLabel() . "\n";
+	private function generateSideboxWikitext( CategoryModel $category ): string {
+		// Infobox style: floated right, distinct styling
+		$content = "<includeonly>\n";
+		$content .= "{| class=\"wikitable source-semanticschemas-sidebox\" style=\"float: right; clear: right; margin: 0 0 1em 1em; width: 300px; background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);\"\n";
+		$content .= "|+ style=\"font-size: 120%; font-weight: bold; background-color: #eaecf0;\" | " . $category->getLabel() . "\n";
 
-        $content .= $this->generatePropertyRows($category);
+		$content .= $this->generatePropertyRows( $category );
 
-        $content .= "|}\n";
-        $content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
+		$content .= "|}\n";
+		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
-        return $content;
-    }
+		return $content;
+	}
 
-    private function generateSectionsWikitext(CategoryModel $category): string
-    {
-        $content = "<includeonly>\n";
-        $content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
+	private function generateSectionsWikitext( CategoryModel $category ): string {
+		$content = "<includeonly>\n";
+		$content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
 
-        $sections = $category->getDisplaySections();
+		$sections = $category->getDisplaySections();
 
-        // Convert sections to map to track used properties
-        $usedProperties = [];
+		// Convert sections to map to track used properties
+		$usedProperties = [];
 
-        foreach ($sections as $section) {
-            $name = $section['name'];
-            $props = $section['properties'];
+		foreach ( $sections as $section ) {
+			$name = $section['name'];
+			$props = $section['properties'];
 
-            // Section Header
-            $content .= "|-\n";
-            $content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | " . $name . "\n";
+			// Section Header
+			$content .= "|-\n";
+			$content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | " . $name . "\n";
 
-            // Section Properties
-            $content .= $this->generatePropertyRows($category, $props);
+			// Section Properties
+			$content .= $this->generatePropertyRows( $category, $props );
 
-            foreach ($props as $p) {
-                $usedProperties[$p] = true;
-            }
-        }
+			foreach ( $props as $p ) {
+				$usedProperties[$p] = true;
+			}
+		}
 
-        // Catch-all for properties NOT in any section
-        $allProps = $category->getAllProperties();
-        $remaining = [];
-        foreach ($allProps as $p) {
-            if (!isset($usedProperties[$p])) {
-                $remaining[] = $p;
-            }
-        }
+		// Catch-all for properties NOT in any section
+		$allProps = $category->getAllProperties();
+		$remaining = [];
+		foreach ( $allProps as $p ) {
+			if ( !isset( $usedProperties[$p] ) ) {
+				$remaining[] = $p;
+			}
+		}
 
-        if (!empty($remaining)) {
-            $content .= "|-\n";
-            $content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | Other Properties\n";
-            $content .= $this->generatePropertyRows($category, $remaining);
-        }
+		if ( !empty( $remaining ) ) {
+			$content .= "|-\n";
+			$content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | Other Properties\n";
+			$content .= $this->generatePropertyRows( $category, $remaining );
+		}
 
-        $content .= "|}\n";
-        $content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
+		$content .= "|}\n";
+		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
-        return $content;
-    }
+		return $content;
+	}
 
-    /**
-     * Generate table rows for a list of properties.
-     * Default to all category properties if $properties is null.
-     */
-    private function generatePropertyRows(CategoryModel $category, ?array $properties = null): string
-    {
-        $out = "";
-        $targetProperties = $properties ?? $category->getAllProperties();
+	/**
+	 * Generate table rows for a list of properties.
+	 * Default to all category properties if $properties is null.
+	 */
+	private function generatePropertyRows( CategoryModel $category, ?array $properties = null ): string {
+		$out = "";
+		$targetProperties = $properties ?? $category->getAllProperties();
 
-        foreach ($targetProperties as $propName) {
-            $property = $this->propertyStore->readProperty($propName);
-            if ($property) {
-                $label = $property->getLabel();
-                $paramName = $property->getSnakeCaseName();
+		foreach ( $targetProperties as $propName ) {
+			$property = $this->propertyStore->readProperty( $propName );
+			if ( $property ) {
+				$label = $property->getLabel();
+				$paramName = $property->getSnakeCaseName();
 
-                // Resolve the specific render template (e.g. Template:Property/Email)
-                // Defaults to Template:Property/Default if not specified/found.
-                $renderTemplate = $property->getRenderTemplate();
+				// Resolve the specific render template (e.g. Template:Property/Email)
+				// Defaults to Template:Property/Default if not specified/found.
+				$renderTemplate = $property->getRenderTemplate();
 
-                // Construct the template call:
-                // {{ Template:Property/Email | value={{{email|}}} }}
-                $valueCall = "{{" . $renderTemplate . " | value={{{" . $paramName . "|}}} }}";
+				// Construct the template call:
+				// {{ Template:Property/Email | value={{{email|}}} }}
+				$valueCall = "{{" . $renderTemplate . " | value={{{" . $paramName . "|}}} }}";
 
-                $out .= "|-\n";
-                // Standard row format works for both table and simplified infobox
-                $out .= "! " . $label . "\n";
-                $out .= "| " . $valueCall . "\n";
-            }
-        }
-        return $out;
-    }
+				$out .= "|-\n";
+				// Standard row format works for both table and simplified infobox
+				$out .= "! " . $label . "\n";
+				$out .= "| " . $valueCall . "\n";
+			}
+		}
+		return $out;
+	}
 
-    /**
-     * Check if the display stub already exists.
-     *
-     * @param string $categoryName
-     * @return bool
-     */
-    public function displayStubExists(string $categoryName): bool
-    {
-        $title = $this->pageCreator->makeTitle($categoryName . "/display", NS_TEMPLATE);
-        return $title && $this->pageCreator->pageExists($title);
-    }
+	/**
+	 * Check if the display stub already exists.
+	 *
+	 * @param string $categoryName
+	 * @return bool
+	 */
+	public function displayStubExists( string $categoryName ): bool {
+		$title = $this->pageCreator->makeTitle( $categoryName . "/display", NS_TEMPLATE );
+		return $title && $this->pageCreator->pageExists( $title );
+	}
 }

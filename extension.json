@@ -2,7 +2,7 @@
 	"name": "SemanticSchemas",
 	"version": "0.1.0",
 	"author": [
-		"Your Name"
+		"Daniel Aharoni"
 	],
 	"url": "https://www.mediawiki.org/wiki/Extension:SemanticSchemas",
 	"descriptionmsg": "semanticschemas-desc",
@@ -143,6 +143,16 @@
 	},
 	"MaintenanceScripts": {
 		"SemanticSchemas:InstallConfig": "maintenance/installConfig.php"
+	},
+	"config": {
+		"SemanticSchemasRequireApiAuth": {
+			"value": false,
+			"description": "If true, require 'read' permission to access the hierarchy API"
+		},
+		"SemanticSchemasRateLimitPerHour": {
+			"value": 20,
+			"description": "Maximum number of generate operations allowed per hour per user"
+		}
 	},
 	"manifest_version": 2
 }

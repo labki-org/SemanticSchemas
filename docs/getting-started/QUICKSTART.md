@@ -81,16 +81,10 @@ This creates:
 
 ### Step 4: Export Your Schema
 
-**Via Special Page:**
 1. Go to `Special:SemanticSchemas/export`
 2. Select format (JSON or YAML)
 3. Click "Generate Schema"
 4. Download file
-
-**Via CLI:**
-```bash
-php extensions/SemanticSchemas/maintenance/exportOntology.php --format=json --output=schema.json
-```
 
 ## Working with Multiple Inheritance
 
@@ -113,10 +107,12 @@ GraduateStudent will inherit all properties from both Person and LabMember, plus
 
 ## Schema Import/Export Workflow
 
+All import/export operations are performed through the Special:SemanticSchemas page:
+
 1. **Export current state:**
-   ```bash
-   php extensions/SemanticSchemas/maintenance/exportOntology.php --format=json --output=production-schema.json
-   ```
+   - Go to `Special:SemanticSchemas/export`
+   - Select JSON or YAML format
+   - Click "Generate Schema" and download the file
 
 2. **Edit schema file:**
    ```json
@@ -141,19 +137,18 @@ GraduateStudent will inherit all properties from both Person and LabMember, plus
    ```
 
 3. **Validate before import:**
-   ```bash
-   php extensions/SemanticSchemas/maintenance/validateOntology.php --schema=production-schema.json
-   ```
+   - Go to `Special:SemanticSchemas/validate`
+   - Click "Run Validation" to check for issues
 
 4. **Dry run to preview:**
-   ```bash
-   php extensions/SemanticSchemas/maintenance/importOntology.php --input=production-schema.json --dry-run
-   ```
+   - Go to `Special:SemanticSchemas/import`
+   - Paste or upload your schema
+   - Check "Dry run (preview only)"
+   - Click "Import Schema" to see what would change
 
 5. **Import for real:**
-   ```bash
-   php extensions/SemanticSchemas/maintenance/importOntology.php --input=production-schema.json
-   ```
+   - Uncheck the dry run option
+   - Click "Import Schema" to apply changes
 
 ## Common Tasks
 
@@ -177,11 +172,7 @@ php extensions/SemanticSchemas/maintenance/regenerateArtifacts.php --category=Pe
 
 ### Validate Your Ontology
 
-```bash
-php extensions/SemanticSchemas/maintenance/validateOntology.php --show-warnings
-```
-
-Check for:
+Go to `Special:SemanticSchemas/validate` and click "Run Validation" to check for:
 - Circular dependencies
 - Missing properties
 - Invalid references

@@ -16,144 +16,148 @@ use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
  * Supports:
  *   - Real category lookup
  *   - Virtual lookup (via ?parents[]=Parent1&parents[]=Parent2)
+ *
+ * Security:
+ *   - By default, this is a read-only public API (no authentication required)
+ *   - Set $wgSemanticSchemasRequireApiAuth = true in LocalSettings.php to
+ *     require the 'read' permission for API access
  */
-class ApiSemanticSchemasHierarchy extends ApiBase
-{
+class ApiSemanticSchemasHierarchy extends ApiBase {
 
-    /**
-     * Execute the API request.
-     */
-    public function execute()
-    {
-        $params = $this->extractRequestParams();
-        $categoryName = $this->stripPrefix($params['category']);
-        $parentList = $params['parents'] ?? [];
+	/**
+	 * Execute the API request.
+	 */
+	public function execute() {
+		// Optional permission check - enable via $wgSemanticSchemasRequireApiAuth
+		$config = $this->getConfig();
+		if ( $config->get( 'SemanticSchemasRequireApiAuth' ) ) {
+			$this->checkUserRightsAny( 'read' );
+		}
 
-        $service = new CategoryHierarchyService();
+		$params = $this->extractRequestParams();
+		$categoryName = $this->stripPrefix( $params['category'] );
+		$parentList = $params['parents'] ?? [];
 
-        if (!empty($parentList)) {
-            // Virtual mode: form preview request
-            $cleanParents = $this->sanitizeParentList($parentList);
-            $data = $service->getVirtualHierarchyData($categoryName, $cleanParents);
-        } else {
-            // Normal mode
-            $data = $service->getHierarchyData($categoryName);
-        }
+		$service = new CategoryHierarchyService();
 
-        // Convert required=true/false → integers (MediaWiki drops boolean false keys)
-        $this->normalizeRequiredFlags($data);
+		if ( !empty( $parentList ) ) {
+			// Virtual mode: form preview request
+			$cleanParents = $this->sanitizeParentList( $parentList );
+			$data = $service->getVirtualHierarchyData( $categoryName, $cleanParents );
+		} else {
+			// Normal mode
+			$data = $service->getHierarchyData( $categoryName );
+		}
 
-        // Add result
-        $this->getResult()->addValue(
-            null,
-            $this->getModuleName(),
-            $data
-        );
-    }
+		// Convert required=true/false → integers (MediaWiki drops boolean false keys)
+		$this->normalizeRequiredFlags( $data );
 
-    /* =====================================================================
-     * INPUT SANITIZATION
-     * ===================================================================== */
+		// Add result
+		$this->getResult()->addValue(
+			null,
+			$this->getModuleName(),
+			$data
+		);
+	}
 
-    /**
-     * Strip "Category:" prefix if present.
-     */
-    private function stripPrefix(string $name): string
-    {
-        return preg_replace('/^Category:/i', '', trim($name));
-    }
+	/* =====================================================================
+	 * INPUT SANITIZATION
+	 * ===================================================================== */
 
-    /**
-     * Sanitize parent categories array.
-     *
-     * @param array $parents
-     * @return array Clean, normalized parent names
-     */
-    private function sanitizeParentList(array $parents): array
-    {
-        $clean = [];
+	/**
+	 * Strip "Category:" prefix if present.
+	 */
+	private function stripPrefix( string $name ): string {
+		return preg_replace( '/^Category:/i', '', trim( $name ) );
+	}
 
-        foreach ($parents as $parent) {
-            if (!is_string($parent)) {
-                continue;
-            }
-            $p = $this->stripPrefix($parent);
-            if ($p !== '') {
-                $clean[] = $p;
-            }
-        }
+	/**
+	 * Sanitize parent categories array.
+	 *
+	 * @param array $parents
+	 * @return array Clean, normalized parent names
+	 */
+	private function sanitizeParentList( array $parents ): array {
+		$clean = [];
 
-        return $clean;
-    }
+		foreach ( $parents as $parent ) {
+			if ( !is_string( $parent ) ) {
+				continue;
+			}
+			$p = $this->stripPrefix( $parent );
+			if ( $p !== '' ) {
+				$clean[] = $p;
+			}
+		}
 
-    /* =====================================================================
-     * REQUIRED FLAG NORMALIZATION
-     * ===================================================================== */
+		return $clean;
+	}
 
-    /**
-     * Convert required flags from bool → int (1/0) for JSON reliability.
-     */
-    private function normalizeRequiredFlags(array &$data): void
-    {
+	/* =====================================================================
+	 * REQUIRED FLAG NORMALIZATION
+	 * ===================================================================== */
 
-        $convertList = function (array &$items, string $key) {
-            foreach ($items as &$entry) {
-                if (isset($entry[$key])) {
-                    $entry[$key] = $entry[$key] ? 1 : 0;
-                }
-            }
-            unset($entry);
-        };
+	/**
+	 * Convert required flags from bool → int (1/0) for JSON reliability.
+	 */
+	private function normalizeRequiredFlags( array &$data ): void {
+		$convertList = static function ( array &$items, string $key ) {
+			foreach ( $items as &$entry ) {
+				if ( isset( $entry[$key] ) ) {
+					$entry[$key] = $entry[$key] ? 1 : 0;
+				}
+			}
+			unset( $entry );
+		};
 
-        if (isset($data['inheritedProperties'])) {
-            $convertList($data['inheritedProperties'], 'required');
-        }
+		if ( isset( $data['inheritedProperties'] ) ) {
+			$convertList( $data['inheritedProperties'], 'required' );
+		}
 
-        if (isset($data['inheritedSubobjects'])) {
-            $convertList($data['inheritedSubobjects'], 'required');
-        }
-    }
+		if ( isset( $data['inheritedSubobjects'] ) ) {
+			$convertList( $data['inheritedSubobjects'], 'required' );
+		}
+	}
 
-    /* =====================================================================
-     * API METADATA
-     * ===================================================================== */
+	/* =====================================================================
+	 * API METADATA
+	 * ===================================================================== */
 
-    public function getAllowedParams()
-    {
-        return [
-            'category' => [
-                self::PARAM_TYPE => 'string',
-                self::PARAM_REQUIRED => true,
-                self::PARAM_HELP_MSG => 'semanticschemas-api-param-category',
-            ],
-            'parents' => [
-                self::PARAM_TYPE => 'string',
-                self::PARAM_ISMULTI => true,
-                self::PARAM_REQUIRED => false,
-                self::PARAM_HELP_MSG => 'semanticschemas-api-param-parents',
-            ],
-        ];
-    }
+	public function getAllowedParams() {
+		return [
+			'category' => [
+				self::PARAM_TYPE => 'string',
+				self::PARAM_REQUIRED => true,
+				self::PARAM_HELP_MSG => 'semanticschemas-api-param-category',
+			],
+			'parents' => [
+				self::PARAM_TYPE => 'string',
+				self::PARAM_ISMULTI => true,
+				self::PARAM_REQUIRED => false,
+				self::PARAM_HELP_MSG => 'semanticschemas-api-param-parents',
+			],
+		];
+	}
 
-    protected function getExamplesMessages()
-    {
-        return [
-            'action=semanticschemas-hierarchy&category=PhDStudent'
-            => 'apihelp-semanticschemas-hierarchy-example-1',
-            'action=semanticschemas-hierarchy&category=Category:GraduateStudent'
-            => 'apihelp-semanticschemas-hierarchy-example-2',
-            'action=semanticschemas-hierarchy&category=NewCategory&parents=Faculty|Person'
-            => 'apihelp-semanticschemas-hierarchy-example-3',
-        ];
-    }
+	protected function getExamplesMessages() {
+		return [
+			'action=semanticschemas-hierarchy&category=PhDStudent'
+			=> 'apihelp-semanticschemas-hierarchy-example-1',
+			'action=semanticschemas-hierarchy&category=Category:GraduateStudent'
+			=> 'apihelp-semanticschemas-hierarchy-example-2',
+			'action=semanticschemas-hierarchy&category=NewCategory&parents=Faculty|Person'
+			=> 'apihelp-semanticschemas-hierarchy-example-3',
+		];
+	}
 
-    public function needsToken()
-    {
-        return false; // Read-only public API
-    }
+	public function needsToken() {
+		// No CSRF token needed - this is a read-only API that returns
+		// category hierarchy data. Authentication can be optionally
+		// enabled via $wgSemanticSchemasRequireApiAuth configuration.
+		return false;
+	}
 
-    public function isReadMode()
-    {
-        return true;
-    }
+	public function isReadMode() {
+		return true;
+	}
 }

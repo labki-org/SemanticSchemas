@@ -143,7 +143,7 @@ class WikiFormatStore {
 		$out['emptyValueBehavior'] = $this->fetchOne( $sdata, 'Has empty value behavior', 'text' );
 
 		// Remove nulls
-		return array_filter( $out, static fn( $v ) => $v !== null );
+		return array_filter( $out, static fn ( $v ) => $v !== null );
 	}
 
 	/**
@@ -186,4 +186,3 @@ class WikiFormatStore {
 		return trim( str_replace( '_', ' ', $name ) );
 	}
 }
-

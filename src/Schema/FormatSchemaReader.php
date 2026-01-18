@@ -22,8 +22,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *
  * @since 1.0
  */
-class FormatSchemaReader
-{
+class FormatSchemaReader {
 
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
@@ -46,10 +45,9 @@ class FormatSchemaReader
 	 * @param string $formatName Format category name (e.g., "TemplateFormat/Sections")
 	 * @return FormatModel|null Format model, or null if not found
 	 */
-	public function readFormat(string $formatName): ?FormatModel
-	{
-		$category = $this->categoryStore->readCategory($formatName);
-		if (!$category) {
+	public function readFormat( string $formatName ): ?FormatModel {
+		$category = $this->categoryStore->readCategory( $formatName );
+		if ( !$category ) {
 			return null;
 		}
 
@@ -57,13 +55,13 @@ class FormatSchemaReader
 		$data = [
 			'label' => $category->getLabel(),
 			'description' => $category->getDescription(),
-			'wrapperTemplate' => $this->getPropertyValue($formatName, 'Has wrapper template'),
-			'propertyPattern' => $this->getPropertyValue($formatName, 'Has property template pattern'),
-			'sectionSeparator' => $this->getPropertyValue($formatName, 'Has section separator'),
-			'emptyValueBehavior' => $this->getPropertyValue($formatName, 'Has empty value behavior') ?? 'hide',
+			'wrapperTemplate' => $this->getPropertyValue( $formatName, 'Has wrapper template' ),
+			'propertyPattern' => $this->getPropertyValue( $formatName, 'Has property template pattern' ),
+			'sectionSeparator' => $this->getPropertyValue( $formatName, 'Has section separator' ),
+			'emptyValueBehavior' => $this->getPropertyValue( $formatName, 'Has empty value behavior' ) ?? 'hide',
 		];
 
-		return new FormatModel($formatName, $data);
+		return new FormatModel( $formatName, $data );
 	}
 
 	/**
@@ -73,27 +71,26 @@ class FormatSchemaReader
 	 * @param string $propertyName Property to fetch
 	 * @return string|null Property value
 	 */
-	private function getPropertyValue(string $categoryName, string $propertyName): ?string
-	{
-		if (!defined('SMW_VERSION')) {
+	private function getPropertyValue( string $categoryName, string $propertyName ): ?string {
+		if ( !defined( 'SMW_VERSION' ) ) {
 			return null;
 		}
 
 		$store = \SMW\StoreFactory::getStore();
 		$subject = \SMW\DIWikiPage::newFromTitle(
-			\Title::makeTitle(NS_CATEGORY, $categoryName)
+			\Title::makeTitle( NS_CATEGORY, $categoryName )
 		);
 
-		$propertyDI = \SMWDIProperty::newFromUserLabel($propertyName);
-		$values = $store->getPropertyValues($subject, $propertyDI);
+		$propertyDI = \SMWDIProperty::newFromUserLabel( $propertyName );
+		$values = $store->getPropertyValues( $subject, $propertyDI );
 
-		if (empty($values)) {
+		if ( empty( $values ) ) {
 			return null;
 		}
 
-		$value = reset($values);
-		if ($value instanceof \SMWDIBlob) {
-			return trim($value->getString());
+		$value = reset( $values );
+		if ( $value instanceof \SMWDIBlob ) {
+			return trim( $value->getString() );
 		}
 
 		return null;
@@ -113,16 +110,15 @@ class FormatSchemaReader
 	 * @param CategoryModel $category Category whose properties to render
 	 * @return string Generated wikitext
 	 */
-	public function composePropertyCalls(FormatModel $format, CategoryModel $category): string
-	{
+	public function composePropertyCalls( FormatModel $format, CategoryModel $category ): string {
 		$sections = $category->getDisplaySections();
 		$lines = [];
 
-		foreach ($sections as $section) {
+		foreach ( $sections as $section ) {
 			$sectionName = $section['name'];
 			$properties = $section['properties'];
 
-			if (empty($properties)) {
+			if ( empty( $properties ) ) {
 				continue;
 			}
 
@@ -131,17 +127,17 @@ class FormatSchemaReader
 			$lines[] = '';
 
 			// Compose property calls
-			foreach ($properties as $propertyName) {
-				$paramName = NamingHelper::propertyToParameter($propertyName);
-				$templateCall = $this->makePropertyTemplateCall($propertyName, $paramName, $format);
+			foreach ( $properties as $propertyName ) {
+				$paramName = NamingHelper::propertyToParameter( $propertyName );
+				$templateCall = $this->makePropertyTemplateCall( $propertyName, $paramName, $format );
 
-				if ($templateCall !== null) {
+				if ( $templateCall !== null ) {
 					$lines[] = $templateCall;
 				}
 			}
 
 			// Section separator
-			if ($format->getSectionSeparator() !== null) {
+			if ( $format->getSectionSeparator() !== null ) {
 				$lines[] = $format->getSectionSeparator();
 			}
 
@@ -149,11 +145,11 @@ class FormatSchemaReader
 		}
 
 		// Apply wrapper template if defined
-		$content = implode("\n", $lines);
-		if ($format->getWrapperTemplate() !== null) {
+		$content = implode( "\n", $lines );
+		if ( $format->getWrapperTemplate() !== null ) {
 			$wrapper = $format->getWrapperTemplate();
 			// Replace {{{content}}} placeholder with generated content
-			$content = str_replace('{{{content}}}', $content, $wrapper);
+			$content = str_replace( '{{{content}}}', $content, $wrapper );
 		}
 
 		return $content;
@@ -178,8 +174,8 @@ class FormatSchemaReader
 		FormatModel $format
 	): ?string {
 		// Get property label
-		$property = $this->propertyStore->readProperty($propertyName);
-		$label = $property ? $property->getLabel() : NamingHelper::generatePropertyLabel($propertyName);
+		$property = $this->propertyStore->readProperty( $propertyName );
+		$label = $property ? $property->getLabel() : NamingHelper::generatePropertyLabel( $propertyName );
 
 		$templateName = 'Property/' . $propertyName;
 
@@ -191,10 +187,10 @@ class FormatSchemaReader
 		$fullCall = "'''" . $label . ":''' " . $call;
 
 		// Apply property pattern if defined
-		if ($format->getPropertyPattern() !== null) {
+		if ( $format->getPropertyPattern() !== null ) {
 			$pattern = $format->getPropertyPattern();
 			// Replace {{{property}}} placeholder with the property call
-			$fullCall = str_replace('{{{property}}}', $fullCall, $pattern);
+			$fullCall = str_replace( '{{{property}}}', $fullCall, $pattern );
 		}
 
 		return $fullCall;
@@ -211,16 +207,15 @@ class FormatSchemaReader
 	 *
 	 * @return FormatModel
 	 */
-	public function getDefaultFormat(): FormatModel
-	{
-		return new FormatModel('TemplateFormat/Sections', [
+	public function getDefaultFormat(): FormatModel {
+		return new FormatModel( 'TemplateFormat/Sections', [
 			'label' => 'Sections',
 			'description' => 'Default section-based layout',
 			'wrapperTemplate' => null,
 			'propertyPattern' => null,
 			'sectionSeparator' => null,
 			'emptyValueBehavior' => 'hide',
-		]);
+		] );
 	}
 
 	/**
@@ -229,14 +224,12 @@ class FormatSchemaReader
 	 * @param string|null $formatName Format name, or null for default
 	 * @return FormatModel
 	 */
-	public function readFormatOrDefault(?string $formatName): FormatModel
-	{
-		if ($formatName === null || trim($formatName) === '') {
+	public function readFormatOrDefault( ?string $formatName ): FormatModel {
+		if ( $formatName === null || trim( $formatName ) === '' ) {
 			return $this->getDefaultFormat();
 		}
 
-		$format = $this->readFormat($formatName);
+		$format = $this->readFormat( $formatName );
 		return $format ?? $this->getDefaultFormat();
 	}
 }
-

@@ -15,237 +15,222 @@ use MediaWiki\Title\Title;
  */
 class WikiSubobjectStore {
 
-    private const MARKER_START = '<!-- SemanticSchemas Start -->';
-    private const MARKER_END   = '<!-- SemanticSchemas End -->';
+	private const MARKER_START = '<!-- SemanticSchemas Start -->';
+	private const MARKER_END   = '<!-- SemanticSchemas End -->';
 
-    private PageCreator $pageCreator;
+	private PageCreator $pageCreator;
 
-    public function __construct(PageCreator $pageCreator = null) {
-        $this->pageCreator = $pageCreator ?? new PageCreator();
-    }
+	public function __construct( PageCreator $pageCreator = null ) {
+		$this->pageCreator = $pageCreator ?? new PageCreator();
+	}
 
-    /* -------------------------------------------------------------------------
-     * READ
-     * ------------------------------------------------------------------------- */
+	/* -------------------------------------------------------------------------
+	 * READ
+	 * ------------------------------------------------------------------------- */
 
-    public function readSubobject(string $name): ?SubobjectModel {
+	public function readSubobject( string $name ): ?SubobjectModel {
+		$title = $this->pageCreator->makeTitle( $name, NS_SUBOBJECT );
+		if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
+			return null;
+		}
 
-        $title = $this->pageCreator->makeTitle($name, NS_SUBOBJECT);
-        if (!$title || !$this->pageCreator->pageExists($title)) {
-            return null;
-        }
+		$data = $this->readFromSMW( $title );
 
-        $data = $this->readFromSMW($title);
+		// Guarantee canonical minimal structure
+		$data += [
+			'label'       => $name,
+			'description' => '',
+			'properties'  => [
+				'required' => [],
+				'optional' => [],
+			],
+		];
 
-        // Guarantee canonical minimal structure
-        $data += [
-            'label'       => $name,
-            'description' => '',
-            'properties'  => [
-                'required' => [],
-                'optional' => [],
-            ],
-        ];
+		return new SubobjectModel( $name, $data );
+	}
 
-        return new SubobjectModel($name, $data);
-    }
+	private function readFromSMW( Title $title ): array {
+		$out = [
+			'label' => null,
+			'description' => '',
+			'properties' => [
+				'required' => [],
+				'optional' => [],
+			],
+		];
 
+		try {
+			$store   = \SMW\StoreFactory::getStore();
+			$subject = \SMW\DIWikiPage::newFromTitle( $title );
+			$sdata   = $store->getSemanticData( $subject );
+		} catch ( \Throwable $e ) {
+			return $out;
+		}
 
-    private function readFromSMW(Title $title): array {
+		// Optional label
+		$label = $this->fetchOne( $sdata, 'Display label', 'text' );
+		if ( $label !== null && $label !== '' ) {
+			$out['label'] = $label;
+		}
 
-        $out = [
-            'label' => null,
-            'description' => '',
-            'properties' => [
-                'required' => [],
-                'optional' => [],
-            ],
-        ];
+		// Description
+		$desc = $this->fetchOne( $sdata, 'Has description', 'text' );
+		if ( $desc !== null ) {
+			$out['description'] = $desc;
+		}
 
-        try {
-            $store   = \SMW\StoreFactory::getStore();
-            $subject = \SMW\DIWikiPage::newFromTitle($title);
-            $sdata   = $store->getSemanticData($subject);
-        } catch (\Throwable $e) {
-            return $out;
-        }
+		// Required properties
+		$out['properties']['required'] = $this->fetchMany(
+			$sdata,
+			'Has required property',
+			'property'
+		);
 
-        // Optional label
-        $label = $this->fetchOne($sdata, 'Display label', 'text');
-        if ($label !== null && $label !== '') {
-            $out['label'] = $label;
-        }
+		// Optional properties
+		$out['properties']['optional'] = $this->fetchMany(
+			$sdata,
+			'Has optional property',
+			'property'
+		);
 
-        // Description
-        $desc = $this->fetchOne($sdata, 'Has description', 'text');
-        if ($desc !== null) {
-            $out['description'] = $desc;
-        }
+		return $out;
+	}
 
-        // Required properties
-        $out['properties']['required'] = $this->fetchMany(
-            $sdata,
-            'Has required property',
-            'property'
-        );
+	private function fetchOne( $semanticData, string $label, string $type ): ?string {
+		$vals = $this->fetchMany( $semanticData, $label, $type );
+		return $vals[0] ?? null;
+	}
 
-        // Optional properties
-        $out['properties']['optional'] = $this->fetchMany(
-            $sdata,
-            'Has optional property',
-            'property'
-        );
+	private function fetchMany( $semanticData, string $label, string $type ): array {
+		try {
+			$prop = \SMW\DIProperty::newFromUserLabel( $label );
+			$items = $semanticData->getPropertyValues( $prop );
+		} catch ( \Throwable $e ) {
+			return [];
+		}
 
-        return $out;
-    }
+		$out = [];
 
+		foreach ( $items as $di ) {
+			$v = $this->extractValue( $di, $type );
+			if ( $v !== null ) {
+				$out[] = $v;
+			}
+		}
 
-    private function fetchOne($semanticData, string $label, string $type): ?string {
-        $vals = $this->fetchMany($semanticData, $label, $type);
-        return $vals[0] ?? null;
-    }
+		return $out;
+	}
 
+	private function extractValue( $di, string $type ): ?string {
+		if ( $di instanceof \SMW\DIWikiPage ) {
+			$t = $di->getTitle();
+			if ( !$t ) {
+				return null;
+			}
 
-    private function fetchMany($semanticData, string $label, string $type): array {
+			$text = str_replace( '_', ' ', $t->getText() );
 
-        try {
-            $prop = \SMW\DIProperty::newFromUserLabel($label);
-            $items = $semanticData->getPropertyValues($prop);
-        } catch (\Throwable $e) {
-            return [];
-        }
+			return match ( $type ) {
+				'property' =>
+					$t->getNamespace() === SMW_NS_PROPERTY ? $text : null,
 
-        $out = [];
+				'subobject' =>
+					$t->getNamespace() === NS_SUBOBJECT ? $text : null,
 
-        foreach ($items as $di) {
-            $v = $this->extractValue($di, $type);
-            if ($v !== null) {
-                $out[] = $v;
-            }
-        }
+				default => $text,
+			};
+		}
 
-        return $out;
-    }
+		if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
+			return trim( $di->getString() );
+		}
 
+		return null;
+	}
 
-    private function extractValue($di, string $type): ?string {
+	/* -------------------------------------------------------------------------
+	 * WRITE
+	 * ------------------------------------------------------------------------- */
 
-        if ($di instanceof \SMW\DIWikiPage) {
-            $t = $di->getTitle();
-            if (!$t) {
-                return null;
-            }
+	public function writeSubobject( SubobjectModel $s ): bool {
+		$title = $this->pageCreator->makeTitle( $s->getName(), NS_SUBOBJECT );
+		if ( !$title ) {
+			return false;
+		}
 
-            $text = str_replace('_', ' ', $t->getText());
+		$existing = $this->pageCreator->getPageContent( $title ) ?? '';
 
-            return match ($type) {
-                'property' =>
-                    $t->getNamespace() === SMW_NS_PROPERTY ? $text : null,
+		$block = $this->buildSemanticBlock( $s );
 
-                'subobject' =>
-                    $t->getNamespace() === NS_SUBOBJECT ? $text : null,
+		$newContent = $this->pageCreator->updateWithinMarkers(
+			$existing,
+			$block,
+			self::MARKER_START,
+			self::MARKER_END
+		);
 
-                default => $text,
-            };
-        }
+		// Tracking category
+		if ( !str_contains( $newContent, '[[Category:SemanticSchemas-managed-subobject]]' ) ) {
+			$newContent .= "\n[[Category:SemanticSchemas-managed-subobject]]";
+		}
 
-        if ($di instanceof \SMWDIBlob || $di instanceof \SMWDIString) {
-            return trim($di->getString());
-        }
+		return $this->pageCreator->createOrUpdatePage(
+			$title,
+			$newContent,
+			'SemanticSchemas: Update subobject schema metadata'
+		);
+	}
 
-        return null;
-    }
+	private function buildSemanticBlock( SubobjectModel $s ): string {
+		$lines = [];
 
+		if ( $s->getDescription() !== '' ) {
+			$lines[] = '[[Has description::' . $s->getDescription() . ']]';
+		}
 
-    /* -------------------------------------------------------------------------
-     * WRITE
-     * ------------------------------------------------------------------------- */
+		foreach ( $s->getRequiredProperties() as $p ) {
+			$lines[] = '[[Has required property::Property:' . $p . ']]';
+		}
 
-    public function writeSubobject(SubobjectModel $s): bool {
+		foreach ( $s->getOptionalProperties() as $p ) {
+			$lines[] = '[[Has optional property::Property:' . $p . ']]';
+		}
 
-        $title = $this->pageCreator->makeTitle($s->getName(), NS_SUBOBJECT);
-        if (!$title) {
-            return false;
-        }
+		return implode( "\n", $lines );
+	}
 
-        $existing = $this->pageCreator->getPageContent($title) ?? '';
+	/* -------------------------------------------------------------------------
+	 * LISTING
+	 * ------------------------------------------------------------------------- */
 
-        $block = $this->buildSemanticBlock($s);
+	public function getAllSubobjects(): array {
+		$out = [];
 
-        $newContent = $this->pageCreator->updateWithinMarkers(
-            $existing,
-            $block,
-            self::MARKER_START,
-            self::MARKER_END
-        );
+		$dbr = MediaWikiServices::getInstance()
+			->getDBLoadBalancer()
+			->getConnection( DB_REPLICA );
 
-        // Tracking category
-        if (!str_contains($newContent, '[[Category:SemanticSchemas-managed-subobject]]')) {
-            $newContent .= "\n[[Category:SemanticSchemas-managed-subobject]]";
-        }
+		$res = $dbr->newSelectQueryBuilder()
+			->select( 'page_title' )
+			->from( 'page' )
+			->where( [ 'page_namespace' => NS_SUBOBJECT ] )
+			->caller( __METHOD__ )
+			->fetchResultSet();
 
-        return $this->pageCreator->createOrUpdatePage(
-            $title,
-            $newContent,
-            'SemanticSchemas: Update subobject schema metadata'
-        );
-    }
+		foreach ( $res as $row ) {
+			$name = str_replace( '_', ' ', $row->page_title );
 
+			$model = $this->readSubobject( $name );
+			if ( $model ) {
+				$out[$name] = $model;
+			}
+		}
 
-    private function buildSemanticBlock(SubobjectModel $s): string {
+		return $out;
+	}
 
-        $lines = [];
-
-        if ($s->getDescription() !== '') {
-            $lines[] = '[[Has description::' . $s->getDescription() . ']]';
-        }
-
-        foreach ($s->getRequiredProperties() as $p) {
-            $lines[] = '[[Has required property::Property:' . $p . ']]';
-        }
-
-        foreach ($s->getOptionalProperties() as $p) {
-            $lines[] = '[[Has optional property::Property:' . $p . ']]';
-        }
-
-        return implode("\n", $lines);
-    }
-
-
-    /* -------------------------------------------------------------------------
-     * LISTING
-     * ------------------------------------------------------------------------- */
-
-    public function getAllSubobjects(): array {
-
-        $out = [];
-
-        $dbr = MediaWikiServices::getInstance()
-            ->getDBLoadBalancer()
-            ->getConnection(DB_REPLICA);
-
-        $res = $dbr->newSelectQueryBuilder()
-            ->select('page_title')
-            ->from('page')
-            ->where(['page_namespace' => NS_SUBOBJECT])
-            ->caller(__METHOD__)
-            ->fetchResultSet();
-
-        foreach ($res as $row) {
-            $name = str_replace('_', ' ', $row->page_title);
-
-            $model = $this->readSubobject($name);
-            if ($model) {
-                $out[$name] = $model;
-            }
-        }
-
-        return $out;
-    }
-
-
-    public function subobjectExists(string $name): bool {
-        $title = $this->pageCreator->makeTitle($name, NS_SUBOBJECT);
-        return $title && $this->pageCreator->pageExists($title);
-    }
+	public function subobjectExists( string $name ): bool {
+		$title = $this->pageCreator->makeTitle( $name, NS_SUBOBJECT );
+		return $title && $this->pageCreator->pageExists( $title );
+	}
 }

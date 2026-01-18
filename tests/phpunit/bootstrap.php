@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * PHPUnit bootstrap file for SemanticSchemas tests.
+ *
+ * This file sets up the autoloader for running unit tests outside of MediaWiki.
+ * These tests are designed to be self-contained and not require a full MW installation.
+ */
+
+// Load Composer autoloader
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+// Define MediaWiki constants that tests might need
+if ( !defined( 'NS_TEMPLATE' ) ) {
+	define( 'NS_TEMPLATE', 10 );
+}
+if ( !defined( 'NS_MEDIAWIKI' ) ) {
+	define( 'NS_MEDIAWIKI', 8 );
+}
+if ( !defined( 'NS_CATEGORY' ) ) {
+	define( 'NS_CATEGORY', 14 );
+}
+if ( !defined( 'NS_SUBOBJECT' ) ) {
+	define( 'NS_SUBOBJECT', 3300 );
+}
+
+// Mock wfLogWarning if not defined (used by some classes)
+if ( !function_exists( 'wfLogWarning' ) ) {
+	function wfLogWarning( $msg ) {
+		// Silent in tests
+	}
+}
+
+// Mock wfTimestamp if not defined (used by StateManager)
+if ( !function_exists( 'wfTimestamp' ) ) {
+	function wfTimestamp( $type, $ts = null ) {
+		if ( $ts === null ) {
+			$ts = time();
+		}
+		// TS_ISO_8601 format
+		return gmdate( 'Y-m-d\TH:i:s\Z', $ts );
+	}
+}

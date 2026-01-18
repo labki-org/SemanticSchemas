@@ -24,8 +24,7 @@ use InvalidArgumentException;
  *
  * @since 1.0
  */
-class FormatModel
-{
+class FormatModel {
 
 	private string $name;
 	private string $label;
@@ -49,29 +48,28 @@ class FormatModel
 	 *   - sectionSeparator: string
 	 *   - emptyValueBehavior: "show" | "hide"
 	 */
-	public function __construct(string $name, array $data = [])
-	{
-		$name = trim($name);
-		if ($name === '') {
-			throw new InvalidArgumentException("Format name cannot be empty.");
+	public function __construct( string $name, array $data = [] ) {
+		$name = trim( $name );
+		if ( $name === '' ) {
+			throw new InvalidArgumentException( "Format name cannot be empty." );
 		}
 		$this->name = $name;
 
-		$this->label = isset($data['label']) && trim($data['label']) !== ''
-			? trim($data['label'])
+		$this->label = isset( $data['label'] ) && trim( $data['label'] ) !== ''
+			? trim( $data['label'] )
 			: $name;
 
-		$this->description = isset($data['description'])
-			? trim((string) $data['description'])
+		$this->description = isset( $data['description'] )
+			? trim( (string)$data['description'] )
 			: '';
 
-		$this->wrapperTemplate = $this->cleanNullableString($data['wrapperTemplate'] ?? null);
-		$this->propertyPattern = $this->cleanNullableString($data['propertyPattern'] ?? null);
-		$this->sectionSeparator = $this->cleanNullableString($data['sectionSeparator'] ?? null);
+		$this->wrapperTemplate = $this->cleanNullableString( $data['wrapperTemplate'] ?? null );
+		$this->propertyPattern = $this->cleanNullableString( $data['propertyPattern'] ?? null );
+		$this->sectionSeparator = $this->cleanNullableString( $data['sectionSeparator'] ?? null );
 
 		// Validate empty value behavior
-		$behavior = strtolower(trim((string) ($data['emptyValueBehavior'] ?? 'hide')));
-		if (!in_array($behavior, ['show', 'hide'], true)) {
+		$behavior = strtolower( trim( (string)( $data['emptyValueBehavior'] ?? 'hide' ) ) );
+		if ( !in_array( $behavior, [ 'show', 'hide' ], true ) ) {
 			$behavior = 'hide';
 		}
 		$this->emptyValueBehavior = $behavior;
@@ -81,12 +79,11 @@ class FormatModel
 	 * HELPER
 	 * ------------------------------------------------------------------------- */
 
-	private function cleanNullableString($value): ?string
-	{
-		if ($value === null) {
+	private function cleanNullableString( $value ): ?string {
+		if ( $value === null ) {
 			return null;
 		}
-		$v = trim((string) $value);
+		$v = trim( (string)$value );
 		return $v !== '' ? $v : null;
 	}
 
@@ -94,43 +91,35 @@ class FormatModel
 	 * ACCESSORS
 	 * ------------------------------------------------------------------------- */
 
-	public function getName(): string
-	{
+	public function getName(): string {
 		return $this->name;
 	}
 
-	public function getLabel(): string
-	{
+	public function getLabel(): string {
 		return $this->label;
 	}
 
-	public function getDescription(): string
-	{
+	public function getDescription(): string {
 		return $this->description;
 	}
 
-	public function getWrapperTemplate(): ?string
-	{
+	public function getWrapperTemplate(): ?string {
 		return $this->wrapperTemplate;
 	}
 
-	public function getPropertyPattern(): ?string
-	{
+	public function getPropertyPattern(): ?string {
 		return $this->propertyPattern;
 	}
 
-	public function getSectionSeparator(): ?string
-	{
+	public function getSectionSeparator(): ?string {
 		return $this->sectionSeparator;
 	}
 
-	public function getEmptyValueBehavior(): string
-	{
+	public function getEmptyValueBehavior(): string {
 		return $this->emptyValueBehavior;
 	}
 
-	public function shouldShowEmptyValues(): bool
-	{
+	public function shouldShowEmptyValues(): bool {
 		return $this->emptyValueBehavior === 'show';
 	}
 
@@ -143,8 +132,7 @@ class FormatModel
 	 *
 	 * @return array
 	 */
-	public function toArray(): array
-	{
+	public function toArray(): array {
 		return [
 			'name' => $this->name,
 			'label' => $this->label,
@@ -156,4 +144,3 @@ class FormatModel
 		];
 	}
 }
-

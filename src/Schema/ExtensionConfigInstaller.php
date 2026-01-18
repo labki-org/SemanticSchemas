@@ -16,106 +16,101 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
  * This is a minimal, internal helper that reuses the canonical
  * schema models + Wiki*Store classes, and writes via PageCreator.
  */
-class ExtensionConfigInstaller
-{
+class ExtensionConfigInstaller {
 
-    private SchemaLoader $loader;
-    private SchemaValidator $validator;
+	private SchemaLoader $loader;
+	private SchemaValidator $validator;
 
-    private WikiCategoryStore $categoryStore;
-    private WikiPropertyStore $propertyStore;
-    private WikiSubobjectStore $subobjectStore;
+	private WikiCategoryStore $categoryStore;
+	private WikiPropertyStore $propertyStore;
+	private WikiSubobjectStore $subobjectStore;
 
-    public function __construct(
-        ?SchemaLoader $loader = null,
-        ?SchemaValidator $validator = null,
-        ?WikiCategoryStore $categoryStore = null,
-        ?WikiPropertyStore $propertyStore = null,
-        ?WikiSubobjectStore $subobjectStore = null
-    ) {
-        $this->loader = $loader ?? new SchemaLoader();
-        $this->validator = $validator ?? new SchemaValidator();
+	public function __construct(
+		?SchemaLoader $loader = null,
+		?SchemaValidator $validator = null,
+		?WikiCategoryStore $categoryStore = null,
+		?WikiPropertyStore $propertyStore = null,
+		?WikiSubobjectStore $subobjectStore = null
+	) {
+		$this->loader = $loader ?? new SchemaLoader();
+		$this->validator = $validator ?? new SchemaValidator();
 
-        $this->categoryStore = $categoryStore ?? new WikiCategoryStore();
-        $this->propertyStore = $propertyStore ?? new WikiPropertyStore();
-        $this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
-    }
+		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
+		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
+		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
+	}
 
-    /**
-     * Load and apply an extension config schema from a JSON/YAML file.
-     *
-     * @param string $filePath
-     * @return array{
-     *   errors:array,
-     *   warnings:array,
-     *   applied:array{
-     *     categories:array<string,bool>,
-     *     properties:array<string,bool>,
-     *     subobjects:array<string,bool>
-     *   }
-     * }
-     */
-    public function applyFromFile(string $filePath): array
-    {
-        $schema = $this->loader->loadFromFile($filePath);
-        return $this->applySchema($schema);
-    }
+	/**
+	 * Load and apply an extension config schema from a JSON/YAML file.
+	 *
+	 * @param string $filePath
+	 * @return array{
+	 *   errors:array,
+	 *   warnings:array,
+	 *   applied:array{
+	 *     categories:array<string,bool>,
+	 *     properties:array<string,bool>,
+	 *     subobjects:array<string,bool>
+	 *   }
+	 * }
+	 */
+	public function applyFromFile( string $filePath ): array {
+		$schema = $this->loader->loadFromFile( $filePath );
+		return $this->applySchema( $schema );
+	}
 
-    /**
-     * Apply a parsed extension config schema array.
-     *
-     * If validation errors are present, no pages are written and the
-     * errors are returned to the caller.
-     *
-     * @param array $schema
-     * @return array See applyFromFile()
-     */
-    public function applySchema(array $schema): array
-    {
-        $validation = $this->validator->validateSchemaWithSeverity($schema);
+	/**
+	 * Apply a parsed extension config schema array.
+	 *
+	 * If validation errors are present, no pages are written and the
+	 * errors are returned to the caller.
+	 *
+	 * @param array $schema
+	 * @return array See applyFromFile()
+	 */
+	public function applySchema( array $schema ): array {
+		$validation = $this->validator->validateSchemaWithSeverity( $schema );
 
-        $result = [
-            'errors' => $validation['errors'],
-            'warnings' => $validation['warnings'],
-            'applied' => [
-                'categories' => [],
-                'properties' => [],
-                'subobjects' => [],
-            ],
-        ];
+		$result = [
+			'errors' => $validation['errors'],
+			'warnings' => $validation['warnings'],
+			'applied' => [
+				'categories' => [],
+				'properties' => [],
+				'subobjects' => [],
+			],
+		];
 
-        // Do not write anything if the schema is invalid.
-        if ($validation['errors']) {
-            return $result;
-        }
+		// Do not write anything if the schema is invalid.
+		if ( $validation['errors'] ) {
+			return $result;
+		}
 
-        $categories = $schema['categories'] ?? [];
-        $properties = $schema['properties'] ?? [];
-        $subobjects = $schema['subobjects'] ?? [];
+		$categories = $schema['categories'] ?? [];
+		$properties = $schema['properties'] ?? [];
+		$subobjects = $schema['subobjects'] ?? [];
 
-        // 1. Properties
-        foreach ($properties as $name => $data) {
-            $model = new PropertyModel($name, $data ?? []);
-            $ok = $this->propertyStore->writeProperty($model);
-            $result['applied']['properties'][$name] = $ok;
-        }
+		// 1. Properties
+		foreach ( $properties as $name => $data ) {
+			$model = new PropertyModel( $name, $data ?? [] );
+			$ok = $this->propertyStore->writeProperty( $model );
+			$result['applied']['properties'][$name] = $ok;
+		}
 
-        // 2. Subobjects
-        foreach ($subobjects as $name => $data) {
-            $model = new SubobjectModel($name, $data ?? []);
-            $ok = $this->subobjectStore->writeSubobject($model);
-            $result['applied']['subobjects'][$name] = $ok;
-        }
+		// 2. Subobjects
+		foreach ( $subobjects as $name => $data ) {
+			$model = new SubobjectModel( $name, $data ?? [] );
+			$ok = $this->subobjectStore->writeSubobject( $model );
+			$result['applied']['subobjects'][$name] = $ok;
+		}
 
-        // 3. Categories
-        foreach ($categories as $name => $data) {
-            $model = new CategoryModel($name, $data ?? []);
-            $ok = $this->categoryStore->writeCategory($model);
-            $result['applied']['categories'][$name] = $ok;
-        }
+		// 3. Categories
+		foreach ( $categories as $name => $data ) {
+			$model = new CategoryModel( $name, $data ?? [] );
+			$ok = $this->categoryStore->writeCategory( $model );
+			$result['applied']['categories'][$name] = $ok;
+		}
 
-        return $result;
-    }
+		return $result;
+	}
 }
-
-

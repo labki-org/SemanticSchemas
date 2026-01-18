@@ -2,8 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
-use InvalidArgumentException;
-
 /**
  * SchemaComparer
  * ---------------
@@ -28,376 +26,361 @@ use InvalidArgumentException;
  * - Only canonical keys are compared.
  * - Order-sensitive arrays (display/forms) use structural comparison.
  */
-class SchemaComparer
-{
+class SchemaComparer {
 
-    /* -------------------------------------------------------------------------
-     * PUBLIC API
-     * ---------------------------------------------------------------------- */
+	/* -------------------------------------------------------------------------
+	 * PUBLIC API
+	 * ---------------------------------------------------------------------- */
 
-    /**
-     * Compare two full schema arrays and return a structured diff.
-     *
-     * @param array $schemaA "New" schema (file import)
-     * @param array $schemaB "Old" schema (wiki export)
-     * @return array
-     */
-    public function compare(array $schemaA, array $schemaB): array
-    {
+	/**
+	 * Compare two full schema arrays and return a structured diff.
+	 *
+	 * @param array $schemaA "New" schema (file import)
+	 * @param array $schemaB "Old" schema (wiki export)
+	 * @return array
+	 */
+	public function compare( array $schemaA, array $schemaB ): array {
+		return [
+			'categories' => $this->compareEntityMap(
+				$schemaA['categories'] ?? [],
+				$schemaB['categories'] ?? [],
+				fn ( $a, $b ) => $this->diffCategory( $a, $b )
+			),
+			'properties' => $this->compareEntityMap(
+				$schemaA['properties'] ?? [],
+				$schemaB['properties'] ?? [],
+				fn ( $a, $b ) => $this->diffProperty( $a, $b )
+			),
+			'subobjects' => $this->compareEntityMap(
+				$schemaA['subobjects'] ?? [],
+				$schemaB['subobjects'] ?? [],
+				fn ( $a, $b ) => $this->diffSubobject( $a, $b )
+			),
+		];
+	}
 
-        return [
-            'categories' => $this->compareEntityMap(
-                $schemaA['categories'] ?? [],
-                $schemaB['categories'] ?? [],
-                fn($a, $b) => $this->diffCategory($a, $b)
-            ),
-            'properties' => $this->compareEntityMap(
-                $schemaA['properties'] ?? [],
-                $schemaB['properties'] ?? [],
-                fn($a, $b) => $this->diffProperty($a, $b)
-            ),
-            'subobjects' => $this->compareEntityMap(
-                $schemaA['subobjects'] ?? [],
-                $schemaB['subobjects'] ?? [],
-                fn($a, $b) => $this->diffSubobject($a, $b)
-            ),
-        ];
-    }
+	/* -------------------------------------------------------------------------
+	 * GENERIC MAP COMPARISON
+	 * ---------------------------------------------------------------------- */
 
-    /* -------------------------------------------------------------------------
-     * GENERIC MAP COMPARISON
-     * ---------------------------------------------------------------------- */
+	/**
+	 * Compare two entity maps (categories/properties/subobjects).
+	 *
+	 * @param array<string,array> $mapA name => canonical data
+	 * @param array<string,array> $mapB
+	 * @param callable $diffFn function( array $a, array $b ): array
+	 * @return array
+	 */
+	private function compareEntityMap( array $mapA, array $mapB, callable $diffFn ): array {
+		$added = [];
+		$removed = [];
+		$modified = [];
+		$unchanged = [];
 
-    /**
-     * Compare two entity maps (categories/properties/subobjects).
-     *
-     * @param array<string,array> $mapA  name => canonical data
-     * @param array<string,array> $mapB
-     * @param callable $diffFn function( array $a, array $b ): array
-     * @return array
-     */
-    private function compareEntityMap(array $mapA, array $mapB, callable $diffFn): array
-    {
+		$allNames = array_unique( array_merge( array_keys( $mapA ), array_keys( $mapB ) ) );
+		sort( $allNames, SORT_STRING );
 
-        $added = [];
-        $removed = [];
-        $modified = [];
-        $unchanged = [];
+		foreach ( $allNames as $name ) {
 
-        $allNames = array_unique(array_merge(array_keys($mapA), array_keys($mapB)));
-        sort($allNames, SORT_STRING);
+			$existsA = array_key_exists( $name, $mapA );
+			$existsB = array_key_exists( $name, $mapB );
 
-        foreach ($allNames as $name) {
+			if ( $existsA && !$existsB ) {
+				$added[] = [ 'name' => $name, 'data' => $mapA[$name] ];
+				continue;
+			}
 
-            $existsA = array_key_exists($name, $mapA);
-            $existsB = array_key_exists($name, $mapB);
+			if ( !$existsA && $existsB ) {
+				$removed[] = [ 'name' => $name, 'data' => $mapB[$name] ];
+				continue;
+			}
 
-            if ($existsA && !$existsB) {
-                $added[] = ['name' => $name, 'data' => $mapA[$name]];
-                continue;
-            }
+			// Both exist → compare canonical data
+			$dataA = $mapA[$name] ?? [];
+			$dataB = $mapB[$name] ?? [];
 
-            if (!$existsA && $existsB) {
-                $removed[] = ['name' => $name, 'data' => $mapB[$name]];
-                continue;
-            }
+			$diff = $diffFn( $dataA, $dataB );
+			if ( $diff !== [] ) {
+				$modified[] = [
+					'name' => $name,
+					'old' => $dataB,
+					'new' => $dataA,
+					'diff' => $diff,
+				];
+			} else {
+				$unchanged[] = $name;
+			}
+		}
 
-            // Both exist → compare canonical data
-            $dataA = $mapA[$name] ?? [];
-            $dataB = $mapB[$name] ?? [];
+		return [
+			'added' => $added,
+			'removed' => $removed,
+			'modified' => $modified,
+			'unchanged' => $unchanged,
+		];
+	}
 
-            $diff = $diffFn($dataA, $dataB);
-            if ($diff !== []) {
-                $modified[] = [
-                    'name' => $name,
-                    'old' => $dataB,
-                    'new' => $dataA,
-                    'diff' => $diff,
-                ];
-            } else {
-                $unchanged[] = $name;
-            }
-        }
+	/* -------------------------------------------------------------------------
+	 * CATEGORY DIFF
+	 * ---------------------------------------------------------------------- */
 
-        return [
-            'added' => $added,
-            'removed' => $removed,
-            'modified' => $modified,
-            'unchanged' => $unchanged,
-        ];
-    }
+	private function diffCategory( array $a, array $b ): array {
+		$diff = [];
 
-    /* -------------------------------------------------------------------------
-     * CATEGORY DIFF
-     * ---------------------------------------------------------------------- */
+		// parents (order-insensitive)
+		if ( $this->arraysDiffer( $a['parents'] ?? [], $b['parents'] ?? [] ) ) {
+			$diff['parents'] = [
+				'old' => $b['parents'] ?? [],
+				'new' => $a['parents'] ?? [],
+			];
+		}
 
-    private function diffCategory(array $a, array $b): array
-    {
+		// label
+		if ( ( $a['label'] ?? '' ) !== ( $b['label'] ?? '' ) ) {
+			$diff['label'] = [ 'old' => $b['label'] ?? '', 'new' => $a['label'] ?? '' ];
+		}
 
-        $diff = [];
+		// description
+		if ( ( $a['description'] ?? '' ) !== ( $b['description'] ?? '' ) ) {
+			$diff['description'] = [
+				'old' => $b['description'] ?? '',
+				'new' => $a['description'] ?? '',
+			];
+		}
 
-        // parents (order-insensitive)
-        if ($this->arraysDiffer($a['parents'] ?? [], $b['parents'] ?? [])) {
-            $diff['parents'] = [
-                'old' => $b['parents'] ?? [],
-                'new' => $a['parents'] ?? [],
-            ];
-        }
+		// targetNamespace (string|null)
+		if ( ( $a['targetNamespace'] ?? null ) !== ( $b['targetNamespace'] ?? null ) ) {
+			$diff['targetNamespace'] = [
+				'old' => $b['targetNamespace'] ?? null,
+				'new' => $a['targetNamespace'] ?? null,
+			];
+		}
 
-        // label
-        if (($a['label'] ?? '') !== ($b['label'] ?? '')) {
-            $diff['label'] = ['old' => $b['label'] ?? '', 'new' => $a['label'] ?? ''];
-        }
+		// properties (required/optional lists)
+		$propsA = $a['properties'] ?? [];
+		$propsB = $b['properties'] ?? [];
 
-        // description
-        if (($a['description'] ?? '') !== ($b['description'] ?? '')) {
-            $diff['description'] = [
-                'old' => $b['description'] ?? '',
-                'new' => $a['description'] ?? '',
-            ];
-        }
+		if ( $this->arraysDiffer( $propsA['required'] ?? [], $propsB['required'] ?? [] ) ) {
+			$diff['properties']['required'] = [
+				'old' => $propsB['required'] ?? [],
+				'new' => $propsA['required'] ?? [],
+			];
+		}
 
-        // targetNamespace (string|null)
-        if (($a['targetNamespace'] ?? null) !== ($b['targetNamespace'] ?? null)) {
-            $diff['targetNamespace'] = [
-                'old' => $b['targetNamespace'] ?? null,
-                'new' => $a['targetNamespace'] ?? null,
-            ];
-        }
+		if ( $this->arraysDiffer( $propsA['optional'] ?? [], $propsB['optional'] ?? [] ) ) {
+			$diff['properties']['optional'] = [
+				'old' => $propsB['optional'] ?? [],
+				'new' => $propsA['optional'] ?? [],
+			];
+		}
 
-        // properties (required/optional lists)
-        $propsA = $a['properties'] ?? [];
-        $propsB = $b['properties'] ?? [];
+		// subobjects (required/optional)
+		$sgA = $a['subobjects'] ?? [];
+		$sgB = $b['subobjects'] ?? [];
 
-        if ($this->arraysDiffer($propsA['required'] ?? [], $propsB['required'] ?? [])) {
-            $diff['properties']['required'] = [
-                'old' => $propsB['required'] ?? [],
-                'new' => $propsA['required'] ?? [],
-            ];
-        }
+		if ( $this->arraysDiffer( $sgA['required'] ?? [], $sgB['required'] ?? [] ) ) {
+			$diff['subobjects']['required'] = [
+				'old' => $sgB['required'] ?? [],
+				'new' => $sgA['required'] ?? [],
+			];
+		}
 
-        if ($this->arraysDiffer($propsA['optional'] ?? [], $propsB['optional'] ?? [])) {
-            $diff['properties']['optional'] = [
-                'old' => $propsB['optional'] ?? [],
-                'new' => $propsA['optional'] ?? [],
-            ];
-        }
+		if ( $this->arraysDiffer( $sgA['optional'] ?? [], $sgB['optional'] ?? [] ) ) {
+			$diff['subobjects']['optional'] = [
+				'old' => $sgB['optional'] ?? [],
+				'new' => $sgA['optional'] ?? [],
+			];
+		}
 
-        // subobjects (required/optional)
-        $sgA = $a['subobjects'] ?? [];
-        $sgB = $b['subobjects'] ?? [];
+		// display (order-sensitive)
+		if ( $this->deepDiffer( $a['display'] ?? [], $b['display'] ?? [] ) ) {
+			$diff['display'] = [
+				'old' => $b['display'] ?? [],
+				'new' => $a['display'] ?? [],
+			];
+		}
 
-        if ($this->arraysDiffer($sgA['required'] ?? [], $sgB['required'] ?? [])) {
-            $diff['subobjects']['required'] = [
-                'old' => $sgB['required'] ?? [],
-                'new' => $sgA['required'] ?? [],
-            ];
-        }
+		// forms (order-sensitive)
+		if ( $this->deepDiffer( $a['forms'] ?? [], $b['forms'] ?? [] ) ) {
+			$diff['forms'] = [
+				'old' => $b['forms'] ?? [],
+				'new' => $a['forms'] ?? [],
+			];
+		}
 
-        if ($this->arraysDiffer($sgA['optional'] ?? [], $sgB['optional'] ?? [])) {
-            $diff['subobjects']['optional'] = [
-                'old' => $sgB['optional'] ?? [],
-                'new' => $sgA['optional'] ?? [],
-            ];
-        }
+		return $diff;
+	}
 
-        // display (order-sensitive)
-        if ($this->deepDiffer($a['display'] ?? [], $b['display'] ?? [])) {
-            $diff['display'] = [
-                'old' => $b['display'] ?? [],
-                'new' => $a['display'] ?? [],
-            ];
-        }
+	/* -------------------------------------------------------------------------
+	 * PROPERTY DIFF
+	 * ---------------------------------------------------------------------- */
 
-        // forms (order-sensitive)
-        if ($this->deepDiffer($a['forms'] ?? [], $b['forms'] ?? [])) {
-            $diff['forms'] = [
-                'old' => $b['forms'] ?? [],
-                'new' => $a['forms'] ?? [],
-            ];
-        }
+	private function diffProperty( array $a, array $b ): array {
+		$diff = [];
 
-        return $diff;
-    }
+		if ( ( $a['datatype'] ?? '' ) !== ( $b['datatype'] ?? '' ) ) {
+			$diff['datatype'] = [
+				'old' => $b['datatype'] ?? '',
+				'new' => $a['datatype'] ?? '',
+			];
+		}
 
-    /* -------------------------------------------------------------------------
-     * PROPERTY DIFF
-     * ---------------------------------------------------------------------- */
+		if ( ( $a['label'] ?? '' ) !== ( $b['label'] ?? '' ) ) {
+			$diff['label'] = [
+				'old' => $b['label'] ?? '',
+				'new' => $a['label'] ?? '',
+			];
+		}
 
-    private function diffProperty(array $a, array $b): array
-    {
+		if ( ( $a['description'] ?? '' ) !== ( $b['description'] ?? '' ) ) {
+			$diff['description'] = [
+				'old' => $b['description'] ?? '',
+				'new' => $a['description'] ?? '',
+			];
+		}
 
-        $diff = [];
+		// allowedValues: order-insensitive list
+		if ( $this->arraysDiffer( $a['allowedValues'] ?? [], $b['allowedValues'] ?? [] ) ) {
+			$diff['allowedValues'] = [
+				'old' => $b['allowedValues'] ?? [],
+				'new' => $a['allowedValues'] ?? [],
+			];
+		}
 
-        if (($a['datatype'] ?? '') !== ($b['datatype'] ?? '')) {
-            $diff['datatype'] = [
-                'old' => $b['datatype'] ?? '',
-                'new' => $a['datatype'] ?? '',
-            ];
-        }
+		// rangeCategory
+		if ( ( $a['rangeCategory'] ?? null ) !== ( $b['rangeCategory'] ?? null ) ) {
+			$diff['rangeCategory'] = [
+				'old' => $b['rangeCategory'] ?? null,
+				'new' => $a['rangeCategory'] ?? null,
+			];
+		}
 
-        if (($a['label'] ?? '') !== ($b['label'] ?? '')) {
-            $diff['label'] = [
-                'old' => $b['label'] ?? '',
-                'new' => $a['label'] ?? '',
-            ];
-        }
+		// subpropertyOf
+		if ( ( $a['subpropertyOf'] ?? null ) !== ( $b['subpropertyOf'] ?? null ) ) {
+			$diff['subpropertyOf'] = [
+				'old' => $b['subpropertyOf'] ?? null,
+				'new' => $a['subpropertyOf'] ?? null,
+			];
+		}
 
-        if (($a['description'] ?? '') !== ($b['description'] ?? '')) {
-            $diff['description'] = [
-                'old' => $b['description'] ?? '',
-                'new' => $a['description'] ?? '',
-            ];
-        }
+		// display block (order-sensitive)
+		if ( $this->deepDiffer( $a['display'] ?? [], $b['display'] ?? [] ) ) {
+			$diff['display'] = [
+				'old' => $b['display'] ?? [],
+				'new' => $a['display'] ?? [],
+			];
+		}
 
-        // allowedValues: order-insensitive list
-        if ($this->arraysDiffer($a['allowedValues'] ?? [], $b['allowedValues'] ?? [])) {
-            $diff['allowedValues'] = [
-                'old' => $b['allowedValues'] ?? [],
-                'new' => $a['allowedValues'] ?? [],
-            ];
-        }
+		// allowedCategory / allowedNamespace
+		if ( ( $a['allowedCategory'] ?? null ) !== ( $b['allowedCategory'] ?? null ) ) {
+			$diff['allowedCategory'] = [
+				'old' => $b['allowedCategory'] ?? null,
+				'new' => $a['allowedCategory'] ?? null,
+			];
+		}
 
-        // rangeCategory
-        if (($a['rangeCategory'] ?? null) !== ($b['rangeCategory'] ?? null)) {
-            $diff['rangeCategory'] = [
-                'old' => $b['rangeCategory'] ?? null,
-                'new' => $a['rangeCategory'] ?? null,
-            ];
-        }
+		if ( ( $a['allowedNamespace'] ?? null ) !== ( $b['allowedNamespace'] ?? null ) ) {
+			$diff['allowedNamespace'] = [
+				'old' => $b['allowedNamespace'] ?? null,
+				'new' => $a['allowedNamespace'] ?? null,
+			];
+		}
 
-        // subpropertyOf
-        if (($a['subpropertyOf'] ?? null) !== ($b['subpropertyOf'] ?? null)) {
-            $diff['subpropertyOf'] = [
-                'old' => $b['subpropertyOf'] ?? null,
-                'new' => $a['subpropertyOf'] ?? null,
-            ];
-        }
+		if ( ( $a['allowsMultipleValues'] ?? false ) !== ( $b['allowsMultipleValues'] ?? false ) ) {
+			$diff['allowsMultipleValues'] = [
+				'old' => $b['allowsMultipleValues'] ?? false,
+				'new' => $a['allowsMultipleValues'] ?? false,
+			];
+		}
 
-        // display block (order-sensitive)
-        if ($this->deepDiffer($a['display'] ?? [], $b['display'] ?? [])) {
-            $diff['display'] = [
-                'old' => $b['display'] ?? [],
-                'new' => $a['display'] ?? [],
-            ];
-        }
+		return $diff;
+	}
 
-        // allowedCategory / allowedNamespace
-        if (($a['allowedCategory'] ?? null) !== ($b['allowedCategory'] ?? null)) {
-            $diff['allowedCategory'] = [
-                'old' => $b['allowedCategory'] ?? null,
-                'new' => $a['allowedCategory'] ?? null,
-            ];
-        }
+	/* -------------------------------------------------------------------------
+	 * SUBOBJECT DIFF
+	 * ---------------------------------------------------------------------- */
 
-        if (($a['allowedNamespace'] ?? null) !== ($b['allowedNamespace'] ?? null)) {
-            $diff['allowedNamespace'] = [
-                'old' => $b['allowedNamespace'] ?? null,
-                'new' => $a['allowedNamespace'] ?? null,
-            ];
-        }
+	private function diffSubobject( array $a, array $b ): array {
+		$diff = [];
 
-        if (($a['allowsMultipleValues'] ?? false) !== ($b['allowsMultipleValues'] ?? false)) {
-            $diff['allowsMultipleValues'] = [
-                'old' => $b['allowsMultipleValues'] ?? false,
-                'new' => $a['allowsMultipleValues'] ?? false,
-            ];
-        }
+		if ( ( $a['label'] ?? '' ) !== ( $b['label'] ?? '' ) ) {
+			$diff['label'] = [
+				'old' => $b['label'] ?? '',
+				'new' => $a['label'] ?? '',
+			];
+		}
 
-        return $diff;
-    }
+		if ( ( $a['description'] ?? '' ) !== ( $b['description'] ?? '' ) ) {
+			$diff['description'] = [
+				'old' => $b['description'] ?? '',
+				'new' => $a['description'] ?? '',
+			];
+		}
 
-    /* -------------------------------------------------------------------------
-     * SUBOBJECT DIFF
-     * ---------------------------------------------------------------------- */
+		$propsA = $a['properties'] ?? [];
+		$propsB = $b['properties'] ?? [];
 
-    private function diffSubobject(array $a, array $b): array
-    {
+		if ( $this->arraysDiffer( $propsA['required'] ?? [], $propsB['required'] ?? [] ) ) {
+			$diff['properties']['required'] = [
+				'old' => $propsB['required'] ?? [],
+				'new' => $propsA['required'] ?? [],
+			];
+		}
 
-        $diff = [];
+		if ( $this->arraysDiffer( $propsA['optional'] ?? [], $propsB['optional'] ?? [] ) ) {
+			$diff['properties']['optional'] = [
+				'old' => $propsB['optional'] ?? [],
+				'new' => $propsA['optional'] ?? [],
+			];
+		}
 
-        if (($a['label'] ?? '') !== ($b['label'] ?? '')) {
-            $diff['label'] = [
-                'old' => $b['label'] ?? '',
-                'new' => $a['label'] ?? '',
-            ];
-        }
+		return $diff;
+	}
 
-        if (($a['description'] ?? '') !== ($b['description'] ?? '')) {
-            $diff['description'] = [
-                'old' => $b['description'] ?? '',
-                'new' => $a['description'] ?? '',
-            ];
-        }
+	/* -------------------------------------------------------------------------
+	 * HELPERS
+	 * ---------------------------------------------------------------------- */
 
-        $propsA = $a['properties'] ?? [];
-        $propsB = $b['properties'] ?? [];
+	/**
+	 * Order-insensitive comparison of scalar lists.
+	 */
+	private function arraysDiffer( array $a, array $b ): bool {
+		$a = array_map( 'strval', $a );
+		$b = array_map( 'strval', $b );
+		sort( $a );
+		sort( $b );
+		return $a !== $b;
+	}
 
-        if ($this->arraysDiffer($propsA['required'] ?? [], $propsB['required'] ?? [])) {
-            $diff['properties']['required'] = [
-                'old' => $propsB['required'] ?? [],
-                'new' => $propsA['required'] ?? [],
-            ];
-        }
+	/**
+	 * Strict, order-sensitive structural comparison.
+	 */
+	private function deepDiffer( $a, $b ): bool {
+		return json_encode( $a ) !== json_encode( $b );
+	}
 
-        if ($this->arraysDiffer($propsA['optional'] ?? [], $propsB['optional'] ?? [])) {
-            $diff['properties']['optional'] = [
-                'old' => $propsB['optional'] ?? [],
-                'new' => $propsA['optional'] ?? [],
-            ];
-        }
+	/* -------------------------------------------------------------------------
+	 * SUMMARY GENERATOR
+	 * ---------------------------------------------------------------------- */
 
-        return $diff;
-    }
+	/**
+	 * Generate a simple human-readable summary.
+	 */
+	public function generateSummary( array $diff ): string {
+		$fmt = static function ( $section ) {
+			return sprintf(
+				"Added: %d, Removed: %d, Modified: %d, Unchanged: %d",
+				count( $section['added'] ?? [] ),
+				count( $section['removed'] ?? [] ),
+				count( $section['modified'] ?? [] ),
+				count( $section['unchanged'] ?? [] )
+			);
+		};
 
-    /* -------------------------------------------------------------------------
-     * HELPERS
-     * ---------------------------------------------------------------------- */
-
-    /**
-     * Order-insensitive comparison of scalar lists.
-     */
-    private function arraysDiffer(array $a, array $b): bool
-    {
-        $a = array_map('strval', $a);
-        $b = array_map('strval', $b);
-        sort($a);
-        sort($b);
-        return $a !== $b;
-    }
-
-    /**
-     * Strict, order-sensitive structural comparison.
-     */
-    private function deepDiffer($a, $b): bool
-    {
-        return json_encode($a) !== json_encode($b);
-    }
-
-    /* -------------------------------------------------------------------------
-     * SUMMARY GENERATOR
-     * ---------------------------------------------------------------------- */
-
-    /**
-     * Generate a simple human-readable summary.
-     */
-    public function generateSummary(array $diff): string
-    {
-
-        $fmt = function ($section) {
-            return sprintf(
-                "Added: %d, Removed: %d, Modified: %d, Unchanged: %d",
-                count($section['added'] ?? []),
-                count($section['removed'] ?? []),
-                count($section['modified'] ?? []),
-                count($section['unchanged'] ?? [])
-            );
-        };
-
-        return implode("\n", [
-            "Categories: " . $fmt($diff['categories'] ?? []),
-            "Properties: " . $fmt($diff['properties'] ?? []),
-            "Subobjects: " . $fmt($diff['subobjects'] ?? []),
-        ]);
-    }
+		return implode( "\n", [
+			"Categories: " . $fmt( $diff['categories'] ?? [] ),
+			"Properties: " . $fmt( $diff['properties'] ?? [] ),
+			"Subobjects: " . $fmt( $diff['subobjects'] ?? [] ),
+		] );
+	}
 }

@@ -81,6 +81,7 @@
 	"semanticschemas-generate-processing": "Progress message for individual category. Parameters:\n* $1 - category name",
 	"semanticschemas-generate-no-categories": "Error message when no categories match the filter",
 	"semanticschemas-generate-error": "Error message for generation failure. Parameters:\n* $1 - error message",
+	"semanticschemas-generate-category-error": "Error message when generation fails for a specific category. Parameters:\n* $1 - category name\n* $2 - error message",
 	"semanticschemas-diff-title": "Title for the diff section",
 	"semanticschemas-diff-description": "Description of the diff functionality",
 	"semanticschemas-diff-file": "Label for file upload/text input",
