@@ -134,59 +134,11 @@ jobs:
           rm -rf /var/www/html/extensions/SemanticSchemas
           ln -s $GITHUB_WORKSPACE/extensions/SemanticSchemas /var/www/html/extensions/SemanticSchemas
 
-      - name: Setup LocalSettings
-        run: |
-          mkdir -p /mw-config
-          cp $GITHUB_WORKSPACE/extensions/SemanticSchemas/tests/LocalSettings.test.php /mw-config/LocalSettings.user.php
-
-      - name: Initialize MediaWiki
+      - name: Install MediaWiki database
         working-directory: /var/www/html
         run: |
-          # Find the bootstrap.php location in the image
-          BOOTSTRAP_PATH=""
-          for path in /var/www/html/mediawiki/bootstrap.php /mw-config/bootstrap.php /opt/labki/mediawiki/bootstrap.php; do
-            if [ -f "$path" ]; then
-              BOOTSTRAP_PATH="$path"
-              break
-            fi
-          done
-
-          if [ -n "$BOOTSTRAP_PATH" ] && [ ! -f LocalSettings.php ]; then
-            echo "Using labki-platform bootstrap at: $BOOTSTRAP_PATH"
-            # Create LocalSettings.php that uses the bootstrap system
-            printf '%s\n' "<?php" > LocalSettings.php
-            printf '%s\n' "# LocalSettings.php - Generated for CI testing" >> LocalSettings.php
-            printf '%s\n' "if (!defined('MEDIAWIKI')) { exit; }" >> LocalSettings.php
-            printf '%s\n' "require_once '$BOOTSTRAP_PATH';" >> LocalSettings.php
-          elif [ ! -f LocalSettings.php ]; then
-            echo "No bootstrap found, using MediaWiki installer..."
-            # Fallback: run MediaWiki installer manually
-            php maintenance/install.php \
-              --dbserver="$MW_DB_HOST" \
-              --dbname="$MW_DB_NAME" \
-              --dbuser="$MW_DB_USER" \
-              --dbpass="$MW_DB_PASSWORD" \
-              --pass="$MW_ADMIN_PASS" \
-              --scriptpath="" \
-              "SemanticSchemasTest" \
-              "$MW_ADMIN_USER"
-
-            # Add user settings include
-            printf '\n%s\n' "# Load custom test settings" >> LocalSettings.php
-            printf '%s\n' "if (file_exists('/mw-config/LocalSettings.user.php')) {" >> LocalSettings.php
-            printf '%s\n' "    require_once '/mw-config/LocalSettings.user.php';" >> LocalSettings.php
-            printf '%s\n' "}" >> LocalSettings.php
-          fi
-
-          # Show configuration for debugging
-          echo "=== LocalSettings.php ==="
-          cat LocalSettings.php || true
-
-      - name: Setup database tables
-        working-directory: /var/www/html
-        run: |
-          # First run install.php to create base tables (if not exists)
-          # Then update.php to apply any migrations
+          # Run install.php first (before LocalSettings.php exists) to create tables
+          rm -f LocalSettings.php
           php maintenance/install.php \
             --dbserver="$MW_DB_HOST" \
             --dbname="$MW_DB_NAME" \
@@ -195,8 +147,46 @@ jobs:
             --pass="$MW_ADMIN_PASS" \
             --scriptpath="" \
             "SemanticSchemasTest" \
-            "$MW_ADMIN_USER" || true
+            "$MW_ADMIN_USER"
 
+      - name: Setup LocalSettings with bootstrap
+        working-directory: /var/www/html
+        run: |
+          mkdir -p /mw-config
+          cp $GITHUB_WORKSPACE/extensions/SemanticSchemas/tests/LocalSettings.test.php /mw-config/LocalSettings.user.php
+
+          # Find the bootstrap.php location in the image
+          BOOTSTRAP_PATH=""
+          for path in /opt/labki/mediawiki/bootstrap.php /var/www/html/mediawiki/bootstrap.php /mw-config/bootstrap.php; do
+            if [ -f "$path" ]; then
+              BOOTSTRAP_PATH="$path"
+              break
+            fi
+          done
+
+          if [ -n "$BOOTSTRAP_PATH" ]; then
+            echo "Using labki-platform bootstrap at: $BOOTSTRAP_PATH"
+            # Replace LocalSettings.php with bootstrap-based config
+            printf '%s\n' "<?php" > LocalSettings.php
+            printf '%s\n' "# LocalSettings.php - Generated for CI testing" >> LocalSettings.php
+            printf '%s\n' "if (!defined('MEDIAWIKI')) { exit; }" >> LocalSettings.php
+            printf '%s\n' "require_once '$BOOTSTRAP_PATH';" >> LocalSettings.php
+          else
+            echo "No bootstrap found, adding user settings include..."
+            # Add user settings include to existing LocalSettings.php
+            printf '\n%s\n' "# Load custom test settings" >> LocalSettings.php
+            printf '%s\n' "if (file_exists('/mw-config/LocalSettings.user.php')) {" >> LocalSettings.php
+            printf '%s\n' "    require_once '/mw-config/LocalSettings.user.php';" >> LocalSettings.php
+            printf '%s\n' "}" >> LocalSettings.php
+          fi
+
+          # Show configuration for debugging
+          echo "=== LocalSettings.php ==="
+          cat LocalSettings.php
+
+      - name: Update database schema
+        working-directory: /var/www/html
+        run: |
           php maintenance/update.php --quick
 
       - name: Run integration tests
