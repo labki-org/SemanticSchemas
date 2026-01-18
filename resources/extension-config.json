@@ -28,6 +28,44 @@
           "Display section"
         ]
       }
+    },
+    "Property": {
+      "parents": [],
+      "label": "Property",
+      "description": "Defines a semantic property for storing data on wiki pages.",
+      "targetNamespace": "Property",
+      "properties": {
+        "required": [
+          "Has description",
+          "Has type"
+        ],
+        "optional": [
+          "Display label",
+          "Allows multiple values",
+          "Allows value",
+          "Has domain and range",
+          "Subproperty of",
+          "Allows value from category",
+          "Allows value from namespace",
+          "Has template"
+        ]
+      }
+    },
+    "Subobject": {
+      "parents": [],
+      "label": "Subobject",
+      "description": "Defines a subobject type for nested data structures within pages.",
+      "targetNamespace": "Subobject",
+      "properties": {
+        "required": [
+          "Has description"
+        ],
+        "optional": [
+          "Display label",
+          "Has required property",
+          "Has optional property"
+        ]
+      }
     }
   },
   "subobjects": {
@@ -45,70 +83,87 @@
     }
   },
   "properties": {
+    "Has type": {
+      "datatype": "Text",
+      "label": "Data type",
+      "description": "The type of data this property stores (e.g., Text, Page, Number, Date).",
+      "allowedValues": [
+        "Text",
+        "Page",
+        "Number",
+        "Date",
+        "Boolean",
+        "URL",
+        "Email",
+        "Telephone number",
+        "Code"
+      ],
+      "allowsMultipleValues": false
+    },
     "Display label": {
       "datatype": "Text",
-      "label": "Display label",
-      "description": "Human-readable label used for display instead of the internal name.",
+      "label": "Display name",
+      "description": "Human-readable name shown instead of the internal name.",
       "allowsMultipleValues": false
     },
     "Has description": {
       "datatype": "Text",
-      "label": "Has description",
-      "description": "Description text explaining the purpose of the category, property, or subobject.",
+      "label": "Description",
+      "description": "Explains the purpose of this category, property, or subobject.",
       "allowsMultipleValues": false
     },
     "Has target namespace": {
       "datatype": "Text",
-      "label": "Has target namespace",
-      "description": "Target namespace where pages of this category are created (e.g., Main, User).",
+      "label": "Target namespace",
+      "description": "Where pages of this category are created (e.g., Main, User).",
       "allowsMultipleValues": false
     },
     "Has parent category": {
       "datatype": "Page",
-      "label": "Has parent category",
-      "description": "Parent categories for inheritance in the category hierarchy.",
+      "label": "Inherits from",
+      "description": "Parent categories whose properties and subobjects are inherited.",
       "allowedNamespace": "Category",
       "allowsMultipleValues": true
     },
     "Has required property": {
       "datatype": "Page",
-      "label": "Has required property",
-      "description": "Properties that must be filled in for pages of this category or subobject.",
+      "label": "Required fields",
+      "description": "Fields that must be filled in when creating pages of this type.",
       "allowedNamespace": "Property",
       "allowsMultipleValues": true
     },
     "Has optional property": {
       "datatype": "Page",
-      "label": "Has optional property",
-      "description": "Properties that may optionally be filled in for pages of this category or subobject.",
+      "label": "Optional fields",
+      "description": "Fields that may optionally be filled in.",
       "allowedNamespace": "Property",
       "allowsMultipleValues": true
     },
     "Has required subobject": {
       "datatype": "Page",
-      "label": "Has required subobject",
-      "description": "Subobjects that must be present on pages in this category.",
+      "label": "Required subobjects",
+      "description": "Subobject types that must be present on pages of this category.",
       "allowedNamespace": "Subobject",
       "allowsMultipleValues": true
     },
     "Has optional subobject": {
       "datatype": "Page",
-      "label": "Has optional subobject",
-      "description": "Subobjects that may be present on pages in this category.",
+      "label": "Optional subobjects",
+      "description": "Subobject types that may optionally be present.",
       "allowedNamespace": "Subobject",
       "allowsMultipleValues": true
     },
     "Has display header property": {
       "datatype": "Page",
-      "label": "Has display header property",
-      "description": "Properties to display prominently in the header of the page.",
+      "label": "Header fields",
+      "description": "Fields to display prominently in the page header.",
       "allowedNamespace": "Property",
       "allowsMultipleValues": true
     },
     "Has display format": {
       "datatype": "Text",
-      "label": "Has display format",
-      "description": "Format for the display template (e.g. table, sidebox, sections).",
+      "label": "Display format",
+      "description": "How to lay out the page (table, sidebox, or sections).",
       "allowedValues": [
         "table",
         "sidebox",
@@ -118,71 +173,71 @@
     },
     "Has display section name": {
       "datatype": "Text",
-      "label": "Has display section name",
-      "description": "Name of a display section used in inline subobjects.",
+      "label": "Section name",
+      "description": "Name of a display section for grouping fields.",
       "allowsMultipleValues": false
     },
     "Has display section property": {
       "datatype": "Page",
-      "label": "Has display section property",
-      "description": "Properties included in a given display section.",
+      "label": "Section fields",
+      "description": "Fields included in this display section.",
       "allowedNamespace": "Property",
       "allowsMultipleValues": true
     },
     "Allows value": {
       "datatype": "Text",
-      "label": "Allows value",
-      "description": "Enumerated allowed value for a property.",
+      "label": "Allowed values",
+      "description": "Specific values that this property can have (creates a dropdown).",
       "allowsMultipleValues": true
     },
     "Allows multiple values": {
       "datatype": "Boolean",
-      "label": "Allows multiple values",
-      "description": "Whether the property itself can have multiple values.",
+      "label": "Allow multiple values",
+      "description": "Whether this field can hold more than one value.",
       "allowsMultipleValues": false
     },
     "Has domain and range": {
       "datatype": "Page",
-      "label": "Has domain and range",
-      "description": "For page-type properties, restricts values to pages in a given category.",
+      "label": "Restrict to category",
+      "description": "For Page-type properties, only allow pages from this category.",
       "allowedNamespace": "Category",
       "allowsMultipleValues": false
     },
     "Subproperty of": {
       "datatype": "Page",
       "label": "Subproperty of",
-      "description": "Marks this property as a subproperty of another property.",
+      "description": "Parent property that this property specializes.",
       "allowedNamespace": "Property",
       "allowsMultipleValues": false
     },
     "Allows value from category": {
       "datatype": "Text",
-      "label": "Allows value from category",
-      "description": "For autocomplete, restricts value suggestions to a given category.",
+      "label": "Autocomplete from category",
+      "description": "Category to use for autocomplete suggestions.",
       "allowsMultipleValues": false
     },
     "Allows value from namespace": {
       "datatype": "Text",
-      "label": "Allows value from namespace",
-      "description": "For autocomplete, restricts value suggestions to a given namespace.",
+      "label": "Autocomplete from namespace",
+      "description": "Namespace to use for autocomplete suggestions.",
       "allowsMultipleValues": false
     },
     "Has template": {
       "datatype": "Page",
-      "label": "Has template",
-      "description": "Template page name or PropertyType reference for rendering this property.",
+      "label": "Display template",
+      "description": "Custom template for rendering this property's value.",
       "allowsMultipleValues": false
     },
     "Has section separator": {
       "datatype": "Text",
-      "label": "Has section separator",
-      "description": "Separator text between sections or properties in a format.",
+      "label": "Section separator",
+      "description": "Text shown between sections or fields.",
       "allowsMultipleValues": false
     },
     "Has empty value behavior": {
       "datatype": "Text",
-      "label": "Has empty value behavior",
-      "description": "How to handle properties with empty values (show/hide).",
+      "label": "Empty value behavior",
+      "description": "What to do when a field has no value.",
       "allowedValues": [
         "show",
         "hide"
@@ -191,8 +246,8 @@
     },
     "Has subobject type": {
       "datatype": "Page",
-      "label": "Has subobject type",
-      "description": "Identifies which Subobject schema a stored subobject instance conforms to.",
+      "label": "Subobject type",
+      "description": "Which subobject schema this instance conforms to.",
       "allowedNamespace": "Subobject",
       "allowsMultipleValues": false
     }
