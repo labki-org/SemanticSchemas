@@ -128,5 +128,10 @@
 	"semanticschemas-api-param-parents": "Optional: Parent categories for virtual hierarchy preview (for form preview mode). Pipe-separated list.",
 	"apihelp-semanticschemas-hierarchy-example-1": "Get hierarchy for PhDStudent category",
 	"apihelp-semanticschemas-hierarchy-example-2": "Get hierarchy for GraduateStudent category (with prefix)",
-	"apihelp-semanticschemas-hierarchy-example-3": "Get virtual hierarchy preview with specified parents"
+	"apihelp-semanticschemas-hierarchy-example-3": "Get virtual hierarchy preview with specified parents",
+	"semanticschemas-action-generate-form": "Generate form",
+	"semanticschemas-form-generated": "Form for category \"$1\" has been generated.",
+	"semanticschemas-generate-form-failed": "Failed to generate form for category \"$1\": $2",
+	"semanticschemas-generate-form-no-category": "No category specified.",
+	"semanticschemas-generate-form-no-schema": "Category \"$1\" does not have schema data. Import a schema first."
 }

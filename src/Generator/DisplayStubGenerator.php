@@ -15,8 +15,19 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
  *
  * This "Generation-Time Resolution" replaces the older dynamic runtime system,
  * ensuring reliability, cacheability, and compatibility with the standard MediaWiki parser.
+ *
+ * Display templates include a special marker comment that indicates they are safe
+ * to auto-regenerate. If a user removes this marker, the template is considered
+ * "customized" and will be preserved during automatic updates.
  */
 class DisplayStubGenerator {
+
+	/**
+	 * Marker comment that indicates the display template is safe to auto-regenerate.
+	 * Users can remove this line to prevent automatic updates.
+	 */
+	public const AUTO_REGENERATE_MARKER =
+		'<!-- SemanticSchemas:auto-regenerate - Remove this line to prevent automatic updates -->';
 
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
@@ -100,7 +111,8 @@ class DisplayStubGenerator {
 	}
 
 	private function generateTableWikitext( CategoryModel $category ): string {
-		$content = "<includeonly>\n";
+		$content = self::AUTO_REGENERATE_MARKER . "\n";
+		$content .= "<includeonly>\n";
 		$content .= "{| class=\"wikitable source-semanticschemas\"\n";
 		$content .= "! Property !! Value\n";
 
@@ -114,7 +126,8 @@ class DisplayStubGenerator {
 
 	private function generateSideboxWikitext( CategoryModel $category ): string {
 		// Infobox style: floated right, distinct styling
-		$content = "<includeonly>\n";
+		$content = self::AUTO_REGENERATE_MARKER . "\n";
+		$content .= "<includeonly>\n";
 		$tableStyle = 'float: right; clear: right; margin: 0 0 1em 1em; width: 300px; '
 			. 'background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
 		$content .= '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
@@ -130,7 +143,8 @@ class DisplayStubGenerator {
 	}
 
 	private function generateSectionsWikitext( CategoryModel $category ): string {
-		$content = "<includeonly>\n";
+		$content = self::AUTO_REGENERATE_MARKER . "\n";
+		$content .= "<includeonly>\n";
 		$content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
 
 		$sections = $category->getDisplaySections();
@@ -215,5 +229,71 @@ class DisplayStubGenerator {
 	public function displayStubExists( string $categoryName ): bool {
 		$title = $this->pageCreator->makeTitle( $categoryName . "/display", NS_TEMPLATE );
 		return $title && $this->pageCreator->pageExists( $title );
+	}
+
+	/**
+	 * Generate display template only if allowed by the auto-regenerate marker.
+	 *
+	 * This method implements the conditional regeneration logic:
+	 * - If the display template doesn't exist, generate it (with marker)
+	 * - If it exists AND has the marker, regenerate it (user hasn't customized)
+	 * - If it exists but NO marker, preserve it (user customized)
+	 *
+	 * @param CategoryModel $category
+	 * @return array Result array with keys:
+	 *   - 'status' (string): 'created', 'updated', or 'preserved'
+	 *   - 'message' (string): Human-readable status message
+	 */
+	public function generateIfAllowed( CategoryModel $category ): array {
+		$categoryName = $category->getName();
+		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
+
+		if ( !$title ) {
+			return [
+				'status' => 'error',
+				'message' => 'Failed to create title for display template.'
+			];
+		}
+
+		// Check if the page exists
+		if ( !$this->pageCreator->pageExists( $title ) ) {
+			// Template doesn't exist - create it
+			$this->generateDisplayContent( $category );
+			return [
+				'status' => 'created',
+				'message' => "Display template created: {$title->getPrefixedText()}"
+			];
+		}
+
+		// Template exists - check for the auto-regenerate marker
+		if ( $this->hasAutoRegenerateMarker( $title ) ) {
+			// Safe to regenerate
+			$this->generateDisplayContent( $category );
+			return [
+				'status' => 'updated',
+				'message' => "Display template updated: {$title->getPrefixedText()}"
+			];
+		}
+
+		// User has customized the template (marker removed) - preserve it
+		return [
+			'status' => 'preserved',
+			'message' => "Display template was not updated because it has been customized. " .
+				"The template may be out of date if category properties have changed."
+		];
+	}
+
+	/**
+	 * Check if a display template has the auto-regenerate marker.
+	 *
+	 * @param \Title $title
+	 * @return bool True if the template has the marker (safe to regenerate)
+	 */
+	public function hasAutoRegenerateMarker( \Title $title ): bool {
+		$content = $this->pageCreator->getPageContent( $title );
+		if ( $content === null ) {
+			return false;
+		}
+		return strpos( $content, self::AUTO_REGENERATE_MARKER ) !== false;
 	}
 }

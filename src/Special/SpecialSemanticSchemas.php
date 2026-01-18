@@ -141,6 +141,13 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
+		// Check for generate-form action (from Category page link)
+		$action = $request->getVal( 'action' );
+		if ( $action === 'generate-form' ) {
+			$this->handleGenerateFormAction();
+			return;
+		}
+
 		// Add ResourceLoader styles
 		$output->addModuleStyles( 'ext.semanticschemas.styles' );
 
@@ -165,6 +172,126 @@ class SpecialSemanticSchemas extends SpecialPage {
 			default:
 				$this->showOverview();
 				break;
+		}
+	}
+
+	/**
+	 * Handle the "generate-form" action from Category page links.
+	 *
+	 * This generates the full artifact set for a single category:
+	 * - Form (always regenerated)
+	 * - Dispatcher template (always regenerated)
+	 * - Semantic template (always regenerated)
+	 * - Display template (conditional - only if not user-customized)
+	 * - Subobject templates (always regenerated)
+	 *
+	 * After generation, redirects to the Form page.
+	 */
+	private function handleGenerateFormAction(): void {
+		$request = $this->getRequest();
+		$output = $this->getOutput();
+
+		$categoryName = trim( $request->getVal( 'category', '' ) );
+
+		if ( $categoryName === '' ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-generate-form-no-category' )->text()
+			) );
+			return;
+		}
+
+		// Check rate limit
+		if ( $this->checkRateLimit( 'generate-form' ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-ratelimit-exceeded' )
+					->params( $this->getRateLimitPerHour() )
+					->text()
+			) );
+			return;
+		}
+
+		// Load the category
+		$categoryStore = new WikiCategoryStore();
+		$category = $categoryStore->readCategory( $categoryName );
+
+		if ( $category === null ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-generate-form-no-schema' )->params( $categoryName )->text()
+			) );
+			return;
+		}
+
+		try {
+			// Build category map for inheritance resolution
+			$categoryMap = $this->buildCategoryMap( $categoryStore );
+			$resolver = new InheritanceResolver( $categoryMap );
+
+			// Resolve inheritance to get effective category with all inherited properties
+			$effective = $resolver->getEffectiveCategory( $categoryName );
+
+			// Generate templates (always regenerate auto-generated ones)
+			$templateGenerator = new TemplateGenerator();
+			$templateResult = $templateGenerator->generateAllTemplates( $effective );
+
+			if ( !$templateResult['success'] ) {
+				$output->addHTML( Html::errorBox(
+					$this->msg( 'semanticschemas-generate-form-failed' )
+						->params( $categoryName, implode( ', ', $templateResult['errors'] ) )
+						->text()
+				) );
+				return;
+			}
+
+			// Generate form
+			$formGenerator = new FormGenerator();
+			$formSuccess = $formGenerator->generateAndSaveForm( $effective );
+
+			if ( !$formSuccess ) {
+				$output->addHTML( Html::errorBox(
+					$this->msg( 'semanticschemas-generate-form-failed' )
+						->params( $categoryName, 'Failed to save form' )
+						->text()
+				) );
+				return;
+			}
+
+			// Generate display template conditionally (respect user customizations)
+			$displayGenerator = new DisplayStubGenerator();
+			$displayResult = $displayGenerator->generateIfAllowed( $effective );
+
+			// Log the operation
+			$this->logOperation( 'generate', "Form generated for $categoryName", [
+				'category' => $categoryName,
+				'displayStatus' => $displayResult['status'],
+			] );
+
+			// Redirect to the form page
+			$formTitle = Title::makeTitleSafe( $this->getFormNamespace(), $categoryName );
+			if ( $formTitle ) {
+				$output->redirect( $formTitle->getFullURL() );
+			} else {
+				// Fallback: show success message if redirect fails
+				$output->addHTML( Html::successBox(
+					$this->msg( 'semanticschemas-form-generated' )->params( $categoryName )->text()
+				) );
+
+				// Show warning if display template was preserved
+				if ( $displayResult['status'] === 'preserved' ) {
+					$output->addHTML( Html::warningBox( $displayResult['message'] ) );
+				}
+			}
+
+		} catch ( \Exception $e ) {
+			$this->logOperation( 'generate', "Form generation failed for $categoryName: " . $e->getMessage(), [
+				'category' => $categoryName,
+				'exception' => get_class( $e ),
+			] );
+
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-generate-form-failed' )
+					->params( $categoryName, $e->getMessage() )
+					->text()
+			) );
 		}
 	}
 

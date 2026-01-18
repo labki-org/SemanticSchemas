@@ -112,5 +112,10 @@
 	"semanticschemas-hierarchy-unknown-category": "Fallback text when the source category is missing",
 	"semanticschemas-hierarchy-unnamed-property": "Fallback text when property name is missing",
 	"semanticschemas-hierarchy-required": "Badge text for required items",
-	"semanticschemas-hierarchy-optional": "Badge text for optional items"
+	"semanticschemas-hierarchy-optional": "Badge text for optional items",
+	"semanticschemas-action-generate-form": "Text shown in the action dropdown menu on Category pages to generate a form",
+	"semanticschemas-form-generated": "Success message after generating a form. Parameters:\n* $1 - category name",
+	"semanticschemas-generate-form-failed": "Error message when form generation fails. Parameters:\n* $1 - category name\n* $2 - error message",
+	"semanticschemas-generate-form-no-category": "Error message when no category is specified for form generation",
+	"semanticschemas-generate-form-no-schema": "Error message when the category has no schema data. Parameters:\n* $1 - category name"
 }

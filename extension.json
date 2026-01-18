@@ -47,7 +47,8 @@
 	"Hooks": {
 		"SetupAfterCache": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks::onSetupAfterCache",
 		"LoadExtensionSchemaUpdates": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks::onLoadExtensionSchemaUpdates",
-		"ParserFirstCallInit": "MediaWiki\\Extension\\SemanticSchemas\\Parser\\DisplayParserFunctions::onParserFirstCallInit"
+		"ParserFirstCallInit": "MediaWiki\\Extension\\SemanticSchemas\\Parser\\DisplayParserFunctions::onParserFirstCallInit",
+		"SkinTemplateNavigation::Universal": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\CategoryPageHooks::onSkinTemplateNavigation"
 	},
 	"AutoloadClasses": {
 		"MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks": "src/Hooks/SemanticSchemasSetupHooks.php"
