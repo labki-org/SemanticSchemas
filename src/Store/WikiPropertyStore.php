@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
+use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 
@@ -15,6 +16,8 @@ use MediaWiki\Title\Title;
  * Fully semantic: NO wikitext parsing.
  */
 class WikiPropertyStore {
+
+	use SMWDataExtractor;
 
 	private const MARKER_START = '<!-- SemanticSchemas Start -->';
 	private const MARKER_END = '<!-- SemanticSchemas End -->';
@@ -191,29 +194,29 @@ class WikiPropertyStore {
 			// If property creation fails, datatype will default to 'Text' in readProperty()
 		}
 
-		$out['label'] = $this->fetchOne( $sdata, 'Display label' );
-		$out['description'] = $this->fetchOne( $sdata, 'Has description' );
+		$out['label'] = $this->smwFetchOne( $sdata, 'Display label' );
+		$out['description'] = $this->smwFetchOne( $sdata, 'Has description' );
 
 		$out['allowedValues'] =
-			$this->fetchMany( $sdata, 'Allows value', 'text' );
+			$this->smwFetchMany( $sdata, 'Allows value', 'text' );
 
 		$out['rangeCategory'] =
-			$this->fetchOne( $sdata, 'Has domain and range', 'category' );
+			$this->smwFetchOne( $sdata, 'Has domain and range', 'category' );
 
 		$out['subpropertyOf'] =
-			$this->fetchOne( $sdata, 'Subproperty of', 'property' );
+			$this->smwFetchOne( $sdata, 'Subproperty of', 'property' );
 
 		$out['allowedCategory'] =
-			$this->fetchOne( $sdata, 'Allows value from category', 'text' );
+			$this->smwFetchOne( $sdata, 'Allows value from category', 'text' );
 
 		$out['allowedNamespace'] =
-			$this->fetchOne( $sdata, 'Allows value from namespace', 'text' );
+			$this->smwFetchOne( $sdata, 'Allows value from namespace', 'text' );
 
 		$out['allowsMultipleValues'] =
-			$this->fetchBoolean( $sdata, 'Allows multiple values' );
+			$this->smwFetchBoolean( $sdata, 'Allows multiple values' );
 
 		/* -------------------- Template Configuration -------------------- */
-		$hasTemplate = $this->fetchOne( $sdata, 'Has template', 'page' );
+		$hasTemplate = $this->smwFetchOne( $sdata, 'Has template', 'page' );
 
 		if ( $hasTemplate ) {
 			$out['hasTemplate'] = $hasTemplate;
@@ -221,91 +224,10 @@ class WikiPropertyStore {
 		}
 
 		// Clean null/empty
-
-		// Clean null/empty
 		return array_filter(
 			$out,
 			fn ( $v ) => $v !== null && $v !== []
 		);
-	}
-
-	private function fetchOne( $sd, string $p, string $type = 'text' ): ?string {
-		$vals = $this->fetchMany( $sd, $p, $type );
-		return $vals[0] ?? null;
-	}
-
-	private function fetchBoolean( $sd, string $prop ): bool {
-		try {
-			$p = \SMW\DIProperty::newFromUserLabel( $prop );
-			$items = $sd->getPropertyValues( $p );
-		} catch ( \Throwable $e ) {
-			return false;
-		}
-
-		foreach ( $items as $di ) {
-			if ( $di instanceof \SMWDIBoolean ) {
-				return $di->getBoolean();
-			}
-			if ( $di instanceof \SMWDINumber ) {
-				return $di->getNumber() > 0;
-			}
-			if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
-				$v = strtolower( trim( $di->getString() ) );
-				if ( in_array( $v, [ '1', 'true', 'yes', 'y', 't' ], true ) ) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	private function fetchMany( $sd, string $p, string $type = 'text' ): array {
-		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $p );
-			$items = $sd->getPropertyValues( $prop );
-		} catch ( \Throwable $e ) {
-			return [];
-		}
-
-		$out = [];
-
-		foreach ( $items as $di ) {
-			$v = $this->extractValue( $di, $type );
-			if ( $v !== null ) {
-				$out[] = $v;
-			}
-		}
-
-		return $out;
-	}
-
-	private function extractValue( $di, string $type ): ?string {
-		if ( $di instanceof \SMW\DIWikiPage ) {
-			$t = $di->getTitle();
-			if ( !$t ) {
-				return null;
-			}
-
-			$text = str_replace( '_', ' ', $t->getText() );
-
-			switch ( $type ) {
-				case 'property':
-					return ( $t->getNamespace() === 102 ) ? $text : null;
-				case 'category':
-					return ( $t->getNamespace() === 14 ) ? $text : null;
-				case 'page':
-					return $t->getPrefixedText();
-				default:
-					return $text;
-			}
-		}
-
-		if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
-			return trim( $di->getString() );
-		}
-
-		return null;
 	}
 
 	/* -------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 
@@ -14,6 +15,8 @@ use MediaWiki\Title\Title;
  * Fully symmetric with CategoryModel->toArray() structure.
  */
 class WikiCategoryStore {
+
+	use SMWDataExtractor;
 
 	private const MARKER_START = '<!-- SemanticSchemas Start -->';
 	private const MARKER_END = '<!-- SemanticSchemas End -->';
@@ -130,20 +133,20 @@ class WikiCategoryStore {
 		$sdata = $store->getSemanticData( $subject );
 
 		return [
-			'label' => $this->fetchOne( $sdata, 'Display label' ) ?? $categoryName,
-			'description' => $this->fetchOne( $sdata, 'Has description' ) ?? '',
-			'targetNamespace' => $this->fetchOne( $sdata, 'Has target namespace' ) ?? null,
+			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
+			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
+			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
 
-			'parents' => $this->fetchList( $sdata, 'Has parent category', 'category' ),
+			'parents' => $this->smwFetchMany( $sdata, 'Has parent category', 'category' ),
 
 			'properties' => [
-				'required' => $this->fetchList( $sdata, 'Has required property', 'property' ),
-				'optional' => $this->fetchList( $sdata, 'Has optional property', 'property' ),
+				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
+				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),
 			],
 
 			'subobjects' => [
-				'required' => $this->fetchList( $sdata, 'Has required subobject', 'subobject' ),
-				'optional' => $this->fetchList( $sdata, 'Has optional subobject', 'subobject' ),
+				'required' => $this->smwFetchMany( $sdata, 'Has required subobject', 'subobject' ),
+				'optional' => $this->smwFetchMany( $sdata, 'Has optional subobject', 'subobject' ),
 			],
 
 			'display' => $this->loadDisplayConfig( $sdata ),
@@ -151,10 +154,10 @@ class WikiCategoryStore {
 	}
 
 	private function loadDisplayConfig( $semanticData ): array {
-		$header = $this->fetchList( $semanticData, 'Has display header property', 'property' );
+		$header = $this->smwFetchMany( $semanticData, 'Has display header property', 'property' );
 		$sections = $this->fetchDisplaySections( $semanticData );
-		$format = $this->fetchOne( $semanticData, 'Has display format' );
-		$templateProp = $this->fetchOne( $semanticData, 'Has display template', 'property' );
+		$format = $this->smwFetchOne( $semanticData, 'Has display format' );
+		$templateProp = $this->smwFetchOne( $semanticData, 'Has display template', 'property' );
 
 		$out = [];
 		if ( $header !== [] ) {
@@ -173,75 +176,6 @@ class WikiCategoryStore {
 		return $out;
 	}
 
-	/* -------------------------------------------------------------------------
-	 * SMW extraction helpers
-	 * ------------------------------------------------------------------------- */
-
-	private function fetchOne( $semanticData, string $propName, string $type = 'text' ): ?string {
-		$vals = $this->fetchList( $semanticData, $propName, $type );
-		return $vals[0] ?? null;
-	}
-
-	private function fetchList( $semanticData, string $propName, string $type ): array {
-		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
-			$items = $semanticData->getPropertyValues( $prop );
-		} catch ( \Throwable $e ) {
-			return [];
-		}
-
-		$out = [];
-		foreach ( $items as $di ) {
-			$v = $this->extractValue( $di, $type );
-			if ( $v !== null ) {
-				$out[] = $v;
-			}
-		}
-		return $out;
-	}
-
-	private function extractValue( $di, string $type ): ?string {
-		if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
-			return trim( $di->getString() );
-		}
-
-		if ( $di instanceof \SMW\DIWikiPage ) {
-			$t = $di->getTitle();
-			if ( !$t ) {
-				return null;
-			}
-
-			$text = str_replace( '_', ' ', $t->getText() );
-
-			switch ( $type ) {
-				case 'property':
-					// SMW Property namespace is usually 102
-					return $t->getNamespace() === 102 ? $text : null;
-
-				case 'category':
-					// Category namespace is 14
-					return $t->getNamespace() === 14 ? $text : null;
-
-				case 'subobject':
-					// Subobjects are often in main/other namespaces but have a subobject name.
-					// If strict namespace check was intended, we might need configuration.
-					// For now, checking if it is a subobject DI.
-					// Note: DIWikiPage doesn't easy tell if it IS a subobject, but we can check usage.
-					// If the previous code relied on a constant NS_SUBOBJECT, it might be custom.
-					// Assuming for now we accept any namespace if we successfully requested a subobject type.
-					return $text;
-
-				case 'page':
-					return $t->getPrefixedText();
-
-				default:
-					return $text;
-			}
-		}
-
-		return null;
-	}
-
 	private function fetchDisplaySections( $semanticData ): array {
 		$sections = [];
 
@@ -252,8 +186,8 @@ class WikiCategoryStore {
 				continue;
 			}
 
-			$secName = $this->fetchOne( $subSD, 'Has display section name' );
-			$props = $this->fetchList( $subSD, 'Has display section property', 'property' );
+			$secName = $this->smwFetchOne( $subSD, 'Has display section name' );
+			$props = $this->smwFetchMany( $subSD, 'Has display section property', 'property' );
 
 			if ( $secName !== null && $props !== [] ) {
 				$sections[] = [

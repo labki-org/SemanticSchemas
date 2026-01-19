@@ -79,10 +79,10 @@ class ExtensionConfigInstaller {
 
 		// Check all layers - templates, properties, subobjects, and categories
 		// If any layer is incomplete, we consider installation incomplete
-		return $this->areTemplatesInstalled( $configPath )
-			&& $this->arePropertiesInstalled( $configPath )
-			&& $this->areSubobjectsInstalled( $configPath )
-			&& $this->areCategoriesInstalled( $configPath );
+		return $this->areEntitiesInstalled( $configPath, 'templates', NS_TEMPLATE )
+			&& $this->areEntitiesInstalled( $configPath, 'properties', SMW_NS_PROPERTY )
+			&& $this->areEntitiesInstalled( $configPath, 'subobjects', NS_SUBOBJECT )
+			&& $this->areEntitiesInstalled( $configPath, 'categories', NS_CATEGORY );
 	}
 
 	/**
@@ -290,94 +290,23 @@ class ExtensionConfigInstaller {
 	}
 
 	/**
-	 * Check if properties from the schema are installed.
+	 * Check if entities of a given type from the schema are installed.
 	 *
-	 * @param string $filePath
+	 * @param string $filePath Path to schema file
+	 * @param string $entityType Schema key: 'properties', 'categories', 'templates', or 'subobjects'
+	 * @param int $namespace MediaWiki namespace constant
 	 * @return bool
 	 */
-	public function arePropertiesInstalled( string $filePath ): bool {
+	private function areEntitiesInstalled( string $filePath, string $entityType, int $namespace ): bool {
 		$schema = $this->loader->loadFromFile( $filePath );
-		$properties = $schema['properties'] ?? [];
+		$entities = $schema[$entityType] ?? [];
 
-		if ( empty( $properties ) ) {
+		if ( empty( $entities ) ) {
 			return true;
 		}
 
-		// Check if at least the first few key properties exist
-		foreach ( array_keys( $properties ) as $name ) {
-			$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
-			if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Check if categories from the schema are installed.
-	 *
-	 * @param string $filePath
-	 * @return bool
-	 */
-	public function areCategoriesInstalled( string $filePath ): bool {
-		$schema = $this->loader->loadFromFile( $filePath );
-		$categories = $schema['categories'] ?? [];
-
-		if ( empty( $categories ) ) {
-			return true;
-		}
-
-		foreach ( array_keys( $categories ) as $name ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
-			if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Check if templates from the schema are installed.
-	 *
-	 * @param string $filePath
-	 * @return bool
-	 */
-	public function areTemplatesInstalled( string $filePath ): bool {
-		$schema = $this->loader->loadFromFile( $filePath );
-		$templates = $schema['templates'] ?? [];
-
-		if ( empty( $templates ) ) {
-			return true;
-		}
-
-		foreach ( array_keys( $templates ) as $name ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_TEMPLATE );
-			if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Check if subobjects from the schema are installed.
-	 *
-	 * @param string $filePath
-	 * @return bool
-	 */
-	public function areSubobjectsInstalled( string $filePath ): bool {
-		$schema = $this->loader->loadFromFile( $filePath );
-		$subobjects = $schema['subobjects'] ?? [];
-
-		if ( empty( $subobjects ) ) {
-			return true;
-		}
-
-		foreach ( array_keys( $subobjects ) as $name ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_SUBOBJECT );
+		foreach ( array_keys( $entities ) as $name ) {
+			$title = $this->pageCreator->makeTitle( $name, $namespace );
 			if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
 				return false;
 			}
@@ -724,26 +653,29 @@ class ExtensionConfigInstaller {
 	}
 
 	/**
-	 * Force SMW to rebuild semantic data for specific property pages.
+	 * Force SMW to rebuild semantic data for specific pages.
 	 *
-	 * This is necessary because SMW may not have processed property type definitions
-	 * before categories try to use them, resulting in "improper value" errors.
+	 * This is necessary because SMW may not have processed semantic data
+	 * before other pages try to reference them, resulting in "improper value" errors.
 	 *
-	 * We force a fresh parse (bypassing cache) to ensure SMW processes the property
-	 * type definitions before categories reference them.
+	 * We force a fresh parse (bypassing cache) to ensure SMW processes the
+	 * semantic annotations before they are referenced.
 	 *
-	 * @param string[] $propertyNames
+	 * @param string[] $names Page names (without namespace prefix)
+	 * @param int $namespace MediaWiki namespace constant
 	 */
-	private function rebuildSMWDataForProperties( array $propertyNames ): void {
+	private function rebuildSMWDataForPages( array $names, int $namespace ): void {
 		if ( !class_exists( \SMW\StoreFactory::class ) ) {
 			return;
 		}
 
 		$store = \SMW\StoreFactory::getStore();
 		$services = \MediaWiki\MediaWikiServices::getInstance();
+		$nsInfo = $services->getNamespaceInfo();
+		$nsName = $nsInfo->getCanonicalName( $namespace ) ?: "NS$namespace";
 
-		foreach ( $propertyNames as $name ) {
-			$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
+		foreach ( $names as $name ) {
+			$title = $this->pageCreator->makeTitle( $name, $namespace );
 			if ( !$title || !$title->exists() ) {
 				continue;
 			}
@@ -756,7 +688,7 @@ class ExtensionConfigInstaller {
 				}
 
 				// Force a fresh parse using ContentRenderer, bypassing parser cache.
-				// This ensures SMW's parser hooks run and process property type definitions.
+				// This ensures SMW's parser hooks run and process semantic annotations.
 				$parserOptions = \ParserOptions::newFromAnon();
 				$parserOptions->setOption( 'enableLimitReport', false );
 
@@ -775,7 +707,7 @@ class ExtensionConfigInstaller {
 					}
 				}
 			} catch ( \Throwable $e ) {
-				wfDebugLog( 'semanticschemas', "Failed to rebuild SMW data for Property:$name: " . $e->getMessage() );
+				wfDebugLog( 'semanticschemas', "Failed to rebuild SMW data for $nsName:$name: " . $e->getMessage() );
 			}
 		}
 	}
@@ -818,63 +750,6 @@ class ExtensionConfigInstaller {
 		// Also clear the StoreFactory cache.
 		if ( class_exists( \SMW\StoreFactory::class ) ) {
 			\SMW\StoreFactory::clear();
-		}
-	}
-
-	/**
-	 * Force SMW to rebuild semantic data for specific category pages.
-	 *
-	 * This is necessary because SMW may not have processed category semantic data
-	 * (like Has target namespace) before form generation tries to read it.
-	 *
-	 * We force a fresh parse (bypassing cache) to ensure SMW sees the current
-	 * property type definitions.
-	 *
-	 * @param string[] $categoryNames
-	 */
-	private function rebuildSMWDataForCategories( array $categoryNames ): void {
-		if ( !class_exists( \SMW\StoreFactory::class ) ) {
-			return;
-		}
-
-		$store = \SMW\StoreFactory::getStore();
-		$services = \MediaWiki\MediaWikiServices::getInstance();
-
-		foreach ( $categoryNames as $name ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
-			if ( !$title || !$title->exists() ) {
-				continue;
-			}
-
-			try {
-				$wikiPage = $services->getWikiPageFactory()->newFromTitle( $title );
-				$content = $wikiPage->getContent();
-				if ( !$content ) {
-					continue;
-				}
-
-				// Force a fresh parse using ContentRenderer, bypassing parser cache.
-				// This ensures SMW's parser hooks run with current property type knowledge.
-				$parserOptions = \ParserOptions::newFromAnon();
-				$parserOptions->setOption( 'enableLimitReport', false );
-
-				$contentRenderer = $services->getContentRenderer();
-				$parserOutput = $contentRenderer->getParserOutput(
-					$content,
-					$title,
-					null, // revision
-					$parserOptions
-				);
-
-				if ( $parserOutput && method_exists( \SMW\ParserData::class, 'newFromParserOutput' ) ) {
-					$parserData = \SMW\ParserData::newFromParserOutput( $parserOutput, $title );
-					if ( $parserData ) {
-						$store->updateData( $parserData->getSemanticData() );
-					}
-				}
-			} catch ( \Throwable $e ) {
-				wfDebugLog( 'semanticschemas', "Failed to rebuild SMW data for Category:$name: " . $e->getMessage() );
-			}
 		}
 	}
 }
