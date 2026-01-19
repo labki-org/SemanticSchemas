@@ -160,6 +160,24 @@ class TemplateGenerator {
 	 * ===================================================================== */
 
 	/**
+	 * Generate a template call with property parameter passthrough.
+	 *
+	 * @param string $templateName Template name to call
+	 * @param array $props List of property names
+	 * @return array Lines of wikitext
+	 */
+	private function generateTemplateCall( string $templateName, array $props ): array {
+		$out = [];
+		$out[] = '{{' . $templateName;
+		foreach ( $props as $p ) {
+			$param = NamingHelper::propertyToParameter( $p );
+			$out[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
+		}
+		$out[] = '}}';
+		return $out;
+	}
+
+	/**
 	 * Generate content for the dispatcher template.
 	 *
 	 * @param CategoryModel $category
@@ -185,21 +203,11 @@ class TemplateGenerator {
 		$out[] = '';
 
 		/* Semantic storage */
-		$out[] = '{{' . $cat . '/semantic';
-		foreach ( $props as $p ) {
-			$param = NamingHelper::propertyToParameter( $p );
-			$out[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
-		}
-		$out[] = '}}';
+		$out = array_merge( $out, $this->generateTemplateCall( $cat . '/semantic', $props ) );
 		$out[] = '';
 
 		/* Display template (delegated to static display template) */
-		$out[] = '{{' . $cat . '/display';
-		foreach ( $props as $p ) {
-			$param = NamingHelper::propertyToParameter( $p );
-			$out[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
-		}
-		$out[] = '}}';
+		$out = array_merge( $out, $this->generateTemplateCall( $cat . '/display', $props ) );
 		$out[] = '';
 
 		/* Subobject Sections */
