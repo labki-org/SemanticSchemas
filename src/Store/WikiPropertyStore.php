@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
+use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 
@@ -39,9 +40,10 @@ class WikiPropertyStore {
 		$data = $this->loadFromSMW( $title );
 
 		// Ensure canonical minimal fields
+		// Use NamingHelper to generate human-readable label from property name
 		$data += [
 			'datatype' => 'Text',
-			'label' => $canonical,
+			'label' => NamingHelper::generatePropertyLabel( $canonical ),
 			'description' => '',
 			'allowedValues' => [],
 			'rangeCategory' => null,

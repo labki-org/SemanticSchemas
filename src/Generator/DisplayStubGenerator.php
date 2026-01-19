@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
  * Generates static display templates for Categories.
@@ -201,7 +202,8 @@ class DisplayStubGenerator {
 			$property = $this->propertyStore->readProperty( $propName );
 			if ( $property ) {
 				$label = $property->getLabel();
-				$paramName = $property->getSnakeCaseName();
+				// Use NamingHelper for consistent parameter names with TemplateGenerator
+				$paramName = NamingHelper::propertyToParameter( $propName );
 
 				// Resolve the specific render template (e.g. Template:Property/Email)
 				// Defaults to Template:Property/Default if not specified/found.

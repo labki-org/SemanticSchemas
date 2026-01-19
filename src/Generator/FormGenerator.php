@@ -84,6 +84,17 @@ class FormGenerator {
 		$lines[] = '';
 
 		/* ----------------------------------------------------------
+		 * Page name info (for namespace targeting)
+		 * -------------------------------------------------------- */
+		if ( $category->getTargetNamespace() !== null ) {
+			// PageForms requires {{{info|page name=Namespace:<page name>}}} to create
+			// pages in a specific namespace. The <page name> placeholder is filled by
+			// PageForms with the user-entered page name.
+			$lines[] = '{{{info|page name=' . $this->s( $category->getTargetNamespace() ) . ':<page name>}}}';
+			$lines[] = '';
+		}
+
+		/* ----------------------------------------------------------
 		 * Template binding
 		 * -------------------------------------------------------- */
 		$lines[] = '{{{for template|' . $this->s( $name ) . '}}}';
@@ -338,11 +349,20 @@ class FormGenerator {
 			return false;
 		}
 
-		return $this->pageCreator->createOrUpdatePage(
+		$result = $this->pageCreator->createOrUpdatePage(
 			$title,
 			$content,
 			'SemanticSchemas: Auto-generated form'
 		);
+
+		// Purge the form page cache to ensure PageForms sees the updated content.
+		// This is critical when form parameters like namespace targeting change,
+		// as PageForms caches the parsed form definition.
+		if ( $result ) {
+			$this->pageCreator->purgePage( $title );
+		}
+
+		return $result;
 	}
 
 	public function generateAndSaveForm( CategoryModel $category ): bool {

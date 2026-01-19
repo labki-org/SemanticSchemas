@@ -6,6 +6,7 @@ use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
@@ -145,6 +146,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$action = $request->getVal( 'action' );
 		if ( $action === 'generate-form' ) {
 			$this->handleGenerateFormAction();
+			return;
+		}
+
+		// Check for install-config action
+		if ( $action === 'install-config' ) {
+			$this->handleInstallConfigAction();
 			return;
 		}
 
@@ -293,6 +300,240 @@ class SpecialSemanticSchemas extends SpecialPage {
 					->text()
 			) );
 		}
+	}
+
+	/**
+	 * Handle the "install-config" action to install/reinstall base configuration.
+	 *
+	 * This installs the base Category/Property/Subobject pages from extension-config.json.
+	 * Requires a valid CSRF token and is subject to rate limiting.
+	 */
+	private function handleInstallConfigAction(): void {
+		$request = $this->getRequest();
+		$output = $this->getOutput();
+
+		// Add ResourceLoader styles for consistent look
+		$output->addModuleStyles( 'ext.semanticschemas.styles' );
+
+		// CSRF check for POST requests
+		if ( $request->wasPosted() ) {
+			if ( !$this->getUser()->matchEditToken( $request->getVal( 'token' ) ) ) {
+				$output->addHTML( Html::errorBox( 'Invalid edit token' ) );
+				return;
+			}
+		} else {
+			// GET request - show confirmation form
+			$this->showInstallConfigConfirmation();
+			return;
+		}
+
+		// Check rate limit
+		if ( $this->checkRateLimit( 'install-config' ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-ratelimit-exceeded' )
+					->params( $this->getRateLimitPerHour() )
+					->text()
+			) );
+			return;
+		}
+
+		$configPath = __DIR__ . '/../../resources/extension-config.json';
+		if ( !file_exists( $configPath ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-install-config-not-found' )->text()
+			) );
+			return;
+		}
+
+		try {
+			$installer = new ExtensionConfigInstaller();
+			$result = $installer->applyFromFile( $configPath );
+
+			if ( !empty( $result['errors'] ) ) {
+				$output->addHTML( Html::errorBox(
+					$this->msg( 'semanticschemas-install-config-failed' )
+						->params( implode( ', ', $result['errors'] ) )
+						->text()
+				) );
+				return;
+			}
+
+			// Build a summary of what was installed
+			$summary = [];
+			$created = $result['created'] ?? [];
+			$updated = $result['updated'] ?? [];
+
+			$createdCount = count( $created['properties'] ?? [] ) +
+				count( $created['categories'] ?? [] ) +
+				count( $created['subobjects'] ?? [] );
+			$updatedCount = count( $updated['properties'] ?? [] ) +
+				count( $updated['categories'] ?? [] ) +
+				count( $updated['subobjects'] ?? [] );
+
+			if ( $createdCount > 0 ) {
+				$summary[] = $this->msg( 'semanticschemas-import-created' )
+					->numParams( $createdCount )->text();
+			}
+			if ( $updatedCount > 0 ) {
+				$summary[] = $this->msg( 'semanticschemas-import-updated' )
+					->numParams( $updatedCount )->text();
+			}
+
+			$this->logOperation( 'install-config', 'Base configuration installed', [
+				'created' => $created,
+				'updated' => $updated,
+			] );
+
+			$output->addHTML( Html::successBox(
+				$this->msg( 'semanticschemas-install-config-success' )->text() .
+				( !empty( $summary ) ? ' ' . implode( ', ', $summary ) : '' )
+			) );
+
+			// Show link back to overview
+			$output->addHTML( Html::rawElement(
+				'p',
+				[ 'style' => 'margin-top: 1em;' ],
+				Html::element(
+					'a',
+					[
+						'href' => $this->getPageTitle()->getLocalURL(),
+						'class' => 'mw-ui-button mw-ui-progressive',
+					],
+					$this->msg( 'semanticschemas-overview' )->text()
+				)
+			) );
+
+		} catch ( \Exception $e ) {
+			$this->logOperation( 'install-config', 'Install failed: ' . $e->getMessage(), [
+				'exception' => get_class( $e ),
+			] );
+
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-install-config-failed' )
+					->params( $e->getMessage() )
+					->text()
+			) );
+		}
+	}
+
+	/**
+	 * Show the install config confirmation form.
+	 */
+	private function showInstallConfigConfirmation(): void {
+		$output = $this->getOutput();
+		$output->setPageTitle( $this->msg( 'semanticschemas-install-config-title' )->text() );
+
+		$configPath = __DIR__ . '/../../resources/extension-config.json';
+		$installer = new ExtensionConfigInstaller();
+
+		// Preview what will be installed
+		$preview = [];
+		if ( file_exists( $configPath ) ) {
+			$preview = $installer->previewInstallation( $configPath );
+		}
+
+		$body = Html::rawElement(
+			'div',
+			[ 'class' => 'semanticschemas-install-config-message' ],
+			Html::element( 'p', [], $this->msg( 'semanticschemas-install-config-description' )->text() )
+		);
+
+		// Show preview of what would be created/updated
+		if ( !empty( $preview['would_create'] ) || !empty( $preview['would_update'] ) ) {
+			$previewHtml = '';
+
+			$wouldCreate = $preview['would_create'] ?? [];
+			$createCount = count( $wouldCreate['properties'] ?? [] ) +
+				count( $wouldCreate['categories'] ?? [] ) +
+				count( $wouldCreate['subobjects'] ?? [] );
+
+			$wouldUpdate = $preview['would_update'] ?? [];
+			$updateCount = count( $wouldUpdate['properties'] ?? [] ) +
+				count( $wouldUpdate['categories'] ?? [] ) +
+				count( $wouldUpdate['subobjects'] ?? [] );
+
+			if ( $createCount > 0 ) {
+				$previewHtml .= Html::element(
+					'p',
+					[],
+					$this->msg( 'semanticschemas-install-config-would-create' )
+						->numParams( $createCount )->text()
+				);
+			}
+			if ( $updateCount > 0 ) {
+				$previewHtml .= Html::element(
+					'p',
+					[],
+					$this->msg( 'semanticschemas-install-config-would-update' )
+						->numParams( $updateCount )->text()
+				);
+			}
+
+			$body .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-preview' ], $previewHtml );
+		}
+
+		// Form with CSRF token
+		$form = Html::openElement( 'form', [
+			'method' => 'post',
+			'action' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-config' ] ),
+		] );
+		$form .= Html::hidden( 'token', $this->getUser()->getEditToken() );
+		$form .= Html::submitButton(
+			$this->msg( 'semanticschemas-install-config-button' )->text(),
+			[ 'class' => 'mw-ui-button mw-ui-progressive' ]
+		);
+		$form .= ' ';
+		$form .= Html::element(
+			'a',
+			[
+				'href' => $this->getPageTitle()->getLocalURL(),
+				'class' => 'mw-ui-button',
+			],
+			$this->msg( 'cancel' )->text()
+		);
+		$form .= Html::closeElement( 'form' );
+
+		$body .= $form;
+
+		$card = $this->renderCard(
+			$this->msg( 'semanticschemas-install-config-title' )->text(),
+			$this->msg( 'semanticschemas-install-config-subtitle' )->text(),
+			$body
+		);
+
+		$output->addHTML( $this->wrapShell( $card ) );
+	}
+
+	/**
+	 * Render the install config warning banner for the overview page.
+	 *
+	 * @return string HTML
+	 */
+	private function renderInstallConfigBanner(): string {
+		$content = Html::rawElement(
+			'div',
+			[ 'class' => 'semanticschemas-install-banner' ],
+			Html::element(
+				'strong',
+				[],
+				$this->msg( 'semanticschemas-install-config-banner-title' )->text()
+			) .
+			Html::element(
+				'p',
+				[],
+				$this->msg( 'semanticschemas-install-config-banner-message' )->text()
+			) .
+			Html::element(
+				'a',
+				[
+					'href' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-config' ] ),
+					'class' => 'mw-ui-button mw-ui-progressive',
+				],
+				$this->msg( 'semanticschemas-install-config-button' )->text()
+			)
+		);
+
+		return Html::warningBox( $content );
 	}
 
 	/**
@@ -553,7 +794,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return array<int, array<string, string>>
 	 */
 	private function getQuickActions(): array {
-		return [
+		$actions = [
 			[
 				'action' => 'generate',
 				'label' => $this->msg( 'semanticschemas-generate' )->text(),
@@ -565,6 +806,20 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'description' => $this->msg( 'semanticschemas-validate-description' )->text(),
 			],
 		];
+
+		// Add install config action if base config is not installed
+		$installer = new ExtensionConfigInstaller();
+		if ( !$installer->isInstalled() ) {
+			// Add at the beginning since it's a prerequisite
+			array_unshift( $actions, [
+				'action' => 'install-config',
+				'href' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-config' ] ),
+				'label' => $this->msg( 'semanticschemas-quick-action-install-config' )->text(),
+				'description' => $this->msg( 'semanticschemas-quick-action-install-config-desc' )->text(),
+			] );
+		}
+
+		return $actions;
 	}
 
 	/**
@@ -676,10 +931,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function renderQuickActionsHtml(): string {
 		$actionsHtml = '';
 		foreach ( $this->getQuickActions() as $action ) {
+			// Use custom href if provided, otherwise generate from action subpage
+			$href = $action['href'] ?? $this->getPageTitle( $action['action'] )->getLocalURL();
 			$actionsHtml .= Html::rawElement(
 				'a',
 				[
-					'href' => $this->getPageTitle( $action['action'] )->getLocalURL(),
+					'href' => $href,
 					'class' => 'semanticschemas-quick-action'
 				],
 				Html::element( 'strong', [], $action['label'] ) .
@@ -696,6 +953,13 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function showOverview(): void {
 		$output = $this->getOutput();
 		$output->setPageTitle( $this->msg( 'semanticschemas-overview' )->text() );
+
+		// Check if base config is installed and show banner if not
+		$installer = new ExtensionConfigInstaller();
+		$installBanner = '';
+		if ( !$installer->isInstalled() ) {
+			$installBanner = $this->renderInstallConfigBanner();
+		}
 
 		$inspector = new OntologyInspector();
 		$stats = $inspector->getStatistics();
@@ -718,7 +982,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 			Html::rawElement( 'div', [ 'class' => 'semanticschemas-table-wrapper' ], $this->getCategoryStatusTable() )
 		);
 
-		$output->addHTML( $this->wrapShell( $hero . $summaryGrid . $quickActionsCard . $categoryCard ) );
+		$content = $installBanner . $hero . $summaryGrid . $quickActionsCard . $categoryCard;
+		$output->addHTML( $this->wrapShell( $content ) );
 	}
 
 	/**

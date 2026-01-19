@@ -45,6 +45,21 @@ class ExtensionConfigInstaller {
 	}
 
 	/**
+	 * Check if the base extension configuration has been installed.
+	 *
+	 * Checks for the existence of a key property from extension-config.json
+	 * to determine if installation has occurred.
+	 *
+	 * @return bool True if the base configuration appears to be installed
+	 */
+	public function isInstalled(): bool {
+		// Check if a core property from extension-config.json exists
+		// Property:Has type is a fundamental property defined in the base config
+		$title = $this->pageCreator->makeTitle( 'Has type', SMW_NS_PROPERTY );
+		return $title && $this->pageCreator->pageExists( $title );
+	}
+
+	/**
 	 * Load and apply an extension config schema from a JSON/YAML file.
 	 *
 	 * @param string $filePath
@@ -211,6 +226,10 @@ class ExtensionConfigInstaller {
 			}
 		}
 
+		// Force SMW to rebuild semantic data for all properties before creating categories.
+		// This ensures SMW knows the property datatypes before categories reference them.
+		$this->rebuildSMWDataForProperties( array_keys( $properties ) );
+
 		// 3. Categories
 		foreach ( $categories as $name => $data ) {
 			$categoryTitle = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
@@ -231,5 +250,57 @@ class ExtensionConfigInstaller {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Force SMW to rebuild semantic data for specific property pages.
+	 *
+	 * This is necessary because SMW may not have processed property type definitions
+	 * before categories try to use them, resulting in "improper value" errors.
+	 *
+	 * @param string[] $propertyNames
+	 */
+	private function rebuildSMWDataForProperties( array $propertyNames ): void {
+		if ( !class_exists( \SMW\StoreFactory::class ) ) {
+			return;
+		}
+
+		$store = \SMW\StoreFactory::getStore();
+
+		foreach ( $propertyNames as $name ) {
+			$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
+			if ( !$title || !$title->exists() ) {
+				continue;
+			}
+
+			try {
+				// Create a DIWikiPage for the property
+				$subject = \SMW\DIWikiPage::newFromTitle( $title );
+
+				// Get the WikiPage and force a re-parse to extract semantic data
+				$wikiPage = \MediaWiki\MediaWikiServices::getInstance()
+					->getWikiPageFactory()
+					->newFromTitle( $title );
+
+				$content = $wikiPage->getContent();
+				if ( !$content ) {
+					continue;
+				}
+
+				// Parse the page content to extract semantic data
+				$parserOutput = $wikiPage->getParserOutput(
+					\MediaWiki\MediaWikiServices::getInstance()->getParserFactory()->getInstance()
+				);
+
+				if ( $parserOutput && method_exists( \SMW\ParserData::class, 'newFromParserOutput' ) ) {
+					$parserData = \SMW\ParserData::newFromParserOutput( $parserOutput, $title );
+					if ( $parserData ) {
+						$store->updateData( $parserData->getSemanticData() );
+					}
+				}
+			} catch ( \Throwable $e ) {
+				wfDebugLog( 'semanticschemas', "Failed to rebuild SMW data for Property:$name: " . $e->getMessage() );
+			}
+		}
 	}
 }

@@ -34,22 +34,25 @@ class SemanticSchemasSetupHooks {
 	/**
 	 * Hook: LoadExtensionSchemaUpdates
 	 *
-	 * Invoked from maintenance/update.php. This is a convenient place to apply
-	 * the bundled extension configuration so that required schema pages
-	 * (Category:, Property:, Subobject:) are created or updated when the
-	 * extension is installed or upgraded.
+	 * Invoked from maintenance/update.php. We deliberately do NOT auto-install
+	 * the base configuration here because:
+	 *
+	 * 1. SMW's own table setup runs during update.php, and creating Properties
+	 *    triggers SMW operations that conflict with the ongoing setup.
+	 * 2. DeferredUpdates still run within the same process, causing the same issues.
+	 * 3. The extension may not be fully initialized when this hook fires.
+	 *
+	 * Instead, users should:
+	 * - Use the "Install Base Configuration" UI at Special:SemanticSchemas
+	 * - Or run: php maintenance/run.php SemanticSchemas:InstallConfig
 	 *
 	 * @param mixed $updater DatabaseUpdater (not used directly)
 	 * @return bool
 	 */
 	public static function onLoadExtensionSchemaUpdates( $updater ): bool {
-		// Note: We deliberately DO NOT run the installer here anymore.
-		// Doing so causes transaction conflicts ("Uncommitted DB writes") because
-		// we are inside a transaction started by update.php, and constructing
-		// Categories/Properties triggers complex SMW updates that expect a clean state.
-		//
-		// Instead, use maintenance/installConfig.php to run this manually.
-
+		// No automatic installation - see docblock above for rationale.
+		// The Special:SemanticSchemas page will show a banner prompting
+		// users to install the base configuration if it's missing.
 		return true;
 	}
 
