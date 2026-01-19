@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 01-template-foundation
 source: 01-01-SUMMARY.md
 started: 2026-01-19T18:10:00Z
@@ -41,7 +41,10 @@ skipped: 0
   reason: "User reported: link shows only as 'PageA' and takes me to 'PageA', not 'Property:PageA'"
   severity: major
   test: 1
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Template uses [[@@item@@]] which relies on MediaWiki namespace recognition at parse time. Extension namespaces (Property:, Category:) may not be recognized in template context. Fix: use [[:@@item@@]] with leading colon to bypass namespace scanning."
+  artifacts:
+    - path: "resources/extension-config.json"
+      issue: "Line 17 - Property/Page template uses [[@@item@@]] instead of [[:@@item@@]]"
+  missing:
+    - "Add leading colon to wikilink syntax: [[@@item@@]] → [[:@@item@@]]"
+  debug_session: ".planning/debug/namespace-page-link-bug.md"
