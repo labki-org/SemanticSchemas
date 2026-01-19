@@ -12,6 +12,10 @@
     "Property/Link": {
       "content": "<includeonly>[{{{value|}}} {{{value|}}}]</includeonly>",
       "description": "Displays URLs as clickable links"
+    },
+    "Property/Page": {
+      "content": "<includeonly>{{#if:{{{value|}}}|{{#arraymap:{{{value|}}}|,|@@item@@|[[@@item@@]]|, }}|}}</includeonly>",
+      "description": "Displays Page-type property values as clickable wiki links"
     }
   },
   "categories": {
