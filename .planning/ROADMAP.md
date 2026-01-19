@@ -15,7 +15,7 @@ Enhancement to SemanticSchemas extension enabling Page-type property values to r
 **Plans:** 1 plan
 
 Plans:
-- [ ] 01-01-PLAN.md — Add Property/Page template to extension config and verify
+- [x] 01-01-PLAN.md — Add Property/Page template to extension config and verify
 
 **Requirements:**
 - REQ-003: Empty Value Handling
@@ -64,10 +64,10 @@ Plans:
 
 | Phase | Status | Requirements | Completion |
 |-------|--------|--------------|------------|
-| 1 - Template Foundation | Planned | REQ-003, REQ-005 | 0% |
+| 1 - Template Foundation | Complete | REQ-003, REQ-005 | 100% |
 | 2 - System Integration | Not Started | REQ-001, REQ-002, REQ-004 | 0% |
 
-**Overall:** 0/5 requirements complete
+**Overall:** 2/5 requirements complete
 
 ---
 
@@ -77,12 +77,13 @@ Plans:
 |-------------|-------|--------|
 | REQ-001 | Phase 2 | Pending |
 | REQ-002 | Phase 2 | Pending |
-| REQ-003 | Phase 1 | Pending |
+| REQ-003 | Phase 1 | Complete |
 | REQ-004 | Phase 2 | Pending |
-| REQ-005 | Phase 1 | Pending |
+| REQ-005 | Phase 1 | Complete |
 
 **Coverage:** 5/5 requirements mapped
 
 ---
 *Roadmap created: 2026-01-19*
 *Phase 1 planned: 2026-01-19*
+*Phase 1 complete: 2026-01-19*

@@ -110,9 +110,9 @@ Option to display links without namespace prefix while preserving correct link t
 |--------|---------|-------|--------|
 | REQ-001 | Wiki links | Phase 2 | Pending |
 | REQ-002 | Multi-value | Phase 2 | Pending |
-| REQ-003 | Empty handling | Phase 1 | Pending |
+| REQ-003 | Empty handling | Phase 1 | Complete |
 | REQ-004 | Smart fallback | Phase 2 | Pending |
-| REQ-005 | Page template | Phase 1 | Pending |
+| REQ-005 | Page template | Phase 1 | Complete |
 
 ---
 *Requirements defined: 2026-01-19*
