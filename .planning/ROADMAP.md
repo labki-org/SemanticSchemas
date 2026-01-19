@@ -12,10 +12,11 @@ Enhancement to SemanticSchemas extension enabling Page-type property values to r
 
 **Dependencies:** None
 
-**Plans:** 1 plan
+**Plans:** 2 plans
 
 Plans:
 - [x] 01-01-PLAN.md — Add Property/Page template to extension config and verify
+- [x] 01-02-PLAN.md — Fix namespace handling bug (gap closure)
 
 **Requirements:**
 - REQ-003: Empty Value Handling
@@ -27,10 +28,13 @@ Plans:
 3. Template renders single value as clickable wiki link
 4. Template renders comma-separated values as individual links joined by ", "
 5. Template uses `@@item@@` variable (not `x`) to avoid name collision
+6. Namespaced page values (e.g., Property:PageA) link to correct destination
 
 **Implementation:**
 - Add to `resources/extension-config.json` in Layer 0 property templates section
-- Content: `<includeonly>{{#if:{{{value|}}}|{{#arraymap:{{{value|}}}|,|@@item@@|[[@@item@@]]|, }}|}}</includeonly>`
+- Content: `<includeonly>{{#if:{{{value|}}}|{{#arraymap:{{{value|}}}|,|@@item@@|[[:@@item@@]]|,&#32;}}|}}</includeonly>`
+- Uses leading colon `[[:@@item@@]]` for namespace-safe linking
+- Uses `&#32;` HTML entity for space in delimiter
 
 ---
 
@@ -64,7 +68,7 @@ Plans:
 
 | Phase | Status | Requirements | Completion |
 |-------|--------|--------------|------------|
-| 1 - Template Foundation | Complete | REQ-003, REQ-005 | 100% |
+| 1 - Template Foundation | Verified ✓ | REQ-003, REQ-005 | 100% |
 | 2 - System Integration | Not Started | REQ-001, REQ-002, REQ-004 | 0% |
 
 **Overall:** 2/5 requirements complete
@@ -87,3 +91,4 @@ Plans:
 *Roadmap created: 2026-01-19*
 *Phase 1 planned: 2026-01-19*
 *Phase 1 complete: 2026-01-19*
+*Phase 1 verified: 2026-01-19 (6/6 must-haves)*
