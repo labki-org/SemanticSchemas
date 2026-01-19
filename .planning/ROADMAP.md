@@ -12,6 +12,11 @@ Enhancement to SemanticSchemas extension enabling Page-type property values to r
 
 **Dependencies:** None
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 01-01-PLAN.md — Add Property/Page template to extension config and verify
+
 **Requirements:**
 - REQ-003: Empty Value Handling
 - REQ-005: Template:Property/Page Implementation
@@ -35,6 +40,8 @@ Enhancement to SemanticSchemas extension enabling Page-type property values to r
 
 **Dependencies:** Phase 1
 
+**Plans:** (created by /gsd:plan-phase)
+
 **Requirements:**
 - REQ-001: Clickable Wiki Links for Page-Type Properties
 - REQ-002: Multi-Value Support
@@ -57,7 +64,7 @@ Enhancement to SemanticSchemas extension enabling Page-type property values to r
 
 | Phase | Status | Requirements | Completion |
 |-------|--------|--------------|------------|
-| 1 - Template Foundation | Not Started | REQ-003, REQ-005 | 0% |
+| 1 - Template Foundation | Planned | REQ-003, REQ-005 | 0% |
 | 2 - System Integration | Not Started | REQ-001, REQ-002, REQ-004 | 0% |
 
 **Overall:** 0/5 requirements complete
@@ -78,3 +85,4 @@ Enhancement to SemanticSchemas extension enabling Page-type property values to r
 
 ---
 *Roadmap created: 2026-01-19*
+*Phase 1 planned: 2026-01-19*
