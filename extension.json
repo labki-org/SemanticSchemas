@@ -125,7 +125,8 @@
 		}
 	},
 	"APIModules": {
-		"semanticschemas-hierarchy": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasHierarchy"
+		"semanticschemas-hierarchy": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasHierarchy",
+		"semanticschemas-install": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasInstall"
 	},
 	"SpecialPages": {
 		"SemanticSchemas": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialSemanticSchemas"

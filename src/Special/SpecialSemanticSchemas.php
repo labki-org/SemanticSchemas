@@ -155,6 +155,18 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
+		// Check for install-properties action (Step 1)
+		if ( $action === 'install-properties' ) {
+			$this->handleInstallPropertiesAction();
+			return;
+		}
+
+		// Check for install-categories action (Step 2)
+		if ( $action === 'install-categories' ) {
+			$this->handleInstallCategoriesAction();
+			return;
+		}
+
 		// Add ResourceLoader styles
 		$output->addModuleStyles( 'ext.semanticschemas.styles' );
 
@@ -417,11 +429,39 @@ class SpecialSemanticSchemas extends SpecialPage {
 	}
 
 	/**
-	 * Show the install config confirmation form.
+	 * Handle the "install-properties" action (Step 1 of 2) - legacy handler.
+	 * Redirects to the automated installer.
 	 */
-	private function showInstallConfigConfirmation(): void {
+	private function handleInstallPropertiesAction(): void {
+		$this->showAutomatedInstaller();
+	}
+
+	/**
+	 * Handle the "install-categories" action (Step 2 of 2) - legacy handler.
+	 * Redirects to the automated installer.
+	 */
+	private function handleInstallCategoriesAction(): void {
+		$this->showAutomatedInstaller();
+	}
+
+	/**
+	 * Show the automated layer-by-layer installer with JavaScript progress monitoring.
+	 *
+	 * This installer creates wiki pages in 4 layers via separate API calls, waiting for
+	 * SMW's job queue to complete between each layer. This is necessary because SMW's
+	 * property type registry is updated asynchronously - if we create properties and
+	 * categories in the same request, category annotations may be stored with incorrect
+	 * data types (e.g., text values stored as page references).
+	 *
+	 * The JavaScript polls the API every 2 seconds to check job queue status, automatically
+	 * proceeding to the next layer once all jobs are complete.
+	 *
+	 * @see ApiSemanticSchemasInstall for layer definitions and detailed explanation
+	 */
+	private function showAutomatedInstaller(): void {
 		$output = $this->getOutput();
 		$output->setPageTitle( $this->msg( 'semanticschemas-install-config-title' )->text() );
+		$output->addModuleStyles( 'ext.semanticschemas.styles' );
 
 		$configPath = __DIR__ . '/../../resources/extension-config.json';
 		$installer = new ExtensionConfigInstaller();
@@ -432,10 +472,290 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$preview = $installer->previewInstallation( $configPath );
 		}
 
+		$wouldCreate = $preview['would_create'] ?? [];
+		$propCount = count( $wouldCreate['properties'] ?? [] );
+		$catCount = count( $wouldCreate['categories'] ?? [] );
+		$subCount = count( $wouldCreate['subobjects'] ?? [] );
+
+		// Common styles to avoid long lines
+		$previewStyle = 'margin: 1em 0; padding: 1em; background: #f8f9fa; border-radius: 4px;';
+		$layerStyle = 'padding: 0.5em; margin: 0.5em 0; border-radius: 4px; background: #e9ecef;';
+		$infoStyle = 'margin-left: 1em; color: #666;';
+		$jobsStyle = 'margin-top: 1em; padding: 0.5em; background: #fff3cd; ' .
+			'border-radius: 4px; display: none;';
+
+		// Build the installer UI
+		$html = Html::rawElement( 'div', [ 'id' => 'ss-installer' ],
+			Html::element( 'h3', [], 'Automated Installation' ) .
+			Html::element( 'p', [],
+				'This installer will create pages in layers, waiting for SMW to process each layer ' .
+				'before proceeding to the next.'
+			) .
+			Html::rawElement( 'div', [ 'class' => 'ss-install-preview', 'style' => $previewStyle ],
+				Html::element( 'strong', [], 'Items to install:' ) .
+				Html::rawElement( 'ul', [],
+					Html::element( 'li', [], "Properties: $propCount" ) .
+					Html::element( 'li', [], "Subobjects: $subCount" ) .
+					Html::element( 'li', [], "Categories: $catCount" )
+				)
+			) .
+
+			// Progress display
+			Html::rawElement( 'div', [ 'id' => 'ss-progress', 'style' => 'display: none; margin: 1em 0;' ],
+				Html::rawElement( 'div', [ 'id' => 'ss-layer1', 'class' => 'ss-layer', 'style' => $layerStyle ],
+					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
+					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 1: Property Types' ) .
+					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+				) .
+				Html::rawElement( 'div', [ 'id' => 'ss-layer2', 'class' => 'ss-layer', 'style' => $layerStyle ],
+					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
+					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 2: Property Annotations' ) .
+					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+				) .
+				Html::rawElement( 'div', [ 'id' => 'ss-layer3', 'class' => 'ss-layer', 'style' => $layerStyle ],
+					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
+					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 3: Subobjects' ) .
+					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+				) .
+				Html::rawElement( 'div', [ 'id' => 'ss-layer4', 'class' => 'ss-layer', 'style' => $layerStyle ],
+					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
+					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 4: Categories' ) .
+					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+				) .
+				Html::rawElement( 'div', [ 'id' => 'ss-jobs', 'style' => $jobsStyle ],
+					Html::element( 'span', [], 'Waiting for SMW jobs: ' ) .
+					Html::element( 'span', [ 'id' => 'ss-job-count' ], '0' )
+				)
+			) .
+
+			// Result display
+			Html::rawElement( 'div', [ 'id' => 'ss-result', 'style' => 'display: none; margin: 1em 0;' ] ) .
+
+			// Buttons
+			Html::rawElement( 'div', [ 'style' => 'margin-top: 1em;' ],
+				Html::element( 'button', [
+					'id' => 'ss-start-btn',
+					'class' => 'mw-ui-button mw-ui-progressive',
+				], 'Start Installation' ) .
+				' ' .
+				Html::element( 'a', [
+					'href' => $this->getPageTitle()->getLocalURL(),
+					'class' => 'mw-ui-button',
+				], 'Cancel' )
+			)
+		);
+
+		$output->addHTML( $html );
+
+		// Add the JavaScript
+		$token = json_encode( $this->getUser()->getEditToken() );
+		$apiUrl = json_encode( wfScript( 'api' ) );
+
+		$js = <<<JAVASCRIPT
+(function() {
+	var token = $token;
+	var apiUrl = $apiUrl;
+	var layers = ['layer1', 'layer2', 'layer3', 'layer4'];
+	var layerNames = {
+		'layer1': 'Property Types',
+		'layer2': 'Property Annotations',
+		'layer3': 'Subobjects',
+		'layer4': 'Categories'
+	};
+	var currentLayer = 0;
+	var pollInterval = null;
+
+	function updateLayerStatus(layer, status, info) {
+		var el = document.getElementById('ss-' + layer);
+		if (!el) return;
+
+		var statusEl = el.querySelector('.ss-layer-status');
+		var infoEl = el.querySelector('.ss-layer-info');
+
+		if (status === 'pending') {
+			el.style.background = '#e9ecef';
+			statusEl.textContent = '○';
+		} else if (status === 'running') {
+			el.style.background = '#fff3cd';
+			statusEl.textContent = '◐';
+		} else if (status === 'waiting') {
+			el.style.background = '#cce5ff';
+			statusEl.textContent = '⏳';
+		} else if (status === 'done') {
+			el.style.background = '#d4edda';
+			statusEl.textContent = '✓';
+		} else if (status === 'error') {
+			el.style.background = '#f8d7da';
+			statusEl.textContent = '✗';
+		}
+
+		if (info) {
+			infoEl.textContent = info;
+		}
+	}
+
+	function showResult(success, message) {
+		var resultEl = document.getElementById('ss-result');
+		resultEl.style.display = 'block';
+		resultEl.innerHTML = '<div style="padding: 1em; border-radius: 4px; background: ' +
+			(success ? '#d4edda' : '#f8d7da') + ';">' + message + '</div>';
+
+		if (success) {
+			resultEl.innerHTML += '<p style="margin-top: 1em;"><a href="' +
+				mw.config.get('wgScript') + '/Special:SemanticSchemas" ' +
+				'class="mw-ui-button mw-ui-progressive">Return to Overview</a></p>';
+		}
+	}
+
+	function checkJobsAndProceed() {
+		fetch(apiUrl + '?action=semanticschemas-install&step=status&format=json')
+			.then(function(r) { return r.json(); })
+			.then(function(data) {
+				var status = data.status;
+				var jobCount = status.pendingJobs || 0;
+
+				document.getElementById('ss-job-count').textContent = jobCount;
+
+				if (jobCount === 0) {
+					document.getElementById('ss-jobs').style.display = 'none';
+					clearInterval(pollInterval);
+					pollInterval = null;
+
+					// Mark current layer as done before moving on
+					updateLayerStatus(layers[currentLayer], 'done', 'Complete');
+
+					// Move to next layer
+					currentLayer++;
+					if (currentLayer < layers.length) {
+						runLayer(layers[currentLayer]);
+					} else {
+						showResult(true, '<strong>Installation Complete!</strong>' +
+							'<br>All layers have been installed successfully.');
+					}
+				} else {
+					document.getElementById('ss-jobs').style.display = 'block';
+					updateLayerStatus(layers[currentLayer], 'waiting',
+						'Waiting for ' + jobCount + ' jobs...');
+				}
+			})
+			.catch(function(err) {
+				console.error('Status check failed:', err);
+			});
+	}
+
+	function runLayer(layer) {
+		updateLayerStatus(layer, 'running', 'Installing...');
+
+		var formData = new FormData();
+		formData.append('action', 'semanticschemas-install');
+		formData.append('step', layer);
+		formData.append('token', token);
+		formData.append('format', 'json');
+
+		fetch(apiUrl, {
+			method: 'POST',
+			body: formData
+		})
+		.then(function(r) { return r.json(); })
+		.then(function(data) {
+			if (data.error) {
+				updateLayerStatus(layer, 'error', data.error.info || 'Error');
+				showResult(false, '<strong>Installation Failed</strong><br>' + (data.error.info || 'Unknown error'));
+				return;
+			}
+
+			var install = data.install;
+			// Check for errors array instead of success boolean (MW API quirk)
+			if (install.errors && install.errors.length > 0) {
+				updateLayerStatus(layer, 'error', install.errors.join(', '));
+				showResult(false, '<strong>Installation Failed</strong><br>' +
+					install.errors.join(', '));
+				return;
+			}
+
+			var created = 0, updated = 0;
+			for (var key in install.created) {
+				created += (install.created[key] || []).length;
+			}
+			for (var key in install.updated) {
+				updated += (install.updated[key] || []).length;
+			}
+
+			updateLayerStatus(layer, 'done', 'Created: ' + created + ', Updated: ' + updated);
+
+			// Check for pending jobs
+			if (install.pendingJobs > 0) {
+				document.getElementById('ss-jobs').style.display = 'block';
+				document.getElementById('ss-job-count').textContent = install.pendingJobs;
+				updateLayerStatus(layer, 'waiting', 'Waiting for ' + install.pendingJobs + ' jobs...');
+
+				// Start polling for job completion
+				pollInterval = setInterval(checkJobsAndProceed, 2000);
+			} else {
+				// Proceed immediately to next layer
+				currentLayer++;
+				if (currentLayer < layers.length) {
+					setTimeout(function() { runLayer(layers[currentLayer]); }, 500);
+				} else {
+					showResult(true, '<strong>Installation Complete!</strong>' +
+						'<br>All layers have been installed successfully.');
+				}
+			}
+		})
+		.catch(function(err) {
+			updateLayerStatus(layer, 'error', 'Network error');
+			showResult(false, '<strong>Installation Failed</strong><br>Network error: ' + err.message);
+		});
+	}
+
+	document.getElementById('ss-start-btn').addEventListener('click', function() {
+		this.disabled = true;
+		this.textContent = 'Installing...';
+		document.getElementById('ss-progress').style.display = 'block';
+
+		currentLayer = 0;
+		runLayer(layers[0]);
+	});
+})();
+JAVASCRIPT;
+
+		$output->addInlineScript( $js );
+	}
+
+	/**
+	 * Show the install config confirmation form with two-step process.
+	 */
+	private function showInstallConfigConfirmation(): void {
+		$this->showAutomatedInstaller();
+	}
+
+	/**
+	 * Legacy showInstallConfigConfirmation content - kept for reference.
+	 */
+	private function showInstallConfigConfirmationLegacy(): void {
+		$output = $this->getOutput();
+		$output->setPageTitle( $this->msg( 'semanticschemas-install-config-title' )->text() );
+
+		$configPath = __DIR__ . '/../../resources/extension-config.json';
+		$installer = new ExtensionConfigInstaller();
+
+		// Check current installation state
+		$propertiesInstalled = $installer->arePropertiesInstalled( $configPath );
+		$categoriesInstalled = $installer->areCategoriesInstalled( $configPath );
+
+		// Preview what will be installed
+		$preview = [];
+		if ( file_exists( $configPath ) ) {
+			$preview = $installer->previewInstallation( $configPath );
+		}
+
 		$body = Html::rawElement(
 			'div',
 			[ 'class' => 'semanticschemas-install-config-message' ],
-			Html::element( 'p', [], $this->msg( 'semanticschemas-install-config-description' )->text() )
+			Html::element( 'p', [],
+				'Installation requires two steps to ensure SMW correctly indexes property types ' .
+				'before categories reference them.'
+			)
 		);
 
 		// Show preview of what would be created/updated
@@ -443,57 +763,88 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$previewHtml = '';
 
 			$wouldCreate = $preview['would_create'] ?? [];
-			$createCount = count( $wouldCreate['properties'] ?? [] ) +
-				count( $wouldCreate['categories'] ?? [] ) +
-				count( $wouldCreate['subobjects'] ?? [] );
+			$propCount = count( $wouldCreate['properties'] ?? [] );
+			$catCount = count( $wouldCreate['categories'] ?? [] );
+			$subCount = count( $wouldCreate['subobjects'] ?? [] );
 
-			$wouldUpdate = $preview['would_update'] ?? [];
-			$updateCount = count( $wouldUpdate['properties'] ?? [] ) +
-				count( $wouldUpdate['categories'] ?? [] ) +
-				count( $wouldUpdate['subobjects'] ?? [] );
-
-			if ( $createCount > 0 ) {
-				$previewHtml .= Html::element(
-					'p',
-					[],
-					$this->msg( 'semanticschemas-install-config-would-create' )
-						->numParams( $createCount )->text()
-				);
+			if ( $propCount > 0 || $subCount > 0 ) {
+				$previewHtml .= Html::element( 'p', [],
+					"Properties to install: $propCount, Subobjects: $subCount" );
 			}
-			if ( $updateCount > 0 ) {
-				$previewHtml .= Html::element(
-					'p',
-					[],
-					$this->msg( 'semanticschemas-install-config-would-update' )
-						->numParams( $updateCount )->text()
-				);
+			if ( $catCount > 0 ) {
+				$previewHtml .= Html::element( 'p', [],
+					"Categories to install: $catCount" );
 			}
 
 			$body .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-preview' ], $previewHtml );
 		}
 
-		// Form with CSRF token
-		$form = Html::openElement( 'form', [
-			'method' => 'post',
-			'action' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-config' ] ),
-		] );
-		$form .= Html::hidden( 'token', $this->getUser()->getEditToken() );
-		$form .= Html::submitButton(
-			$this->msg( 'semanticschemas-install-config-button' )->text(),
-			[ 'class' => 'mw-ui-button mw-ui-progressive' ]
+		// Step 1: Install Properties
+		$step1Status = $propertiesInstalled ? '✓ Complete' : 'Not started';
+		$step1Class = $propertiesInstalled
+			? 'background: #d4edda; padding: 1em; margin: 1em 0; border-radius: 4px;'
+			: 'background: #fff3cd; padding: 1em; margin: 1em 0; border-radius: 4px;';
+
+		$step1Html = Html::rawElement( 'div', [ 'style' => $step1Class ],
+			Html::rawElement( 'strong', [], "Step 1: Install Properties ($step1Status)" ) .
+			Html::element( 'p', [], 'Creates Property and Subobject pages with type definitions.' )
 		);
-		$form .= ' ';
-		$form .= Html::element(
-			'a',
-			[
+
+		if ( !$propertiesInstalled ) {
+			$form1 = Html::openElement( 'form', [
+				'method' => 'post',
+				'action' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-properties' ] ),
+			] );
+			$form1 .= Html::hidden( 'token', $this->getUser()->getEditToken() );
+			$form1 .= Html::submitButton(
+				'Install Properties',
+				[ 'class' => 'mw-ui-button mw-ui-progressive' ]
+			);
+			$form1 .= Html::closeElement( 'form' );
+			$step1Html .= $form1;
+		}
+
+		$body .= $step1Html;
+
+		// Step 2: Install Categories
+		$step2Status = $categoriesInstalled
+			? '✓ Complete'
+			: ( $propertiesInstalled ? 'Ready' : 'Waiting for Step 1' );
+		$step2Class = $categoriesInstalled
+			? 'background: #d4edda; padding: 1em; margin: 1em 0; border-radius: 4px;'
+			: ( $propertiesInstalled
+				? 'background: #fff3cd; padding: 1em; margin: 1em 0; border-radius: 4px;'
+				: 'background: #e9ecef; padding: 1em; margin: 1em 0; border-radius: 4px;' );
+
+		$step2Html = Html::rawElement( 'div', [ 'style' => $step2Class ],
+			Html::rawElement( 'strong', [], "Step 2: Install Categories ($step2Status)" ) .
+			Html::element( 'p', [], 'Creates Category pages that reference the properties. ' .
+				'Wait a few seconds after Step 1 for SMW to process property types.' )
+		);
+
+		if ( $propertiesInstalled && !$categoriesInstalled ) {
+			$form2 = Html::openElement( 'form', [
+				'method' => 'post',
+				'action' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-categories' ] ),
+			] );
+			$form2 .= Html::hidden( 'token', $this->getUser()->getEditToken() );
+			$form2 .= Html::submitButton(
+				'Install Categories',
+				[ 'class' => 'mw-ui-button mw-ui-progressive' ]
+			);
+			$form2 .= Html::closeElement( 'form' );
+			$step2Html .= $form2;
+		}
+
+		$body .= $step2Html;
+
+		// Cancel link
+		$body .= Html::rawElement( 'p', [ 'style' => 'margin-top: 1em;' ],
+			Html::element( 'a', [
 				'href' => $this->getPageTitle()->getLocalURL(),
 				'class' => 'mw-ui-button',
-			],
-			$this->msg( 'cancel' )->text()
+			], $this->msg( 'cancel' )->text() )
 		);
-		$form .= Html::closeElement( 'form' );
-
-		$body .= $form;
 
 		$card = $this->renderCard(
 			$this->msg( 'semanticschemas-install-config-title' )->text(),
