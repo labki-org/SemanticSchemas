@@ -209,9 +209,13 @@ class DisplayStubGenerator {
 				// Defaults to Template:Property/Default if not specified/found.
 				$renderTemplate = $property->getRenderTemplate();
 
+				// Build the value expression, adding namespace prefix for Page-type properties
+				// This mirrors TemplateGenerator::generatePropertyLine() logic
+				$valueExpr = $this->buildValueExpression( $property, $paramName );
+
 				// Construct the template call:
 				// {{ Template:Property/Email | value={{{email|}}} }}
-				$valueCall = "{{" . $renderTemplate . " | value={{{" . $paramName . "|}}} }}";
+				$valueCall = "{{" . $renderTemplate . " | value=" . $valueExpr . " }}";
 
 				$out .= "|-\n";
 				// Standard row format works for both table and simplified infobox
@@ -220,6 +224,37 @@ class DisplayStubGenerator {
 			}
 		}
 		return $out;
+	}
+
+	/**
+	 * Build the value expression for a property, adding namespace prefix if needed.
+	 *
+	 * For Page-type properties with allowedNamespace, prefixes values with the namespace.
+	 * For multi-value properties, uses #arraymap to prefix each value.
+	 * For other properties, returns the raw parameter reference.
+	 *
+	 * @param \MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel $property
+	 * @param string $paramName
+	 * @return string Wikitext expression for the value
+	 */
+	private function buildValueExpression( $property, string $paramName ): string {
+		$allowedNamespace = $property->getAllowedNamespace();
+
+		// Non-Page or no namespace restriction: simple parameter reference
+		if ( !$property->isPageType() || $allowedNamespace === null || $allowedNamespace === '' ) {
+			return '{{{' . $paramName . '|}}}';
+		}
+
+		// Page-type with namespace restriction: prefix namespace to values
+		if ( $property->allowsMultipleValues() ) {
+			// Multi-value: use #arraymap to prefix each value
+			// Input: "Value1,Value2" -> Output: "Namespace:Value1,Namespace:Value2"
+			return '{{#arraymap:{{{' . $paramName . '|}}}|,|@@item@@|' .
+				$allowedNamespace . ':@@item@@|,&#32;}}';
+		}
+
+		// Single value: conditional prefix (empty if no value)
+		return '{{#if:{{{' . $paramName . '|}}}|' . $allowedNamespace . ':{{{' . $paramName . '|}}}|}}';
 	}
 
 	/**
