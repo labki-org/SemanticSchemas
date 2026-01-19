@@ -769,18 +769,11 @@ echo ""
 
 echo "==> Creating Template Infrastructure..."
 
-# Templates 1-3 removed (Legacy dynamic display system)
+# Note: Template:Property/Default, Template:Property/Email, and Template:Property/Link
+# are now installed automatically by the extension via extension-config.json
+# (See resources/extension-config.json "templates" section)
 
-# 4. Template:Property/Default
-create_page "Template:Property/Default" "<includeonly>{{{value}}}</includeonly>"
-
-# 5. Template:Property/Email
-create_page "Template:Property/Email" "<includeonly>[mailto:{{{value|}}} {{{value|}}}]</includeonly>"
-
-# 6. Template:Property/Link
-create_page "Template:Property/Link" "<includeonly>[{{{value|}}} {{{value|}}}]</includeonly>"
-
-# 7. Template:Property/Typography (for Biography)
+# Template:Property/Typography (for Biography) - custom styling, not bundled with extension
 create_page "Template:Property/Typography" "<includeonly>'''{{{value|}}}'''</includeonly>"
 
 echo "  - Creating Category:Test Table View..."

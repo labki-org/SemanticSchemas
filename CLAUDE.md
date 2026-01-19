@@ -80,3 +80,21 @@ Each category generates three templates:
 ### Custom Namespace
 
 Defines namespace 3300/3301 (Subobject/Subobject_talk) for subobject storage with semantic annotations enabled.
+
+### Base Configuration
+
+The extension requires foundational wiki pages to be installed before use. These are defined in `resources/extension-config.json` and installed via `Special:SemanticSchemas` or `maintenance/installConfig.php`.
+
+**Installation layers (in order):**
+- Layer 0: Property display templates (`Template:Property/Default`, `Template:Property/Email`, `Template:Property/Link`)
+- Layer 1: Property type declarations (registers datatypes with SMW)
+- Layer 2: Full property annotations (labels, descriptions, constraints)
+- Layer 3: Subobject definitions (`Display section`)
+- Layer 4: Meta-categories (`Category`, `Property`, `Subobject`)
+
+**Key files:**
+- `resources/extension-config.json` - Defines all base configuration items
+- `src/Schema/ExtensionConfigInstaller.php` - Handles layer-by-layer installation
+- `src/Api/ApiSemanticSchemasInstall.php` - API endpoint for UI-driven installation
+
+The `isInstalled()` method checks ALL layers before hiding the install button, ensuring partial installations can be completed.

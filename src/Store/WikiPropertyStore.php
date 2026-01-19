@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
+use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 
@@ -39,9 +40,10 @@ class WikiPropertyStore {
 		$data = $this->loadFromSMW( $title );
 
 		// Ensure canonical minimal fields
+		// Use NamingHelper to generate human-readable label from property name
 		$data += [
 			'datatype' => 'Text',
-			'label' => $canonical,
+			'label' => NamingHelper::generatePropertyLabel( $canonical ),
 			'description' => '',
 			'allowedValues' => [],
 			'rangeCategory' => null,
@@ -84,6 +86,51 @@ class WikiPropertyStore {
 			$title,
 			$newContent,
 			"SemanticSchemas: Update property metadata"
+		);
+	}
+
+	/**
+	 * Write a property page with ONLY the datatype declaration.
+	 *
+	 * This is Layer 1 of the installation process. SMW's property type registry is
+	 * updated asynchronously via the job queue. If we write full property annotations
+	 * (like [[Has description::...]]) before SMW knows the property's type, SMW may
+	 * store values with incorrect data types (e.g., DIWikiPage instead of DIBlob).
+	 *
+	 * By writing only [[Has type::...]] first and waiting for SMW jobs to complete,
+	 * we ensure the type registry is populated before any pages use these properties.
+	 *
+	 * @see ApiSemanticSchemasInstall for the full layer-by-layer installation explanation
+	 *
+	 * @param PropertyModel $property
+	 * @return bool
+	 */
+	public function writePropertyTypeOnly( PropertyModel $property ): bool {
+		$title = $this->pageCreator->makeTitle( $property->getName(), SMW_NS_PROPERTY );
+		if ( !$title ) {
+			return false;
+		}
+
+		$existing = $this->pageCreator->getPageContent( $title ) ?? '';
+
+		// Only write the datatype declaration - no other semantic annotations
+		$semanticBlock = '[[Has type::' . $property->getSMWType() . ']]';
+
+		$newContent = $this->pageCreator->updateWithinMarkers(
+			$existing,
+			$semanticBlock,
+			self::MARKER_START,
+			self::MARKER_END
+		);
+
+		if ( !str_contains( $newContent, '[[Category:SemanticSchemas-managed-property]]' ) ) {
+			$newContent .= "\n[[Category:SemanticSchemas-managed-property]]";
+		}
+
+		return $this->pageCreator->createOrUpdatePage(
+			$title,
+			$newContent,
+			"SemanticSchemas: Initialize property type"
 		);
 	}
 

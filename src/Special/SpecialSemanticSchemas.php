@@ -6,6 +6,7 @@ use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
@@ -141,6 +142,31 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
+		// Check for generate-form action (from Category page link)
+		$action = $request->getVal( 'action' );
+		if ( $action === 'generate-form' ) {
+			$this->handleGenerateFormAction();
+			return;
+		}
+
+		// Check for install-config action
+		if ( $action === 'install-config' ) {
+			$this->handleInstallConfigAction();
+			return;
+		}
+
+		// Check for install-properties action (Step 1)
+		if ( $action === 'install-properties' ) {
+			$this->handleInstallPropertiesAction();
+			return;
+		}
+
+		// Check for install-categories action (Step 2)
+		if ( $action === 'install-categories' ) {
+			$this->handleInstallCategoriesAction();
+			return;
+		}
+
 		// Add ResourceLoader styles
 		$output->addModuleStyles( 'ext.semanticschemas.styles' );
 
@@ -166,6 +192,707 @@ class SpecialSemanticSchemas extends SpecialPage {
 				$this->showOverview();
 				break;
 		}
+	}
+
+	/**
+	 * Handle the "generate-form" action from Category page links.
+	 *
+	 * This generates the full artifact set for a single category:
+	 * - Form (always regenerated)
+	 * - Dispatcher template (always regenerated)
+	 * - Semantic template (always regenerated)
+	 * - Display template (conditional - only if not user-customized)
+	 * - Subobject templates (always regenerated)
+	 *
+	 * After generation, redirects to the Form page.
+	 */
+	private function handleGenerateFormAction(): void {
+		$request = $this->getRequest();
+		$output = $this->getOutput();
+
+		$categoryName = trim( $request->getVal( 'category', '' ) );
+
+		if ( $categoryName === '' ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-generate-form-no-category' )->text()
+			) );
+			return;
+		}
+
+		// Check rate limit
+		if ( $this->checkRateLimit( 'generate-form' ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-ratelimit-exceeded' )
+					->params( $this->getRateLimitPerHour() )
+					->text()
+			) );
+			return;
+		}
+
+		// Load the category
+		$categoryStore = new WikiCategoryStore();
+		$category = $categoryStore->readCategory( $categoryName );
+
+		if ( $category === null ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-generate-form-no-schema' )->params( $categoryName )->text()
+			) );
+			return;
+		}
+
+		try {
+			// Build category map for inheritance resolution
+			$categoryMap = $this->buildCategoryMap( $categoryStore );
+			$resolver = new InheritanceResolver( $categoryMap );
+
+			// Resolve inheritance to get effective category with all inherited properties
+			$effective = $resolver->getEffectiveCategory( $categoryName );
+
+			// Generate templates (always regenerate auto-generated ones)
+			$templateGenerator = new TemplateGenerator();
+			$templateResult = $templateGenerator->generateAllTemplates( $effective );
+
+			if ( !$templateResult['success'] ) {
+				$output->addHTML( Html::errorBox(
+					$this->msg( 'semanticschemas-generate-form-failed' )
+						->params( $categoryName, implode( ', ', $templateResult['errors'] ) )
+						->text()
+				) );
+				return;
+			}
+
+			// Generate form
+			$formGenerator = new FormGenerator();
+			$formSuccess = $formGenerator->generateAndSaveForm( $effective );
+
+			if ( !$formSuccess ) {
+				$output->addHTML( Html::errorBox(
+					$this->msg( 'semanticschemas-generate-form-failed' )
+						->params( $categoryName, 'Failed to save form' )
+						->text()
+				) );
+				return;
+			}
+
+			// Generate display template conditionally (respect user customizations)
+			$displayGenerator = new DisplayStubGenerator();
+			$displayResult = $displayGenerator->generateIfAllowed( $effective );
+
+			// Log the operation
+			$this->logOperation( 'generate', "Form generated for $categoryName", [
+				'category' => $categoryName,
+				'displayStatus' => $displayResult['status'],
+			] );
+
+			// Redirect to the form page
+			$formTitle = Title::makeTitleSafe( $this->getFormNamespace(), $categoryName );
+			if ( $formTitle ) {
+				$output->redirect( $formTitle->getFullURL() );
+			} else {
+				// Fallback: show success message if redirect fails
+				$output->addHTML( Html::successBox(
+					$this->msg( 'semanticschemas-form-generated' )->params( $categoryName )->text()
+				) );
+
+				// Show warning if display template was preserved
+				if ( $displayResult['status'] === 'preserved' ) {
+					$output->addHTML( Html::warningBox( $displayResult['message'] ) );
+				}
+			}
+
+		} catch ( \Exception $e ) {
+			$this->logOperation( 'generate', "Form generation failed for $categoryName: " . $e->getMessage(), [
+				'category' => $categoryName,
+				'exception' => get_class( $e ),
+			] );
+
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-generate-form-failed' )
+					->params( $categoryName, $e->getMessage() )
+					->text()
+			) );
+		}
+	}
+
+	/**
+	 * Handle the "install-config" action to install/reinstall base configuration.
+	 *
+	 * This installs the base Category/Property/Subobject pages from extension-config.json.
+	 * Requires a valid CSRF token and is subject to rate limiting.
+	 */
+	private function handleInstallConfigAction(): void {
+		$request = $this->getRequest();
+		$output = $this->getOutput();
+
+		// Add ResourceLoader styles for consistent look
+		$output->addModuleStyles( 'ext.semanticschemas.styles' );
+
+		// CSRF check for POST requests
+		if ( $request->wasPosted() ) {
+			if ( !$this->getUser()->matchEditToken( $request->getVal( 'token' ) ) ) {
+				$output->addHTML( Html::errorBox( 'Invalid edit token' ) );
+				return;
+			}
+		} else {
+			// GET request - show confirmation form
+			$this->showInstallConfigConfirmation();
+			return;
+		}
+
+		// Check rate limit
+		if ( $this->checkRateLimit( 'install-config' ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-ratelimit-exceeded' )
+					->params( $this->getRateLimitPerHour() )
+					->text()
+			) );
+			return;
+		}
+
+		$configPath = __DIR__ . '/../../resources/extension-config.json';
+		if ( !file_exists( $configPath ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-install-config-not-found' )->text()
+			) );
+			return;
+		}
+
+		try {
+			$installer = new ExtensionConfigInstaller();
+			$result = $installer->applyFromFile( $configPath );
+
+			if ( !empty( $result['errors'] ) ) {
+				$output->addHTML( Html::errorBox(
+					$this->msg( 'semanticschemas-install-config-failed' )
+						->params( implode( ', ', $result['errors'] ) )
+						->text()
+				) );
+				return;
+			}
+
+			// Build a summary of what was installed
+			$summary = [];
+			$created = $result['created'] ?? [];
+			$updated = $result['updated'] ?? [];
+
+			$createdCount = count( $created['properties'] ?? [] ) +
+				count( $created['categories'] ?? [] ) +
+				count( $created['subobjects'] ?? [] );
+			$updatedCount = count( $updated['properties'] ?? [] ) +
+				count( $updated['categories'] ?? [] ) +
+				count( $updated['subobjects'] ?? [] );
+
+			if ( $createdCount > 0 ) {
+				$summary[] = $this->msg( 'semanticschemas-import-created' )
+					->numParams( $createdCount )->text();
+			}
+			if ( $updatedCount > 0 ) {
+				$summary[] = $this->msg( 'semanticschemas-import-updated' )
+					->numParams( $updatedCount )->text();
+			}
+
+			$this->logOperation( 'install-config', 'Base configuration installed', [
+				'created' => $created,
+				'updated' => $updated,
+			] );
+
+			$output->addHTML( Html::successBox(
+				$this->msg( 'semanticschemas-install-config-success' )->text() .
+				( !empty( $summary ) ? ' ' . implode( ', ', $summary ) : '' )
+			) );
+
+			// Show link back to overview
+			$output->addHTML( Html::rawElement(
+				'p',
+				[ 'style' => 'margin-top: 1em;' ],
+				Html::element(
+					'a',
+					[
+						'href' => $this->getPageTitle()->getLocalURL(),
+						'class' => 'mw-ui-button mw-ui-progressive',
+					],
+					$this->msg( 'semanticschemas-overview' )->text()
+				)
+			) );
+
+		} catch ( \Exception $e ) {
+			$this->logOperation( 'install-config', 'Install failed: ' . $e->getMessage(), [
+				'exception' => get_class( $e ),
+			] );
+
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-install-config-failed' )
+					->params( $e->getMessage() )
+					->text()
+			) );
+		}
+	}
+
+	/**
+	 * Handle the "install-properties" action (Step 1 of 2) - legacy handler.
+	 * Redirects to the automated installer.
+	 */
+	private function handleInstallPropertiesAction(): void {
+		$this->showAutomatedInstaller();
+	}
+
+	/**
+	 * Handle the "install-categories" action (Step 2 of 2) - legacy handler.
+	 * Redirects to the automated installer.
+	 */
+	private function handleInstallCategoriesAction(): void {
+		$this->showAutomatedInstaller();
+	}
+
+	/**
+	 * Show the automated layer-by-layer installer with JavaScript progress monitoring.
+	 *
+	 * This installer creates wiki pages in 4 layers via separate API calls, waiting for
+	 * SMW's job queue to complete between each layer. This is necessary because SMW's
+	 * property type registry is updated asynchronously - if we create properties and
+	 * categories in the same request, category annotations may be stored with incorrect
+	 * data types (e.g., text values stored as page references).
+	 *
+	 * The JavaScript polls the API every 2 seconds to check job queue status, automatically
+	 * proceeding to the next layer once all jobs are complete.
+	 *
+	 * @see ApiSemanticSchemasInstall for layer definitions and detailed explanation
+	 */
+	private function showAutomatedInstaller(): void {
+		$output = $this->getOutput();
+		$output->setPageTitle( $this->msg( 'semanticschemas-install-config-title' )->text() );
+		$output->addModuleStyles( 'ext.semanticschemas.styles' );
+
+		$configPath = __DIR__ . '/../../resources/extension-config.json';
+		$installer = new ExtensionConfigInstaller();
+
+		// Preview what will be installed
+		$preview = [];
+		if ( file_exists( $configPath ) ) {
+			$preview = $installer->previewInstallation( $configPath );
+		}
+
+		$wouldCreate = $preview['would_create'] ?? [];
+		$tplCount = count( $wouldCreate['templates'] ?? [] );
+		$propCount = count( $wouldCreate['properties'] ?? [] );
+		$catCount = count( $wouldCreate['categories'] ?? [] );
+		$subCount = count( $wouldCreate['subobjects'] ?? [] );
+
+		// Common styles to avoid long lines
+		$previewStyle = 'margin: 1em 0; padding: 1em; background: #f8f9fa; border-radius: 4px;';
+		$layerStyle = 'padding: 0.5em; margin: 0.5em 0; border-radius: 4px; background: #e9ecef;';
+		$infoStyle = 'margin-left: 1em; color: #666;';
+		$jobsStyle = 'margin-top: 1em; padding: 0.5em; background: #fff3cd; ' .
+			'border-radius: 4px; display: none;';
+
+		// Build the installer UI
+		$html = Html::rawElement( 'div', [ 'id' => 'ss-installer' ],
+			Html::element( 'h3', [], 'Automated Installation' ) .
+			Html::element( 'p', [],
+				'This installer will create pages in layers, waiting for SMW to process each layer ' .
+				'before proceeding to the next.'
+			) .
+			Html::rawElement( 'div', [ 'class' => 'ss-install-preview', 'style' => $previewStyle ],
+				Html::element( 'strong', [], 'Items to install:' ) .
+				Html::rawElement( 'ul', [],
+					Html::element( 'li', [], "Templates: $tplCount" ) .
+					Html::element( 'li', [], "Properties: $propCount" ) .
+					Html::element( 'li', [], "Subobjects: $subCount" ) .
+					Html::element( 'li', [], "Categories: $catCount" )
+				)
+			) .
+
+			// Progress display
+			Html::rawElement( 'div', [ 'id' => 'ss-progress', 'style' => 'display: none; margin: 1em 0;' ],
+				Html::rawElement( 'div', [ 'id' => 'ss-layer0', 'class' => 'ss-layer', 'style' => $layerStyle ],
+					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
+					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 0: Templates' ) .
+					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+				) .
+				Html::rawElement( 'div', [ 'id' => 'ss-layer1', 'class' => 'ss-layer', 'style' => $layerStyle ],
+					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
+					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 1: Property Types' ) .
+					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+				) .
+				Html::rawElement( 'div', [ 'id' => 'ss-layer2', 'class' => 'ss-layer', 'style' => $layerStyle ],
+					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
+					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 2: Property Annotations' ) .
+					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+				) .
+				Html::rawElement( 'div', [ 'id' => 'ss-layer3', 'class' => 'ss-layer', 'style' => $layerStyle ],
+					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
+					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 3: Subobjects' ) .
+					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+				) .
+				Html::rawElement( 'div', [ 'id' => 'ss-layer4', 'class' => 'ss-layer', 'style' => $layerStyle ],
+					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
+					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 4: Categories' ) .
+					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+				) .
+				Html::rawElement( 'div', [ 'id' => 'ss-jobs', 'style' => $jobsStyle ],
+					Html::element( 'span', [], 'Waiting for SMW jobs: ' ) .
+					Html::element( 'span', [ 'id' => 'ss-job-count' ], '0' )
+				)
+			) .
+
+			// Result display
+			Html::rawElement( 'div', [ 'id' => 'ss-result', 'style' => 'display: none; margin: 1em 0;' ] ) .
+
+			// Buttons
+			Html::rawElement( 'div', [ 'style' => 'margin-top: 1em;' ],
+				Html::element( 'button', [
+					'id' => 'ss-start-btn',
+					'class' => 'mw-ui-button mw-ui-progressive',
+				], 'Start Installation' ) .
+				' ' .
+				Html::element( 'a', [
+					'href' => $this->getPageTitle()->getLocalURL(),
+					'class' => 'mw-ui-button',
+				], 'Cancel' )
+			)
+		);
+
+		$output->addHTML( $html );
+
+		// Add the JavaScript
+		$token = json_encode( $this->getUser()->getEditToken() );
+		$apiUrl = json_encode( wfScript( 'api' ) );
+
+		$js = <<<JAVASCRIPT
+(function() {
+	var token = $token;
+	var apiUrl = $apiUrl;
+	var layers = ['layer0', 'layer1', 'layer2', 'layer3', 'layer4'];
+	var layerNames = {
+		'layer0': 'Templates',
+		'layer1': 'Property Types',
+		'layer2': 'Property Annotations',
+		'layer3': 'Subobjects',
+		'layer4': 'Categories'
+	};
+	var currentLayer = 0;
+	var pollInterval = null;
+
+	function updateLayerStatus(layer, status, info) {
+		var el = document.getElementById('ss-' + layer);
+		if (!el) return;
+
+		var statusEl = el.querySelector('.ss-layer-status');
+		var infoEl = el.querySelector('.ss-layer-info');
+
+		if (status === 'pending') {
+			el.style.background = '#e9ecef';
+			statusEl.textContent = '○';
+		} else if (status === 'running') {
+			el.style.background = '#fff3cd';
+			statusEl.textContent = '◐';
+		} else if (status === 'waiting') {
+			el.style.background = '#cce5ff';
+			statusEl.textContent = '⏳';
+		} else if (status === 'done') {
+			el.style.background = '#d4edda';
+			statusEl.textContent = '✓';
+		} else if (status === 'error') {
+			el.style.background = '#f8d7da';
+			statusEl.textContent = '✗';
+		}
+
+		if (info) {
+			infoEl.textContent = info;
+		}
+	}
+
+	function showResult(success, message) {
+		var resultEl = document.getElementById('ss-result');
+		resultEl.style.display = 'block';
+		resultEl.innerHTML = '<div style="padding: 1em; border-radius: 4px; background: ' +
+			(success ? '#d4edda' : '#f8d7da') + ';">' + message + '</div>';
+
+		if (success) {
+			resultEl.innerHTML += '<p style="margin-top: 1em;"><a href="' +
+				mw.config.get('wgScript') + '/Special:SemanticSchemas" ' +
+				'class="mw-ui-button mw-ui-progressive">Return to Overview</a></p>';
+		}
+	}
+
+	function checkJobsAndProceed() {
+		fetch(apiUrl + '?action=semanticschemas-install&step=status&format=json')
+			.then(function(r) { return r.json(); })
+			.then(function(data) {
+				var status = data.status;
+				var jobCount = status.pendingJobs || 0;
+
+				document.getElementById('ss-job-count').textContent = jobCount;
+
+				if (jobCount === 0) {
+					document.getElementById('ss-jobs').style.display = 'none';
+					clearInterval(pollInterval);
+					pollInterval = null;
+
+					// Mark current layer as done before moving on
+					updateLayerStatus(layers[currentLayer], 'done', 'Complete');
+
+					// Move to next layer
+					currentLayer++;
+					if (currentLayer < layers.length) {
+						runLayer(layers[currentLayer]);
+					} else {
+						showResult(true, '<strong>Installation Complete!</strong>' +
+							'<br>All layers have been installed successfully.');
+					}
+				} else {
+					document.getElementById('ss-jobs').style.display = 'block';
+					updateLayerStatus(layers[currentLayer], 'waiting',
+						'Waiting for ' + jobCount + ' jobs...');
+				}
+			})
+			.catch(function(err) {
+				console.error('Status check failed:', err);
+			});
+	}
+
+	function runLayer(layer) {
+		updateLayerStatus(layer, 'running', 'Installing...');
+
+		var formData = new FormData();
+		formData.append('action', 'semanticschemas-install');
+		formData.append('step', layer);
+		formData.append('token', token);
+		formData.append('format', 'json');
+
+		fetch(apiUrl, {
+			method: 'POST',
+			body: formData
+		})
+		.then(function(r) { return r.json(); })
+		.then(function(data) {
+			if (data.error) {
+				updateLayerStatus(layer, 'error', data.error.info || 'Error');
+				showResult(false, '<strong>Installation Failed</strong><br>' + (data.error.info || 'Unknown error'));
+				return;
+			}
+
+			var install = data.install;
+			// Check for errors array instead of success boolean (MW API quirk)
+			if (install.errors && install.errors.length > 0) {
+				updateLayerStatus(layer, 'error', install.errors.join(', '));
+				showResult(false, '<strong>Installation Failed</strong><br>' +
+					install.errors.join(', '));
+				return;
+			}
+
+			var created = 0, updated = 0;
+			for (var key in install.created) {
+				created += (install.created[key] || []).length;
+			}
+			for (var key in install.updated) {
+				updated += (install.updated[key] || []).length;
+			}
+
+			updateLayerStatus(layer, 'done', 'Created: ' + created + ', Updated: ' + updated);
+
+			// Check for pending jobs
+			if (install.pendingJobs > 0) {
+				document.getElementById('ss-jobs').style.display = 'block';
+				document.getElementById('ss-job-count').textContent = install.pendingJobs;
+				updateLayerStatus(layer, 'waiting', 'Waiting for ' + install.pendingJobs + ' jobs...');
+
+				// Start polling for job completion
+				pollInterval = setInterval(checkJobsAndProceed, 2000);
+			} else {
+				// Proceed immediately to next layer
+				currentLayer++;
+				if (currentLayer < layers.length) {
+					setTimeout(function() { runLayer(layers[currentLayer]); }, 500);
+				} else {
+					showResult(true, '<strong>Installation Complete!</strong>' +
+						'<br>All layers have been installed successfully.');
+				}
+			}
+		})
+		.catch(function(err) {
+			updateLayerStatus(layer, 'error', 'Network error');
+			showResult(false, '<strong>Installation Failed</strong><br>Network error: ' + err.message);
+		});
+	}
+
+	document.getElementById('ss-start-btn').addEventListener('click', function() {
+		this.disabled = true;
+		this.textContent = 'Installing...';
+		document.getElementById('ss-progress').style.display = 'block';
+
+		currentLayer = 0;
+		runLayer(layers[0]);
+	});
+})();
+JAVASCRIPT;
+
+		$output->addInlineScript( $js );
+	}
+
+	/**
+	 * Show the install config confirmation form with two-step process.
+	 */
+	private function showInstallConfigConfirmation(): void {
+		$this->showAutomatedInstaller();
+	}
+
+	/**
+	 * Legacy showInstallConfigConfirmation content - kept for reference.
+	 */
+	private function showInstallConfigConfirmationLegacy(): void {
+		$output = $this->getOutput();
+		$output->setPageTitle( $this->msg( 'semanticschemas-install-config-title' )->text() );
+
+		$configPath = __DIR__ . '/../../resources/extension-config.json';
+		$installer = new ExtensionConfigInstaller();
+
+		// Check current installation state
+		$propertiesInstalled = $installer->arePropertiesInstalled( $configPath );
+		$categoriesInstalled = $installer->areCategoriesInstalled( $configPath );
+
+		// Preview what will be installed
+		$preview = [];
+		if ( file_exists( $configPath ) ) {
+			$preview = $installer->previewInstallation( $configPath );
+		}
+
+		$body = Html::rawElement(
+			'div',
+			[ 'class' => 'semanticschemas-install-config-message' ],
+			Html::element( 'p', [],
+				'Installation requires two steps to ensure SMW correctly indexes property types ' .
+				'before categories reference them.'
+			)
+		);
+
+		// Show preview of what would be created/updated
+		if ( !empty( $preview['would_create'] ) || !empty( $preview['would_update'] ) ) {
+			$previewHtml = '';
+
+			$wouldCreate = $preview['would_create'] ?? [];
+			$propCount = count( $wouldCreate['properties'] ?? [] );
+			$catCount = count( $wouldCreate['categories'] ?? [] );
+			$subCount = count( $wouldCreate['subobjects'] ?? [] );
+
+			if ( $propCount > 0 || $subCount > 0 ) {
+				$previewHtml .= Html::element( 'p', [],
+					"Properties to install: $propCount, Subobjects: $subCount" );
+			}
+			if ( $catCount > 0 ) {
+				$previewHtml .= Html::element( 'p', [],
+					"Categories to install: $catCount" );
+			}
+
+			$body .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-preview' ], $previewHtml );
+		}
+
+		// Step 1: Install Properties
+		$step1Status = $propertiesInstalled ? '✓ Complete' : 'Not started';
+		$step1Class = $propertiesInstalled
+			? 'background: #d4edda; padding: 1em; margin: 1em 0; border-radius: 4px;'
+			: 'background: #fff3cd; padding: 1em; margin: 1em 0; border-radius: 4px;';
+
+		$step1Html = Html::rawElement( 'div', [ 'style' => $step1Class ],
+			Html::rawElement( 'strong', [], "Step 1: Install Properties ($step1Status)" ) .
+			Html::element( 'p', [], 'Creates Property and Subobject pages with type definitions.' )
+		);
+
+		if ( !$propertiesInstalled ) {
+			$form1 = Html::openElement( 'form', [
+				'method' => 'post',
+				'action' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-properties' ] ),
+			] );
+			$form1 .= Html::hidden( 'token', $this->getUser()->getEditToken() );
+			$form1 .= Html::submitButton(
+				'Install Properties',
+				[ 'class' => 'mw-ui-button mw-ui-progressive' ]
+			);
+			$form1 .= Html::closeElement( 'form' );
+			$step1Html .= $form1;
+		}
+
+		$body .= $step1Html;
+
+		// Step 2: Install Categories
+		$step2Status = $categoriesInstalled
+			? '✓ Complete'
+			: ( $propertiesInstalled ? 'Ready' : 'Waiting for Step 1' );
+		$step2Class = $categoriesInstalled
+			? 'background: #d4edda; padding: 1em; margin: 1em 0; border-radius: 4px;'
+			: ( $propertiesInstalled
+				? 'background: #fff3cd; padding: 1em; margin: 1em 0; border-radius: 4px;'
+				: 'background: #e9ecef; padding: 1em; margin: 1em 0; border-radius: 4px;' );
+
+		$step2Html = Html::rawElement( 'div', [ 'style' => $step2Class ],
+			Html::rawElement( 'strong', [], "Step 2: Install Categories ($step2Status)" ) .
+			Html::element( 'p', [], 'Creates Category pages that reference the properties. ' .
+				'Wait a few seconds after Step 1 for SMW to process property types.' )
+		);
+
+		if ( $propertiesInstalled && !$categoriesInstalled ) {
+			$form2 = Html::openElement( 'form', [
+				'method' => 'post',
+				'action' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-categories' ] ),
+			] );
+			$form2 .= Html::hidden( 'token', $this->getUser()->getEditToken() );
+			$form2 .= Html::submitButton(
+				'Install Categories',
+				[ 'class' => 'mw-ui-button mw-ui-progressive' ]
+			);
+			$form2 .= Html::closeElement( 'form' );
+			$step2Html .= $form2;
+		}
+
+		$body .= $step2Html;
+
+		// Cancel link
+		$body .= Html::rawElement( 'p', [ 'style' => 'margin-top: 1em;' ],
+			Html::element( 'a', [
+				'href' => $this->getPageTitle()->getLocalURL(),
+				'class' => 'mw-ui-button',
+			], $this->msg( 'cancel' )->text() )
+		);
+
+		$card = $this->renderCard(
+			$this->msg( 'semanticschemas-install-config-title' )->text(),
+			$this->msg( 'semanticschemas-install-config-subtitle' )->text(),
+			$body
+		);
+
+		$output->addHTML( $this->wrapShell( $card ) );
+	}
+
+	/**
+	 * Render the install config warning banner for the overview page.
+	 *
+	 * @return string HTML
+	 */
+	private function renderInstallConfigBanner(): string {
+		$content = Html::rawElement(
+			'div',
+			[ 'class' => 'semanticschemas-install-banner' ],
+			Html::element(
+				'strong',
+				[],
+				$this->msg( 'semanticschemas-install-config-banner-title' )->text()
+			) .
+			Html::element(
+				'p',
+				[],
+				$this->msg( 'semanticschemas-install-config-banner-message' )->text()
+			) .
+			Html::element(
+				'a',
+				[
+					'href' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-config' ] ),
+					'class' => 'mw-ui-button mw-ui-progressive',
+				],
+				$this->msg( 'semanticschemas-install-config-button' )->text()
+			)
+		);
+
+		return Html::warningBox( $content );
 	}
 
 	/**
@@ -426,7 +1153,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return array<int, array<string, string>>
 	 */
 	private function getQuickActions(): array {
-		return [
+		$actions = [
 			[
 				'action' => 'generate',
 				'label' => $this->msg( 'semanticschemas-generate' )->text(),
@@ -438,6 +1165,20 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'description' => $this->msg( 'semanticschemas-validate-description' )->text(),
 			],
 		];
+
+		// Add install config action if base config is not installed
+		$installer = new ExtensionConfigInstaller();
+		if ( !$installer->isInstalled() ) {
+			// Add at the beginning since it's a prerequisite
+			array_unshift( $actions, [
+				'action' => 'install-config',
+				'href' => $this->getPageTitle()->getLocalURL( [ 'action' => 'install-config' ] ),
+				'label' => $this->msg( 'semanticschemas-quick-action-install-config' )->text(),
+				'description' => $this->msg( 'semanticschemas-quick-action-install-config-desc' )->text(),
+			] );
+		}
+
+		return $actions;
 	}
 
 	/**
@@ -549,10 +1290,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function renderQuickActionsHtml(): string {
 		$actionsHtml = '';
 		foreach ( $this->getQuickActions() as $action ) {
+			// Use custom href if provided, otherwise generate from action subpage
+			$href = $action['href'] ?? $this->getPageTitle( $action['action'] )->getLocalURL();
 			$actionsHtml .= Html::rawElement(
 				'a',
 				[
-					'href' => $this->getPageTitle( $action['action'] )->getLocalURL(),
+					'href' => $href,
 					'class' => 'semanticschemas-quick-action'
 				],
 				Html::element( 'strong', [], $action['label'] ) .
@@ -569,6 +1312,13 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function showOverview(): void {
 		$output = $this->getOutput();
 		$output->setPageTitle( $this->msg( 'semanticschemas-overview' )->text() );
+
+		// Check if base config is installed and show banner if not
+		$installer = new ExtensionConfigInstaller();
+		$installBanner = '';
+		if ( !$installer->isInstalled() ) {
+			$installBanner = $this->renderInstallConfigBanner();
+		}
 
 		$inspector = new OntologyInspector();
 		$stats = $inspector->getStatistics();
@@ -591,7 +1341,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 			Html::rawElement( 'div', [ 'class' => 'semanticschemas-table-wrapper' ], $this->getCategoryStatusTable() )
 		);
 
-		$output->addHTML( $this->wrapShell( $hero . $summaryGrid . $quickActionsCard . $categoryCard ) );
+		$content = $installBanner . $hero . $summaryGrid . $quickActionsCard . $categoryCard;
+		$output->addHTML( $this->wrapShell( $content ) );
 	}
 
 	/**

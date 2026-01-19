@@ -1,5 +1,19 @@
 {
   "schemaVersion": "1.0",
+  "templates": {
+    "Property/Default": {
+      "content": "<includeonly>{{{value}}}</includeonly>",
+      "description": "Default property display template - passes value through unchanged"
+    },
+    "Property/Email": {
+      "content": "<includeonly>[mailto:{{{value|}}} {{{value|}}}]</includeonly>",
+      "description": "Displays email addresses as mailto links"
+    },
+    "Property/Link": {
+      "content": "<includeonly>[{{{value|}}} {{{value|}}}]</includeonly>",
+      "description": "Displays URLs as clickable links"
+    }
+  },
   "categories": {
     "Category": {
       "parents": [],

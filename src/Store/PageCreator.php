@@ -232,6 +232,37 @@ class PageCreator {
 	}
 
 	/* =====================================================================
+	 * CACHE PURGE
+	 * ===================================================================== */
+
+	/**
+	 * Purge the parser cache for a page.
+	 *
+	 * This forces the page to be re-parsed on next view, which is important
+	 * for forms where PageForms caches the parsed form definition.
+	 *
+	 * @param Title $title
+	 * @return bool
+	 */
+	public function purgePage( Title $title ): bool {
+		if ( !$title->exists() ) {
+			return false;
+		}
+
+		try {
+			$wikiPage = $this->wikiPageFactory->newFromTitle( $title );
+			$wikiPage->doPurge();
+			wfDebugLog( 'semanticschemas', "Purged cache: " . $title->getPrefixedText() );
+			return true;
+		} catch ( \Exception $e ) {
+			wfLogWarning(
+				"SemanticSchemas: Failed purging '{$title->getPrefixedText()}': " . $e->getMessage()
+			);
+			return false;
+		}
+	}
+
+	/* =====================================================================
 	 * MARKER-BASED CONTENT UPDATES
 	 * ===================================================================== */
 
