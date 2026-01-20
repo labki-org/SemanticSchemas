@@ -161,44 +161,48 @@ class FormGenerator {
 	 * Separates required and optional properties into distinct sections.
 	 */
 	private function generatePropertyTable( CategoryModel $category ): array {
-		$required = $category->getRequiredProperties();
-		$optional = $category->getOptionalProperties();
-
-		$out = [];
-
-		// Sort both lists alphabetically
-		$required = array_unique( $required );
-		$optional = array_unique( $optional );
+		$required = array_unique( $category->getRequiredProperties() );
+		$optional = array_unique( $category->getOptionalProperties() );
 		sort( $required );
 		sort( $optional );
 
-		// Generate required properties section
-		if ( !empty( $required ) ) {
-			$out[] = "'''Required fields:'''";
-			$out[] = '';
-			$out[] = '{| class="formtable"';
+		$out = [];
+		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields', $category, true ) );
+		$out = array_merge( $out, $this->generatePropertySection( $optional, 'Optional fields', $category, false ) );
 
-			foreach ( $required as $prop ) {
-				$out = array_merge( $out, $this->generateTableField( $prop, $category, true ) );
-			}
+		return $out;
+	}
 
-			$out[] = '|}';
-			$out[] = '';
+	/**
+	 * Generate a property section with label and table.
+	 *
+	 * @param array $props List of property names
+	 * @param string $label Section label
+	 * @param CategoryModel $category The category model
+	 * @param bool $isRequired Whether properties in this section are required
+	 * @return array Lines of wikitext
+	 */
+	private function generatePropertySection(
+		array $props,
+		string $label,
+		CategoryModel $category,
+		bool $isRequired
+	): array {
+		if ( empty( $props ) ) {
+			return [];
 		}
 
-		// Generate optional properties section
-		if ( !empty( $optional ) ) {
-			$out[] = "'''Optional fields:'''";
-			$out[] = '';
-			$out[] = '{| class="formtable"';
+		$out = [];
+		$out[] = "'''" . $label . ":'''";
+		$out[] = '';
+		$out[] = '{| class="formtable"';
 
-			foreach ( $optional as $prop ) {
-				$out = array_merge( $out, $this->generateTableField( $prop, $category, false ) );
-			}
-
-			$out[] = '|}';
-			$out[] = '';
+		foreach ( $props as $prop ) {
+			$out = array_merge( $out, $this->generateTableField( $prop, $category, $isRequired ) );
 		}
+
+		$out[] = '|}';
+		$out[] = '';
 
 		return $out;
 	}
