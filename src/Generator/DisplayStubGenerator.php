@@ -200,28 +200,28 @@ class DisplayStubGenerator {
 
 		foreach ( $targetProperties as $propName ) {
 			$property = $this->propertyStore->readProperty( $propName );
+			$paramName = NamingHelper::propertyToParameter( $propName );
+
 			if ( $property ) {
 				$label = $property->getLabel();
-				// Use NamingHelper for consistent parameter names with TemplateGenerator
-				$paramName = NamingHelper::propertyToParameter( $propName );
-
-				// Resolve the specific render template (e.g. Template:Property/Email)
-				// Defaults to Template:Property/Default if not specified/found.
 				$renderTemplate = $property->getRenderTemplate();
-
-				// Build the value expression, adding namespace prefix for Page-type properties
-				// This mirrors TemplateGenerator::generatePropertyLine() logic
 				$valueExpr = $this->buildValueExpression( $property, $paramName );
-
-				// Construct the template call:
-				// {{ Template:Property/Email | value={{{email|}}} }}
-				$valueCall = "{{" . $renderTemplate . " | value=" . $valueExpr . " }}";
-
-				$out .= "|-\n";
-				// Standard row format works for both table and simplified infobox
-				$out .= "! " . $label . "\n";
-				$out .= "| " . $valueCall . "\n";
+			} else {
+				// Fallback for properties without wiki pages:
+				// Generate a readable label and use default render template
+				$label = NamingHelper::generatePropertyLabel( $propName );
+				$renderTemplate = 'Template:Property/Default';
+				$valueExpr = '{{{' . $paramName . '|}}}';
 			}
+
+			// Construct the template call:
+			// {{ Template:Property/Email | value={{{email|}}} }}
+			$valueCall = "{{" . $renderTemplate . " | value=" . $valueExpr . " }}";
+
+			$out .= "|-\n";
+			// Standard row format works for both table and simplified infobox
+			$out .= "! " . $label . "\n";
+			$out .= "| " . $valueCall . "\n";
 		}
 		return $out;
 	}
