@@ -290,6 +290,46 @@ class ExtensionConfigInstaller {
 	}
 
 	/**
+	 * Check if templates from the schema are installed.
+	 *
+	 * @param string $filePath Path to schema file
+	 * @return bool
+	 */
+	public function areTemplatesInstalled( string $filePath ): bool {
+		return $this->areEntitiesInstalled( $filePath, 'templates', NS_TEMPLATE );
+	}
+
+	/**
+	 * Check if properties from the schema are installed.
+	 *
+	 * @param string $filePath Path to schema file
+	 * @return bool
+	 */
+	public function arePropertiesInstalled( string $filePath ): bool {
+		return $this->areEntitiesInstalled( $filePath, 'properties', SMW_NS_PROPERTY );
+	}
+
+	/**
+	 * Check if subobjects from the schema are installed.
+	 *
+	 * @param string $filePath Path to schema file
+	 * @return bool
+	 */
+	public function areSubobjectsInstalled( string $filePath ): bool {
+		return $this->areEntitiesInstalled( $filePath, 'subobjects', NS_SUBOBJECT );
+	}
+
+	/**
+	 * Check if categories from the schema are installed.
+	 *
+	 * @param string $filePath Path to schema file
+	 * @return bool
+	 */
+	public function areCategoriesInstalled( string $filePath ): bool {
+		return $this->areEntitiesInstalled( $filePath, 'categories', NS_CATEGORY );
+	}
+
+	/**
 	 * Check if entities of a given type from the schema are installed.
 	 *
 	 * @param string $filePath Path to schema file
