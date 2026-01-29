@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\SpecialPage\SpecialPage;
 use Skin;
 
