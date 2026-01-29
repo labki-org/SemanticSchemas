@@ -1129,17 +1129,14 @@ JAVASCRIPT;
 			$this->renderStatCard(
 				$this->msg( 'semanticschemas-label-categories' )->text(),
 				$lang->formatNum( $categoryCount ),
-				$this->msg( 'semanticschemas-categories-count' )->numParams( $categoryCount )->text()
 			) .
 			$this->renderStatCard(
 				$this->msg( 'semanticschemas-label-properties' )->text(),
 				$lang->formatNum( $propertyCount ),
-				$this->msg( 'semanticschemas-properties-count' )->numParams( $propertyCount )->text()
 			) .
 			$this->renderStatCard(
 				$this->msg( 'semanticschemas-label-subobjects' )->text(),
 				$lang->formatNum( $subobjectCount ),
-				$this->msg( 'semanticschemas-subobjects-count' )->numParams( $subobjectCount )->text()
 			) .
 			$this->renderStatCard(
 				$this->msg( 'semanticschemas-label-last-change' )->text(),
