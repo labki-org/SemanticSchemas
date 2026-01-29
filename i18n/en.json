@@ -141,7 +141,5 @@
 	"semanticschemas-install-config-failed": "Failed to install base configuration: $1",
 	"semanticschemas-install-config-not-found": "Configuration file not found.",
 	"semanticschemas-install-config-would-create": "Will create $1 {{PLURAL:$1|page|pages}}.",
-	"semanticschemas-install-config-would-update": "Will update $1 {{PLURAL:$1|page|pages}}.",
-	"semanticschemas-quick-action-install-config": "Install Base Config",
-	"semanticschemas-quick-action-install-config-desc": "Install core schema pages"
+	"semanticschemas-install-config-would-update": "Will update $1 {{PLURAL:$1|page|pages}}."
 }

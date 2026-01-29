@@ -21,8 +21,6 @@
 	"semanticschemas-tab-diff-subtext": "Short description shown under the Diff tab label",
 	"semanticschemas-overview-summary": "Summary text for the overview page",
 	"semanticschemas-overview-hero-description": "Hero section subheading describing the overview",
-	"semanticschemas-overview-quick-actions": "Heading for the quick actions list",
-	"semanticschemas-overview-quick-actions-subtitle": "Short subtitle shown under the quick actions heading",
 	"semanticschemas-overview-categories-subtitle": "Subtitle for the category coverage card",
 	"semanticschemas-overview-no-categories": "Empty-state message when no categories exist",
 	"semanticschemas-label-categories": "Short label used for category metric cards",
