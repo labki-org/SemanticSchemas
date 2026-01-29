@@ -20,7 +20,7 @@ class WikiSubobjectStore {
 
 	private PageCreator $pageCreator;
 
-	public function __construct( PageCreator $pageCreator = null ) {
+	public function __construct( ?PageCreator $pageCreator = null ) {
 		$this->pageCreator = $pageCreator ?? new PageCreator();
 	}
 

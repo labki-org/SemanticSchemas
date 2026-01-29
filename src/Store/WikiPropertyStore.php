@@ -24,7 +24,7 @@ class WikiPropertyStore {
 
 	private PageCreator $pageCreator;
 
-	public function __construct( PageCreator $pageCreator = null ) {
+	public function __construct( ?PageCreator $pageCreator = null ) {
 		$this->pageCreator = $pageCreator ?? new PageCreator();
 	}
 
@@ -226,7 +226,7 @@ class WikiPropertyStore {
 		// Clean null/empty
 		return array_filter(
 			$out,
-			fn ( $v ) => $v !== null && $v !== []
+			static fn ( $v ) => $v !== null && $v !== []
 		);
 	}
 

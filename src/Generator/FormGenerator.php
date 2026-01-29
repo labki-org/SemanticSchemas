@@ -30,10 +30,10 @@ class FormGenerator {
 	private WikiSubobjectStore $subobjectStore;
 
 	public function __construct(
-		PageCreator $pageCreator = null,
-		WikiPropertyStore $propertyStore = null,
-		PropertyInputMapper $inputMapper = null,
-		WikiSubobjectStore $subobjectStore = null
+		?PageCreator $pageCreator = null,
+		?WikiPropertyStore $propertyStore = null,
+		?PropertyInputMapper $inputMapper = null,
+		?WikiSubobjectStore $subobjectStore = null
 	) {
 		$this->pageCreator = $pageCreator ?? new PageCreator();
 		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();

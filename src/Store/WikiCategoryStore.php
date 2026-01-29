@@ -25,8 +25,8 @@ class WikiCategoryStore {
 	private WikiPropertyStore $propertyStore;
 
 	public function __construct(
-		PageCreator $pageCreator = null,
-		WikiPropertyStore $propertyStore = null
+		?PageCreator $pageCreator = null,
+		?WikiPropertyStore $propertyStore = null
 	) {
 		$this->pageCreator = $pageCreator ?? new PageCreator();
 		$this->propertyStore = $propertyStore ?? new WikiPropertyStore( $this->pageCreator );

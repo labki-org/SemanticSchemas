@@ -115,13 +115,13 @@ class CategoryHierarchyService {
 
 		// Only include valid parents
 		$parents = array_values(
-			array_filter( $parentNames, fn ( $p ) => isset( $allCategories[$p] ) )
+			array_filter( $parentNames, static fn ( $p ) => isset( $allCategories[$p] ) )
 		);
 
 		// Virtual root node
 		$result['nodes'][$fullName] = [
 			'title' => $fullName,
-			'parents' => array_map( fn ( $p ) => "Category:$p", $parents ),
+			'parents' => array_map( static fn ( $p ) => "Category:$p", $parents ),
 		];
 
 		// Build tree for ancestors of valid parents
@@ -170,7 +170,7 @@ class CategoryHierarchyService {
 
 		$full = "Category:$name";
 		$parents = array_map(
-			fn ( $p ) => "Category:$p",
+			static fn ( $p ) => "Category:$p",
 			$model->getParents()
 		);
 
