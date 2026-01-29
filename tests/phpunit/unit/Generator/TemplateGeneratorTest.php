@@ -21,12 +21,6 @@ class TemplateGeneratorTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		// Skip tests if MediaWiki classes aren't available
-		// TemplateGenerator depends on PageCreator which requires MediaWiki
-		if ( !class_exists( 'MediaWiki\User\User' ) ) {
-			$this->markTestSkipped( 'TemplateGenerator tests require MediaWiki environment' );
-		}
-
 		$this->generator = new TemplateGenerator( null, null );
 	}
 

@@ -7,21 +7,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \MediaWiki\Extension\SemanticSchemas\Store\StateManager
- *
- * Note: StateManager tests require a full MediaWiki environment because
- * they depend on PageCreator which uses MediaWiki page operations.
- * These tests will be skipped in standalone PHPUnit.
  */
 class StateManagerTest extends TestCase {
-
-	protected function setUp(): void {
-		parent::setUp();
-
-		// Skip tests if MediaWiki classes aren't available
-		if ( !class_exists( 'MediaWiki\Title\Title' ) ) {
-			$this->markTestSkipped( 'StateManager tests require MediaWiki environment' );
-		}
-	}
 
 	private function createStateManager(): StateManager {
 		return new StateManager();

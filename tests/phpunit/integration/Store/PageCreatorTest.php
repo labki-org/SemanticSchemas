@@ -22,49 +22,28 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 
 	/* =========================================================================
 	 * PAGE CREATION
-	 * Note: These tests are skipped due to a Parsoid/MW core compatibility
-	 * issue in the labki-platform Docker image. They work in environments
-	 * where Parsoid is properly configured.
 	 * ========================================================================= */
 
-	/**
-	 * @group Broken
-	 */
 	public function testCreateOrUpdatePageCreatesNewPage(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
 
-	/**
-	 * @group Broken
-	 */
 	public function testCreateOrUpdatePageWithContentVerification(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
 
-	/**
-	 * @group Broken
-	 */
 	public function testCreateOrUpdatePageUpdatesExistingPage(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
 
-	/**
-	 * @group Broken
-	 */
 	public function testCreateOrUpdatePageWithNoChangeReturnsTrue(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
 
-	/**
-	 * @group Broken
-	 */
 	public function testCreateOrUpdatePageInCategoryNamespace(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
 
-	/**
-	 * @group Broken
-	 */
 	public function testCreateOrUpdatePageInTemplateNamespace(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
@@ -81,9 +60,6 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 		$this->assertFalse( $result );
 	}
 
-	/**
-	 * @group Broken
-	 */
 	public function testPageExistsReturnsTrueForExistingPage(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
@@ -100,16 +76,10 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 		$this->assertNull( $result );
 	}
 
-	/**
-	 * @group Broken
-	 */
 	public function testGetPageContentReturnsContentForExistingPage(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
 
-	/**
-	 * @group Broken
-	 */
 	public function testGetPageContentPreservesWikitext(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
@@ -172,11 +142,6 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public function testTitleFromPageNameWithPropertyPrefix(): void {
-		// This test depends on SMW being available
-		if ( !defined( 'SMW_NS_PROPERTY' ) ) {
-			$this->markTestSkipped( 'SMW not available' );
-		}
-
 		$title = $this->pageCreator->titleFromPageName( 'Property:Has name' );
 
 		$this->assertInstanceOf( Title::class, $title );
@@ -201,9 +166,6 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 	 * PAGE DELETION
 	 * ========================================================================= */
 
-	/**
-	 * @group Broken
-	 */
 	public function testDeletePageRemovesExistingPage(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
@@ -280,9 +242,6 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 	 * ERROR HANDLING
 	 * ========================================================================= */
 
-	/**
-	 * @group Broken
-	 */
 	public function testGetLastErrorReturnsNullOnSuccess(): void {
 		$this->markTestSkipped( 'Parsoid compatibility issue in Docker image' );
 	}
