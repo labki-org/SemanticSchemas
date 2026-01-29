@@ -519,6 +519,8 @@
 	flex-direction: column;
 	gap: var(--ss-space-2);
 	margin-bottom: var(--ss-space-4);
+
+
 }
 
 .semanticschemas-form-group label {
@@ -766,4 +768,54 @@
 
 .semanticschemas-shell .mw-ui-button.mw-ui-progressive:focus {
 	box-shadow: 0 0 0 3px var(--ss-accent-100);
+}
+
+/* Installation */
+
+#ss-installer {
+	#ss-progress {
+		display: none;
+		margin: 1em 0;
+
+		.ss-layer {
+			padding: 0.5em;
+			margin: 0.5em 0;
+			border-radius: 4px;
+			background: #e9ecef;
+		}
+
+		.ss-layer-info {
+			margin-left: 1em;
+			color: #666;
+		}
+
+		#ss-jobs {
+			margin-top: 1em;
+			padding: 0.5em;
+			background: #fff3cd;
+			border-radius: 4px;
+			display: none;
+		}
+	}
+
+	.ss-install-preview {
+		margin: 1em 0;
+		padding: 1em;
+		background: #f8f9fa;
+		border-radius: 4px;
+	}
+
+	#ss-result {
+		display: none;
+		margin: 1em 0;
+	}
+
+	.button-container {
+		margin-top: 1em;
+	}
+}
+/* Data */
+
+#semski-api-data {
+	display: none;
 }

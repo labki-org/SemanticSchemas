@@ -404,7 +404,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			// Show link back to overview
 			$output->addHTML( Html::rawElement(
 				'p',
-				[ 'style' => 'margin-top: 1em;' ],
+				[ 'class' => 'button-container' ],
 				Html::element(
 					'a',
 					[
@@ -462,6 +462,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$output = $this->getOutput();
 		$output->setPageTitle( $this->msg( 'semanticschemas-install-config-title' )->text() );
 		$output->addModuleStyles( 'ext.semanticschemas.styles' );
+		$output->addModules( 'ext.semanticschemas.install' );
 
 		$configPath = __DIR__ . '/../../resources/extension-config.json';
 		$installer = new ExtensionConfigInstaller();
@@ -478,13 +479,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$catCount = count( $wouldCreate['categories'] ?? [] );
 		$subCount = count( $wouldCreate['subobjects'] ?? [] );
 
-		// Common styles to avoid long lines
-		$previewStyle = 'margin: 1em 0; padding: 1em; background: #f8f9fa; border-radius: 4px;';
-		$layerStyle = 'padding: 0.5em; margin: 0.5em 0; border-radius: 4px; background: #e9ecef;';
-		$infoStyle = 'margin-left: 1em; color: #666;';
-		$jobsStyle = 'margin-top: 1em; padding: 0.5em; background: #fff3cd; ' .
-			'border-radius: 4px; display: none;';
-
 		// Build the installer UI
 		$html = Html::rawElement( 'div', [ 'id' => 'ss-installer' ],
 			Html::element( 'h3', [], 'Automated Installation' ) .
@@ -492,7 +486,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'This installer will create pages in layers, waiting for SMW to process each layer ' .
 				'before proceeding to the next.'
 			) .
-			Html::rawElement( 'div', [ 'class' => 'ss-install-preview', 'style' => $previewStyle ],
+			Html::rawElement( 'div', [ 'class' => 'ss-install-preview' ],
 				Html::element( 'strong', [], 'Items to install:' ) .
 				Html::rawElement( 'ul', [],
 					Html::element( 'li', [], "Templates: $tplCount" ) .
@@ -503,43 +497,43 @@ class SpecialSemanticSchemas extends SpecialPage {
 			) .
 
 			// Progress display
-			Html::rawElement( 'div', [ 'id' => 'ss-progress', 'style' => 'display: none; margin: 1em 0;' ],
-				Html::rawElement( 'div', [ 'id' => 'ss-layer0', 'class' => 'ss-layer', 'style' => $layerStyle ],
+			Html::rawElement( 'div', [ 'id' => 'ss-progress' ],
+				Html::rawElement( 'div', [ 'id' => 'ss-layer0', 'class' => 'ss-layer' ],
 					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
 					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 0: Templates' ) .
-					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+					Html::element( 'span', [ 'class' => 'ss-layer-info' ], '' )
 				) .
-				Html::rawElement( 'div', [ 'id' => 'ss-layer1', 'class' => 'ss-layer', 'style' => $layerStyle ],
+				Html::rawElement( 'div', [ 'id' => 'ss-layer1', 'class' => 'ss-layer' ],
 					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
 					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 1: Property Types' ) .
-					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+					Html::element( 'span', [ 'class' => 'ss-layer-info' ], '' )
 				) .
-				Html::rawElement( 'div', [ 'id' => 'ss-layer2', 'class' => 'ss-layer', 'style' => $layerStyle ],
+				Html::rawElement( 'div', [ 'id' => 'ss-layer2', 'class' => 'ss-layer' ],
 					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
 					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 2: Property Annotations' ) .
-					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+					Html::element( 'span', [ 'class' => 'ss-layer-info' ], '' )
 				) .
-				Html::rawElement( 'div', [ 'id' => 'ss-layer3', 'class' => 'ss-layer', 'style' => $layerStyle ],
+				Html::rawElement( 'div', [ 'id' => 'ss-layer3', 'class' => 'ss-layer' ],
 					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
 					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 3: Subobjects' ) .
-					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+					Html::element( 'span', [ 'class' => 'ss-layer-info' ], '' )
 				) .
-				Html::rawElement( 'div', [ 'id' => 'ss-layer4', 'class' => 'ss-layer', 'style' => $layerStyle ],
+				Html::rawElement( 'div', [ 'id' => 'ss-layer4', 'class' => 'ss-layer' ],
 					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
 					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 4: Categories' ) .
-					Html::element( 'span', [ 'class' => 'ss-layer-info', 'style' => $infoStyle ], '' )
+					Html::element( 'span', [ 'class' => 'ss-layer-info' ], '' )
 				) .
-				Html::rawElement( 'div', [ 'id' => 'ss-jobs', 'style' => $jobsStyle ],
+				Html::rawElement( 'div', [ 'id' => 'ss-jobs' ],
 					Html::element( 'span', [], 'Waiting for SMW jobs: ' ) .
 					Html::element( 'span', [ 'id' => 'ss-job-count' ], '0' )
 				)
 			) .
 
 			// Result display
-			Html::rawElement( 'div', [ 'id' => 'ss-result', 'style' => 'display: none; margin: 1em 0;' ] ) .
+			Html::rawElement( 'div', [ 'id' => 'ss-result' ] ) .
 
 			// Buttons
-			Html::rawElement( 'div', [ 'style' => 'margin-top: 1em;' ],
+			Html::rawElement( 'div', [ 'class' => 'button-container' ],
 				Html::element( 'button', [
 					'id' => 'ss-start-btn',
 					'class' => 'mw-ui-button mw-ui-progressive',
@@ -554,180 +548,16 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$output->addHTML( $html );
 
-		// Add the JavaScript
-		$token = json_encode( $this->getUser()->getEditToken() );
-		$apiUrl = json_encode( wfScript( 'api' ) );
-
-		$js = <<<JAVASCRIPT
-(function() {
-	var token = $token;
-	var apiUrl = $apiUrl;
-	var layers = ['layer0', 'layer1', 'layer2', 'layer3', 'layer4'];
-	var layerNames = {
-		'layer0': 'Templates',
-		'layer1': 'Property Types',
-		'layer2': 'Property Annotations',
-		'layer3': 'Subobjects',
-		'layer4': 'Categories'
-	};
-	var currentLayer = 0;
-	var pollInterval = null;
-
-	function updateLayerStatus(layer, status, info) {
-		var el = document.getElementById('ss-' + layer);
-		if (!el) return;
-
-		var statusEl = el.querySelector('.ss-layer-status');
-		var infoEl = el.querySelector('.ss-layer-info');
-
-		if (status === 'pending') {
-			el.style.background = '#e9ecef';
-			statusEl.textContent = '○';
-		} else if (status === 'running') {
-			el.style.background = '#fff3cd';
-			statusEl.textContent = '◐';
-		} else if (status === 'waiting') {
-			el.style.background = '#cce5ff';
-			statusEl.textContent = '⏳';
-		} else if (status === 'done') {
-			el.style.background = '#d4edda';
-			statusEl.textContent = '✓';
-		} else if (status === 'error') {
-			el.style.background = '#f8d7da';
-			statusEl.textContent = '✗';
-		}
-
-		if (info) {
-			infoEl.textContent = info;
-		}
-	}
-
-	function showResult(success, message) {
-		var resultEl = document.getElementById('ss-result');
-		resultEl.style.display = 'block';
-		resultEl.innerHTML = '<div style="padding: 1em; border-radius: 4px; background: ' +
-			(success ? '#d4edda' : '#f8d7da') + ';">' + message + '</div>';
-
-		if (success) {
-			resultEl.innerHTML += '<p style="margin-top: 1em;"><a href="' +
-				mw.config.get('wgScript') + '/Special:SemanticSchemas" ' +
-				'class="mw-ui-button mw-ui-progressive">Return to Overview</a></p>';
-		}
-	}
-
-	function checkJobsAndProceed() {
-		fetch(apiUrl + '?action=semanticschemas-install&step=status&format=json')
-			.then(function(r) { return r.json(); })
-			.then(function(data) {
-				var status = data.status;
-				var jobCount = status.pendingJobs || 0;
-
-				document.getElementById('ss-job-count').textContent = jobCount;
-
-				if (jobCount === 0) {
-					document.getElementById('ss-jobs').style.display = 'none';
-					clearInterval(pollInterval);
-					pollInterval = null;
-
-					// Mark current layer as done before moving on
-					updateLayerStatus(layers[currentLayer], 'done', 'Complete');
-
-					// Move to next layer
-					currentLayer++;
-					if (currentLayer < layers.length) {
-						runLayer(layers[currentLayer]);
-					} else {
-						showResult(true, '<strong>Installation Complete!</strong>' +
-							'<br>All layers have been installed successfully.');
-					}
-				} else {
-					document.getElementById('ss-jobs').style.display = 'block';
-					updateLayerStatus(layers[currentLayer], 'waiting',
-						'Waiting for ' + jobCount + ' jobs...');
-				}
-			})
-			.catch(function(err) {
-				console.error('Status check failed:', err);
-			});
-	}
-
-	function runLayer(layer) {
-		updateLayerStatus(layer, 'running', 'Installing...');
-
-		var formData = new FormData();
-		formData.append('action', 'semanticschemas-install');
-		formData.append('step', layer);
-		formData.append('token', token);
-		formData.append('format', 'json');
-
-		fetch(apiUrl, {
-			method: 'POST',
-			body: formData
-		})
-		.then(function(r) { return r.json(); })
-		.then(function(data) {
-			if (data.error) {
-				updateLayerStatus(layer, 'error', data.error.info || 'Error');
-				showResult(false, '<strong>Installation Failed</strong><br>' + (data.error.info || 'Unknown error'));
-				return;
-			}
-
-			var install = data.install;
-			// Check for errors array instead of success boolean (MW API quirk)
-			if (install.errors && install.errors.length > 0) {
-				updateLayerStatus(layer, 'error', install.errors.join(', '));
-				showResult(false, '<strong>Installation Failed</strong><br>' +
-					install.errors.join(', '));
-				return;
-			}
-
-			var created = 0, updated = 0;
-			for (var key in install.created) {
-				created += (install.created[key] || []).length;
-			}
-			for (var key in install.updated) {
-				updated += (install.updated[key] || []).length;
-			}
-
-			updateLayerStatus(layer, 'done', 'Created: ' + created + ', Updated: ' + updated);
-
-			// Check for pending jobs
-			if (install.pendingJobs > 0) {
-				document.getElementById('ss-jobs').style.display = 'block';
-				document.getElementById('ss-job-count').textContent = install.pendingJobs;
-				updateLayerStatus(layer, 'waiting', 'Waiting for ' + install.pendingJobs + ' jobs...');
-
-				// Start polling for job completion
-				pollInterval = setInterval(checkJobsAndProceed, 2000);
-			} else {
-				// Proceed immediately to next layer
-				currentLayer++;
-				if (currentLayer < layers.length) {
-					setTimeout(function() { runLayer(layers[currentLayer]); }, 500);
-				} else {
-					showResult(true, '<strong>Installation Complete!</strong>' +
-						'<br>All layers have been installed successfully.');
-				}
-			}
-		})
-		.catch(function(err) {
-			updateLayerStatus(layer, 'error', 'Network error');
-			showResult(false, '<strong>Installation Failed</strong><br>Network error: ' + err.message);
-		});
-	}
-
-	document.getElementById('ss-start-btn').addEventListener('click', function() {
-		this.disabled = true;
-		this.textContent = 'Installing...';
-		document.getElementById('ss-progress').style.display = 'block';
-
-		currentLayer = 0;
-		runLayer(layers[0]);
-	});
-})();
-JAVASCRIPT;
-
-		$output->addInlineScript( $js );
+		# Embed data used by the JS
+		$token = $this->getUser()->getEditToken();
+		$apiUrl = wfScript( 'api' );
+		$output->addHTML(
+			Html::element( 'div', [
+				'id' => 'semski-api-data',
+				'data-token' => $token,
+				'data-api-url' => $apiUrl,
+			] )
+		);
 	}
 
 	/**
@@ -1397,6 +1227,7 @@ JAVASCRIPT;
 		$categories = $categoryStore->getAllCategories();
 
 		$form = Html::openElement( 'form', [
+			'id' => 'semski-generate-form',
 			'method' => 'post',
 			'action' => $this->getPageTitle( 'generate' )->getLocalURL()
 		] );
@@ -1433,14 +1264,13 @@ JAVASCRIPT;
 		] );
 		$form .= Html::element(
 			'label',
-			[ 'for' => 'generate-display-check', 'style' => 'display:inline; margin-left: 0.5em;' ],
+			[ 'for' => 'generate-display-check' ],
 			"Force update display templates (e.g. Template:Category/display)"
 		);
 		$form .= Html::element(
 			'p',
 			[
 				'class' => 'semanticschemas-form-help',
-				'style' => 'margin-top: 0.25em; color: #72777d; font-size: 0.85em;'
 			],
 			"Warning: This replaces any manual customizations to the display structure."
 		);

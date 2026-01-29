@@ -122,6 +122,17 @@
 				"desktop",
 				"mobile"
 			]
+		},
+		"ext.semanticschemas.install": {
+			"scripts": [
+				"resources/ext.semanticschemas.install.js"
+			],
+			"localBasePath": "",
+			"remoteExtPath": "SemanticSchemas",
+			"targets": [
+				"desktop",
+				"mobile"
+			]
 		}
 	},
 	"APIModules": {
