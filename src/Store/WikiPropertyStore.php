@@ -24,7 +24,7 @@ class WikiPropertyStore {
 
 	private PageCreator $pageCreator;
 
-	public function __construct( PageCreator $pageCreator = null ) {
+	public function __construct( ?PageCreator $pageCreator = null ) {
 		$this->pageCreator = $pageCreator ?? new PageCreator();
 	}
 
@@ -137,12 +137,6 @@ class WikiPropertyStore {
 		);
 	}
 
-	public function propertyExists( string $propertyName ): bool {
-		$canonical = $this->canonicalize( $propertyName );
-		$t = $this->pageCreator->makeTitle( $canonical, SMW_NS_PROPERTY );
-		return $t && $this->pageCreator->pageExists( $t );
-	}
-
 	public function getAllProperties(): array {
 		$out = [];
 
@@ -226,7 +220,7 @@ class WikiPropertyStore {
 		// Clean null/empty
 		return array_filter(
 			$out,
-			fn ( $v ) => $v !== null && $v !== []
+			static fn ( $v ) => $v !== null && $v !== []
 		);
 	}
 
@@ -274,9 +268,7 @@ class WikiPropertyStore {
 		}
 
 		// Template reference (or source)
-		if ( $p->getTemplateSource() !== null ) {
-			$lines[] = '[[Has template::' . $p->getTemplateSource() . ']]';
-		} elseif ( $p->getHasTemplate() !== null ) {
+		if ( $p->getHasTemplate() !== null ) {
 			$lines[] = '[[Has template::' . $p->getHasTemplate() . ']]';
 		}
 

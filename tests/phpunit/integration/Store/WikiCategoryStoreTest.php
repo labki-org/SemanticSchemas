@@ -43,7 +43,6 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$result = $this->categoryStore->writeCategory( $category );
 
 		$this->assertTrue( $result );
-		$this->assertTrue( $this->categoryStore->categoryExists( $category->getName() ) );
 	}
 
 	public function testWriteCategoryWithDescription(): void {
@@ -255,26 +254,6 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 	}
 
 	/* =========================================================================
-	 * CATEGORY EXISTS
-	 * ========================================================================= */
-
-	public function testCategoryExistsReturnsFalseForNonExistent(): void {
-		$result = $this->categoryStore->categoryExists( 'NonExistentCategory ' . uniqid() );
-
-		$this->assertFalse( $result );
-	}
-
-	public function testCategoryExistsReturnsTrueForExisting(): void {
-		$name = 'ExistingCat ' . uniqid();
-		$category = new CategoryModel( $name );
-		$this->categoryStore->writeCategory( $category );
-
-		$result = $this->categoryStore->categoryExists( $name );
-
-		$this->assertTrue( $result );
-	}
-
-	/* =========================================================================
 	 * SUBOBJECTS
 	 * ========================================================================= */
 
@@ -326,7 +305,6 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$result = $this->categoryStore->writeCategory( $category );
 
 		$this->assertTrue( $result );
-		$this->assertTrue( $this->categoryStore->categoryExists( $name ) );
 	}
 
 	public function testWriteCategoryWithMixedPropertiesAndSubobjects(): void {

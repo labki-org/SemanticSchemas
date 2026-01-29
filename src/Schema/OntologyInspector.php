@@ -30,12 +30,12 @@ class OntologyInspector {
 	private PageCreator $pageCreator;
 
 	public function __construct(
-		WikiCategoryStore $categoryStore = null,
-		WikiPropertyStore $propertyStore = null,
-		WikiSubobjectStore $subobjectStore = null,
-		StateManager $stateManager = null,
-		PageHashComputer $hashComputer = null,
-		PageCreator $pageCreator = null
+		?WikiCategoryStore $categoryStore = null,
+		?WikiPropertyStore $propertyStore = null,
+		?WikiSubobjectStore $subobjectStore = null,
+		?StateManager $stateManager = null,
+		?PageHashComputer $hashComputer = null,
+		?PageCreator $pageCreator = null
 	) {
 		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
 		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();

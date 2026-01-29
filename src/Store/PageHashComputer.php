@@ -52,9 +52,9 @@ class PageHashComputer {
 	 * @param WikiSubobjectStore|null $subobjectStore
 	 */
 	public function __construct(
-		WikiCategoryStore $categoryStore = null,
-		WikiPropertyStore $propertyStore = null,
-		WikiSubobjectStore $subobjectStore = null
+		?WikiCategoryStore $categoryStore = null,
+		?WikiPropertyStore $propertyStore = null,
+		?WikiSubobjectStore $subobjectStore = null
 	) {
 		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
 		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();

@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\SpecialPage\SpecialPage;
 use Skin;
 
@@ -47,15 +46,7 @@ class CategoryPageHooks {
 			return;
 		}
 
-		// Check that this category has schema data
 		$categoryName = $title->getText();
-		$categoryStore = new WikiCategoryStore();
-		$category = $categoryStore->readCategory( $categoryName );
-
-		if ( $category === null ) {
-			// Category doesn't have schema data, don't show the action
-			return;
-		}
 
 		// Add "Generate Form" action to the dropdown menu
 		$links['actions']['ss-generate-form'] = [
