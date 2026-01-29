@@ -135,11 +135,6 @@ class PropertyModel {
 	 * NORMALIZATION
 	 * ---------------------------------------------------------------------- */
 
-	private function cleanNullableString( $value ): ?string {
-		$v = trim( (string)$value );
-		return $v !== '' ? $v : null;
-	}
-
 	/**
 	 * Get the list of valid SMW datatypes.
 	 *
@@ -234,21 +229,11 @@ class PropertyModel {
 		return $this->datatype === 'Page';
 	}
 
-	public function isCategoryRestrictedPageType(): bool {
-		return $this->isPageType() && $this->rangeCategory !== null;
-	}
-
 	public function shouldAutocomplete(): bool {
 		return (
 			( $this->allowedCategory !== null && $this->allowedCategory !== '' ) ||
 			( $this->allowedNamespace !== null && $this->allowedNamespace !== '' )
 		);
-	}
-
-	public function getSnakeCaseName(): string {
-		$clean = preg_replace( '/^Has[_ ]+/i', '', $this->name );
-		$clean = str_replace( [ ' ', '-' ], '_', $clean );
-		return strtolower( $clean );
 	}
 
 	public function getSubpropertyOf(): ?string {
@@ -271,14 +256,6 @@ class PropertyModel {
 		}
 		// Fallback: Default template
 		return 'Template:Property/Default';
-	}
-
-	public function getTemplateSource(): ?string {
-		return $this->templateSource;
-	}
-
-	public function setTemplateSource( ?string $source ): void {
-		$this->templateSource = $source;
 	}
 
 	// Backward compatibility aliases

@@ -153,10 +153,6 @@ class SubobjectModel {
 		return in_array( $prop, $this->requiredProperties, true );
 	}
 
-	public function isPropertyOptional( string $prop ): bool {
-		return in_array( $prop, $this->optionalProperties, true );
-	}
-
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */

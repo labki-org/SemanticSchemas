@@ -249,28 +249,6 @@ class StateManager {
 	}
 
 	/**
-	 * Store hash of imported schema.
-	 *
-	 * @param string $hash
-	 * @return bool
-	 */
-	public function setSourceSchemaHash( string $hash ): bool {
-		$state = $this->getState();
-		$state['sourceSchemaHash'] = $hash;
-		return $this->saveState( $state );
-	}
-
-	/**
-	 * Retrieve source schema hash.
-	 *
-	 * @return string|null
-	 */
-	public function getSourceSchemaHash(): ?string {
-		$state = $this->getState();
-		return $state['sourceSchemaHash'] ?? null;
-	}
-
-	/**
 	 * Get full state object (for debugging/testing).
 	 *
 	 * @return array

@@ -1056,15 +1056,6 @@ JAVASCRIPT;
 	}
 
 	/**
-	 * Resolve the namespace ID used for Semantic MediaWiki properties.
-	 *
-	 * @return int
-	 */
-	private function getPropertyNamespace(): int {
-		return defined( 'SMW_NS_PROPERTY' ) ? constant( 'SMW_NS_PROPERTY' ) : NS_MAIN;
-	}
-
-	/**
 	 * Render the hero section for the overview page.
 	 *
 	 * @param bool $isDirty Whether the schema is out of sync

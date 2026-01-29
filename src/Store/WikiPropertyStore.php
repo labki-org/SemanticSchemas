@@ -137,12 +137,6 @@ class WikiPropertyStore {
 		);
 	}
 
-	public function propertyExists( string $propertyName ): bool {
-		$canonical = $this->canonicalize( $propertyName );
-		$t = $this->pageCreator->makeTitle( $canonical, SMW_NS_PROPERTY );
-		return $t && $this->pageCreator->pageExists( $t );
-	}
-
 	public function getAllProperties(): array {
 		$out = [];
 
@@ -274,9 +268,7 @@ class WikiPropertyStore {
 		}
 
 		// Template reference (or source)
-		if ( $p->getTemplateSource() !== null ) {
-			$lines[] = '[[Has template::' . $p->getTemplateSource() . ']]';
-		} elseif ( $p->getHasTemplate() !== null ) {
+		if ( $p->getHasTemplate() !== null ) {
 			$lines[] = '[[Has template::' . $p->getHasTemplate() . ']]';
 		}
 

@@ -228,9 +228,4 @@ class WikiSubobjectStore {
 
 		return $out;
 	}
-
-	public function subobjectExists( string $name ): bool {
-		$title = $this->pageCreator->makeTitle( $name, NS_SUBOBJECT );
-		return $title && $this->pageCreator->pageExists( $title );
-	}
 }
