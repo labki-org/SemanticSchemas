@@ -404,7 +404,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			// Show link back to overview
 			$output->addHTML( Html::rawElement(
 				'p',
-				[ 'class' => 'button-container'],
+				[ 'class' => 'button-container' ],
 				Html::element(
 					'a',
 					[
@@ -462,7 +462,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$output = $this->getOutput();
 		$output->setPageTitle( $this->msg( 'semanticschemas-install-config-title' )->text() );
 		$output->addModuleStyles( 'ext.semanticschemas.styles' );
-        $output->addModules( 'ext.semanticschemas.install' );
+		$output->addModules( 'ext.semanticschemas.install' );
 
 		$configPath = __DIR__ . '/../../resources/extension-config.json';
 		$installer = new ExtensionConfigInstaller();
@@ -511,14 +511,14 @@ class SpecialSemanticSchemas extends SpecialPage {
 				Html::rawElement( 'div', [ 'id' => 'ss-layer2', 'class' => 'ss-layer' ],
 					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
 					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 2: Property Annotations' ) .
-					Html::element( 'span', [ 'class' => 'ss-layer-info'], '' )
+					Html::element( 'span', [ 'class' => 'ss-layer-info' ], '' )
 				) .
 				Html::rawElement( 'div', [ 'id' => 'ss-layer3', 'class' => 'ss-layer' ],
 					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
 					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 3: Subobjects' ) .
 					Html::element( 'span', [ 'class' => 'ss-layer-info' ], '' )
 				) .
-				Html::rawElement( 'div', [ 'id' => 'ss-layer4', 'class' => 'ss-layer'],
+				Html::rawElement( 'div', [ 'id' => 'ss-layer4', 'class' => 'ss-layer' ],
 					Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
 					Html::element( 'span', [ 'class' => 'ss-layer-name' ], 'Layer 4: Categories' ) .
 					Html::element( 'span', [ 'class' => 'ss-layer-info' ], '' )
@@ -548,16 +548,16 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$output->addHTML( $html );
 
-        # Embed data used by the JS
-        $token = $this->getUser()->getEditToken();
-        $apiUrl = wfScript( 'api' );
-        $output->addHTML(
-            Html::element('div', [
-                'id'=>'semski-api-data',
-                'data-token'=> $token,
-                'data-api-url'=> $apiUrl,
-            ])
-        );
+		# Embed data used by the JS
+		$token = $this->getUser()->getEditToken();
+		$apiUrl = wfScript( 'api' );
+		$output->addHTML(
+			Html::element( 'div', [
+				'id' => 'semski-api-data',
+				'data-token' => $token,
+				'data-api-url' => $apiUrl,
+			] )
+		);
 	}
 
 	/**
@@ -1294,7 +1294,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$categories = $categoryStore->getAllCategories();
 
 		$form = Html::openElement( 'form', [
-            'id' => 'semski-generate-form',
+			'id' => 'semski-generate-form',
 			'method' => 'post',
 			'action' => $this->getPageTitle( 'generate' )->getLocalURL()
 		] );
