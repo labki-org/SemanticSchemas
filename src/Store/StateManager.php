@@ -19,7 +19,7 @@ class StateManager {
 	/**
 	 * @param PageCreator|null $pageCreator
 	 */
-	public function __construct( PageCreator $pageCreator = null ) {
+	public function __construct( ?PageCreator $pageCreator = null ) {
 		$this->pageCreator = $pageCreator ?? new PageCreator();
 	}
 
@@ -246,28 +246,6 @@ class StateManager {
 		}
 
 		return $modified;
-	}
-
-	/**
-	 * Store hash of imported schema.
-	 *
-	 * @param string $hash
-	 * @return bool
-	 */
-	public function setSourceSchemaHash( string $hash ): bool {
-		$state = $this->getState();
-		$state['sourceSchemaHash'] = $hash;
-		return $this->saveState( $state );
-	}
-
-	/**
-	 * Retrieve source schema hash.
-	 *
-	 * @return string|null
-	 */
-	public function getSourceSchemaHash(): ?string {
-		$state = $this->getState();
-		return $state['sourceSchemaHash'] ?? null;
 	}
 
 	/**

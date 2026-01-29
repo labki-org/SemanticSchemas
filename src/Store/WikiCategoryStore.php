@@ -25,8 +25,8 @@ class WikiCategoryStore {
 	private WikiPropertyStore $propertyStore;
 
 	public function __construct(
-		PageCreator $pageCreator = null,
-		WikiPropertyStore $propertyStore = null
+		?PageCreator $pageCreator = null,
+		?WikiPropertyStore $propertyStore = null
 	) {
 		$this->pageCreator = $pageCreator ?? new PageCreator();
 		$this->propertyStore = $propertyStore ?? new WikiPropertyStore( $this->pageCreator );
@@ -50,7 +50,6 @@ class WikiCategoryStore {
 			$p = $this->propertyStore->readProperty( $data['display']['templateProperty'] );
 			if ( $p ) {
 				$cat->setDisplayTemplateProperty( $p );
-				$cat->setDisplayTemplateSource( $p->getTemplateSource() );
 			}
 		}
 
@@ -116,11 +115,6 @@ class WikiCategoryStore {
 		}
 
 		return $out;
-	}
-
-	public function categoryExists( string $categoryName ): bool {
-		$t = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
-		return $t && $this->pageCreator->pageExists( $t );
 	}
 
 	/* -------------------------------------------------------------------------

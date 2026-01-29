@@ -116,13 +116,6 @@ class InheritanceResolver {
 		return $errors;
 	}
 
-	/**
-	 * Whether A is an ancestor of B.
-	 */
-	public function isAncestorOf( string $categoryA, string $categoryB ): bool {
-		return in_array( $categoryA, $this->getAncestors( $categoryB ), true );
-	}
-
 	/* -------------------------------------------------------------------------
 	 * C3 LINEARIZATION
 	 * ---------------------------------------------------------------------- */

@@ -41,11 +41,6 @@ class StateManagerTest extends TestCase {
 		$this->assertEquals( [], $manager->getPageHashes() );
 	}
 
-	public function testGetSourceSchemaHashReturnsNullByDefault(): void {
-		$manager = $this->createStateManager();
-		$this->assertNull( $manager->getSourceSchemaHash() );
-	}
-
 	public function testGetLastChangeTimestampReturnsNullByDefault(): void {
 		$manager = $this->createStateManager();
 		$this->assertNull( $manager->getLastChangeTimestamp() );
@@ -219,19 +214,6 @@ class StateManagerTest extends TestCase {
 
 		$modified = $manager->getModifiedPages();
 		$this->assertContains( 'Category:Person', $modified );
-	}
-
-	/* =========================================================================
-	 * SOURCE SCHEMA HASH
-	 * ========================================================================= */
-
-	public function testSetSourceSchemaHash(): void {
-		$manager = $this->createStateManager();
-		$hash = 'schema_hash_abc123';
-
-		$result = $manager->setSourceSchemaHash( $hash );
-		$this->assertTrue( $result );
-		$this->assertEquals( $hash, $manager->getSourceSchemaHash() );
 	}
 
 	/* =========================================================================

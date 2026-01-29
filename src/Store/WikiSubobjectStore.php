@@ -20,7 +20,7 @@ class WikiSubobjectStore {
 
 	private PageCreator $pageCreator;
 
-	public function __construct( PageCreator $pageCreator = null ) {
+	public function __construct( ?PageCreator $pageCreator = null ) {
 		$this->pageCreator = $pageCreator ?? new PageCreator();
 	}
 
@@ -227,10 +227,5 @@ class WikiSubobjectStore {
 		}
 
 		return $out;
-	}
-
-	public function subobjectExists( string $name ): bool {
-		$title = $this->pageCreator->makeTitle( $name, NS_SUBOBJECT );
-		return $title && $this->pageCreator->pageExists( $title );
 	}
 }

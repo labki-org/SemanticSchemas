@@ -222,50 +222,6 @@ class InheritanceResolverTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * ANCESTOR RELATIONSHIP CHECKS
-	 * ========================================================================= */
-
-	public function testIsAncestorOfReturnsTrueForParent(): void {
-		$map = [
-			'Person' => new CategoryModel( 'Person' ),
-			'Student' => new CategoryModel( 'Student', [ 'parents' => [ 'Person' ] ] ),
-		];
-		$resolver = new InheritanceResolver( $map );
-
-		$this->assertTrue( $resolver->isAncestorOf( 'Person', 'Student' ) );
-	}
-
-	public function testIsAncestorOfReturnsTrueForGrandparent(): void {
-		$map = [
-			'Person' => new CategoryModel( 'Person' ),
-			'Student' => new CategoryModel( 'Student', [ 'parents' => [ 'Person' ] ] ),
-			'GradStudent' => new CategoryModel( 'GradStudent', [ 'parents' => [ 'Student' ] ] ),
-		];
-		$resolver = new InheritanceResolver( $map );
-
-		$this->assertTrue( $resolver->isAncestorOf( 'Person', 'GradStudent' ) );
-	}
-
-	public function testIsAncestorOfReturnsFalseForUnrelated(): void {
-		$map = [
-			'Person' => new CategoryModel( 'Person' ),
-			'Organization' => new CategoryModel( 'Organization' ),
-		];
-		$resolver = new InheritanceResolver( $map );
-
-		$this->assertFalse( $resolver->isAncestorOf( 'Person', 'Organization' ) );
-	}
-
-	public function testIsAncestorOfReturnsTrueForSelf(): void {
-		$map = [
-			'Person' => new CategoryModel( 'Person' ),
-		];
-		$resolver = new InheritanceResolver( $map );
-
-		$this->assertTrue( $resolver->isAncestorOf( 'Person', 'Person' ) );
-	}
-
-	/* =========================================================================
 	 * CACHING
 	 * ========================================================================= */
 

@@ -42,7 +42,6 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 		$result = $this->propertyStore->writeProperty( $property );
 
 		$this->assertTrue( $result );
-		$this->assertTrue( $this->propertyStore->propertyExists( $property->getName() ) );
 	}
 
 	public function testWritePropertyWithTextDatatype(): void {
@@ -216,41 +215,6 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 
 		$this->assertInstanceOf( PropertyModel::class, $result );
 		$this->assertEquals( $name, $result->getName() );
-	}
-
-	/* =========================================================================
-	 * PROPERTY EXISTS
-	 * ========================================================================= */
-
-	public function testPropertyExistsReturnsFalseForNonExistent(): void {
-		$result = $this->propertyStore->propertyExists( 'Nonexistent Property ' . uniqid() );
-
-		$this->assertFalse( $result );
-	}
-
-	public function testPropertyExistsReturnsTrueForExisting(): void {
-		$name = 'Has existing prop ' . uniqid();
-		$property = new PropertyModel( $name, [
-			'datatype' => 'Text',
-		] );
-		$this->propertyStore->writeProperty( $property );
-
-		$result = $this->propertyStore->propertyExists( $name );
-
-		$this->assertTrue( $result );
-	}
-
-	public function testPropertyExistsHandlesPrefixedName(): void {
-		$name = 'Has prefixed prop ' . uniqid();
-		$property = new PropertyModel( $name, [
-			'datatype' => 'Text',
-		] );
-		$this->propertyStore->writeProperty( $property );
-
-		// Check with Property: prefix
-		$result = $this->propertyStore->propertyExists( 'Property:' . $name );
-
-		$this->assertTrue( $result );
 	}
 
 	/* =========================================================================

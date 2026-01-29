@@ -240,10 +240,6 @@ class CategoryModel {
 		return $this->formConfig;
 	}
 
-	public function getFormSections(): array {
-		return $this->formConfig['sections'] ?? [];
-	}
-
 	/* -------------------------------------------------------------------------
 	 * MERGING (CATEGORY + PARENT)
 	 * ------------------------------------------------------------------------- */
@@ -447,33 +443,5 @@ class CategoryModel {
 
 	public function getDisplayTemplateProperty(): ?PropertyModel {
 		return $this->displayTemplateProperty;
-	}
-
-	public function setDisplayTemplateSource( ?string $source ): void {
-		$this->displayTemplateSource = $source;
-	}
-
-	public function getDisplayTemplateSource(): ?string {
-		return $this->displayTemplateSource;
-	}
-
-	/** @param PropertyModel[] $properties */
-	public function setDisplayProperties( array $properties ): void {
-		$this->displayProperties = $properties;
-	}
-
-	/** @return PropertyModel[] */
-	public function getDisplayProperties(): array {
-		return $this->displayProperties;
-	}
-
-	/** @param array<string, PropertyModel[]> $sections */
-	public function setDisplaySectionModels( array $sections ): void {
-		$this->displaySectionModels = $sections;
-	}
-
-	/** @return array<string, PropertyModel[]> */
-	public function getDisplaySectionModels(): array {
-		return $this->displaySectionModels;
 	}
 }

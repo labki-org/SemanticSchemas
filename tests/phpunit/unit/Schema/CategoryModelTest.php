@@ -245,16 +245,6 @@ class CategoryModelTest extends TestCase {
 		$this->assertEquals( $formConfig, $model->getFormConfig() );
 	}
 
-	public function testGetFormSections(): void {
-		$sections = [
-			[ 'name' => 'Basic', 'properties' => [ 'Has name' ] ],
-		];
-		$model = new CategoryModel( 'TestCategory', [
-			'forms' => [ 'sections' => $sections ],
-		] );
-		$this->assertEquals( $sections, $model->getFormSections() );
-	}
-
 	/* =========================================================================
 	 * MERGING WITH PARENT
 	 * ========================================================================= */
