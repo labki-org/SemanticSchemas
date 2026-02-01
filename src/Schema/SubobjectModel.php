@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
+use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
  * Immutable schema-level representation of a Subobject.
@@ -50,7 +51,7 @@ class SubobjectModel {
 
 		if ( $cleanLabel === '' ) {
 			// Normalize to a generated human-readable form
-			$this->label = $this->autoGenerateLabel( $name );
+			$this->label = NamingHelper::generatePropertyLabel( $name );
 		} else {
 			$this->label = $cleanLabel;
 		}
@@ -77,8 +78,8 @@ class SubobjectModel {
 			);
 		}
 
-		$this->requiredProperties = self::normalizeList( $req );
-		$this->optionalProperties = self::normalizeList( $opt );
+		$this->requiredProperties = NamingHelper::normalizeList( $req );
+		$this->optionalProperties = NamingHelper::normalizeList( $opt );
 
 		$overlap = array_intersect( $this->requiredProperties, $this->optionalProperties );
 		if ( $overlap !== [] ) {
@@ -87,31 +88,6 @@ class SubobjectModel {
 				. implode( ', ', $overlap )
 			);
 		}
-	}
-
-	/* -------------------------------------------------------------------------
-	 * NORMALIZATION
-	 * ---------------------------------------------------------------------- */
-
-	private static function normalizeList( array $list ): array {
-		$clean = [];
-		foreach ( $list as $v ) {
-			$v = trim( (string)$v );
-			if ( $v !== '' && !in_array( $v, $clean, true ) ) {
-				$clean[] = $v;
-			}
-		}
-		return $clean;
-	}
-
-	/**
-	 * Auto-generate a human-readable label.
-	 * Mirrors PropertyModel label generation logic.
-	 */
-	private function autoGenerateLabel( string $name ): string {
-		$clean = preg_replace( '/^Has[_ ]+/i', '', $name );
-		$clean = str_replace( '_', ' ', $clean );
-		return ucwords( $clean );
 	}
 
 	/* -------------------------------------------------------------------------

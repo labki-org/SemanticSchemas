@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
+use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
  * Immutable schema-level representation of a Category.
@@ -78,7 +79,7 @@ class CategoryModel {
 
 		/* -------------------- Parents -------------------- */
 
-		$this->parents = self::normalizeList( $data['parents'] ?? [] );
+		$this->parents = NamingHelper::normalizeList( $data['parents'] ?? [] );
 		foreach ( $this->parents as $p ) {
 			if ( $p === $name ) {
 				throw new InvalidArgumentException( "Category '{$name}' cannot be its own parent." );
@@ -105,8 +106,8 @@ class CategoryModel {
 			throw new InvalidArgumentException( "Category '{$name}': 'properties' must be an array." );
 		}
 
-		$this->requiredProperties = self::normalizeList( $props['required'] ?? [] );
-		$this->optionalProperties = self::normalizeList( $props['optional'] ?? [] );
+		$this->requiredProperties = NamingHelper::normalizeList( $props['required'] ?? [] );
+		$this->optionalProperties = NamingHelper::normalizeList( $props['optional'] ?? [] );
 
 		$dup = array_intersect( $this->requiredProperties, $this->optionalProperties );
 		if ( $dup !== [] ) {
@@ -123,8 +124,8 @@ class CategoryModel {
 			throw new InvalidArgumentException( "Category '{$name}': 'subobjects' must be an array." );
 		}
 
-		$this->requiredSubobjects = self::normalizeList( $subs['required'] ?? [] );
-		$this->optionalSubobjects = self::normalizeList( $subs['optional'] ?? [] );
+		$this->requiredSubobjects = NamingHelper::normalizeList( $subs['required'] ?? [] );
+		$this->optionalSubobjects = NamingHelper::normalizeList( $subs['optional'] ?? [] );
 
 		$dupSG = array_intersect( $this->requiredSubobjects, $this->optionalSubobjects );
 		if ( $dupSG !== [] ) {
@@ -319,7 +320,7 @@ class CategoryModel {
 		$merged = $parent;
 
 		if ( isset( $child['header'] ) ) {
-			$merged['header'] = self::normalizeList( $child['header'] );
+			$merged['header'] = NamingHelper::normalizeList( $child['header'] );
 		}
 
 		if ( isset( $child['format'] ) ) {
@@ -366,21 +367,6 @@ class CategoryModel {
 		}
 
 		return $merged;
-	}
-
-	/* -------------------------------------------------------------------------
-	 * UTILITIES
-	 * ------------------------------------------------------------------------- */
-
-	private static function normalizeList( array $list ): array {
-		$out = [];
-		foreach ( $list as $v ) {
-			$v = trim( (string)$v );
-			if ( $v !== '' && !in_array( $v, $out, true ) ) {
-				$out[] = $v;
-			}
-		}
-		return $out;
 	}
 
 	/* -------------------------------------------------------------------------

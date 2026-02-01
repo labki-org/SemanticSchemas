@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
+use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
  * Immutable, canonical schema-level representation of an SMW Property.
@@ -62,7 +63,7 @@ class PropertyModel {
 		/* -------------------- Label -------------------- */
 		$this->label = !empty( $data['label'] )
 			? (string)$data['label']
-			: $this->autoGenerateLabel( $this->name );
+			: NamingHelper::generatePropertyLabel( $this->name );
 
 		/* -------------------- Description -------------------- */
 		$this->description = isset( $data['description'] )
@@ -180,12 +181,6 @@ class PropertyModel {
 		}
 
 		return 'Text';
-	}
-
-	private function autoGenerateLabel( string $name ): string {
-		$clean = preg_replace( '/^Has[_ ]+/i', '', $name );
-		$clean = str_replace( '_', ' ', $clean );
-		return ucwords( $clean );
 	}
 
 	/* -------------------------------------------------------------------------
