@@ -166,10 +166,6 @@ class PropertyInputMapper {
 		$inputType = $this->getInputType( $property );
 		$params = $this->getInputParameters( $property );
 
-		if ( $inputType === null || $inputType === '' ) {
-			$inputType = 'text';
-		}
-
 		if ( $isMandatory ) {
 			$params['mandatory'] = 'true';
 		}

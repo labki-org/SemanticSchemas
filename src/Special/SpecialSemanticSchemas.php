@@ -1373,23 +1373,22 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$formGenerator = new FormGenerator();
 		$displayGenerator = new DisplayStubGenerator();
 
+		$categories = $this->getTargetCategories( $categoryStore, $categoryName );
+
+		if ( empty( $categories ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-generate-no-categories' )->text()
+			) );
+			return;
+		}
+
+		$output->addHTML(
+			Html::openElement( 'div', [ 'class' => 'semanticschemas-progress' ] ) .
+			Html::element( 'p', [], $this->msg( 'semanticschemas-generate-inprogress' )->text() ) .
+			Html::openElement( 'div', [ 'class' => 'semanticschemas-progress-log' ] )
+		);
+
 		try {
-			$categories = $this->getTargetCategories( $categoryStore, $categoryName );
-
-			if ( empty( $categories ) ) {
-				$output->addHTML( Html::errorBox(
-					$this->msg( 'semanticschemas-generate-no-categories' )->text()
-				) );
-				return;
-			}
-
-			$progressContainerOpen = true;
-			$output->addHTML(
-				Html::openElement( 'div', [ 'class' => 'semanticschemas-progress' ] ) .
-				Html::element( 'p', [], $this->msg( 'semanticschemas-generate-inprogress' )->text() ) .
-				Html::openElement( 'div', [ 'class' => 'semanticschemas-progress-log' ] )
-			);
-
 			$categoryMap = $this->buildCategoryMap( $categoryStore );
 			$resolver = new InheritanceResolver( $categoryMap );
 			$generateDisplay = $request->getBool( 'generate-display' );
@@ -1410,10 +1409,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 				try {
 					$effective = $resolver->getEffectiveCategory( $name );
-					$ancestors = $resolver->getAncestors( $name );
 
 					$templateGenerator->generateAllTemplates( $effective );
-					$formGenerator->generateAndSaveForm( $effective, $ancestors );
+					$formGenerator->generateAndSaveForm( $effective );
 
 					if ( $generateDisplay ) {
 						$displayGenerator->generateOrUpdateDisplayStub( $effective );
@@ -1442,11 +1440,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 				$stateManager->clearDirty();
 			}
 
-			if ( $progressContainerOpen ) {
-				$this->closeProgressContainer();
-				$progressContainerOpen = false;
-			}
-
 			$this->logOperation( 'generate', 'Template/form generation completed', [
 				'categoryFilter' => $categoryName ?: 'all',
 				'categoriesProcessed' => $successCount,
@@ -1462,10 +1455,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 				)
 			);
 		} catch ( \Exception $e ) {
-			if ( $progressContainerOpen ) {
-				$this->closeProgressContainer();
-			}
-
 			$this->logOperation( 'generate', 'Generation exception: ' . $e->getMessage(), [
 				'exception' => get_class( $e ),
 				'categoryFilter' => $categoryName ?? '',
@@ -1474,6 +1463,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$output->addHTML( Html::errorBox(
 				$this->msg( 'semanticschemas-generate-error' )->params( $e->getMessage() )->text()
 			) );
+		} finally {
+			$this->closeProgressContainer();
 		}
 	}
 

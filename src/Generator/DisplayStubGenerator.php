@@ -331,6 +331,6 @@ class DisplayStubGenerator {
 		if ( $content === null ) {
 			return false;
 		}
-		return strpos( $content, self::AUTO_REGENERATE_MARKER ) !== false;
+		return str_contains( $content, self::AUTO_REGENERATE_MARKER );
 	}
 }
