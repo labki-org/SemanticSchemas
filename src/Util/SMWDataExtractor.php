@@ -106,16 +106,13 @@ trait SMWDataExtractor {
 
 			switch ( $type ) {
 				case 'property':
-					// SMW Property namespace is usually 102
-					return $t->getNamespace() === 102 ? $text : null;
+					return $t->getNamespace() === SMW_NS_PROPERTY ? $text : null;
 
 				case 'category':
-					// Category namespace is 14
-					return $t->getNamespace() === 14 ? $text : null;
+					return $t->getNamespace() === NS_CATEGORY ? $text : null;
 
 				case 'subobject':
-					// Accept any namespace for subobjects
-					return $text;
+					return $t->getNamespace() === NS_SUBOBJECT ? $text : null;
 
 				case 'page':
 					return $t->getPrefixedText();

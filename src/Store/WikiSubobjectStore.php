@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
+use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 
@@ -14,6 +15,8 @@ use MediaWiki\Title\Title;
  * Pure SMW I/O. No wikitext parsing. No legacy formats.
  */
 class WikiSubobjectStore {
+
+	use SMWDataExtractor;
 
 	private const MARKER_START = '<!-- SemanticSchemas Start -->';
 	private const MARKER_END   = '<!-- SemanticSchemas End -->';
@@ -68,84 +71,32 @@ class WikiSubobjectStore {
 		}
 
 		// Optional label
-		$label = $this->fetchOne( $sdata, 'Display label', 'text' );
+		$label = $this->smwFetchOne( $sdata, 'Display label', 'text' );
 		if ( $label !== null && $label !== '' ) {
 			$out['label'] = $label;
 		}
 
 		// Description
-		$desc = $this->fetchOne( $sdata, 'Has description', 'text' );
+		$desc = $this->smwFetchOne( $sdata, 'Has description', 'text' );
 		if ( $desc !== null ) {
 			$out['description'] = $desc;
 		}
 
 		// Required properties
-		$out['properties']['required'] = $this->fetchMany(
+		$out['properties']['required'] = $this->smwFetchMany(
 			$sdata,
 			'Has required property',
 			'property'
 		);
 
 		// Optional properties
-		$out['properties']['optional'] = $this->fetchMany(
+		$out['properties']['optional'] = $this->smwFetchMany(
 			$sdata,
 			'Has optional property',
 			'property'
 		);
 
 		return $out;
-	}
-
-	private function fetchOne( $semanticData, string $label, string $type ): ?string {
-		$vals = $this->fetchMany( $semanticData, $label, $type );
-		return $vals[0] ?? null;
-	}
-
-	private function fetchMany( $semanticData, string $label, string $type ): array {
-		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $label );
-			$items = $semanticData->getPropertyValues( $prop );
-		} catch ( \Throwable $e ) {
-			return [];
-		}
-
-		$out = [];
-
-		foreach ( $items as $di ) {
-			$v = $this->extractValue( $di, $type );
-			if ( $v !== null ) {
-				$out[] = $v;
-			}
-		}
-
-		return $out;
-	}
-
-	private function extractValue( $di, string $type ): ?string {
-		if ( $di instanceof \SMW\DIWikiPage ) {
-			$t = $di->getTitle();
-			if ( !$t ) {
-				return null;
-			}
-
-			$text = str_replace( '_', ' ', $t->getText() );
-
-			return match ( $type ) {
-				'property' =>
-					$t->getNamespace() === SMW_NS_PROPERTY ? $text : null,
-
-				'subobject' =>
-					$t->getNamespace() === NS_SUBOBJECT ? $text : null,
-
-				default => $text,
-			};
-		}
-
-		if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
-			return trim( $di->getString() );
-		}
-
-		return null;
 	}
 
 	/* -------------------------------------------------------------------------
