@@ -65,7 +65,8 @@
           "Subproperty of",
           "Allows value from category",
           "Allows value from namespace",
-          "Has template"
+          "Has template",
+          "Has input type"
         ]
       }
     },
@@ -244,6 +245,17 @@
       "datatype": "Page",
       "label": "Display template",
       "description": "Custom template for rendering this property's value.",
+      "allowsMultipleValues": false
+    },
+    "Has input type": {
+      "datatype": "Text",
+      "label": "Input type",
+      "description": "Override the auto-detected PageForms input type for this property.",
+      "allowedValues": [
+        "text", "textarea", "dropdown", "radiobutton", "combobox",
+        "tokens", "checkbox", "checkboxes", "listbox",
+        "datepicker", "datetimepicker", "tree"
+      ],
       "allowsMultipleValues": false
     },
     "Has section separator": {

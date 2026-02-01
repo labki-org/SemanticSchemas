@@ -55,6 +55,7 @@ class WikiPropertyStore {
 			'allowedNamespace' => null,
 			'allowsMultipleValues' => false,
 			'hasTemplate' => null,
+			'inputType' => null,
 		];
 
 		return new PropertyModel( $canonical, $data );
@@ -217,6 +218,9 @@ class WikiPropertyStore {
 			$out['templateSource'] = $hasTemplate;
 		}
 
+		/* -------------------- Input type override -------------------- */
+		$out['inputType'] = $this->smwFetchOne( $sdata, 'Has input type' );
+
 		// Clean null/empty
 		return array_filter(
 			$out,
@@ -270,6 +274,10 @@ class WikiPropertyStore {
 		// Template reference (or source)
 		if ( $p->getHasTemplate() !== null ) {
 			$lines[] = '[[Has template::' . $p->getHasTemplate() . ']]';
+		}
+
+		if ( $p->getInputType() !== null ) {
+			$lines[] = '[[Has input type::' . $p->getInputType() . ']]';
 		}
 
 		return implode( "\n", $lines );

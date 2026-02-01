@@ -277,6 +277,37 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringContainsString( '[[Has type::Number]]', $content );
 	}
 
+	public function testWritePropertyWithInputType(): void {
+		$name = 'Has inputtype prop ' . uniqid();
+		$property = new PropertyModel( $name, [
+			'datatype' => 'Text',
+			'description' => 'Property with input type override',
+			'inputType' => 'textarea',
+		] );
+
+		$result = $this->propertyStore->writeProperty( $property );
+
+		$this->assertTrue( $result );
+		$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
+		$content = $this->pageCreator->getPageContent( $title );
+		$this->assertStringContainsString( '[[Has input type::textarea]]', $content );
+	}
+
+	public function testWritePropertyWithoutInputTypeOmitsAnnotation(): void {
+		$name = 'Has noinput prop ' . uniqid();
+		$property = new PropertyModel( $name, [
+			'datatype' => 'Text',
+			'description' => 'Property without input type',
+		] );
+
+		$result = $this->propertyStore->writeProperty( $property );
+
+		$this->assertTrue( $result );
+		$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
+		$content = $this->pageCreator->getPageContent( $title );
+		$this->assertStringNotContainsString( 'Has input type', $content );
+	}
+
 	/**
 	 * Helper to run any pending MediaWiki jobs.
 	 */

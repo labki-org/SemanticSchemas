@@ -48,6 +48,11 @@ class PropertyInputMapper {
 	 * Resolve the PageForms input type in strict priority order.
 	 */
 	public function getInputType( PropertyModel $property ): string {
+		// (0) Explicit input type override
+		if ( $property->getInputType() !== null ) {
+			return $property->getInputType();
+		}
+
 		// (1) Multiple values → tokens
 		if ( $property->allowsMultipleValues() ) {
 			return 'tokens';
