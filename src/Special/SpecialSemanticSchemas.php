@@ -157,13 +157,13 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		// Check for install-properties action (Step 1)
 		if ( $action === 'install-properties' ) {
-			$this->handleInstallPropertiesAction();
+			$this->showAutomatedInstaller();
 			return;
 		}
 
 		// Check for install-categories action (Step 2)
 		if ( $action === 'install-categories' ) {
-			$this->handleInstallCategoriesAction();
+			$this->showAutomatedInstaller();
 			return;
 		}
 
@@ -335,7 +335,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			}
 		} else {
 			// GET request - show confirmation form
-			$this->showInstallConfigConfirmation();
+			$this->showAutomatedInstaller();
 			return;
 		}
 
@@ -426,22 +426,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 					->text()
 			) );
 		}
-	}
-
-	/**
-	 * Handle the "install-properties" action (Step 1 of 2) - legacy handler.
-	 * Redirects to the automated installer.
-	 */
-	private function handleInstallPropertiesAction(): void {
-		$this->showAutomatedInstaller();
-	}
-
-	/**
-	 * Handle the "install-categories" action (Step 2 of 2) - legacy handler.
-	 * Redirects to the automated installer.
-	 */
-	private function handleInstallCategoriesAction(): void {
-		$this->showAutomatedInstaller();
 	}
 
 	/**
@@ -558,13 +542,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'data-api-url' => $apiUrl,
 			] )
 		);
-	}
-
-	/**
-	 * Show the install config confirmation form with two-step process.
-	 */
-	private function showInstallConfigConfirmation(): void {
-		$this->showAutomatedInstaller();
 	}
 
 	/**
