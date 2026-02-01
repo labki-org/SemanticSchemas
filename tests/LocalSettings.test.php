@@ -23,7 +23,6 @@ wfLoadExtension( 'Bootstrap' );
 
 // Labki Extensions (Git Cloned into extensions/)
 wfLoadExtension( 'MsUpload' );
-wfLoadExtension( 'PageSchemas' );
 wfLoadExtension( 'Lockdown' );
 
 // Load SemanticSchemas
