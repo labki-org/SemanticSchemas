@@ -35,9 +35,6 @@ class PropertyModel {
 
 	private ?string $hasTemplate;
 
-	/** @var string|null Raw template wikitext from "Has template" */
-	private ?string $templateSource = null;
-
 	private ?string $allowedCategory;
 	private ?string $allowedNamespace;
 	private bool $allowsMultipleValues;
@@ -113,8 +110,6 @@ class PropertyModel {
 		$this->hasTemplate = ( $template !== null && trim( $template ) !== '' )
 			? trim( $template )
 			: null;
-
-		$this->templateSource = $data['templateSource'] ?? null;
 
 		/* -------------------- Autocomplete restrictions -------------------- */
 		$cat = $data['allowedCategory'] ?? null;

@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
-use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
@@ -27,15 +26,13 @@ class OntologyInspector {
 
 	private StateManager $stateManager;
 	private PageHashComputer $hashComputer;
-	private PageCreator $pageCreator;
 
 	public function __construct(
 		?WikiCategoryStore $categoryStore = null,
 		?WikiPropertyStore $propertyStore = null,
 		?WikiSubobjectStore $subobjectStore = null,
 		?StateManager $stateManager = null,
-		?PageHashComputer $hashComputer = null,
-		?PageCreator $pageCreator = null
+		?PageHashComputer $hashComputer = null
 	) {
 		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
 		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
@@ -43,7 +40,6 @@ class OntologyInspector {
 
 		$this->stateManager = $stateManager ?? new StateManager();
 		$this->hashComputer = $hashComputer ?? new PageHashComputer();
-		$this->pageCreator = $pageCreator ?? new PageCreator();
 	}
 
 	/**

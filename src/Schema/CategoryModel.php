@@ -62,15 +62,6 @@ class CategoryModel {
 	/** @var ?PropertyModel Property defining the display format */
 	private ?PropertyModel $displayTemplateProperty = null;
 
-	/** @var ?string Raw wikitext from the display template property */
-	private ?string $displayTemplateSource = null;
-
-	/** @var PropertyModel[] All properties to be displayed */
-	private array $displayProperties = [];
-
-	/** @var array<string, PropertyModel[]> Properties grouped by section */
-	private array $displaySectionModels = [];
-
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
 	 * ------------------------------------------------------------------------- */
