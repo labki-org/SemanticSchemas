@@ -117,7 +117,7 @@ class WikiPropertyStore {
 		$existing = $this->pageCreator->getPageContent( $title ) ?? '';
 
 		// Only write the datatype declaration - no other semantic annotations
-		$semanticBlock = '[[Has type::' . $property->getSMWType() . ']]';
+		$semanticBlock = '[[Has type::' . $property->getDatatype() . ']]';
 
 		$newContent = $this->pageCreator->updateWithinMarkers(
 			$existing,
@@ -232,7 +232,7 @@ class WikiPropertyStore {
 		$lines = [];
 
 		// Datatype (required)
-		$lines[] = '[[Has type::' . $p->getSMWType() . ']]';
+		$lines[] = '[[Has type::' . $p->getDatatype() . ']]';
 
 		if ( $p->getDescription() !== '' ) {
 			$lines[] = '[[Has description::' . $p->getDescription() . ']]';
