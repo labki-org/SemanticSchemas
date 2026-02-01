@@ -185,7 +185,7 @@ class CategoryHierarchyService {
 	}
 
 	/* =====================================================================
-	 * INTERNAL: INHERITED PROPERTIES
+	 * INTERNAL: INHERITED PROPERTIES & SUBOBJECTS
 	 * ===================================================================== */
 
 	private function extractInheritedProperties(
@@ -195,44 +195,13 @@ class CategoryHierarchyService {
 	): array {
 		$output = [];
 		$seen = [];
-
-		foreach ( $resolver->getAncestors( $name ) as $ancestor ) {
-			$model = $all[$ancestor] ?? null;
-			if ( !$model ) {
-				continue;
-			}
-
-			$source = "Category:$ancestor";
-
-			foreach ( $model->getRequiredProperties() as $p ) {
-				if ( !isset( $seen[$p] ) ) {
-					$output[] = [
-						'propertyTitle' => "Property:$p",
-						'sourceCategory' => $source,
-						'required' => true,
-					];
-					$seen[$p] = true;
-				}
-			}
-
-			foreach ( $model->getOptionalProperties() as $p ) {
-				if ( !isset( $seen[$p] ) ) {
-					$output[] = [
-						'propertyTitle' => "Property:$p",
-						'sourceCategory' => $source,
-						'required' => false,
-					];
-					$seen[$p] = true;
-				}
-			}
-		}
-
+		$this->collectFromAncestors(
+			$resolver->getAncestors( $name ), $all, $output, $seen,
+			'propertyTitle', 'Property:',
+			'getRequiredProperties', 'getOptionalProperties'
+		);
 		return $output;
 	}
-
-	/* =====================================================================
-	 * INTERNAL: INHERITED SUBGROUPS
-	 * ===================================================================== */
 
 	private function extractInheritedSubobjects(
 		string $name,
@@ -241,38 +210,11 @@ class CategoryHierarchyService {
 	): array {
 		$output = [];
 		$seen = [];
-
-		foreach ( $resolver->getAncestors( $name ) as $ancestor ) {
-			$model = $all[$ancestor] ?? null;
-			if ( !$model ) {
-				continue;
-			}
-
-			$source = "Category:$ancestor";
-
-			foreach ( $model->getRequiredSubobjects() as $sg ) {
-				if ( !isset( $seen[$sg] ) ) {
-					$output[] = [
-						'subobjectTitle' => "Subobject:$sg",
-						'sourceCategory' => $source,
-						'required' => 1,
-					];
-					$seen[$sg] = true;
-				}
-			}
-
-			foreach ( $model->getOptionalSubobjects() as $sg ) {
-				if ( !isset( $seen[$sg] ) ) {
-					$output[] = [
-						'subobjectTitle' => "Subobject:$sg",
-						'sourceCategory' => $source,
-						'required' => 0,
-					];
-					$seen[$sg] = true;
-				}
-			}
-		}
-
+		$this->collectFromAncestors(
+			$resolver->getAncestors( $name ), $all, $output, $seen,
+			'subobjectTitle', 'Subobject:',
+			'getRequiredSubobjects', 'getOptionalSubobjects'
+		);
 		return $output;
 	}
 
@@ -290,54 +232,19 @@ class CategoryHierarchyService {
 
 		$output = [];
 		$seen = [];
-
 		$resolver = new InheritanceResolver( $all );
 
 		foreach ( $parents as $parent ) {
-			foreach ( $resolver->getAncestors( $parent ) as $ancestor ) {
-				$model = $all[$ancestor] ?? null;
-				if ( !$model ) {
-					continue;
-				}
-
-				$source = "Category:$ancestor";
-
-				foreach ( $model->getRequiredProperties() as $p ) {
-					if ( !isset( $seen[$p] ) ) {
-						$output[] = [
-							'propertyTitle' => "Property:$p",
-							'sourceCategory' => $source,
-							'required' => true,
-						];
-						$seen[$p] = true;
-					}
-				}
-
-				foreach ( $model->getOptionalProperties() as $p ) {
-					if ( !isset( $seen[$p] ) ) {
-						$output[] = [
-							'propertyTitle' => "Property:$p",
-							'sourceCategory' => $source,
-							'required' => false,
-						];
-						$seen[$p] = true;
-					}
-				}
-			}
+			$this->collectFromAncestors(
+				$resolver->getAncestors( $parent ), $all, $output, $seen,
+				'propertyTitle', 'Property:',
+				'getRequiredProperties', 'getOptionalProperties'
+			);
 		}
 
 		return $output;
 	}
 
-	/**
-	 * Extract inherited subobjects for virtual category (form preview).
-	 *
-	 * Similar to extractVirtualInheritedProperties but for subobjects.
-	 *
-	 * @param array $parents Array of parent category names (no namespace)
-	 * @param array $all All category models
-	 * @return array Array of subobject entries with subobjectTitle, sourceCategory, required
-	 */
 	private function extractVirtualInheritedSubobjects(
 		array $parents,
 		array $all
@@ -348,42 +255,74 @@ class CategoryHierarchyService {
 
 		$output = [];
 		$seen = [];
-
 		$resolver = new InheritanceResolver( $all );
 
 		foreach ( $parents as $parent ) {
-			foreach ( $resolver->getAncestors( $parent ) as $ancestor ) {
-				$model = $all[$ancestor] ?? null;
-				if ( !$model ) {
-					continue;
-				}
-
-				$source = "Category:$ancestor";
-
-				foreach ( $model->getRequiredSubobjects() as $sg ) {
-					if ( !isset( $seen[$sg] ) ) {
-						$output[] = [
-							'subobjectTitle' => "Subobject:$sg",
-							'sourceCategory' => $source,
-							'required' => 1,
-						];
-						$seen[$sg] = true;
-					}
-				}
-
-				foreach ( $model->getOptionalSubobjects() as $sg ) {
-					if ( !isset( $seen[$sg] ) ) {
-						$output[] = [
-							'subobjectTitle' => "Subobject:$sg",
-							'sourceCategory' => $source,
-							'required' => 0,
-						];
-						$seen[$sg] = true;
-					}
-				}
-			}
+			$this->collectFromAncestors(
+				$resolver->getAncestors( $parent ), $all, $output, $seen,
+				'subobjectTitle', 'Subobject:',
+				'getRequiredSubobjects', 'getOptionalSubobjects'
+			);
 		}
 
 		return $output;
+	}
+
+	/* =====================================================================
+	 * INTERNAL: SHARED COLLECTION HELPER
+	 * ===================================================================== */
+
+	/**
+	 * Iterate ancestors and collect required/optional items with deduplication.
+	 *
+	 * @param string[] $ancestors Ordered ancestor list
+	 * @param array $all All category models keyed by name
+	 * @param array &$output Accumulates result entries
+	 * @param array &$seen Tracks already-collected item names
+	 * @param string $titleKey Key name in output entries (e.g. 'propertyTitle')
+	 * @param string $titlePrefix Namespace prefix (e.g. 'Property:')
+	 * @param string $requiredGetter Method name for required items
+	 * @param string $optionalGetter Method name for optional items
+	 */
+	private function collectFromAncestors(
+		array $ancestors,
+		array $all,
+		array &$output,
+		array &$seen,
+		string $titleKey,
+		string $titlePrefix,
+		string $requiredGetter,
+		string $optionalGetter
+	): void {
+		foreach ( $ancestors as $ancestor ) {
+			$model = $all[$ancestor] ?? null;
+			if ( !$model ) {
+				continue;
+			}
+
+			$source = "Category:$ancestor";
+
+			foreach ( $model->$requiredGetter() as $item ) {
+				if ( !isset( $seen[$item] ) ) {
+					$output[] = [
+						$titleKey => $titlePrefix . $item,
+						'sourceCategory' => $source,
+						'required' => true,
+					];
+					$seen[$item] = true;
+				}
+			}
+
+			foreach ( $model->$optionalGetter() as $item ) {
+				if ( !isset( $seen[$item] ) ) {
+					$output[] = [
+						$titleKey => $titlePrefix . $item,
+						'sourceCategory' => $source,
+						'required' => false,
+					];
+					$seen[$item] = true;
+				}
+			}
+		}
 	}
 }
