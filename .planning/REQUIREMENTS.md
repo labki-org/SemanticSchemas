@@ -9,16 +9,16 @@ Requirements for multi-category page creation milestone. Each maps to roadmap ph
 
 ### Workflow
 
-- [ ] **WF-01**: All v0.2.0 work done in a feature branch, delivered as a pull request to main
+- [x] **WF-01**: All v0.2.0 work done in a feature branch, delivered as a pull request to main
 
 ### Required/Optional Conflict Resolution (Bug Fix)
 
-- [ ] **FIX-01**: CategoryModel resolves required+optional conflict by promoting to required instead of throwing
-- [ ] **FIX-02**: SubobjectModel resolves required+optional conflict by promoting to required instead of throwing
-- [ ] **FIX-03**: SchemaValidator warns (not errors) when a property appears in both required and optional
-- [ ] **FIX-04**: When combining categories, if a property is required in any category and optional in another, required wins
-- [ ] **FIX-05**: When combining categories, if a subobject is required in any category and optional in another, required wins
-- [ ] **FIX-06**: Existing schemas that don't have conflicts continue working identically
+- [x] **FIX-01**: CategoryModel resolves required+optional conflict by promoting to required instead of throwing
+- [x] **FIX-02**: SubobjectModel resolves required+optional conflict by promoting to required instead of throwing
+- [x] **FIX-03**: SchemaValidator warns (not errors) when a property appears in both required and optional
+- [x] **FIX-04**: When combining categories, if a property is required in any category and optional in another, required wins
+- [x] **FIX-05**: When combining categories, if a subobject is required in any category and optional in another, required wins
+- [x] **FIX-06**: Existing schemas that don't have conflicts continue working identically
 
 ### Conditional Templates
 
@@ -102,13 +102,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WF-01 | Phase 3 | Pending |
-| FIX-01 | Phase 3 | Pending |
-| FIX-02 | Phase 3 | Pending |
-| FIX-03 | Phase 3 | Pending |
-| FIX-04 | Phase 3 | Pending |
-| FIX-05 | Phase 3 | Pending |
-| FIX-06 | Phase 3 | Pending |
+| WF-01 | Phase 3 | Complete |
+| FIX-01 | Phase 3 | Complete |
+| FIX-02 | Phase 3 | Complete |
+| FIX-03 | Phase 3 | Complete |
+| FIX-04 | Phase 3 | Complete |
+| FIX-05 | Phase 3 | Complete |
+| FIX-06 | Phase 3 | Complete |
 | TMPL-01 | Phase 4 | Pending |
 | TMPL-02 | Phase 4 | Pending |
 | TMPL-03 | Phase 4 | Pending |
