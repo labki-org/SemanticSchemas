@@ -40,26 +40,42 @@ class CategoryModelTest extends TestCase {
 		] );
 	}
 
-	public function testDuplicateRequiredOptionalPropertyThrowsException(): void {
-		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'both required and optional' );
-		new CategoryModel( 'TestCategory', [
+	public function testDuplicateRequiredOptionalPropertyPromotesToRequired(): void {
+		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
 				'required' => [ 'Has name' ],
-				'optional' => [ 'Has name' ],
+				'optional' => [ 'Has name', 'Has email' ],
 			],
 		] );
+
+		$this->assertContains( 'Has name', $model->getRequiredProperties() );
+		$this->assertNotContains( 'Has name', $model->getOptionalProperties() );
+		$this->assertContains( 'Has email', $model->getOptionalProperties() );
 	}
 
-	public function testDuplicateRequiredOptionalSubobjectThrowsException(): void {
-		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'both required and optional' );
-		new CategoryModel( 'TestCategory', [
+	public function testDuplicateRequiredOptionalSubobjectPromotesToRequired(): void {
+		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
 				'required' => [ 'Author' ],
-				'optional' => [ 'Author' ],
+				'optional' => [ 'Author', 'Funding' ],
 			],
 		] );
+
+		$this->assertContains( 'Author', $model->getRequiredSubobjects() );
+		$this->assertNotContains( 'Author', $model->getOptionalSubobjects() );
+		$this->assertContains( 'Funding', $model->getOptionalSubobjects() );
+	}
+
+	public function testNoConflictPropertiesUnchanged(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [ 'Has email' ],
+			],
+		] );
+
+		$this->assertEquals( [ 'Has name' ], $model->getRequiredProperties() );
+		$this->assertEquals( [ 'Has email' ], $model->getOptionalProperties() );
 	}
 
 	public function testNonArrayPropertiesThrowsException(): void {
