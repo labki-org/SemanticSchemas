@@ -28,12 +28,12 @@ Requirements for multi-category page creation milestone. Each maps to roadmap ph
 
 ### Property Resolution
 
-- [ ] **RESO-01**: MultiCategoryResolver resolves properties across multiple selected categories
-- [ ] **RESO-02**: Shared properties (same name across categories) are identified and deduplicated
-- [ ] **RESO-03**: Property ordering follows C3 linearization precedence within each category
-- [ ] **RESO-04**: Each resolved property includes source attribution (which category defines it)
-- [ ] **RESO-05**: Resolver detects conflicting property datatypes across categories and reports errors
-- [ ] **RESO-06**: When a property is required in any selected category, it is required in the composite form
+- [x] **RESO-01**: MultiCategoryResolver resolves properties across multiple selected categories
+- [x] **RESO-02**: Shared properties (same name across categories) are identified and deduplicated
+- [x] **RESO-03**: Property ordering follows C3 linearization precedence within each category
+- [x] **RESO-04**: Each resolved property includes source attribution (which category defines it)
+- [x] **RESO-05**: Resolver detects conflicting property datatypes across categories and reports errors
+- [x] **RESO-06**: When a property is required in any selected category, it is required in the composite form
 
 ### Composite Form Generation
 
@@ -112,12 +112,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TMPL-01 | Phase 4 | Complete |
 | TMPL-02 | Phase 4 | Complete |
 | TMPL-03 | Phase 4 | Complete |
-| RESO-01 | Phase 5 | Pending |
-| RESO-02 | Phase 5 | Pending |
-| RESO-03 | Phase 5 | Pending |
-| RESO-04 | Phase 5 | Pending |
-| RESO-05 | Phase 5 | Pending |
-| RESO-06 | Phase 5 | Pending |
+| RESO-01 | Phase 5 | Complete |
+| RESO-02 | Phase 5 | Complete |
+| RESO-03 | Phase 5 | Complete |
+| RESO-04 | Phase 5 | Complete |
+| RESO-05 | Phase 5 | Complete |
+| RESO-06 | Phase 5 | Complete |
 | FORM-01 | Phase 6 | Pending |
 | FORM-02 | Phase 6 | Pending |
 | FORM-03 | Phase 6 | Pending |
