@@ -102,45 +102,54 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WF-01 | — | Pending |
-| FIX-01 | — | Pending |
-| FIX-02 | — | Pending |
-| FIX-03 | — | Pending |
-| FIX-04 | — | Pending |
-| FIX-05 | — | Pending |
-| FIX-06 | — | Pending |
-| TMPL-01 | — | Pending |
-| TMPL-02 | — | Pending |
-| TMPL-03 | — | Pending |
-| RESO-01 | — | Pending |
-| RESO-02 | — | Pending |
-| RESO-03 | — | Pending |
-| RESO-04 | — | Pending |
-| RESO-05 | — | Pending |
-| RESO-06 | — | Pending |
-| FORM-01 | — | Pending |
-| FORM-02 | — | Pending |
-| FORM-03 | — | Pending |
-| FORM-04 | — | Pending |
-| FORM-05 | — | Pending |
-| API-01 | — | Pending |
-| API-02 | — | Pending |
-| API-03 | — | Pending |
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
-| UI-05 | — | Pending |
-| UI-06 | — | Pending |
-| STATE-01 | — | Pending |
-| STATE-02 | — | Pending |
-| STATE-03 | — | Pending |
+| WF-01 | Phase 3 | Pending |
+| FIX-01 | Phase 3 | Pending |
+| FIX-02 | Phase 3 | Pending |
+| FIX-03 | Phase 3 | Pending |
+| FIX-04 | Phase 3 | Pending |
+| FIX-05 | Phase 3 | Pending |
+| FIX-06 | Phase 3 | Pending |
+| TMPL-01 | Phase 4 | Pending |
+| TMPL-02 | Phase 4 | Pending |
+| TMPL-03 | Phase 4 | Pending |
+| RESO-01 | Phase 5 | Pending |
+| RESO-02 | Phase 5 | Pending |
+| RESO-03 | Phase 5 | Pending |
+| RESO-04 | Phase 5 | Pending |
+| RESO-05 | Phase 5 | Pending |
+| RESO-06 | Phase 5 | Pending |
+| FORM-01 | Phase 6 | Pending |
+| FORM-02 | Phase 6 | Pending |
+| FORM-03 | Phase 6 | Pending |
+| FORM-04 | Phase 6 | Pending |
+| FORM-05 | Phase 6 | Pending |
+| API-01 | Phase 7 | Pending |
+| API-02 | Phase 7 | Pending |
+| API-03 | Phase 7 | Pending |
+| UI-01 | Phase 8 | Pending |
+| UI-02 | Phase 8 | Pending |
+| UI-03 | Phase 8 | Pending |
+| UI-04 | Phase 8 | Pending |
+| UI-05 | Phase 8 | Pending |
+| UI-06 | Phase 8 | Pending |
+| STATE-01 | Phase 9 | Pending |
+| STATE-02 | Phase 9 | Pending |
+| STATE-03 | Phase 9 | Pending |
 
 **Coverage:**
 - v0.2.0 requirements: 33 total
-- Mapped to phases: 0
-- Unmapped: 33 (pending roadmap creation)
+- Mapped to phases: 33
+- Unmapped: 0
+
+**Phase distribution:**
+- Phase 3: 7 requirements (WF-01, FIX-01 through FIX-06)
+- Phase 4: 3 requirements (TMPL-01 through TMPL-03)
+- Phase 5: 6 requirements (RESO-01 through RESO-06)
+- Phase 6: 5 requirements (FORM-01 through FORM-05)
+- Phase 7: 3 requirements (API-01 through API-03)
+- Phase 8: 6 requirements (UI-01 through UI-06)
+- Phase 9: 3 requirements (STATE-01 through STATE-03)
 
 ---
 *Requirements defined: 2026-02-02*
-*Last updated: 2026-02-02 after scope adjustments (branch/PR, separate special page, required/optional bug fix)*
+*Last updated: 2026-02-02 after roadmap creation*
