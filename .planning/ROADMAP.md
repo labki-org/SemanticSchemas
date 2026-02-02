@@ -72,11 +72,10 @@ Plans:
   4. Property ordering within each category follows C3 linearization precedence
   5. Conflicting property datatypes across categories are detected and reported as errors
   6. When a property is required in any selected category, resolver marks it as required
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [ ] 05-01-PLAN.md -- Create MultiCategoryResolver, ResolvedPropertySet, and unit tests
 
 #### Phase 6: Composite Form Generation
 **Goal**: Generate single PageForms form with multiple `{{{for template}}}` blocks for multi-category page creation
@@ -152,7 +151,7 @@ Phases execute in numeric order: 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 2. Smart Fallback Logic | v0.1.2 | 1/1 | Complete | 2026-01-19 |
 | 3. Feature Branch + Bug Fix | v0.2.0 | 2/2 | Complete | 2026-02-02 |
 | 4. Conditional Templates | v0.2.0 | 1/1 | Complete | 2026-02-02 |
-| 5. Property Resolution | v0.2.0 | 0/TBD | Not started | - |
+| 5. Property Resolution | v0.2.0 | 0/1 | Not started | - |
 | 6. Composite Form Generation | v0.2.0 | 0/TBD | Not started | - |
 | 7. API Endpoint | v0.2.0 | 0/TBD | Not started | - |
 | 8. Create Page UI | v0.2.0 | 0/TBD | Not started | - |
