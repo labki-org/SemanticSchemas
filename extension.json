@@ -12,7 +12,8 @@
 		"MediaWiki": ">= 1.39.0",
 		"extensions": {
 			"SemanticMediaWiki": "*",
-			"PageForms": "*"
+			"PageForms": "*",
+			"ParserFunctions": "*"
 		}
 	},
 	"load_composer_autoloader": false,
