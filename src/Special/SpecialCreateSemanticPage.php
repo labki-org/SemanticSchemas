@@ -266,7 +266,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 				$compositeGenerator = new CompositeFormGenerator();
 				$compositeGenerator->generateAndSaveCompositeForm( $resolved );
 
-				$formName = CompositeFormGenerator::getCompositeFormName( $categories );
+				$formName = $compositeGenerator->getCompositeFormName( $categories );
 			}
 
 			// Build target page
