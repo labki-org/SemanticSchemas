@@ -1346,6 +1346,61 @@ class SpecialSemanticSchemas extends SpecialPage {
 	}
 
 	/**
+	 * Compute hashes for all generated template and form artifacts.
+	 *
+	 * Hashes the actual generated wikitext content (not schema model data)
+	 * and keys entries by template page name for per-template dirty detection.
+	 *
+	 * @param array $categories Array of CategoryModel objects
+	 * @param TemplateGenerator $templateGenerator
+	 * @param FormGenerator $formGenerator
+	 * @param InheritanceResolver $resolver
+	 * @return array<string, array> Map of template page name => hash data
+	 */
+	private function computeAllTemplateHashes(
+		array $categories,
+		TemplateGenerator $templateGenerator,
+		FormGenerator $formGenerator,
+		InheritanceResolver $resolver
+	): array {
+		$hashComputer = new PageHashComputer();
+		$templateHashes = [];
+
+		foreach ( $categories as $category ) {
+			$name = $category->getName();
+
+			try {
+				$effective = $resolver->getEffectiveCategory( $name );
+
+				// Hash semantic template
+				$semanticContent = $templateGenerator->generateSemanticTemplate( $effective );
+				$templateHashes["Template:$name/semantic"] = [
+					'generated' => $hashComputer->hashContentString( $semanticContent ),
+					'category' => $name,
+				];
+
+				// Hash dispatcher template
+				$dispatcherContent = $templateGenerator->generateDispatcherTemplate( $effective );
+				$templateHashes["Template:$name"] = [
+					'generated' => $hashComputer->hashContentString( $dispatcherContent ),
+					'category' => $name,
+				];
+
+				// Hash form
+				$formContent = $formGenerator->generateForm( $effective );
+				$templateHashes["Form:$name"] = [
+					'generated' => $hashComputer->hashContentString( $formContent ),
+					'category' => $name,
+				];
+			} catch ( \Throwable $e ) {
+				wfLogWarning( "SemanticSchemas: Could not hash templates for category '$name': " . $e->getMessage() );
+			}
+		}
+
+		return $templateHashes;
+	}
+
+	/**
 	 * Build a complete category map for inheritance resolution.
 	 *
 	 * Ensures all categories are included so parent relationships resolve correctly.
@@ -1458,11 +1513,19 @@ class SpecialSemanticSchemas extends SpecialPage {
 			}
 
 			$pageHashes = $this->computeAllSchemaHashes();
+			$templateHashes = $this->computeAllTemplateHashes(
+				$categories, $templateGenerator, $formGenerator, $resolver
+			);
+
+			$stateManager = new StateManager();
 
 			if ( !empty( $pageHashes ) ) {
-				$stateManager = new StateManager();
 				$stateManager->setPageHashes( $pageHashes );
 				$stateManager->clearDirty();
+			}
+
+			if ( !empty( $templateHashes ) ) {
+				$stateManager->setTemplateHashes( $templateHashes );
 			}
 
 			if ( $progressContainerOpen ) {
@@ -1475,6 +1538,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'categoriesProcessed' => $successCount,
 				'categoriesTotal' => $totalCount,
 				'pagesHashed' => count( $pageHashes ),
+				'templatesHashed' => count( $templateHashes ),
 			] );
 
 			$output->addHTML(
