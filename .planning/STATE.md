@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 Phase: 9 of 9 (State Management Refactor) — IN PROGRESS
-Plan: 1 of 3+ in current phase
+Plan: 2 of 3+ in current phase
 Status: In progress
-Last activity: 2026-02-03 — Completed 09-01-PLAN.md (Template Hash Infrastructure)
+Last activity: 2026-02-03 — Completed 09-02-PLAN.md (Template Hash Integration)
 
-Progress: [█████████░] 93% (15 of 16+ plans across all phases)
+Progress: [█████████░] 94% (16 of 17+ plans across all phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15 (3 v0.1.2 baseline + 12 v0.2.0)
+- Total plans completed: 16 (3 v0.1.2 baseline + 13 v0.2.0)
 - Average duration: 3 min (v0.2.0 plans)
-- Total execution time: 0.75 hours (v0.2.0)
+- Total execution time: 0.8 hours (v0.2.0)
 
 **By Phase:**
 
@@ -35,11 +35,11 @@ Progress: [█████████░] 93% (15 of 16+ plans across all phase
 | 6. Composite Form Generation | 1/1 | Complete | 5 min |
 | 7. API Endpoint | 1/1 | Complete | 3 min |
 | 8. Create Page UI | 3/3 | Complete | 6 min |
-| 9. State Management Refactor | 1/3+ | In Progress | 1 min |
+| 9. State Management Refactor | 2/3+ | In Progress | 2 min |
 
 **Recent Trend:**
-- Phase 9 started with infrastructure plan (09-01) completed in 1 minute
-- Plan 09-01 added template-level hash tracking to StateManager with 10 new unit tests
+- Phase 9 plan 09-01 added template-level hash tracking infrastructure (1 min)
+- Plan 09-02 integrated template hashes into generation, validation, and maintenance flows (2 min)
 - All tests and linting passing consistently
 
 *Updated after each plan completion*
@@ -87,6 +87,10 @@ Recent decisions affecting current work:
 - **v0.2.0 Phase 9-01:** Template hash structure (associative arrays with 'generated' hash + category attribution)
 - **v0.2.0 Phase 9-01:** Public content hashing (hashContentString() exposes hashContent() for raw wikitext)
 - **v0.2.0 Phase 9-01:** Backward compatibility via array_merge (old state without templateHashes gets empty array)
+- **v0.2.0 Phase 9-02:** computeAllTemplateHashes method hashes semantic template, dispatcher, and form content
+- **v0.2.0 Phase 9-02:** Template hash computation occurs after page hash computation in processGenerate
+- **v0.2.0 Phase 9-02:** OntologyInspector.validateWikiState() checks template staleness after page hash validation
+- **v0.2.0 Phase 9-02:** Maintenance script supports single-category and all-categories template hash updates
 
 ### Pending Todos
 
@@ -104,5 +108,5 @@ None — Phase 8 complete, full interactive Create Page UI working end-to-end.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 09-01-PLAN.md (Template Hash Infrastructure)
+Stopped at: Completed 09-02-PLAN.md (Template Hash Integration)
 Resume file: None
