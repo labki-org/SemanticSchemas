@@ -2,29 +2,37 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Store;
 
+use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
+use MediaWiki\Title\Title;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \MediaWiki\Extension\SemanticSchemas\Store\StateManager
- *
- * Note: StateManager tests require a full MediaWiki environment because
- * they depend on PageCreator which uses MediaWiki page operations.
- * These tests will be skipped in standalone PHPUnit.
  */
 class StateManagerTest extends TestCase {
 
-	protected function setUp(): void {
-		parent::setUp();
-
-		// Skip tests if MediaWiki classes aren't available
-		if ( !class_exists( 'MediaWiki\Title\Title' ) ) {
-			$this->markTestSkipped( 'StateManager tests require MediaWiki environment' );
-		}
-	}
+	private ?string $storedPageContent = null;
 
 	private function createStateManager(): StateManager {
-		return new StateManager();
+		$mockTitle = $this->createMock( Title::class );
+
+		$mockPageCreator = $this->createMock( PageCreator::class );
+		$mockPageCreator->method( 'makeTitle' )->willReturn( $mockTitle );
+		$mockPageCreator->method( 'pageExists' )->willReturnCallback( function () {
+			return $this->storedPageContent !== null;
+		} );
+		$mockPageCreator->method( 'getPageContent' )->willReturnCallback( function () {
+			return $this->storedPageContent;
+		} );
+		$mockPageCreator->method( 'createOrUpdatePage' )->willReturnCallback(
+			function ( $title, $content, $summary ) {
+				$this->storedPageContent = $content;
+				return true;
+			}
+		);
+
+		return new StateManager( $mockPageCreator );
 	}
 
 	/* =========================================================================
@@ -224,7 +232,6 @@ class StateManagerTest extends TestCase {
 		$manager = $this->createStateManager();
 		$manager->setDirty( true );
 		$manager->setPageHashes( [ 'Category:Person' => 'hash1' ] );
-		$manager->setSourceSchemaHash( 'schema_hash' );
 
 		$state = $manager->getFullState();
 

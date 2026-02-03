@@ -5,6 +5,9 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Generator;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -21,13 +24,11 @@ class TemplateGeneratorTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		// Skip tests if MediaWiki classes aren't available
-		// TemplateGenerator depends on PageCreator which requires MediaWiki
-		if ( !class_exists( 'MediaWiki\User\User' ) ) {
-			$this->markTestSkipped( 'TemplateGenerator tests require MediaWiki environment' );
-		}
-
-		$this->generator = new TemplateGenerator( null, null );
+		$this->generator = new TemplateGenerator(
+			$this->createMock( PageCreator::class ),
+			$this->createMock( WikiSubobjectStore::class ),
+			$this->createMock( WikiPropertyStore::class )
+		);
 	}
 
 	/* =========================================================================

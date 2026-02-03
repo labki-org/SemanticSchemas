@@ -10,7 +10,6 @@ use MediaWikiIntegrationTestCase;
 /**
  * @covers \MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore
  * @group Database
- * @group Broken
  */
 class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 
@@ -19,11 +18,6 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-
-		// Skip if SMW is not available
-		if ( !defined( 'SMW_NS_PROPERTY' ) ) {
-			$this->markTestSkipped( 'Semantic MediaWiki is not installed' );
-		}
 
 		$this->pageCreator = new PageCreator( null );
 		$this->propertyStore = new WikiPropertyStore( $this->pageCreator );
