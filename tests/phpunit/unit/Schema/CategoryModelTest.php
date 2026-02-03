@@ -160,6 +160,24 @@ class CategoryModelTest extends TestCase {
 		$this->assertCount( 2, $allProps );
 	}
 
+	public function testGetTaggedPropertiesReturnsBothWithFlags(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [ 'Has email' ],
+			],
+		] );
+		$tagged = $model->getTaggedProperties();
+		$this->assertCount( 2, $tagged );
+		$this->assertSame( [ 'name' => 'Has name', 'required' => true ], $tagged[0] );
+		$this->assertSame( [ 'name' => 'Has email', 'required' => false ], $tagged[1] );
+	}
+
+	public function testGetTaggedPropertiesReturnsEmptyWhenNone(): void {
+		$model = new CategoryModel( 'TestCategory' );
+		$this->assertSame( [], $model->getTaggedProperties() );
+	}
+
 	/* =========================================================================
 	 * SUBOBJECT ACCESSORS
 	 * ========================================================================= */
@@ -197,6 +215,24 @@ class CategoryModelTest extends TestCase {
 	public function testHasSubobjectsReturnsFalse(): void {
 		$model = new CategoryModel( 'TestCategory' );
 		$this->assertFalse( $model->hasSubobjects() );
+	}
+
+	public function testGetTaggedSubobjectsReturnsBothWithFlags(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'subobjects' => [
+				'required' => [ 'Author' ],
+				'optional' => [ 'Funding' ],
+			],
+		] );
+		$tagged = $model->getTaggedSubobjects();
+		$this->assertCount( 2, $tagged );
+		$this->assertSame( [ 'name' => 'Author', 'required' => true ], $tagged[0] );
+		$this->assertSame( [ 'name' => 'Funding', 'required' => false ], $tagged[1] );
+	}
+
+	public function testGetTaggedSubobjectsReturnsEmptyWhenNone(): void {
+		$model = new CategoryModel( 'TestCategory' );
+		$this->assertSame( [], $model->getTaggedSubobjects() );
 	}
 
 	/* =========================================================================

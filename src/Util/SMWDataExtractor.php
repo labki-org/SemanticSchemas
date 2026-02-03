@@ -87,9 +87,22 @@ trait SMWDataExtractor {
 	/**
 	 * Extract a value from a SMW DataItem based on type.
 	 *
+	 * The $type parameter acts as a namespace assertion: when the DataItem is a
+	 * DIWikiPage, the method checks that the page belongs to the expected namespace
+	 * (e.g. SMW_NS_PROPERTY for 'property', NS_CATEGORY for 'category'). If the
+	 * namespace does not match, null is returned. This prevents misconfigured or
+	 * cross-namespace annotations from being silently accepted as valid values.
+	 *
+	 * Supported types:
+	 *   - 'text'      — returns the page text (no namespace check)
+	 *   - 'property'  — requires SMW_NS_PROPERTY
+	 *   - 'category'  — requires NS_CATEGORY
+	 *   - 'subobject' — requires NS_SUBOBJECT
+	 *   - 'page'      — returns prefixed text (no namespace check)
+	 *
 	 * @param \SMW\DataItem $di
 	 * @param string $type Value type: 'text', 'property', 'category', 'subobject', 'page'
-	 * @return string|null
+	 * @return string|null The extracted value, or null if the DataItem type or namespace doesn't match
 	 */
 	protected function smwExtractValue( $di, string $type ): ?string {
 		if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {

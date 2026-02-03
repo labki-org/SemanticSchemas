@@ -374,6 +374,7 @@ class ExtensionConfigInstaller {
 	 * @return array
 	 */
 	public function applyPropertiesTypeOnly( array $schema ): array {
+		// Layer 1: register property types only (writePropertyTypeOnly)
 		return $this->applyValidatedEntities(
 			$schema, 'properties', SMW_NS_PROPERTY, 'properties',
 			fn ( string $name, array $data ) => $this->propertyStore->writePropertyTypeOnly(
@@ -390,6 +391,7 @@ class ExtensionConfigInstaller {
 	 * @return array
 	 */
 	public function applyPropertiesFull( array $schema ): array {
+		// Layer 2: full property annotations (writeProperty)
 		return $this->applyValidatedEntities(
 			$schema, 'properties', SMW_NS_PROPERTY, 'properties',
 			fn ( string $name, array $data ) => $this->propertyStore->writeProperty(

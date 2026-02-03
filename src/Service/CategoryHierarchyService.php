@@ -195,10 +195,8 @@ class CategoryHierarchyService {
 	): array {
 		$output = [];
 		$seen = [];
-		$this->collectFromAncestors(
-			$resolver->getAncestors( $name ), $all, $output, $seen,
-			'propertyTitle', 'Property:',
-			'getRequiredProperties', 'getOptionalProperties'
+		$this->collectPropertiesFromAncestors(
+			$resolver->getAncestors( $name ), $all, $output, $seen
 		);
 		return $output;
 	}
@@ -210,18 +208,32 @@ class CategoryHierarchyService {
 	): array {
 		$output = [];
 		$seen = [];
-		$this->collectFromAncestors(
-			$resolver->getAncestors( $name ), $all, $output, $seen,
-			'subobjectTitle', 'Subobject:',
-			'getRequiredSubobjects', 'getOptionalSubobjects'
+		$this->collectSubobjectsFromAncestors(
+			$resolver->getAncestors( $name ), $all, $output, $seen
 		);
 		return $output;
 	}
 
 	/* =====================================================================
 	 * INTERNAL: VIRTUAL-INHERITANCE (FORM PREVIEW)
+	 *
+	 * "Virtual" means the category does not yet exist in the wiki. When the
+	 * user is creating a new category via the UI, these methods resolve what
+	 * properties and subobjects the new category *would* inherit from its
+	 * chosen parents so the form can preview inherited fields in real time.
 	 * ===================================================================== */
 
+	/**
+	 * Collect inherited properties for a category that does not yet exist.
+	 *
+	 * Resolves the full ancestor chain of each selected parent and aggregates
+	 * all properties with their required/optional flags and source categories.
+	 *
+	 * @param string[] $parents Parent category names (no namespace prefix)
+	 * @param array<string,\MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel> $all
+	 *   All existing CategoryModels keyed by name
+	 * @return array List of inherited property descriptors
+	 */
 	private function extractVirtualInheritedProperties(
 		array $parents,
 		array $all
@@ -235,16 +247,24 @@ class CategoryHierarchyService {
 		$resolver = new InheritanceResolver( $all );
 
 		foreach ( $parents as $parent ) {
-			$this->collectFromAncestors(
-				$resolver->getAncestors( $parent ), $all, $output, $seen,
-				'propertyTitle', 'Property:',
-				'getRequiredProperties', 'getOptionalProperties'
+			$this->collectPropertiesFromAncestors(
+				$resolver->getAncestors( $parent ), $all, $output, $seen
 			);
 		}
 
 		return $output;
 	}
 
+	/**
+	 * Collect inherited subobjects for a category that does not yet exist.
+	 *
+	 * Same as extractVirtualInheritedProperties but for subobject definitions.
+	 *
+	 * @param string[] $parents Parent category names (no namespace prefix)
+	 * @param array<string,\MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel> $all
+	 *   All existing CategoryModels keyed by name
+	 * @return array List of inherited subobject descriptors
+	 */
 	private function extractVirtualInheritedSubobjects(
 		array $parents,
 		array $all
@@ -258,10 +278,8 @@ class CategoryHierarchyService {
 		$resolver = new InheritanceResolver( $all );
 
 		foreach ( $parents as $parent ) {
-			$this->collectFromAncestors(
-				$resolver->getAncestors( $parent ), $all, $output, $seen,
-				'subobjectTitle', 'Subobject:',
-				'getRequiredSubobjects', 'getOptionalSubobjects'
+			$this->collectSubobjectsFromAncestors(
+				$resolver->getAncestors( $parent ), $all, $output, $seen
 			);
 		}
 
@@ -269,30 +287,22 @@ class CategoryHierarchyService {
 	}
 
 	/* =====================================================================
-	 * INTERNAL: SHARED COLLECTION HELPER
+	 * INTERNAL: ANCESTOR COLLECTION HELPERS
 	 * ===================================================================== */
 
 	/**
-	 * Iterate ancestors and collect required/optional items with deduplication.
+	 * Iterate ancestors and collect properties with deduplication.
 	 *
 	 * @param string[] $ancestors Ordered ancestor list
 	 * @param array $all All category models keyed by name
 	 * @param array &$output Accumulates result entries
 	 * @param array &$seen Tracks already-collected item names
-	 * @param string $titleKey Key name in output entries (e.g. 'propertyTitle')
-	 * @param string $titlePrefix Namespace prefix (e.g. 'Property:')
-	 * @param string $requiredGetter Method name for required items
-	 * @param string $optionalGetter Method name for optional items
 	 */
-	private function collectFromAncestors(
+	private function collectPropertiesFromAncestors(
 		array $ancestors,
 		array $all,
 		array &$output,
-		array &$seen,
-		string $titleKey,
-		string $titlePrefix,
-		string $requiredGetter,
-		string $optionalGetter
+		array &$seen
 	): void {
 		foreach ( $ancestors as $ancestor ) {
 			$model = $all[$ancestor] ?? null;
@@ -302,25 +312,49 @@ class CategoryHierarchyService {
 
 			$source = "Category:$ancestor";
 
-			foreach ( $model->$requiredGetter() as $item ) {
-				if ( !isset( $seen[$item] ) ) {
+			foreach ( $model->getTaggedProperties() as $tagged ) {
+				if ( !isset( $seen[$tagged['name']] ) ) {
 					$output[] = [
-						$titleKey => $titlePrefix . $item,
+						'propertyTitle' => 'Property:' . $tagged['name'],
 						'sourceCategory' => $source,
-						'required' => true,
+						'required' => $tagged['required'],
 					];
-					$seen[$item] = true;
+					$seen[$tagged['name']] = true;
 				}
 			}
+		}
+	}
 
-			foreach ( $model->$optionalGetter() as $item ) {
-				if ( !isset( $seen[$item] ) ) {
+	/**
+	 * Iterate ancestors and collect subobjects with deduplication.
+	 *
+	 * @param string[] $ancestors Ordered ancestor list
+	 * @param array $all All category models keyed by name
+	 * @param array &$output Accumulates result entries
+	 * @param array &$seen Tracks already-collected item names
+	 */
+	private function collectSubobjectsFromAncestors(
+		array $ancestors,
+		array $all,
+		array &$output,
+		array &$seen
+	): void {
+		foreach ( $ancestors as $ancestor ) {
+			$model = $all[$ancestor] ?? null;
+			if ( !$model ) {
+				continue;
+			}
+
+			$source = "Category:$ancestor";
+
+			foreach ( $model->getTaggedSubobjects() as $tagged ) {
+				if ( !isset( $seen[$tagged['name']] ) ) {
 					$output[] = [
-						$titleKey => $titlePrefix . $item,
+						'subobjectTitle' => 'Subobject:' . $tagged['name'],
 						'sourceCategory' => $source,
-						'required' => false,
+						'required' => $tagged['required'],
 					];
-					$seen[$item] = true;
+					$seen[$tagged['name']] = true;
 				}
 			}
 		}

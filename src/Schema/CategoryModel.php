@@ -196,6 +196,22 @@ class CategoryModel {
 		) );
 	}
 
+	/**
+	 * Return all properties tagged with their required/optional status.
+	 *
+	 * @return array<array{name:string, required:bool}>
+	 */
+	public function getTaggedProperties(): array {
+		$out = [];
+		foreach ( $this->requiredProperties as $name ) {
+			$out[] = [ 'name' => $name, 'required' => true ];
+		}
+		foreach ( $this->optionalProperties as $name ) {
+			$out[] = [ 'name' => $name, 'required' => false ];
+		}
+		return $out;
+	}
+
 	/* -------------------- Subobjects -------------------- */
 
 	public function getRequiredSubobjects(): array {
@@ -208,6 +224,22 @@ class CategoryModel {
 
 	public function hasSubobjects(): bool {
 		return $this->requiredSubobjects !== [] || $this->optionalSubobjects !== [];
+	}
+
+	/**
+	 * Return all subobjects tagged with their required/optional status.
+	 *
+	 * @return array<array{name:string, required:bool}>
+	 */
+	public function getTaggedSubobjects(): array {
+		$out = [];
+		foreach ( $this->requiredSubobjects as $name ) {
+			$out[] = [ 'name' => $name, 'required' => true ];
+		}
+		foreach ( $this->optionalSubobjects as $name ) {
+			$out[] = [ 'name' => $name, 'required' => false ];
+		}
+		return $out;
 	}
 
 	/* -------------------- Display + Forms -------------------- */
