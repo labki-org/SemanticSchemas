@@ -2,6 +2,8 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
+use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
+use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
@@ -216,10 +218,76 @@ class OntologyInspector {
 			$warnings[] = 'Pages modified outside SemanticSchemas: ' . implode( ', ', $modified );
 		}
 
+		// Template-level staleness detection
+		$storedTemplateHashes = $this->stateManager->getTemplateHashes();
+		if ( !empty( $storedTemplateHashes ) ) {
+			$currentTemplateHashes = $this->computeCurrentTemplateHashes();
+			$staleTemplates = $this->stateManager->getStaleTemplates( $currentTemplateHashes );
+
+			if ( !empty( $staleTemplates ) ) {
+				$warnings[] = 'Templates needing regeneration: ' . implode( ', ', $staleTemplates );
+			}
+		}
+
 		return [
 			'errors' => $errors,
 			'warnings' => $warnings,
 			'modifiedPages' => $modified,
 		];
+	}
+
+	/**
+	 * Compute current template hashes for staleness detection.
+	 *
+	 * @return array<string, array> Map of template page name => hash data
+	 */
+	private function computeCurrentTemplateHashes(): array {
+		$templateGenerator = new TemplateGenerator();
+		$formGenerator = new FormGenerator();
+
+		$categories = $this->categoryStore->getAllCategories();
+
+		// Build category map for InheritanceResolver
+		$categoryMap = [];
+		foreach ( $categories as $cat ) {
+			$categoryMap[$cat->getName()] = $cat;
+		}
+		$resolver = new InheritanceResolver( $categoryMap );
+
+		$templateHashes = [];
+
+		foreach ( $categories as $category ) {
+			$name = $category->getName();
+
+			try {
+				$effective = $resolver->getEffectiveCategory( $name );
+
+				// Hash semantic template
+				$semanticContent = $templateGenerator->generateSemanticTemplate( $effective );
+				$templateHashes["Template:$name/semantic"] = [
+					'generated' => $this->hashComputer->hashContentString( $semanticContent ),
+					'category' => $name,
+				];
+
+				// Hash dispatcher template
+				$dispatcherContent = $templateGenerator->generateDispatcherTemplate( $effective );
+				$templateHashes["Template:$name"] = [
+					'generated' => $this->hashComputer->hashContentString( $dispatcherContent ),
+					'category' => $name,
+				];
+
+				// Hash form
+				$formContent = $formGenerator->generateForm( $effective );
+				$templateHashes["Form:$name"] = [
+					'generated' => $this->hashComputer->hashContentString( $formContent ),
+					'category' => $name,
+				];
+			} catch ( \Throwable $e ) {
+				// Skip categories that fail to generate
+				wfLogWarning( "SemanticSchemas: Could not hash templates for category '$name': " . $e->getMessage() );
+			}
+		}
+
+		return $templateHashes;
 	}
 }
