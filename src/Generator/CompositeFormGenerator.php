@@ -69,8 +69,14 @@ class CompositeFormGenerator extends FormGenerator {
 		$lines = array_merge( $lines, $this->generateTemplateSections( $resolved ) );
 
 		/* ----------------------------------------------------------
-		 * Category wikilinks
+		 * Default form override + Category wikilinks
+		 *
+		 * {{#default_form:}} on the saved page overrides per-template
+		 * #default_form declarations so "Edit with Form" uses the
+		 * composite form instead of the first category's form.
 		 * -------------------------------------------------------- */
+		$formName = $this->getCompositeFormName( $categories );
+		$lines[] = '{{#default_form:' . $formName . '}}';
 		foreach ( $categories as $cat ) {
 			$lines[] = '[[Category:' . $this->s( $cat ) . ']]';
 		}
@@ -120,9 +126,17 @@ class CompositeFormGenerator extends FormGenerator {
 	/**
 	 * Generate template sections for all categories.
 	 *
-	 * First category gets ALL properties (shared + category-specific) in a single
-	 * {{{for template}}} block to avoid duplicate template calls.
-	 * Subsequent categories get only category-specific properties.
+	 * The first category's section merges shared and category-specific
+	 * properties into a single {{{for template}}} block. When both exist,
+	 * sub-headers visually separate "Shared Properties" from
+	 * "Category-Specific Properties" within the same box.
+	 *
+	 * This avoids a duplicate template call that would result from having
+	 * two {{{for template|SameTemplate}}} blocks (PageForms always emits
+	 * a {{Template}} call per block, even when no fields are filled).
+	 *
+	 * Remaining categories get their own sections with category-specific
+	 * properties only.
 	 *
 	 * @param ResolvedPropertySet $resolved
 	 * @return array Lines of wikitext
@@ -131,59 +145,93 @@ class CompositeFormGenerator extends FormGenerator {
 		$categories = $resolved->getCategoryNames();
 		$lines = [];
 
-		$isFirst = true;
-		foreach ( $categories as $categoryName ) {
-			if ( $isFirst ) {
-				$lines = array_merge(
-					$lines,
-					$this->generateFirstCategorySection( $categoryName, $resolved )
-				);
-				$isFirst = false;
-			} else {
-				$lines = array_merge(
-					$lines,
-					$this->generateCategorySection( $categoryName, $resolved )
-				);
-			}
+		$sharedRequired = $this->getSharedProperties(
+			$resolved->getRequiredProperties(), $resolved
+		);
+		$sharedOptional = $this->getSharedProperties(
+			$resolved->getOptionalProperties(), $resolved
+		);
+
+		// First category: merge shared + category-specific into one block
+		$lines = array_merge(
+			$lines,
+			$this->generateFirstCategorySection(
+				$categories[0], $resolved, $sharedRequired, $sharedOptional
+			)
+		);
+
+		// Remaining categories: category-specific properties only
+		for ( $i = 1; $i < count( $categories ); $i++ ) {
+			$lines = array_merge(
+				$lines,
+				$this->generateCategorySection( $categories[$i], $resolved )
+			);
 		}
 
 		return $lines;
 	}
 
 	/**
-	 * Generate the first category's template section with shared + category-specific properties.
+	 * Generate the first category's template section, merging shared and
+	 * category-specific properties into a single {{{for template}}} block.
 	 *
-	 * Shared properties are merged into this single section to avoid creating
-	 * duplicate {{{for template}}} blocks for the same template name.
+	 * When both shared and specific properties exist, sub-headers provide
+	 * visual separation within the same form box. When only one type
+	 * exists, no sub-headers are shown.
 	 *
 	 * @param string $categoryName First category name
 	 * @param ResolvedPropertySet $resolved Full resolved property set
+	 * @param array $sharedRequired Shared required properties
+	 * @param array $sharedOptional Shared optional properties
 	 * @return array Lines of wikitext
 	 */
 	private function generateFirstCategorySection(
 		string $categoryName,
-		ResolvedPropertySet $resolved
+		ResolvedPropertySet $resolved,
+		array $sharedRequired,
+		array $sharedOptional
 	): array {
-		$required = $this->getFirstCategoryProperties(
+		$specificRequired = $this->getCategorySpecificProperties(
 			$resolved->getRequiredProperties(), $categoryName, $resolved
 		);
-		$optional = $this->getFirstCategoryProperties(
+		$specificOptional = $this->getCategorySpecificProperties(
 			$resolved->getOptionalProperties(), $categoryName, $resolved
 		);
 
-		if ( empty( $required ) && empty( $optional ) ) {
+		$hasShared = !empty( $sharedRequired ) || !empty( $sharedOptional );
+		$hasSpecific = !empty( $specificRequired ) || !empty( $specificOptional );
+
+		if ( !$hasShared && !$hasSpecific ) {
 			return [];
 		}
 
 		$lines = [];
-
 		$lines[] = '{{{for template|' . $this->s( $categoryName ) . '|label='
 			. $this->s( $categoryName ) . ' Properties}}}';
 		$lines[] = '';
 
-		$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
-			$required, $optional, $categoryName
-		) );
+		if ( $hasShared && $hasSpecific ) {
+			// Both: sub-headers separate shared from category-specific
+			$lines[] = "'''Shared Properties:'''";
+			$lines[] = '';
+			$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
+				$sharedRequired, $sharedOptional, $categoryName
+			) );
+
+			$lines[] = "'''" . $this->s( $categoryName ) . "-Specific Properties:'''";
+			$lines[] = '';
+			$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
+				$specificRequired, $specificOptional, $categoryName
+			) );
+		} elseif ( $hasShared ) {
+			$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
+				$sharedRequired, $sharedOptional, $categoryName
+			) );
+		} else {
+			$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
+				$specificRequired, $specificOptional, $categoryName
+			) );
+		}
 
 		$lines[] = '{{{end template}}}';
 		$lines[] = '';
@@ -245,37 +293,6 @@ class CompositeFormGenerator extends FormGenerator {
 
 		foreach ( $allProperties as $prop ) {
 			if ( $resolved->isSharedProperty( $prop ) ) {
-				$filtered[] = $prop;
-			}
-		}
-
-		return $filtered;
-	}
-
-	/**
-	 * Get properties for the first category section (shared + category-specific).
-	 *
-	 * Includes all properties where this category is a source, plus any shared
-	 * properties (even if not sourced from this category), to ensure shared
-	 * properties appear exactly once in the form.
-	 *
-	 * @param array $allProperties All properties to filter
-	 * @param string $categoryName First category name
-	 * @param ResolvedPropertySet $resolved Resolved property set
-	 * @return array Filtered property names
-	 */
-	private function getFirstCategoryProperties(
-		array $allProperties,
-		string $categoryName,
-		ResolvedPropertySet $resolved
-	): array {
-		$filtered = [];
-
-		foreach ( $allProperties as $prop ) {
-			$sources = $resolved->getPropertySources( $prop );
-
-			// Include if this category is a source OR if property is shared
-			if ( in_array( $categoryName, $sources, true ) || $resolved->isSharedProperty( $prop ) ) {
 				$filtered[] = $prop;
 			}
 		}

@@ -114,12 +114,19 @@ class DisplayStubGenerator {
 	private function generateTableWikitext( CategoryModel $category ): string {
 		$content = self::AUTO_REGENERATE_MARKER . "\n";
 		$content .= "<includeonly>\n";
-		$content .= "{| class=\"wikitable source-semanticschemas\"\n";
+
+		// Wrap entire table in {{#if:}} so empty template calls produce no output.
+		// All table syntax uses {{!}} (pipe magic word) because raw | inside
+		// {{#if:}} is interpreted as an argument separator.
+		$paramCheck = $this->buildParamCheck( $category );
+		$content .= '{{#if:' . $paramCheck . "|\n";
+		$content .= "{{{!}} class=\"wikitable source-semanticschemas\"\n";
 		$content .= "! Property !! Value\n";
 
 		$content .= $this->generatePropertyRows( $category );
 
-		$content .= "|}\n";
+		$content .= "{{!}}}\n";
+		$content .= "|}}\n";
 		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
 		return $content;
@@ -129,15 +136,20 @@ class DisplayStubGenerator {
 		// Infobox style: floated right, distinct styling
 		$content = self::AUTO_REGENERATE_MARKER . "\n";
 		$content .= "<includeonly>\n";
+
+		$paramCheck = $this->buildParamCheck( $category );
+		$content .= '{{#if:' . $paramCheck . "|\n";
+
 		$tableStyle = 'float: right; clear: right; margin: 0 0 1em 1em; width: 300px; '
 			. 'background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
-		$content .= '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
+		$content .= '{{{!}} class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
 		$captionStyle = 'font-size: 120%; font-weight: bold; background-color: #eaecf0;';
-		$content .= '|+ style="' . $captionStyle . '" | ' . $category->getLabel() . "\n";
+		$content .= '{{!}}+ style="' . $captionStyle . '" {{!}} ' . $category->getLabel() . "\n";
 
 		$content .= $this->generatePropertyRows( $category );
 
-		$content .= "|}\n";
+		$content .= "{{!}}}\n";
+		$content .= "|}}\n";
 		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
 		return $content;
@@ -146,7 +158,10 @@ class DisplayStubGenerator {
 	private function generateSectionsWikitext( CategoryModel $category ): string {
 		$content = self::AUTO_REGENERATE_MARKER . "\n";
 		$content .= "<includeonly>\n";
-		$content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
+
+		$paramCheck = $this->buildParamCheck( $category );
+		$content .= '{{#if:' . $paramCheck . "|\n";
+		$content .= "{{{!}} class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
 
 		$sections = $category->getDisplaySections();
 
@@ -158,8 +173,9 @@ class DisplayStubGenerator {
 			$props = $section['properties'];
 
 			// Section Header
-			$content .= "|-\n";
-			$content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | " . $name . "\n";
+			$content .= "{{!}}-\n";
+			$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;" {{!}} '
+				. $name . "\n";
 
 			// Section Properties
 			$content .= $this->generatePropertyRows( $category, $props );
@@ -179,15 +195,36 @@ class DisplayStubGenerator {
 		}
 
 		if ( !empty( $remaining ) ) {
-			$content .= "|-\n";
-			$content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | Other Properties\n";
+			$content .= "{{!}}-\n";
+			$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;" {{!}} '
+				. "Other Properties\n";
 			$content .= $this->generatePropertyRows( $category, $remaining );
 		}
 
-		$content .= "|}\n";
+		$content .= "{{!}}}\n";
+		$content .= "|}}\n";
 		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
 		return $content;
+	}
+
+	/**
+	 * Build a concatenated parameter check for the outer {{#if:}} wrapper.
+	 *
+	 * Produces "{{{param1|}}}{{{param2|}}}..." — if ALL parameters are empty,
+	 * the concatenation is empty and the entire table is suppressed.
+	 *
+	 * @param CategoryModel $category
+	 * @param array|null $properties Optional subset of properties
+	 * @return string
+	 */
+	private function buildParamCheck( CategoryModel $category, ?array $properties = null ): string {
+		$targetProperties = $properties ?? $category->getAllProperties();
+		$parts = [];
+		foreach ( $targetProperties as $propName ) {
+			$parts[] = '{{{' . NamingHelper::propertyToParameter( $propName ) . '|}}}';
+		}
+		return implode( '', $parts );
 	}
 
 	/**
@@ -218,10 +255,15 @@ class DisplayStubGenerator {
 			// {{ Template:Property/Email | value={{{email|}}} }}
 			$valueCall = "{{" . $renderTemplate . " | value=" . $valueExpr . " }}";
 
-			$out .= "|-\n";
-			// Standard row format works for both table and simplified infobox
+			// Conditionally render row only when parameter has a value.
+			// Uses {{!}} (pipe magic word) because raw | inside {{#if:}} is
+			// interpreted as the parser function argument separator.
+			$out .= '{{#if:{{{' . $paramName . '|}}}|' . "\n";
+			$out .= "{{!}}-\n";
 			$out .= "! " . $label . "\n";
-			$out .= "| " . $valueCall . "\n";
+			$out .= "{{!}} " . $valueCall . "\n";
+			$out .= "|}}";
+			$out .= "\n";
 		}
 		return $out;
 	}

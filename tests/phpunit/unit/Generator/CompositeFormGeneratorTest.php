@@ -88,7 +88,7 @@ class CompositeFormGeneratorTest extends TestCase {
 	 * SHARED PROPERTY HANDLING (core deduplication behavior)
 	 * ========================================================================= */
 
-	public function testSharedPropertyAppearsOnlyInFirstSection(): void {
+	public function testSharedPropertyMergedIntoFirstCategoryWithSubHeaders(): void {
 		$resolved = new ResolvedPropertySet(
 			[ 'Has name', 'Has email', 'Has employee ID' ], // required
 			[], // optional
@@ -106,22 +106,37 @@ class CompositeFormGeneratorTest extends TestCase {
 		$generator = $this->createGenerator();
 		$result = $generator->generateCompositeForm( $resolved );
 
-		// Person section (first) should have all properties including shared
-		$personStart = strpos( $result, '{{{for template|Person' );
-		$employeeStart = strpos( $result, '{{{for template|Employee' );
+		// First category merges shared + specific into one section
+		$this->assertStringContainsString(
+			'{{{for template|Person|label=Person Properties}}}', $result
+		);
+		$this->assertStringContainsString(
+			'{{{for template|Employee|label=Employee Properties}}}', $result
+		);
+
+		// Sub-headers within the Person section separate shared from specific
+		$personStart = strpos( $result, 'label=Person Properties' );
+		$employeeStart = strpos( $result, 'label=Employee Properties' );
 		$personSection = substr( $result, $personStart, $employeeStart - $personStart );
 
+		$this->assertStringContainsString( "'''Shared Properties:'''", $personSection );
+		$this->assertStringContainsString( "'''Person-Specific Properties:'''", $personSection );
 		$this->assertStringContainsString( 'Has name', $personSection );
 		$this->assertStringContainsString( 'Has email', $personSection );
 
-		// Employee section should NOT have shared property
+		// Employee section should have Has employee ID, NOT shared Has name
 		$employeeSection = substr( $result, $employeeStart );
+		$this->assertStringContainsString( 'Has employee ID', $employeeSection );
 		$this->assertStringNotContainsString(
 			'Has name',
 			$employeeSection,
-			'Shared property should not appear in second section'
+			'Shared property should not appear in other category sections'
 		);
-		$this->assertStringContainsString( 'Has employee ID', $employeeSection );
+
+		// Only one Person template block (no duplicate)
+		$personForCount = substr_count( $result, '{{{for template|Person' );
+		$this->assertSame( 1, $personForCount,
+			'First category should have a single template block' );
 	}
 
 	/* =========================================================================
@@ -291,7 +306,7 @@ class CompositeFormGeneratorTest extends TestCase {
 	 * EMPTY SECTION HANDLING
 	 * ========================================================================= */
 
-	public function testSharedPropertiesMergedIntoFirstCategory(): void {
+	public function testAllSharedPropertiesNoSubHeaders(): void {
 		// All properties shared — no category-specific properties
 		$resolved = new ResolvedPropertySet(
 			[ 'Has name' ], // required (shared)
@@ -308,18 +323,22 @@ class CompositeFormGeneratorTest extends TestCase {
 		$generator = $this->createGenerator();
 		$result = $generator->generateCompositeForm( $resolved );
 
-		// Shared properties merged into first category's section
-		$this->assertStringContainsString( '{{{for template|Person|label=Person Properties}}}', $result );
+		// Shared properties in first category's section
+		$this->assertStringContainsString(
+			'{{{for template|Person|label=Person Properties}}}', $result
+		);
 
-		// No separate shared section
-		$this->assertStringNotContainsString( 'label=Shared Properties', $result );
+		// No sub-headers when only shared exist (no specific to contrast with)
+		$this->assertStringNotContainsString( "'''Shared Properties:'''", $result );
+		$this->assertStringNotContainsString( '-Specific Properties:', $result );
 
-		// Employee has no non-shared properties, so section is skipped
+		// Employee has no category-specific properties, so section is skipped
 		$this->assertStringNotContainsString( 'label=Employee Properties', $result );
 
-		// Only 1 template block (first category with shared properties merged)
+		// Only 1 template block (first category with shared properties)
 		$endCount = substr_count( $result, '{{{end template}}}' );
-		$this->assertSame( 1, $endCount, 'Only first category section should exist when all properties are shared' );
+		$this->assertSame( 1, $endCount,
+			'Only first category section should exist when all properties are shared' );
 	}
 
 	/* =========================================================================
@@ -352,6 +371,28 @@ class CompositeFormGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '{{{standard input|preview}}}', $result );
 		$this->assertStringContainsString( '{{{standard input|changes}}}', $result );
 		$this->assertStringContainsString( '{{{standard input|cancel}}}', $result );
+	}
+
+	/* =========================================================================
+	 * DEFAULT FORM OVERRIDE
+	 * ========================================================================= */
+
+	public function testCompositeFormIncludesDefaultFormOverride(): void {
+		$resolved = new ResolvedPropertySet(
+			[ 'Has name' ], // required
+			[], // optional
+			[ 'Has name' => [ 'Person' ] ],
+			[], // required subobjects
+			[], // optional subobjects
+			[], // subobject sources
+			[ 'Person', 'Employee' ]
+		);
+
+		$generator = $this->createGenerator();
+		$result = $generator->generateCompositeForm( $resolved );
+
+		// Should include #default_form with alphabetically sorted composite name
+		$this->assertStringContainsString( '{{#default_form:Employee+Person}}', $result );
 	}
 
 	/* =========================================================================
