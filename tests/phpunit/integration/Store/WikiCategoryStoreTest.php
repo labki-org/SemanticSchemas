@@ -11,7 +11,6 @@ use MediaWikiIntegrationTestCase;
 /**
  * @covers \MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore
  * @group Database
- * @group Broken
  */
 class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
@@ -20,11 +19,6 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-
-		// Skip if SMW is not available
-		if ( !defined( 'SMW_NS_PROPERTY' ) ) {
-			$this->markTestSkipped( 'Semantic MediaWiki is not installed' );
-		}
 
 		$this->pageCreator = new PageCreator( null );
 		$propertyStore = new WikiPropertyStore( $this->pageCreator );
