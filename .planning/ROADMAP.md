@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v0.1.2 Page-Type Property Display** - Phases 1-2 (shipped 2026-01-19)
-- ✅ **v0.2.0 Multi-Category Page Creation** - Phases 3-9 (completed 2026-02-03)
+- 🚧 **v0.2.0 Multi-Category Page Creation** - Phases 3-9 (in progress)
 
 ## Phases
 
@@ -27,7 +27,7 @@ Plans:
 
 </details>
 
-### ✅ v0.2.0 Multi-Category Page Creation (Completed 2026-02-03)
+### 🚧 v0.2.0 Multi-Category Page Creation (In Progress)
 
 **Milestone Goal:** Enable users to create pages belonging to multiple categories with a single form, intelligently deduplicating shared properties.
 
@@ -44,8 +44,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [x] 03-01-PLAN.md -- Create feature branch, fix model constructor crash points, update tests
-- [x] 03-02-PLAN.md -- Change SchemaValidator overlap from error to warning, update OntologyInspector
+- [ ] 03-01-PLAN.md -- Create feature branch, fix model constructor crash points, update tests
+- [ ] 03-02-PLAN.md -- Change SchemaValidator overlap from error to warning, update OntologyInspector
 
 #### Phase 4: Conditional Templates
 **Goal**: Wrap semantic template `#set` calls in `#if` conditions to prevent empty value overwrites in multi-category pages
@@ -56,10 +56,10 @@ Plans:
   2. Multi-value properties use `+sep` parameter instead of manual separators
   3. Existing single-category pages continue storing and displaying properties correctly after template changes
   4. When multiple category templates set the same property, non-empty value wins (no overwrite with empty)
-**Plans**: 1 plan
+**Plans**: TBD
 
 Plans:
-- [x] 04-01-PLAN.md -- Add #if guards and +sep to TemplateGenerator output, update tests
+- [ ] 04-01: TBD
 
 #### Phase 5: Property Resolution
 **Goal**: Multi-category property resolver identifies shared properties and resolves conflicts across selected categories
@@ -72,10 +72,11 @@ Plans:
   4. Property ordering within each category follows C3 linearization precedence
   5. Conflicting property datatypes across categories are detected and reported as errors
   6. When a property is required in any selected category, resolver marks it as required
-**Plans**: 1 plan
+**Plans**: TBD
 
 Plans:
-- [x] 05-01-PLAN.md -- Create MultiCategoryResolver, ResolvedPropertySet, and unit tests
+- [ ] 05-01: TBD
+- [ ] 05-02: TBD
 
 #### Phase 6: Composite Form Generation
 **Goal**: Generate single PageForms form with multiple `{{{for template}}}` blocks for multi-category page creation
@@ -87,10 +88,11 @@ Plans:
   3. Each template section has clear label identifying which category it represents
   4. Generated form includes `[[Category:X]]` wikilinks for all selected categories
   5. Composite form is saved as wiki Form: page and accessible via Special:FormEdit
-**Plans**: 1 plan
+**Plans**: TBD
 
 Plans:
-- [x] 06-01-PLAN.md -- CompositeFormGenerator with TDD: refactor FormGenerator methods, create generator with shared property deduplication, comprehensive tests
+- [ ] 06-01: TBD
+- [ ] 06-02: TBD
 
 #### Phase 7: API Endpoint
 **Goal**: API endpoint providing multi-category property resolution data for UI preview
@@ -101,10 +103,10 @@ Plans:
   2. API response includes shared properties, category-specific properties, and conflicts
   3. API is registered in extension.json and follows existing ApiBase pattern
   4. JavaScript clients can call API and receive property resolution data synchronously
-**Plans**: 1 plan
+**Plans**: TBD
 
 Plans:
-- [x] 07-01-PLAN.md -- Create ApiSemanticSchemasMultiCategory endpoint with MultiCategoryResolver delegation, registration, i18n, and unit tests
+- [ ] 07-01: TBD
 
 #### Phase 8: Create Page UI
 **Goal**: New Special page (Special:CreateSemanticPage) with hierarchy tree selection and live property preview
@@ -117,12 +119,12 @@ Plans:
   4. Page name input field allows naming the new page
   5. Submitting form generates composite form and redirects to Special:FormEdit
   6. JavaScript module is registered via ResourceLoader and loads without errors
-**Plans**: 3 plans
+**Plans**: TBD
 
 Plans:
-- [x] 08-01-PLAN.md -- Enhance multi-category API with property datatypes and category target namespaces
-- [x] 08-02-PLAN.md -- Create SpecialCreateSemanticPage PHP class with registration, HTML skeleton, and POST handler
-- [x] 08-03-PLAN.md -- Build client-side JS module and CSS for interactive tree, preview, and submit flow
+- [ ] 08-01: TBD
+- [ ] 08-02: TBD
+- [ ] 08-03: TBD
 
 #### Phase 9: State Management Refactor
 **Goal**: StateManager uses template-level hashing instead of page-level hashing for dirty detection
@@ -133,25 +135,25 @@ Plans:
   2. Multi-category pages do not trigger false-positive dirty warnings when one category schema changes
   3. Existing single-category state tracking continues working after refactor
   4. State JSON structure correctly stores and retrieves template-level hashes
-**Plans**: 2 plans
+**Plans**: TBD
 
 Plans:
-- [x] 09-01-PLAN.md -- Add templateHashes infrastructure to StateManager + PageHashComputer, unit tests
-- [x] 09-02-PLAN.md -- Wire template hashing into generation flow, validation, and maintenance script
+- [ ] 09-01: TBD
+- [ ] 09-02: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
+Phases execute in numeric order: 3 → 4 → 5 → 6 → 7 → 8 → 9
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Property Display Template | v0.1.2 | 2/2 | Complete | 2026-01-19 |
 | 2. Smart Fallback Logic | v0.1.2 | 1/1 | Complete | 2026-01-19 |
-| 3. Feature Branch + Bug Fix | v0.2.0 | 2/2 | Complete | 2026-02-02 |
-| 4. Conditional Templates | v0.2.0 | 1/1 | Complete | 2026-02-02 |
-| 5. Property Resolution | v0.2.0 | 1/1 | Complete | 2026-02-02 |
-| 6. Composite Form Generation | v0.2.0 | 1/1 | Complete | 2026-02-02 |
-| 7. API Endpoint | v0.2.0 | 1/1 | Complete | 2026-02-02 |
-| 8. Create Page UI | v0.2.0 | 3/3 | Complete | 2026-02-03 |
-| 9. State Management Refactor | v0.2.0 | 2/2 | Complete | 2026-02-03 |
+| 3. Feature Branch + Bug Fix | v0.2.0 | 0/2 | Not started | - |
+| 4. Conditional Templates | v0.2.0 | 0/TBD | Not started | - |
+| 5. Property Resolution | v0.2.0 | 0/TBD | Not started | - |
+| 6. Composite Form Generation | v0.2.0 | 0/TBD | Not started | - |
+| 7. API Endpoint | v0.2.0 | 0/TBD | Not started | - |
+| 8. Create Page UI | v0.2.0 | 0/TBD | Not started | - |
+| 9. State Management Refactor | v0.2.0 | 0/TBD | Not started | - |
