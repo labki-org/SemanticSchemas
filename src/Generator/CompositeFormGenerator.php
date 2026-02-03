@@ -130,11 +130,31 @@ class CompositeFormGenerator extends FormGenerator {
 		$categories = $resolved->getCategoryNames();
 		$lines = [];
 
-		foreach ( $categories as $index => $categoryName ) {
-			$isFirst = ( $index === 0 );
+		// Shared properties get their own box (mapped to first category's template)
+		$sharedRequired = $this->getSharedProperties(
+			$resolved->getRequiredProperties(), $resolved
+		);
+		$sharedOptional = $this->getSharedProperties(
+			$resolved->getOptionalProperties(), $resolved
+		);
+
+		if ( !empty( $sharedRequired ) || !empty( $sharedOptional ) ) {
+			$firstCategory = $categories[0];
+			$lines[] = '{{{for template|' . $this->s( $firstCategory )
+				. '|label=Shared Properties}}}';
+			$lines[] = '';
+			$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
+				$sharedRequired, $sharedOptional, $firstCategory
+			) );
+			$lines[] = '{{{end template}}}';
+			$lines[] = '';
+		}
+
+		// Per-category sections (category-specific properties only)
+		foreach ( $categories as $categoryName ) {
 			$lines = array_merge(
 				$lines,
-				$this->generateCategorySection( $categoryName, $resolved, $isFirst )
+				$this->generateCategorySection( $categoryName, $resolved )
 			);
 		}
 
@@ -142,73 +162,38 @@ class CompositeFormGenerator extends FormGenerator {
 	}
 
 	/**
-	 * Generate a single category's template section.
+	 * Generate a single category's template section with category-specific properties.
 	 *
 	 * @param string $categoryName Category name
 	 * @param ResolvedPropertySet $resolved Full resolved property set
-	 * @param bool $isFirst Whether this is the first category section
 	 * @return array Lines of wikitext
 	 */
 	private function generateCategorySection(
 		string $categoryName,
-		ResolvedPropertySet $resolved,
-		bool $isFirst
+		ResolvedPropertySet $resolved
 	): array {
+		$required = $this->getCategorySpecificProperties(
+			$resolved->getRequiredProperties(), $categoryName, $resolved
+		);
+		$optional = $this->getCategorySpecificProperties(
+			$resolved->getOptionalProperties(), $categoryName, $resolved
+		);
+
+		// Skip empty sections
+		if ( empty( $required ) && empty( $optional ) ) {
+			return [];
+		}
+
 		$lines = [];
 
-		// Template opening
 		$lines[] = '{{{for template|' . $this->s( $categoryName ) . '|label='
 			. $this->s( $categoryName ) . ' Properties}}}';
 		$lines[] = '';
 
-		if ( $isFirst ) {
-			// First section: separate shared from category-specific
-			$sharedRequired = $this->getSharedProperties(
-				$resolved->getRequiredProperties(), $resolved
-			);
-			$sharedOptional = $this->getSharedProperties(
-				$resolved->getOptionalProperties(), $resolved
-			);
+		$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
+			$required, $optional, $categoryName
+		) );
 
-			$catRequired = $this->getCategorySpecificProperties(
-				$resolved->getRequiredProperties(), $categoryName, $resolved
-			);
-			$catOptional = $this->getCategorySpecificProperties(
-				$resolved->getOptionalProperties(), $categoryName, $resolved
-			);
-
-			// Shared properties section
-			if ( !empty( $sharedRequired ) || !empty( $sharedOptional ) ) {
-				$lines[] = '=== Shared Properties ===';
-				$lines[] = '';
-				$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
-					$sharedRequired, $sharedOptional, $categoryName
-				) );
-			}
-
-			// Category-specific properties section
-			if ( !empty( $catRequired ) || !empty( $catOptional ) ) {
-				$lines[] = '=== ' . $this->s( $categoryName ) . ' Properties ===';
-				$lines[] = '';
-				$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
-					$catRequired, $catOptional, $categoryName
-				) );
-			}
-		} else {
-			// Subsequent sections: category-specific properties only
-			$required = $this->getCategorySpecificProperties(
-				$resolved->getRequiredProperties(), $categoryName, $resolved
-			);
-			$optional = $this->getCategorySpecificProperties(
-				$resolved->getOptionalProperties(), $categoryName, $resolved
-			);
-
-			$lines = array_merge( $lines, $this->generatePropertySectionsForCategory(
-				$required, $optional, $categoryName
-			) );
-		}
-
-		// Template closing
 		$lines[] = '{{{end template}}}';
 		$lines[] = '';
 

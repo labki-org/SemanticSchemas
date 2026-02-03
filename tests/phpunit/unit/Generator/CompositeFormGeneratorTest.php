@@ -187,9 +187,12 @@ class CompositeFormGeneratorTest extends TestCase {
 
 	public function testTemplateSectionLabels(): void {
 		$resolved = new ResolvedPropertySet(
-			[ 'Has name' ], // required
+			[ 'Has name', 'Has dept' ], // required
 			[], // optional
-			[ 'Has name' => [ 'Person' ] ],
+			[
+				'Has name' => [ 'Person' ],
+				'Has dept' => [ 'Employee' ],
+			],
 			[], // required subobjects
 			[], // optional subobjects
 			[], // subobject sources
@@ -199,7 +202,7 @@ class CompositeFormGeneratorTest extends TestCase {
 		$generator = $this->createGenerator();
 		$result = $generator->generateCompositeForm( $resolved );
 
-		// Each template section should have label parameter
+		// Each category with properties should have a labeled template section
 		$this->assertStringContainsString( '{{{for template|Person|label=Person Properties}}}', $result );
 		$this->assertStringContainsString( '{{{for template|Employee|label=Employee Properties}}}', $result );
 	}
@@ -288,8 +291,8 @@ class CompositeFormGeneratorTest extends TestCase {
 	 * EMPTY SECTION HANDLING
 	 * ========================================================================= */
 
-	public function testEmptySectionStillHasTemplateBlock(): void {
-		// Employee category has NO unique properties (all shared)
+	public function testSharedPropertiesGetOwnSection(): void {
+		// All properties shared — no category-specific properties
 		$resolved = new ResolvedPropertySet(
 			[ 'Has name' ], // required (shared)
 			[], // optional
@@ -305,13 +308,16 @@ class CompositeFormGeneratorTest extends TestCase {
 		$generator = $this->createGenerator();
 		$result = $generator->generateCompositeForm( $resolved );
 
-		// Both template sections should exist
-		$this->assertStringContainsString( '{{{for template|Person|label=Person Properties}}}', $result );
-		$this->assertStringContainsString( '{{{for template|Employee|label=Employee Properties}}}', $result );
+		// Shared properties get their own labeled section
+		$this->assertStringContainsString( '{{{for template|Person|label=Shared Properties}}}', $result );
 
-		// Count end template markers (should be 2)
+		// Empty category-specific sections are skipped
+		$this->assertStringNotContainsString( 'label=Person Properties', $result );
+		$this->assertStringNotContainsString( 'label=Employee Properties', $result );
+
+		// Only 1 template block (the shared one)
 		$endCount = substr_count( $result, '{{{end template}}}' );
-		$this->assertSame( 2, $endCount, 'Should have 2 end template markers even if second section is empty' );
+		$this->assertSame( 1, $endCount, 'Only shared section should exist when no category-specific properties' );
 	}
 
 	/* =========================================================================
