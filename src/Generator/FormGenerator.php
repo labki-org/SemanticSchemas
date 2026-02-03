@@ -216,7 +216,7 @@ class FormGenerator {
 		?bool $isRequired = null
 	): array {
 		$prop = $this->propertyStore->readProperty( $propertyName )
-			?: new PropertyModel( $propertyName, [ 'datatype' => 'Text' ] );
+			?: new PropertyModel( $propertyName, [ 'datatype' => 'Page' ] );
 
 		$isReq = ( $isRequired !== null )
 			? $isRequired

@@ -65,7 +65,8 @@
           "Subproperty of",
           "Allows value from category",
           "Allows value from namespace",
-          "Has template"
+          "Has template",
+          "Has input type"
         ]
       }
     },
@@ -128,7 +129,8 @@
       "datatype": "Text",
       "label": "Description",
       "description": "Explains the purpose of this category, property, or subobject.",
-      "allowsMultipleValues": false
+      "allowsMultipleValues": false,
+      "inputType": "textarea"
     },
     "Has target namespace": {
       "datatype": "Text",
@@ -187,7 +189,8 @@
         "sidebox",
         "sections"
       ],
-      "allowsMultipleValues": false
+      "allowsMultipleValues": false,
+      "inputType": "radiobutton"
     },
     "Has display section name": {
       "datatype": "Text",
@@ -246,6 +249,18 @@
       "description": "Custom template for rendering this property's value.",
       "allowsMultipleValues": false
     },
+    "Has input type": {
+      "datatype": "Text",
+      "label": "Input type",
+      "description": "Override the auto-detected PageForms input type for this property.",
+      "allowedValues": [
+        "checkbox", "checkboxes", "combobox", "date", "datepicker",
+        "datetime", "datetimepicker", "dropdown", "googlemaps", "leaflet",
+        "listbox", "openlayers", "radiobutton", "rating", "regexp",
+        "text", "textarea", "tokens", "tree", "year"
+      ],
+      "allowsMultipleValues": false
+    },
     "Has section separator": {
       "datatype": "Text",
       "label": "Section separator",
@@ -260,7 +275,8 @@
         "show",
         "hide"
       ],
-      "allowsMultipleValues": false
+      "allowsMultipleValues": false,
+      "inputType": "radiobutton"
     },
     "Has subobject type": {
       "datatype": "Page",

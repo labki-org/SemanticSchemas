@@ -18,6 +18,7 @@ use InvalidArgumentException;
  *   - allowedCategory     (string|null)
  *   - allowedNamespace    (string|null)
  *   - allowsMultipleValues (bool)
+ *   - inputType            (string|null) - Explicit PageForms input type override
  */
 class PropertyModel {
 
@@ -41,6 +42,8 @@ class PropertyModel {
 	private ?string $allowedCategory;
 	private ?string $allowedNamespace;
 	private bool $allowsMultipleValues;
+
+	private ?string $inputType;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
@@ -129,6 +132,11 @@ class PropertyModel {
 
 		/* -------------------- Multiple values -------------------- */
 		$this->allowsMultipleValues = !empty( $data['allowsMultipleValues'] );
+
+		/* -------------------- Input type override -------------------- */
+		$it = $data['inputType'] ?? null;
+		$this->inputType = ( $it !== null && trim( (string)$it ) !== '' )
+			? trim( (string)$it ) : null;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -180,11 +188,11 @@ class PropertyModel {
 		// Fallback with logging
 		if ( function_exists( 'wfLogWarning' ) ) {
 			wfLogWarning(
-				"SemanticSchemas: Unknown datatype '{$datatype}' for property '{$this->name}'. Defaulting to 'Text'."
+				"SemanticSchemas: Unknown datatype '{$datatype}' for property '{$this->name}'. Defaulting to 'Page'."
 			);
 		}
 
-		return 'Text';
+		return 'Page';
 	}
 
 	private function autoGenerateLabel( string $name ): string {
@@ -272,6 +280,10 @@ class PropertyModel {
 		return $this->allowsMultipleValues;
 	}
 
+	public function getInputType(): ?string {
+		return $this->inputType;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */
@@ -288,6 +300,7 @@ class PropertyModel {
 			'allowedCategory' => $this->allowedCategory,
 			'allowedNamespace' => $this->allowedNamespace,
 			'allowsMultipleValues' => $this->allowsMultipleValues,
+			'inputType' => $this->inputType,
 		];
 
 		// Remove nulls + empty arrays, but preserve boolean false
