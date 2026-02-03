@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v0.1.2 Page-Type Property Display** - Phases 1-2 (shipped 2026-01-19)
-- 🚧 **v0.2.0 Multi-Category Page Creation** - Phases 3-9 (in progress)
+- ✅ **v0.2.0 Multi-Category Page Creation** - Phases 3-9 (completed 2026-02-03)
 
 ## Phases
 
@@ -27,7 +27,7 @@ Plans:
 
 </details>
 
-### 🚧 v0.2.0 Multi-Category Page Creation (In Progress)
+### ✅ v0.2.0 Multi-Category Page Creation (Completed 2026-02-03)
 
 **Milestone Goal:** Enable users to create pages belonging to multiple categories with a single form, intelligently deduplicating shared properties.
 
@@ -136,8 +136,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 09-01-PLAN.md -- Add templateHashes infrastructure to StateManager + PageHashComputer, unit tests
-- [ ] 09-02-PLAN.md -- Wire template hashing into generation flow, validation, and maintenance script
+- [x] 09-01-PLAN.md -- Add templateHashes infrastructure to StateManager + PageHashComputer, unit tests
+- [x] 09-02-PLAN.md -- Wire template hashing into generation flow, validation, and maintenance script
 
 ## Progress
 
@@ -154,4 +154,4 @@ Phases execute in numeric order: 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 6. Composite Form Generation | v0.2.0 | 1/1 | Complete | 2026-02-02 |
 | 7. API Endpoint | v0.2.0 | 1/1 | Complete | 2026-02-02 |
 | 8. Create Page UI | v0.2.0 | 3/3 | Complete | 2026-02-03 |
-| 9. State Management Refactor | v0.2.0 | 0/2 | Not started | - |
+| 9. State Management Refactor | v0.2.0 | 2/2 | Complete | 2026-02-03 |

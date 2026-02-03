@@ -51,18 +51,18 @@ Requirements for multi-category page creation milestone. Each maps to roadmap ph
 
 ### Create Page UI
 
-- [ ] **UI-01**: New Special page (e.g., `Special:CreateSemanticPage`) accessible to users with edit permissions
-- [ ] **UI-02**: Collapsible hierarchy tree with checkboxes for category selection
-- [ ] **UI-03**: Live AJAX preview shows merged/deduplicated properties as categories are selected
-- [ ] **UI-04**: Page name input field for the new page
-- [ ] **UI-05**: Submit triggers composite form generation and redirects to Special:FormEdit
-- [ ] **UI-06**: JavaScript module registered via ResourceLoader in extension.json
+- [x] **UI-01**: New Special page (e.g., `Special:CreateSemanticPage`) accessible to users with edit permissions
+- [x] **UI-02**: Collapsible hierarchy tree with checkboxes for category selection
+- [x] **UI-03**: Live AJAX preview shows merged/deduplicated properties as categories are selected
+- [x] **UI-04**: Page name input field for the new page
+- [x] **UI-05**: Submit triggers composite form generation and redirects to Special:FormEdit
+- [x] **UI-06**: JavaScript module registered via ResourceLoader in extension.json
 
 ### State Management
 
-- [ ] **STATE-01**: StateManager uses template-level hashing instead of page-level hashing
-- [ ] **STATE-02**: Dirty detection correctly handles multi-category pages (no false positives)
-- [ ] **STATE-03**: Existing single-category state tracking continues working after refactor
+- [x] **STATE-01**: StateManager uses template-level hashing instead of page-level hashing
+- [x] **STATE-02**: Dirty detection correctly handles multi-category pages (no false positives)
+- [x] **STATE-03**: Existing single-category state tracking continues working after refactor
 
 ## Future Requirements
 
@@ -126,15 +126,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | API-01 | Phase 7 | Complete |
 | API-02 | Phase 7 | Complete |
 | API-03 | Phase 7 | Complete |
-| UI-01 | Phase 8 | Pending |
-| UI-02 | Phase 8 | Pending |
-| UI-03 | Phase 8 | Pending |
-| UI-04 | Phase 8 | Pending |
-| UI-05 | Phase 8 | Pending |
-| UI-06 | Phase 8 | Pending |
-| STATE-01 | Phase 9 | Pending |
-| STATE-02 | Phase 9 | Pending |
-| STATE-03 | Phase 9 | Pending |
+| UI-01 | Phase 8 | Complete |
+| UI-02 | Phase 8 | Complete |
+| UI-03 | Phase 8 | Complete |
+| UI-04 | Phase 8 | Complete |
+| UI-05 | Phase 8 | Complete |
+| UI-06 | Phase 8 | Complete |
+| STATE-01 | Phase 9 | Complete |
+| STATE-02 | Phase 9 | Complete |
+| STATE-03 | Phase 9 | Complete |
 
 **Coverage:**
 - v0.2.0 requirements: 33 total
@@ -152,4 +152,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-02*
-*Last updated: 2026-02-02 after roadmap creation*
+*Last updated: 2026-02-03 — all requirements complete*
