@@ -131,6 +131,17 @@ class PageHashComputer {
 	}
 
 	/**
+	 * Compute SHA256 hash of content string.
+	 * Public wrapper for hashing raw content (e.g., generated template/form wikitext).
+	 *
+	 * @param string $content
+	 * @return string Hash with "sha256:" prefix
+	 */
+	public function hashContentString( string $content ): string {
+		return $this->hashContent( $content );
+	}
+
+	/**
 	 * Compute SHA256 hash of content.
 	 *
 	 * @param string $content

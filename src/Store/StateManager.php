@@ -60,6 +60,7 @@ class StateManager {
 			'generated' => null,
 			'sourceSchemaHash' => null,
 			'pageHashes' => [],
+			'templateHashes' => [],
 		];
 	}
 
@@ -246,6 +247,73 @@ class StateManager {
 		}
 
 		return $modified;
+	}
+
+	/**
+	 * Get stored template hashes.
+	 *
+	 * @return array
+	 */
+	public function getTemplateHashes(): array {
+		$state = $this->getState();
+		return $state['templateHashes'] ?? [];
+	}
+
+	/**
+	 * Store template hashes.
+	 *
+	 * @param array $hashes Map of template name => ['generated' => 'sha256:...', 'category' => 'CategoryName']
+	 *                      or ['generated' => 'sha256:...', 'categories' => ['Cat1', 'Cat2']]
+	 * @return bool
+	 */
+	public function setTemplateHashes( array $hashes ): bool {
+		$state = $this->getState();
+		$templateHashes = $state['templateHashes'] ?? [];
+
+		foreach ( $hashes as $templateName => $hashData ) {
+			$templateHashes[$templateName] = $hashData;
+		}
+
+		$state['templateHashes'] = $templateHashes;
+		$state['generated'] = wfTimestamp( TS_ISO_8601 );
+		return $this->saveState( $state );
+	}
+
+	/**
+	 * Get list of templates where generated hash has changed.
+	 *
+	 * @param array $currentTemplateHashes Map of template name => ['generated' => 'sha256:...', ...]
+	 * @return array List of stale template page names
+	 */
+	public function getStaleTemplates( array $currentTemplateHashes ): array {
+		$state = $this->getState();
+		$stored = $state['templateHashes'] ?? [];
+		$stale = [];
+
+		// Check for changed templates
+		foreach ( $currentTemplateHashes as $templateName => $currentData ) {
+			$storedData = $stored[$templateName] ?? null;
+			if ( $storedData === null ) {
+				// Template not in stored hashes, consider it stale
+				$stale[] = $templateName;
+				continue;
+			}
+
+			$currentGenerated = $currentData['generated'] ?? '';
+			$storedGenerated = $storedData['generated'] ?? '';
+			if ( $currentGenerated !== $storedGenerated ) {
+				$stale[] = $templateName;
+			}
+		}
+
+		// Check for removed templates
+		foreach ( $stored as $templateName => $storedData ) {
+			if ( !isset( $currentTemplateHashes[$templateName] ) ) {
+				$stale[] = $templateName;
+			}
+		}
+
+		return $stale;
 	}
 
 	/**

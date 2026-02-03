@@ -305,11 +305,11 @@ class SchemaValidator {
 		);
 		if ( !empty( $duplicates ) ) {
 			$itemType = ucfirst( $referenceType ) . 's';
-			$errors[] = $this->formatError(
+			$warnings[] = $this->formatWarning(
 				$entityType,
 				$entityName,
-				"$itemType cannot be both required and optional: " . implode( ', ', $duplicates ),
-				'Remove duplicates from either list'
+				"$itemType listed as both required and optional will be promoted to required: "
+				. implode( ', ', $duplicates )
 			);
 		}
 

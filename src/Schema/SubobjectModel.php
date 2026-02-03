@@ -80,13 +80,10 @@ class SubobjectModel {
 		$this->requiredProperties = self::normalizeList( $req );
 		$this->optionalProperties = self::normalizeList( $opt );
 
-		$overlap = array_intersect( $this->requiredProperties, $this->optionalProperties );
-		if ( $overlap !== [] ) {
-			throw new InvalidArgumentException(
-				"Subobject '{$name}' has properties listed as both required and optional: "
-				. implode( ', ', $overlap )
-			);
-		}
+		// Silently promote overlapping properties to required
+		$this->optionalProperties = array_values(
+			array_diff( $this->optionalProperties, $this->requiredProperties )
+		);
 	}
 
 	/* -------------------------------------------------------------------------

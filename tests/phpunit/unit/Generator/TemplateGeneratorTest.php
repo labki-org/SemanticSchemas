@@ -90,6 +90,9 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( 'Has email', $result );
 		$this->assertStringContainsString( '{{{name|}}}', $result );
 		$this->assertStringContainsString( '{{{email|}}}', $result );
+		// Properties should be wrapped in #if guards
+		$this->assertStringContainsString( '{{#if:{{{name|}}}|{{{name|}}}|}}', $result );
+		$this->assertStringContainsString( '{{#if:{{{email|}}}|{{{email|}}}|}}', $result );
 	}
 
 	public function testGenerateSemanticTemplateContainsCategoryLink(): void {
@@ -161,11 +164,11 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '{{Person/display', $result );
 	}
 
-	public function testGenerateDispatcherTemplateContainsHierarchyWidget(): void {
+	public function testGenerateDispatcherTemplateDoesNotContainHierarchyWidget(): void {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generator->generateDispatcherTemplate( $category );
 
-		$this->assertStringContainsString( '{{#semanticschemas_hierarchy:', $result );
+		$this->assertStringNotContainsString( '{{#semanticschemas_hierarchy:', $result );
 	}
 
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
@@ -209,6 +212,8 @@ class TemplateGeneratorTest extends TestCase {
 
 		// "Has full name" should convert to "full_name" parameter
 		$this->assertStringContainsString( '{{{full_name|}}}', $result );
+		// Should be wrapped in #if guard
+		$this->assertStringContainsString( '{{#if:{{{full_name|}}}|{{{full_name|}}}|}}', $result );
 	}
 
 	public function testMultiplePropertiesConvertedCorrectly(): void {
@@ -224,6 +229,10 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '{{{first_name|}}}', $result );
 		$this->assertStringContainsString( '{{{last_name|}}}', $result );
 		$this->assertStringContainsString( '{{{email_address|}}}', $result );
+		// All should be wrapped in #if guards
+		$this->assertStringContainsString( '{{#if:{{{first_name|}}}|{{{first_name|}}}|}}', $result );
+		$this->assertStringContainsString( '{{#if:{{{last_name|}}}|{{{last_name|}}}|}}', $result );
+		$this->assertStringContainsString( '{{#if:{{{email_address|}}}|{{{email_address|}}}|}}', $result );
 	}
 
 	/* =========================================================================
@@ -285,5 +294,102 @@ class TemplateGeneratorTest extends TestCase {
 		$result = $this->generator->generateSemanticTemplate( $category );
 
 		$this->assertStringContainsString( '[[Category:PhD Student]]', $result );
+	}
+
+	/* =========================================================================
+	 * CONDITIONAL #IF GUARDS AND MULTI-VALUE +sep
+	 * ========================================================================= */
+
+	public function testGenerateSemanticTemplateWrapsPropertiesInIfGuard(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $this->generator->generateSemanticTemplate( $category );
+
+		// Core requirement: all properties wrapped in #if guard
+		$this->assertStringContainsString( '{{#if:{{{name|}}}|{{{name|}}}|}}', $result );
+	}
+
+	public function testGenerateSemanticTemplateUsePlusSepForMultiValue(): void {
+		// Mock WikiPropertyStore to return a multi-value property
+		$propModel = $this->createMock( \MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel::class );
+		$propModel->method( 'isPageType' )->willReturn( false );
+		$propModel->method( 'getAllowedNamespace' )->willReturn( null );
+		$propModel->method( 'allowsMultipleValues' )->willReturn( true );
+
+		$propertyStore = $this->createMock( \MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore::class );
+		$propertyStore->method( 'readProperty' )->willReturn( $propModel );
+
+		$generator = new TemplateGenerator( null, null, $propertyStore );
+
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				'required' => [ 'Has keywords' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $generator->generateSemanticTemplate( $category );
+
+		// Multi-value properties should include |+sep=,
+		$this->assertStringContainsString( '|+sep=,', $result );
+		// Should also have #if guard
+		$this->assertStringContainsString( '{{#if:{{{keywords|}}}|{{{keywords|}}}|}}', $result );
+	}
+
+	public function testGenerateSemanticTemplateIfGuardForPageTypeWithNamespace(): void {
+		// Mock WikiPropertyStore to return a single-value Page property with namespace
+		$propModel = $this->createMock( \MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel::class );
+		$propModel->method( 'isPageType' )->willReturn( true );
+		$propModel->method( 'getAllowedNamespace' )->willReturn( 'Property' );
+		$propModel->method( 'allowsMultipleValues' )->willReturn( false );
+
+		$propertyStore = $this->createMock( \MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore::class );
+		$propertyStore->method( 'readProperty' )->willReturn( $propModel );
+
+		$generator = new TemplateGenerator( null, null, $propertyStore );
+
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				'required' => [ 'Has property' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $generator->generateSemanticTemplate( $category );
+
+		// Should contain conditional namespace prefix pattern (already has #if)
+		$this->assertStringContainsString( '{{#if:{{{property|}}}|Property:{{{property|}}}|}}', $result );
+	}
+
+	public function testGenerateSemanticTemplateInlineAnnotationWrappedInIf(): void {
+		// Mock WikiPropertyStore to return a multi-value Page property with namespace
+		$propModel = $this->createMock( \MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel::class );
+		$propModel->method( 'isPageType' )->willReturn( true );
+		$propModel->method( 'getAllowedNamespace' )->willReturn( 'Subobject' );
+		$propModel->method( 'allowsMultipleValues' )->willReturn( true );
+
+		$propertyStore = $this->createMock( \MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore::class );
+		$propertyStore->method( 'readProperty' )->willReturn( $propModel );
+
+		$generator = new TemplateGenerator( null, null, $propertyStore );
+
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				'required' => [ 'Has subobjects' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $generator->generateSemanticTemplate( $category );
+
+		// Should contain #if-wrapped #arraymap
+		$this->assertStringContainsString( '{{#if:{{{subobjects|}}}|{{#arraymap:', $result );
+		// Should contain the property annotation with namespace
+		$this->assertStringContainsString( '[[Has subobjects::Subobject:', $result );
 	}
 }

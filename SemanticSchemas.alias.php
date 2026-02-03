@@ -22,6 +22,7 @@ $specialPageAliases = [];
 /** English (English) */
 $specialPageAliases['en'] = [
 	'SemanticSchemas' => [ 'SemanticSchemas', 'Semantic Schemas' ],
+	'CreateSemanticPage' => [ 'CreateSemanticPage', 'Create Semantic Page' ],
 ];
 
 $magicWords = [];

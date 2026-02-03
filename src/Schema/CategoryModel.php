@@ -117,13 +117,10 @@ class CategoryModel {
 		$this->requiredProperties = self::normalizeList( $props['required'] ?? [] );
 		$this->optionalProperties = self::normalizeList( $props['optional'] ?? [] );
 
-		$dup = array_intersect( $this->requiredProperties, $this->optionalProperties );
-		if ( $dup !== [] ) {
-			throw new InvalidArgumentException(
-				"Category '{$name}' has properties listed as both required and optional: " .
-				implode( ', ', $dup )
-			);
-		}
+		// Silently promote overlapping properties to required
+		$this->optionalProperties = array_values(
+			array_diff( $this->optionalProperties, $this->requiredProperties )
+		);
 
 		/* -------------------- Subobjects -------------------- */
 
@@ -135,13 +132,10 @@ class CategoryModel {
 		$this->requiredSubobjects = self::normalizeList( $subs['required'] ?? [] );
 		$this->optionalSubobjects = self::normalizeList( $subs['optional'] ?? [] );
 
-		$dupSG = array_intersect( $this->requiredSubobjects, $this->optionalSubobjects );
-		if ( $dupSG !== [] ) {
-			throw new InvalidArgumentException(
-				"Category '{$name}' has subobjects listed as both required and optional: " .
-				implode( ', ', $dupSG )
-			);
-		}
+		// Silently promote overlapping subobjects to required
+		$this->optionalSubobjects = array_values(
+			array_diff( $this->optionalSubobjects, $this->requiredSubobjects )
+		);
 
 		/* -------------------- Display Config -------------------- */
 

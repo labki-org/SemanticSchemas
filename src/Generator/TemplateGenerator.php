@@ -42,6 +42,9 @@ class TemplateGenerator {
 	/**
 	 * Generate the property line for a semantic template's #set block.
 	 *
+	 * All property values are wrapped in {{#if:...}} guards to prevent empty
+	 * values from being stored. Multi-value properties use |+sep=, parameter.
+	 *
 	 * For Page-type properties with allowedNamespace, this adds the namespace
 	 * prefix to ensure SMW correctly interprets values as page references.
 	 *
@@ -52,32 +55,40 @@ class TemplateGenerator {
 	private function generatePropertyLine( string $propertyName, string $param ): ?string {
 		$propModel = $this->propertyStore->readProperty( $propertyName );
 
-		// Default: simple property = value
+		// Default: #if-guarded property = value (property not found in store)
 		if ( !$propModel instanceof PropertyModel ) {
-			return ' | ' . $propertyName . ' = {{{' . $param . '|}}}';
+			return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|{{{' . $param . '|}}}|}}';
 		}
 
 		$allowedNamespace = $propModel->getAllowedNamespace();
+		$isPageType = $propModel->isPageType();
+		$allowsMultipleValues = $propModel->allowsMultipleValues();
 
-		// Non-Page or no namespace restriction: simple assignment
-		if ( !$propModel->isPageType() || $allowedNamespace === null || $allowedNamespace === '' ) {
-			return ' | ' . $propertyName . ' = {{{' . $param . '|}}}';
-		}
-
-		if ( $propModel->allowsMultipleValues() ) {
-			// Multi-value Page property: handled via inline annotations outside #set
+		// Multi-value Page property with namespace: handled via inline annotations outside #set
+		if ( $isPageType && $allowedNamespace !== null && $allowedNamespace !== '' && $allowsMultipleValues ) {
 			return null;
 		}
 
-		// Single value: conditional prefix
-		return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|' .
-			$allowedNamespace . ':{{{' . $param . '|}}}|}}';
+		// Single-value Page property with namespace: conditional namespace prefix
+		if ( $isPageType && $allowedNamespace !== null && $allowedNamespace !== '' ) {
+			return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|' .
+				$allowedNamespace . ':{{{' . $param . '|}}}|}}';
+		}
+
+		// Multi-value property (non-Page or Page without namespace): #if guard with +sep
+		if ( $allowsMultipleValues ) {
+			return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|{{{' . $param . '|}}}|}}|+sep=,';
+		}
+
+		// Single-value property (non-Page or Page without namespace): #if guard
+		return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|{{{' . $param . '|}}}|}}';
 	}
 
 	/**
 	 * Generate inline annotation for multi-value Page property with namespace prefix.
 	 *
 	 * Uses [[Property::Namespace:Value]] syntax which creates separate property values.
+	 * Wrapped in #if guard to prevent processing when parameter is empty.
 	 *
 	 * @param string $propertyName The SMW property name
 	 * @param string $param The template parameter name
@@ -89,9 +100,9 @@ class TemplateGenerator {
 		string $param,
 		string $allowedNamespace
 	): string {
-		// Use #arraymap to create [[Property::Namespace:Value]] for each value
-		return '{{#arraymap:{{{' . $param .
-			'|}}}|,|@@item@@|[[' . $propertyName . '::' . $allowedNamespace . ':@@item@@]]|}}';
+		// Use #arraymap to create [[Property::Namespace:Value]] for each value, wrapped in #if
+		return '{{#if:{{{' . $param . '|}}}|{{#arraymap:{{{' . $param .
+			'|}}}|,|@@item@@|[[' . $propertyName . '::' . $allowedNamespace . ':@@item@@]]|}}|}}';
 	}
 
 	/* =====================================================================
@@ -215,10 +226,6 @@ class TemplateGenerator {
 			$out,
 			$this->generateSubobjectDisplaySections( $category )
 		);
-
-		/* Hierarchy Widget (Bottom of page) */
-		$out[] = '';
-		$out[] = '{{#semanticschemas_hierarchy:' . $cat . '}}';
 
 		$out[] = '</includeonly>';
 

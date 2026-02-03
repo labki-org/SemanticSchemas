@@ -7,6 +7,8 @@ use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
+use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
+use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
@@ -69,6 +71,60 @@ class RegenerateArtifacts extends Maintenance {
 					$category, $templateGenerator, $formGenerator, $displayGenerator, $generateDisplay
 				);
 			}
+		}
+
+		// Update template hashes after regeneration
+		$this->output( "Updating template hashes...\n" );
+		$stateManager = new StateManager();
+		$hashComputer = new PageHashComputer();
+		$templateHashes = [];
+
+		$allCategories = $categoryStore->getAllCategories();
+		$categoryMap = [];
+		foreach ( $allCategories as $cat ) {
+			$categoryMap[$cat->getName()] = $cat;
+		}
+		$resolver = new InheritanceResolver( $categoryMap );
+
+		// Compute hashes for all categories or just the specific category
+		$categoriesToHash = ( $categoryName !== null )
+			? [ $categoryStore->readCategory( $categoryName ) ]
+			: $allCategories;
+
+		foreach ( $categoriesToHash as $category ) {
+			if ( $category === null ) {
+				continue;
+			}
+
+			$name = $category->getName();
+			try {
+				$effective = $resolver->getEffectiveCategory( $name );
+
+				$semanticContent = $templateGenerator->generateSemanticTemplate( $effective );
+				$templateHashes["Template:$name/semantic"] = [
+					'generated' => $hashComputer->hashContentString( $semanticContent ),
+					'category' => $name,
+				];
+
+				$dispatcherContent = $templateGenerator->generateDispatcherTemplate( $effective );
+				$templateHashes["Template:$name"] = [
+					'generated' => $hashComputer->hashContentString( $dispatcherContent ),
+					'category' => $name,
+				];
+
+				$formContent = $formGenerator->generateForm( $effective );
+				$templateHashes["Form:$name"] = [
+					'generated' => $hashComputer->hashContentString( $formContent ),
+					'category' => $name,
+				];
+			} catch ( \Throwable $e ) {
+				$this->output( "  Warning: Could not hash templates for $name: " . $e->getMessage() . "\n" );
+			}
+		}
+
+		if ( !empty( $templateHashes ) ) {
+			$stateManager->setTemplateHashes( $templateHashes );
+			$this->output( "  Updated " . count( $templateHashes ) . " template hashes\n" );
 		}
 
 		$this->output( "\nRegeneration complete!\n" );

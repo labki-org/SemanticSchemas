@@ -24,7 +24,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  */
 class FormGenerator {
 
-	private PageCreator $pageCreator;
+	protected PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
 	private PropertyInputMapper $inputMapper;
 	private WikiSubobjectStore $subobjectStore;
@@ -41,7 +41,7 @@ class FormGenerator {
 		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
 	}
 
-	private function s( ?string $v ): string {
+	protected function s( ?string $v ): string {
 		return $v ?? '';
 	}
 
@@ -182,7 +182,7 @@ class FormGenerator {
 	 * @param bool $isRequired Whether properties in this section are required
 	 * @return array Lines of wikitext
 	 */
-	private function generatePropertySection(
+	protected function generatePropertySection(
 		array $props,
 		string $label,
 		CategoryModel $category,
@@ -210,7 +210,7 @@ class FormGenerator {
 	/**
 	 * Generate a table row for a property field with label and description.
 	 */
-	private function generateTableField(
+	protected function generateTableField(
 		string $propertyName,
 		CategoryModel $category,
 		?bool $isRequired = null

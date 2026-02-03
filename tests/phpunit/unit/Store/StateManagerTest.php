@@ -225,6 +225,130 @@ class StateManagerTest extends TestCase {
 	}
 
 	/* =========================================================================
+	 * TEMPLATE HASHES
+	 * ========================================================================= */
+
+	public function testGetTemplateHashesReturnsEmptyArrayByDefault(): void {
+		$manager = $this->createStateManager();
+		$this->assertEquals( [], $manager->getTemplateHashes() );
+	}
+
+	public function testSetTemplateHashes(): void {
+		$manager = $this->createStateManager();
+		$hashes = [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+			'Form:Person' => [ 'generated' => 'sha256:def', 'category' => 'Person' ],
+		];
+
+		$result = $manager->setTemplateHashes( $hashes );
+		$this->assertTrue( $result );
+
+		$stored = $manager->getTemplateHashes();
+		$this->assertArrayHasKey( 'Template:Person/semantic', $stored );
+		$this->assertArrayHasKey( 'Form:Person', $stored );
+	}
+
+	public function testSetTemplateHashesPreservesExisting(): void {
+		$manager = $this->createStateManager();
+		$manager->setTemplateHashes( [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+		] );
+
+		$manager->setTemplateHashes( [
+			'Template:Student/semantic' => [ 'generated' => 'sha256:def', 'category' => 'Student' ],
+		] );
+
+		$stored = $manager->getTemplateHashes();
+		$this->assertArrayHasKey( 'Template:Person/semantic', $stored );
+		$this->assertArrayHasKey( 'Template:Student/semantic', $stored );
+	}
+
+	public function testSetTemplateHashesSetsGeneratedTimestamp(): void {
+		$manager = $this->createStateManager();
+		$manager->setTemplateHashes( [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+		] );
+
+		$state = $manager->getFullState();
+		$this->assertNotNull( $state['generated'] );
+	}
+
+	public function testGetStaleTemplatesDetectsChangedHash(): void {
+		$manager = $this->createStateManager();
+		$manager->setTemplateHashes( [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:old', 'category' => 'Person' ],
+		] );
+
+		$currentHashes = [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:new', 'category' => 'Person' ],
+		];
+		$stale = $manager->getStaleTemplates( $currentHashes );
+
+		$this->assertContains( 'Template:Person/semantic', $stale );
+	}
+
+	public function testGetStaleTemplatesReturnsEmptyWhenUnchanged(): void {
+		$manager = $this->createStateManager();
+		$manager->setTemplateHashes( [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+		] );
+
+		$currentHashes = [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+		];
+		$stale = $manager->getStaleTemplates( $currentHashes );
+
+		$this->assertEmpty( $stale );
+	}
+
+	public function testGetStaleTemplatesDetectsRemovedTemplates(): void {
+		$manager = $this->createStateManager();
+		$manager->setTemplateHashes( [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+			'Template:Deleted/semantic' => [ 'generated' => 'sha256:def', 'category' => 'Deleted' ],
+		] );
+
+		$currentHashes = [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+		];
+		$stale = $manager->getStaleTemplates( $currentHashes );
+
+		$this->assertContains( 'Template:Deleted/semantic', $stale );
+	}
+
+	public function testGetStaleTemplatesDetectsNewTemplates(): void {
+		$manager = $this->createStateManager();
+		$manager->setTemplateHashes( [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+		] );
+
+		$currentHashes = [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+			'Template:Student/semantic' => [ 'generated' => 'sha256:def', 'category' => 'Student' ],
+		];
+		$stale = $manager->getStaleTemplates( $currentHashes );
+
+		$this->assertContains( 'Template:Student/semantic', $stale );
+	}
+
+	public function testTemplateHashesIndependentOfPageHashes(): void {
+		$manager = $this->createStateManager();
+		$manager->setPageHashes( [
+			'Category:Person' => 'hash1',
+		] );
+		$manager->setTemplateHashes( [
+			'Template:Person/semantic' => [ 'generated' => 'sha256:abc', 'category' => 'Person' ],
+		] );
+
+		$pageHashes = $manager->getPageHashes();
+		$templateHashes = $manager->getTemplateHashes();
+
+		$this->assertArrayHasKey( 'Category:Person', $pageHashes );
+		$this->assertArrayHasKey( 'Template:Person/semantic', $templateHashes );
+		$this->assertNotEquals( $pageHashes, $templateHashes );
+	}
+
+	/* =========================================================================
 	 * FULL STATE
 	 * ========================================================================= */
 
@@ -238,7 +362,7 @@ class StateManagerTest extends TestCase {
 		$this->assertArrayHasKey( 'dirty', $state );
 		$this->assertArrayHasKey( 'lastChangeTimestamp', $state );
 		$this->assertArrayHasKey( 'pageHashes', $state );
-		$this->assertArrayHasKey( 'sourceSchemaHash', $state );
+		$this->assertArrayHasKey( 'templateHashes', $state );
 	}
 
 	/* =========================================================================

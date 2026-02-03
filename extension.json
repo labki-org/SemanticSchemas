@@ -68,6 +68,50 @@
 				"mobile"
 			]
 		},
+		"ext.semanticschemas.createpage": {
+			"scripts": [
+				"resources/ext.semanticschemas.createpage.js"
+			],
+			"styles": [
+				"resources/ext.semanticschemas.createpage.css"
+			],
+			"dependencies": [
+				"mediawiki.api",
+				"mediawiki.util",
+				"mediawiki.Title",
+				"jquery"
+			],
+			"messages": [
+				"semanticschemas-createpage-empty-state",
+				"semanticschemas-createpage-loading",
+				"semanticschemas-createpage-error",
+				"semanticschemas-createpage-shared-section",
+				"semanticschemas-createpage-required",
+				"semanticschemas-createpage-optional",
+				"semanticschemas-createpage-remove-category",
+				"semanticschemas-createpage-namespace-conflict",
+				"semanticschemas-createpage-namespace-label",
+				"semanticschemas-createpage-page-exists-warning",
+				"semanticschemas-createpage-submit",
+				"semanticschemas-createpage-submitting",
+				"semanticschemas-createpage-submit-error",
+				"semanticschemas-createpage-no-categories",
+				"semanticschemas-createpage-no-pagename",
+				"semanticschemas-hierarchy-no-data",
+				"semanticschemas-hierarchy-no-properties",
+				"semanticschemas-hierarchy-loading",
+				"semanticschemas-hierarchy-error",
+				"semanticschemas-hierarchy-no-category",
+				"semanticschemas-hierarchy-required",
+				"semanticschemas-hierarchy-optional"
+			],
+			"localBasePath": "",
+			"remoteExtPath": "SemanticSchemas",
+			"targets": [
+				"desktop",
+				"mobile"
+			]
+		},
 		"ext.semanticschemas.hierarchy": {
 			"scripts": [
 				"resources/ext.semanticschemas.hierarchy.js"
@@ -137,10 +181,12 @@
 	},
 	"APIModules": {
 		"semanticschemas-hierarchy": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasHierarchy",
-		"semanticschemas-install": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasInstall"
+		"semanticschemas-install": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasInstall",
+		"semanticschemas-multicategory": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasMultiCategory"
 	},
 	"SpecialPages": {
-		"SemanticSchemas": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialSemanticSchemas"
+		"SemanticSchemas": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialSemanticSchemas",
+		"CreateSemanticPage": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialCreateSemanticPage"
 	},
 	"LogTypes": [
 		"semanticschemas"

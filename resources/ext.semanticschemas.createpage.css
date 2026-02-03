@@ -1,0 +1,289 @@
+/**
+ * SemanticSchemas Create Page UI
+ * ===============================
+ * Styles for interactive category selection and property preview.
+ * Uses existing design system tokens from ext.semanticschemas.styles.css
+ */
+
+/* ========================================================
+   Two-Panel Layout
+   ======================================================== */
+
+.ss-createpage-layout {
+	display: grid;
+	grid-template-columns: 1fr 2fr;
+	gap: var(--ss-space-6, 24px);
+	align-items: start;
+}
+
+/* ========================================================
+   Tree Panel
+   ======================================================== */
+
+.ss-createpage-tree-panel {
+	border: 1px solid var(--ss-slate-200, #e2e8f0);
+	border-radius: var(--ss-radius-md, 10px);
+	background: var(--ss-slate-50, #f8fafc);
+	padding: var(--ss-space-5, 20px);
+	max-height: 60vh;
+	overflow-y: auto;
+}
+
+.ss-createpage-tree-panel h3 {
+	margin: 0 0 var(--ss-space-4, 16px);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var(--ss-slate-800, #1e242f);
+	border-bottom: 2px solid var(--ss-slate-200, #e2e8f0);
+	padding-bottom: var(--ss-space-3, 12px);
+}
+
+/* Checkbox styling */
+.ss-createpage-checkbox {
+	cursor: pointer;
+	margin-right: var(--ss-space-2, 8px);
+	accent-color: var(--ss-accent-600, #0d7377);
+}
+
+.ss-createpage-checkbox:focus {
+	outline: 2px solid var(--ss-accent-500, #0f9099);
+	outline-offset: 2px;
+}
+
+/* ========================================================
+   Chip List
+   ======================================================== */
+
+.ss-createpage-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ss-space-2, 8px);
+	margin-bottom: var(--ss-space-4, 16px);
+	min-height: 2rem;
+}
+
+.ss-createpage-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ss-space-1, 4px);
+	padding: var(--ss-space-1, 4px) var(--ss-space-3, 12px);
+	background: var(--ss-accent-50, #ecfeff);
+	border: 1px solid var(--ss-accent-100, #d5f5f6);
+	border-radius: 999px;
+	font-size: 0.8125rem;
+	color: var(--ss-accent-600, #0d7377);
+}
+
+.ss-createpage-chip-remove {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: var(--ss-accent-600, #0d7377);
+	font-size: 0.875rem;
+	padding: 0 2px;
+	line-height: 1;
+	opacity: 0.7;
+	transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.ss-createpage-chip-remove:hover {
+	opacity: 1;
+	color: var(--ss-error-600, #dc2626);
+}
+
+/* ========================================================
+   Preview Panel
+   ======================================================== */
+
+.ss-createpage-preview-panel {
+	border: 1px solid var(--ss-slate-200, #e2e8f0);
+	border-radius: var(--ss-radius-md, 10px);
+	background: #fff;
+	padding: var(--ss-space-5, 20px);
+}
+
+.ss-createpage-preview-panel h3 {
+	margin: 0 0 var(--ss-space-4, 16px);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var(--ss-slate-800, #1e242f);
+	border-bottom: 2px solid var(--ss-slate-200, #e2e8f0);
+	padding-bottom: var(--ss-space-3, 12px);
+}
+
+/* ========================================================
+   Shared Properties Section
+   ======================================================== */
+
+.ss-createpage-shared-section {
+	background: var(--ss-accent-50, #ecfeff);
+	border: 1px solid var(--ss-accent-100, #d5f5f6);
+	border-radius: var(--ss-radius-md, 10px);
+	padding: var(--ss-space-4, 16px);
+	margin-bottom: var(--ss-space-4, 16px);
+}
+
+.ss-createpage-shared-section h4 {
+	margin: 0 0 var(--ss-space-3, 12px);
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--ss-accent-600, #0d7377);
+}
+
+/* ========================================================
+   Per-Category Section
+   ======================================================== */
+
+.ss-createpage-category-section {
+	margin-bottom: var(--ss-space-4, 16px);
+}
+
+.ss-createpage-category-section h4 {
+	margin: 0 0 var(--ss-space-3, 12px);
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--ss-slate-700, #2d3648);
+}
+
+/* ========================================================
+   Datatype Badge
+   ======================================================== */
+
+.ss-createpage-datatype {
+	display: inline-block;
+	font-size: 0.6875rem;
+	font-weight: 500;
+	padding: 0.0625rem 0.375rem;
+	margin-left: var(--ss-space-2, 8px);
+	border-radius: var(--ss-radius-sm, 6px);
+	background: var(--ss-slate-100, #f1f5f9);
+	color: var(--ss-slate-600, #475569);
+}
+
+/* ========================================================
+   Namespace Picker
+   ======================================================== */
+
+.ss-createpage-namespace-picker {
+	margin: var(--ss-space-4, 16px) 0;
+	padding: var(--ss-space-4, 16px);
+	background: var(--ss-warning-50, #fefce8);
+	border: 1px solid var(--ss-warning-100, #fef9c3);
+	border-left: 4px solid var(--ss-warning-600, #ca8a04);
+	border-radius: var(--ss-radius-md, 10px);
+}
+
+.ss-createpage-namespace-picker p {
+	margin: 0 0 var(--ss-space-3, 12px);
+	font-weight: 600;
+	color: var(--ss-warning-600, #ca8a04);
+}
+
+.ss-createpage-namespace-picker > div {
+	margin: var(--ss-space-2, 8px) 0;
+}
+
+.ss-createpage-namespace-picker input[type="radio"] {
+	accent-color: var(--ss-warning-600, #ca8a04);
+}
+
+.ss-createpage-namespace-picker label {
+	font-size: 0.875rem;
+	color: var(--ss-slate-700, #2d3648);
+	cursor: pointer;
+}
+
+/* ========================================================
+   Submit Area
+   ======================================================== */
+
+.ss-createpage-submit-area {
+	margin-top: var(--ss-space-6, 24px);
+	padding-top: var(--ss-space-6, 24px);
+	border-top: 1px solid var(--ss-slate-200, #e2e8f0);
+}
+
+.ss-createpage-submit-area label {
+	display: block;
+	margin-bottom: var(--ss-space-2, 8px);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--ss-slate-700, #2d3648);
+}
+
+/* ========================================================
+   Page Name Input
+   ======================================================== */
+
+#ss-createpage-pagename {
+	width: 100%;
+	max-width: 400px;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid var(--ss-slate-300, #cbd5e1);
+	border-radius: var(--ss-radius-sm, 6px);
+	font-size: 0.9375rem;
+	color: var(--ss-slate-800, #1e242f);
+	margin-bottom: var(--ss-space-3, 12px);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#ss-createpage-pagename:focus {
+	outline: none;
+	border-color: var(--ss-accent-500, #0f9099);
+	box-shadow: 0 0 0 3px var(--ss-accent-100, #d5f5f6);
+}
+
+/* ========================================================
+   Page Exists Warning
+   ======================================================== */
+
+.ss-createpage-page-warning {
+	padding: var(--ss-space-2, 8px) var(--ss-space-3, 12px);
+	margin-bottom: var(--ss-space-3, 12px);
+	background: var(--ss-warning-50, #fefce8);
+	border: 1px solid var(--ss-warning-100, #fef9c3);
+	border-radius: var(--ss-radius-sm, 6px);
+	color: var(--ss-warning-600, #ca8a04);
+	font-size: 0.8125rem;
+}
+
+/* ========================================================
+   Submit Button
+   ======================================================== */
+
+.ss-btn-primary {
+	padding: 0.5rem 1.5rem;
+	background: var(--ss-accent-600, #0d7377);
+	color: #fff;
+	border: none;
+	border-radius: var(--ss-radius-sm, 6px);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.ss-btn-primary:hover:not(:disabled) {
+	background: var(--ss-accent-500, #0f9099);
+}
+
+.ss-btn-primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* ========================================================
+   Responsive
+   ======================================================== */
+
+@media (max-width: 768px) {
+	.ss-createpage-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.ss-createpage-tree-panel {
+		max-height: 50vh;
+	}
+}

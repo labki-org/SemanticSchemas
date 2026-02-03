@@ -292,7 +292,7 @@ class SchemaValidatorTest extends TestCase {
 		$this->assertStringContainsString( 'UndefinedSubobject', $errors[0] );
 	}
 
-	public function testSubobjectWithDuplicatePropertyListsReturnsError(): void {
+	public function testSubobjectWithDuplicatePropertyListsReturnsWarningNotError(): void {
 		$schema = $this->getValidSchema();
 		$schema['subobjects'] = [
 			'TestSubobject' => [
@@ -303,9 +303,117 @@ class SchemaValidatorTest extends TestCase {
 			],
 		];
 
+		$result = $this->validator->validateSchemaWithSeverity( $schema );
+		$this->assertEmpty( $result['errors'], 'Overlap should not produce errors' );
+
+		$hasPromotionWarning = false;
+		foreach ( $result['warnings'] as $warning ) {
+			if ( stripos( $warning, 'promoted to required' ) !== false ) {
+				$hasPromotionWarning = true;
+				break;
+			}
+		}
+		$this->assertTrue( $hasPromotionWarning, 'Should warn about promotion to required' );
+	}
+
+	/* =========================================================================
+	 * REQUIRED/OPTIONAL OVERLAP WARNINGS
+	 * ========================================================================= */
+
+	public function testCategoryDuplicateRequiredOptionalPropertyReturnsWarningNotError(): void {
+		$schema = $this->getValidSchema();
+		$schema['categories']['TestCategory']['properties'] = [
+			'required' => [ 'Has name' ],
+			'optional' => [ 'Has name', 'Has description' ],
+		];
+
+		$result = $this->validator->validateSchemaWithSeverity( $schema );
+		$this->assertEmpty( $result['errors'], 'Overlap should not produce errors' );
+
+		$hasPromotionWarning = false;
+		foreach ( $result['warnings'] as $warning ) {
+			if ( stripos( $warning, 'promoted to required' ) !== false ) {
+				$hasPromotionWarning = true;
+				break;
+			}
+		}
+		$this->assertTrue( $hasPromotionWarning, 'Should warn about promotion to required' );
+	}
+
+	public function testCategoryDuplicateRequiredOptionalSubobjectReturnsWarningNotError(): void {
+		$schema = $this->getValidSchema();
+		$schema['subobjects'] = [
+			'Author' => [
+				'properties' => [
+					'required' => [ 'Has name' ],
+					'optional' => [],
+				],
+			],
+			'Funding' => [
+				'properties' => [
+					'required' => [ 'Has name' ],
+					'optional' => [],
+				],
+			],
+		];
+		$schema['categories']['TestCategory']['subobjects'] = [
+			'required' => [ 'Author' ],
+			'optional' => [ 'Author', 'Funding' ],
+		];
+
+		$result = $this->validator->validateSchemaWithSeverity( $schema );
+		$this->assertEmpty( $result['errors'], 'Subobject overlap should not produce errors' );
+
+		$hasPromotionWarning = false;
+		foreach ( $result['warnings'] as $warning ) {
+			if ( stripos( $warning, 'promoted to required' ) !== false ) {
+				$hasPromotionWarning = true;
+				break;
+			}
+		}
+		$this->assertTrue( $hasPromotionWarning, 'Should warn about subobject promotion' );
+	}
+
+	public function testNoOverlapProducesNoPromotionWarning(): void {
+		$schema = $this->getValidSchema();
+
+		$result = $this->validator->validateSchemaWithSeverity( $schema );
+		$this->assertEmpty( $result['errors'], 'Valid schema should have no errors' );
+		foreach ( $result['warnings'] as $warning ) {
+			$this->assertStringNotContainsString(
+				'promoted to required',
+				$warning,
+				'No promotion warning should appear when there are no overlaps'
+			);
+		}
+	}
+
+	public function testValidateSchemaErrorsOnlyMethodExcludesWarnings(): void {
+		$schema = $this->getValidSchema();
+		$schema['categories']['TestCategory']['properties'] = [
+			'required' => [ 'Has name' ],
+			'optional' => [ 'Has name', 'Has description' ],
+		];
+
+		// validateSchemaWithSeverity should have warnings but validateSchema should not
+		$result = $this->validator->validateSchemaWithSeverity( $schema );
+		$hasPromotionWarning = false;
+		foreach ( $result['warnings'] as $warning ) {
+			if ( stripos( $warning, 'promoted to required' ) !== false ) {
+				$hasPromotionWarning = true;
+				break;
+			}
+		}
+		$this->assertTrue( $hasPromotionWarning, 'Severity method should have promotion warning' );
+
 		$errors = $this->validator->validateSchema( $schema );
-		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'both required and optional', $errors[0] );
+		foreach ( $errors as $error ) {
+			$this->assertStringNotContainsString(
+				'promoted to required',
+				$error,
+				'validateSchema() should not return promotion warnings as errors'
+			);
+		}
 	}
 
 	/* =========================================================================
