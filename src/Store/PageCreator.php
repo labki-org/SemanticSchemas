@@ -10,6 +10,7 @@ use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
 use MediaWiki\User\User;
+use Mediawiki\Page\WikiPage;
 
 /**
  * PageCreator
@@ -114,13 +115,17 @@ class PageCreator {
 		return $title->exists();
 	}
 
+	public function getWikiPage( Title $title ): WikiPage {
+		return $this->wikiPageFactory->newFromTitle( $title );
+	}
+
 	public function getPageContent( Title $title ): ?string {
 		if ( !$title->exists() ) {
 			return null;
 		}
 
 		try {
-			$wikiPage = $this->wikiPageFactory->newFromTitle( $title );
+			$wikiPage = $this->getWikiPage($title);
 			$contentObj = $wikiPage->getContent();
 
 			if ( $contentObj instanceof TextContent ) {
