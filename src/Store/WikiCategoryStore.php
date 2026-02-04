@@ -226,8 +226,8 @@ class WikiCategoryStore {
 
 		$page = $this->pageCreator->getWikiPage( $title );
 		$parents = array_map(
-			fn(Title $cat) => $cat->getText(),
-			[...$page->getCategories()]
+			static fn ( Title $cat ) => $cat->getText(),
+			[ ...$page->getCategories() ]
 		);
 
 		return [

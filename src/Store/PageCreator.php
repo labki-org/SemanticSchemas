@@ -6,11 +6,11 @@ use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Content\TextContent;
 use MediaWiki\Page\DeletePageFactory;
+use Mediawiki\Page\WikiPage;
 use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
 use MediaWiki\User\User;
-use Mediawiki\Page\WikiPage;
 
 /**
  * PageCreator
@@ -125,7 +125,7 @@ class PageCreator {
 		}
 
 		try {
-			$wikiPage = $this->getWikiPage($title);
+			$wikiPage = $this->getWikiPage( $title );
 			$contentObj = $wikiPage->getContent();
 
 			if ( $contentObj instanceof TextContent ) {
