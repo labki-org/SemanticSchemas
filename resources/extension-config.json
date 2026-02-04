@@ -31,7 +31,6 @@
         "optional": [
           "Display label",
           "Has target namespace",
-          "Has parent category",
           "Has required property",
           "Has optional property",
           "Has required subobject",
@@ -137,13 +136,6 @@
       "label": "Target namespace",
       "description": "Where pages of this category are created (e.g., Main, User).",
       "allowsMultipleValues": false
-    },
-    "Has parent category": {
-      "datatype": "Page",
-      "label": "Inherits from",
-      "description": "Parent categories whose properties and subobjects are inherited.",
-      "allowedNamespace": "Category",
-      "allowsMultipleValues": true
     },
     "Has required property": {
       "datatype": "Page",
