@@ -75,7 +75,7 @@ php extensions/SemanticSchemas/maintenance/installConfig.php
 
 The base configuration includes:
 - **Templates:** `Template:Property/Default`, `Template:Property/Email`, `Template:Property/Link`
-- **Properties:** ~25 meta-properties like `Has type`, `Has description`, `Has parent category`, etc.
+- **Properties:** ~25 meta-properties like `Has type`, `Has description`, etc.
 - **Subobjects:** `Display section` for organizing property display
 - **Categories:** `Category`, `Property`, `Subobject` meta-categories
 

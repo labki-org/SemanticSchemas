@@ -6,6 +6,7 @@ use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Content\TextContent;
 use MediaWiki\MediaWikiServices;
+use Mediawiki\Page\WikiPage;
 use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
@@ -112,13 +113,17 @@ class PageCreator {
 		return $title->exists();
 	}
 
+	public function getWikiPage( Title $title ): WikiPage {
+		return $this->wikiPageFactory->newFromTitle( $title );
+	}
+
 	public function getPageContent( Title $title ): ?string {
 		if ( !$title->exists() ) {
 			return null;
 		}
 
 		try {
-			$wikiPage = $this->wikiPageFactory->newFromTitle( $title );
+			$wikiPage = $this->getWikiPage( $title );
 			$contentObj = $wikiPage->getContent();
 
 			if ( $contentObj instanceof TextContent ) {

@@ -12,17 +12,13 @@ The preview updates automatically as users add or change parent categories.
 
 ## Automatic Setup (Recommended)
 
-**Good news!** If your category schema includes `Has parent category` as a property (required or optional), the hierarchy preview is **automatically injected** when forms are regenerated via `Special:SemanticSchemas/regenerate`.
+**Good news!** If your category schema has a parent category (`[[Category:SomeParentCategory]]`), the hierarchy preview is **automatically injected** when forms are regenerated via `Special:SemanticSchemas/regenerate`.
 
-When `FormGenerator` detects that a category has the `Has parent category` property, it will automatically:
+When `FormGenerator` detects that a category has a parent category, it will automatically:
 1. Add `{{#semanticschemas_load_form_preview:}}` to load the module
 2. Add the preview container `<div>` with proper configuration
 3. Position the preview after the form fields
-
-**To enable automatic injection:**
-- Ensure your category has `[[Has required property::Property:Has parent category]]` or `[[Has optional property::Property:Has parent category]]`
-- Regenerate forms via `Special:SemanticSchemas` → "Regenerate" tab
-
+4. 
 If automatic injection works for your use case, you can skip the manual setup below!
 
 ## Manual Setup Instructions

@@ -389,7 +389,7 @@ YAML;
 		// Verify parent reference in child
 		$childTitle = $this->pageCreator->makeTitle( $child, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $childTitle );
-		$this->assertStringContainsString( "[[Has parent category::Category:$parent]]", $content );
+		$this->assertStringContainsString( "[[Category:$parent]]", $content );
 	}
 
 	/* =========================================================================

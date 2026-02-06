@@ -51,7 +51,7 @@ The properties section has two tabs:
 3. Save and view the embedded visualization
 
 ### 3. Add Form Preview (Auto or Manual)
-**Automatic**: If category has `Has parent category` property, preview is auto-injected when forms are regenerated.
+**Automatic**: If category is a subcategory (has a `[[Category:]]` declaration, preview is auto-injected when forms are regenerated.
 
 **Manual**:
 1. Edit Form:Category

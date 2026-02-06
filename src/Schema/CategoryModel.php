@@ -80,6 +80,7 @@ class CategoryModel {
 		/* -------------------- Parents -------------------- */
 
 		$this->parents = NamingHelper::normalizeList( $data['parents'] ?? [] );
+		$this->parents = array_filter( $this->parents, static fn ( $parent )=>$parent !== "SemanticSchemas-managed" );
 		foreach ( $this->parents as $p ) {
 			if ( $p === $name ) {
 				throw new InvalidArgumentException( "Category '{$name}' cannot be its own parent." );

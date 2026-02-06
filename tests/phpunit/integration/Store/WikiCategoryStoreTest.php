@@ -71,7 +71,7 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $childName, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( "[[Has parent category::Category:$parentName]]", $content );
+		$this->assertStringContainsString( "[[Category:$parentName]]", $content );
 	}
 
 	public function testWriteCategoryWithRequiredProperties(): void {

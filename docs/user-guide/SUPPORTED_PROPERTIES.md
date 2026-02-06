@@ -33,18 +33,6 @@ Category pages support the following semantic properties to define their schema:
   [[Has target namespace::Main]]
   ```
 
-### Inheritance
-
-#### `Property:Has parent category`
-- **Type:** Page (Category namespace)
-- **Purpose:** Defines parent categories for inheritance
-- **Multiple:** Yes (supports multiple inheritance)
-- **Example:**
-  ```wiki
-  [[Has parent category::Category:Entity]]
-  [[Has parent category::Category:Living Thing]]
-  ```
-
 ### Properties
 
 #### `Property:Has required property`
@@ -376,7 +364,6 @@ Subobject:Publication
 | `Display label` | Text | No | No | Human-readable label |
 | `Has description` | Text | No | No | Category description |
 | `Has target namespace` | Text | No | No | Target namespace |
-| `Has parent category` | Category | Yes | No | Parent categories |
 | `Has required property` | Property | Yes | No | Required properties |
 | `Has optional property` | Property | Yes | No | Optional properties |
 | `Has required subobject` | Subobject | Yes | No | Required subobjects |
@@ -433,7 +420,7 @@ This ensures that:
 
 ### Inheritance
 
-- **Categories:** Support multiple inheritance via `Has parent category`
+- **Categories:** Support multiple inheritance via `[[Category:]]`
 - **Properties:** Support single inheritance via `Subproperty of`
 - **Subobjects:** No inheritance support
 

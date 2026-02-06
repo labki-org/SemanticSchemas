@@ -95,8 +95,8 @@ Create a category with multiple parents:
 A graduate student.
 
 <!-- SemanticSchemas Schema Start -->
-[[Has parent category::Category:Person]]
-[[Has parent category::Category:LabMember]]
+[[Category:Person]]
+[[Category:LabMember]]
 
 === Required Properties ===
 [[Has required property::Property:Has advisor]]

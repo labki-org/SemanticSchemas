@@ -126,13 +126,17 @@ class WikiCategoryStore {
 		$subject = \SMW\DIWikiPage::newFromTitle( $title );
 		$sdata = $store->getSemanticData( $subject );
 
+		$page = $this->pageCreator->getWikiPage( $title );
+		$parents = array_map(
+			static fn ( Title $cat ) => $cat->getText(),
+			[ ...$page->getCategories() ]
+		);
+
 		return [
 			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
 			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
 			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
-
-			'parents' => $this->smwFetchMany( $sdata, 'Has parent category', 'category' ),
-
+			'parents' => $parents,
 			'properties' => [
 				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
 				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),
@@ -211,7 +215,7 @@ class WikiCategoryStore {
 
 		// Parent categories
 		foreach ( $cat->getParents() as $p ) {
-			$lines[] = "[[Has parent category::Category:$p]]";
+			$lines[] = "[[Category:$p]]";
 		}
 
 		// Header properties
