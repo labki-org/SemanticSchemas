@@ -147,6 +147,7 @@ jobs:
 
       - name: Install MediaWiki database
         run: |
+          rm -f ~/mediawiki/LocalSettings.php
           php ~/mediawiki/maintenance/install.php \
             --dbserver=127.0.0.1 \
             --dbname=wiki \

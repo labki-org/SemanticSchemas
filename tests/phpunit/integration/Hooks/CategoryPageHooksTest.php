@@ -4,11 +4,10 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Hooks;
 
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Extension\SemanticSchemas\Hooks\CategoryPageHooks;
-use MediaWiki\Page\WikiPage;
 use MediaWiki\Revision\SlotRecord;
-use MediaWiki\Skin\Skin;
 use MediaWiki\Title\Title;
 use MediaWikiIntegrationTestCase;
+use Skin;
 
 /**
  * @group Database
@@ -16,8 +15,10 @@ use MediaWikiIntegrationTestCase;
  */
 class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	private string $categoryName = "Category:TestCategory";
-	private WikiPage $page;
-	private Skin $skinMock;
+	/** @var \WikiPage */
+	private $page;
+	/** @var Skin */
+	private $skinMock;
 	private Title $title;
 
 	protected function setUp(): void {
