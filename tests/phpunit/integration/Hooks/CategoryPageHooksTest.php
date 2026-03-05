@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Hooks;
 
+use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Extension\SemanticSchemas\Hooks\CategoryPageHooks;
 use MediaWiki\Revision\SlotRecord;
@@ -55,7 +56,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 				$this->title
 			)
 		);
-		$updater->saveRevision( "Made an invalid category schema" );
+		$updater->saveRevision( CommentStoreComment::newUnsavedComment( "Made an invalid category schema" ) );
 		$links = [];
 		( new CategoryPageHooks )->onSkinTemplateNavigation( $this->skinMock, $links );
 
