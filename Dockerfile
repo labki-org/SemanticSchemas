@@ -1,0 +1,55 @@
+FROM php:8.3-apache
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+	libicu-dev \
+	libzip-dev \
+	unzip \
+	git \
+	default-mysql-client \
+	&& docker-php-ext-install intl mysqli pdo_mysql zip opcache \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
+
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Download MediaWiki core
+ARG MW_BRANCH=REL1_44
+RUN curl -sL "https://github.com/wikimedia/mediawiki/archive/refs/heads/${MW_BRANCH}.tar.gz" | tar xz \
+	&& rm -rf /var/www/html/* \
+	&& mv mediawiki-${MW_BRANCH}/* mediawiki-${MW_BRANCH}/.* /var/www/html/ 2>/dev/null || true \
+	&& rmdir mediawiki-${MW_BRANCH}
+
+WORKDIR /var/www/html
+
+# Install MW core Composer dependencies
+RUN composer install --no-progress --prefer-dist --no-dev
+
+# Install SMW + PageForms via Composer
+ARG SMW_VERSION=6.0
+ARG PF_VERSION=6.0
+RUN echo '{"require":{"mediawiki/semantic-media-wiki":"~'"${SMW_VERSION}"'","mediawiki/page-forms":"~'"${PF_VERSION}"'"}}' > composer.local.json \
+	&& composer update --no-progress --prefer-dist --no-dev
+
+# Clone ParserFunctions (not included in core tarball)
+RUN git clone --depth 1 -b "${MW_BRANCH}" \
+	https://github.com/wikimedia/mediawiki-extensions-ParserFunctions.git \
+	extensions/ParserFunctions
+
+# Clone Vector skin (not included in core tarball)
+RUN git clone --depth 1 -b "${MW_BRANCH}" \
+	https://github.com/wikimedia/mediawiki-skins-Vector.git \
+	skins/Vector
+
+# Create directories for user extensions and logs
+RUN mkdir -p /mw-user-extensions /var/log/mediawiki \
+	&& chown -R www-data:www-data /var/www/html /var/log/mediawiki /mw-user-extensions
+
+# Copy entrypoint
+COPY docker-entrypoint-dev.sh /usr/local/bin/docker-entrypoint-dev.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint-dev.sh
+
+ENTRYPOINT ["docker-entrypoint-dev.sh"]
