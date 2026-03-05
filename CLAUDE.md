@@ -38,7 +38,7 @@ bash tests/scripts/populate_test_data.sh
 docker compose logs -f wiki
 ```
 
-Access wiki at http://localhost:8889 (Admin/dockerpass)
+Access wiki at http://localhost:8889 (Admin/DockerPass123!)
 
 ## Architecture
 

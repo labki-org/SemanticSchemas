@@ -84,19 +84,15 @@ class DisplayParserFunctions {
 		$output = $parser->getOutput();
 		$output->addModules( [ 'ext.semanticschemas.hierarchy' ] );
 
-		$id = 'ss-category-hierarchy-' . md5( $category );
-
-		$html = Html::rawElement(
+		return $this->htmlReturn( Html::rawElement(
 			'div',
 			[
-				'id' => $id,
+				'id' => 'ss-category-hierarchy-' . md5( $category ),
 				'class' => 'ss-hierarchy-block mw-collapsible',
 				'data-category' => $category
 			],
 			Html::element( 'p', [], wfMessage( 'semanticschemas-hierarchy-loading' )->text() )
-		);
-
-		return $this->htmlReturn( $html );
+		) );
 	}
 
 	/* =====================================================================

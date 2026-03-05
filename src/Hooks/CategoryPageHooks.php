@@ -67,7 +67,7 @@ class CategoryPageHooks {
 	 */
 	public static function onArticleViewFooter( Article $article, bool $patrolFooterShown ): bool {
 		$title = $article->getTitle();
-		if ( $title->getNamespace() !== NS_CATEGORY ) {
+		if ( !$title || !$title->inNamespace( NS_CATEGORY ) ) {
 			return true;
 		}
 		$output = $article->getContext()->getOutput();

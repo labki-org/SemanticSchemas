@@ -3,7 +3,7 @@
 # Run SemanticSchemas tests inside Docker MediaWiki environment.
 #
 # Unit tests use our vendor PHPUnit with standalone bootstrap.
-# Integration tests use MW's PHPUnit from the -dev image.
+# Integration tests use MW's PHPUnit test runner.
 #
 # Usage:
 #   ./tests/scripts/run-docker-tests.sh [unit|integration] [phpunit-args...]
@@ -45,8 +45,7 @@ else
     echo "Running SemanticSchemas INTEGRATION tests..."
     echo "(Tests marked @group Broken are excluded)"
     echo ""
-    # Use MW's PHPUnit via composer
-    docker compose exec -T wiki composer phpunit -- \
+    docker compose exec -T -w /var/www/html -e MW_INSTALL_PATH=/var/www/html wiki composer phpunit -- \
         --configuration "$EXT_PATH/tests/phpunit/integration.xml" \
         --exclude-group Broken \
         "$@"

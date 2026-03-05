@@ -1,40 +1,47 @@
 services:
   wiki:
-    image: ghcr.io/labki-org/labki-platform:latest-dev
+    build: .
+    image: semanticschemas-dev
     ports:
       - "8889:80"
     environment:
       MW_DB_HOST: db
-      MW_DB_NAME: labki
-      MW_DB_USER: labki
-      MW_DB_PASSWORD: labki_pass
+      MW_DB_NAME: wiki
+      MW_DB_USER: wiki
+      MW_DB_PASSWORD: wiki_pass
       MW_ADMIN_USER: Admin
-      MW_ADMIN_PASS: dockerpass
-      MW_DISABLE_PLATFORM_EXTENSIONS: 1
+      MW_ADMIN_PASS: DockerPass123!
     volumes:
       - ./:/mw-user-extensions/SemanticSchemas
       - ./tests/LocalSettings.test.php:/mw-config/LocalSettings.user.php
+      - ./tests/LocalSettings.common.php:/mw-config/LocalSettings.common.php
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost/api.php?action=query"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 60s
 
   jobrunner:
-    image: ghcr.io/labki-org/labki-platform:latest-dev
+    image: semanticschemas-dev
     environment:
       MW_DB_HOST: db
-      MW_DB_NAME: labki
-      MW_DB_USER: labki
-      MW_DB_PASSWORD: labki_pass
-      MW_DISABLE_PLATFORM_EXTENSIONS: 1
+      MW_DB_NAME: wiki
+      MW_DB_USER: wiki
+      MW_DB_PASSWORD: wiki_pass
     volumes:
       - ./:/mw-user-extensions/SemanticSchemas
       - ./tests/LocalSettings.test.php:/mw-config/LocalSettings.user.php
+      - ./tests/LocalSettings.common.php:/mw-config/LocalSettings.common.php
     depends_on:
-      - db
-      - wiki
+      wiki:
+        condition: service_healthy
+    entrypoint: []
     command: >
       bash -c "
-        echo 'Waiting for wiki to be ready...' &&
-        sleep 10 &&
         echo 'Starting job runner...' &&
         while true; do
           php /var/www/html/maintenance/runJobs.php --wait --maxjobs=10;
@@ -46,12 +53,17 @@ services:
   db:
     image: mariadb:10.11
     environment:
-      MARIADB_DATABASE: labki
-      MARIADB_USER: labki
-      MARIADB_PASSWORD: labki_pass
+      MARIADB_DATABASE: wiki
+      MARIADB_USER: wiki
+      MARIADB_PASSWORD: wiki_pass
       MARIADB_ROOT_PASSWORD: root_pass
     volumes:
       - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   db-data:
