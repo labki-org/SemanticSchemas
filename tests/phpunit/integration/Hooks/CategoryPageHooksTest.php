@@ -6,7 +6,6 @@ use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Extension\SemanticSchemas\Hooks\CategoryPageHooks;
 use MediaWiki\Revision\SlotRecord;
-use MediaWiki\Page\WikiPage;
 use MediaWiki\Title\Title;
 use MediaWikiIntegrationTestCase;
 use Skin;
@@ -17,7 +16,8 @@ use Skin;
  */
 class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	private string $categoryName = "Category:TestCategory";
-	private WikiPage $page;
+	/** @var \WikiPage */
+	private $page;
 	private Skin $skinMock;
 	private Title $title;
 
