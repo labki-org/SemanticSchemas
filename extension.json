@@ -9,7 +9,7 @@
 	"license-name": "GPL-3.0-or-later",
 	"type": "semantic",
 	"requires": {
-		"MediaWiki": ">= 1.39.0",
+		"MediaWiki": ">= 1.43.0",
 		"extensions": {
 			"SemanticMediaWiki": "*",
 			"PageForms": "*",

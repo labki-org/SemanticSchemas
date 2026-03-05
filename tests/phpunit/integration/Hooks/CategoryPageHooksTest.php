@@ -4,9 +4,9 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Hooks;
 
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Extension\SemanticSchemas\Hooks\CategoryPageHooks;
-use WikiPage;
+use MediaWiki\Page\WikiPage;
 use MediaWiki\Revision\SlotRecord;
-use Skin;
+use MediaWiki\Skin\Skin;
 use MediaWiki\Title\Title;
 use MediaWikiIntegrationTestCase;
 

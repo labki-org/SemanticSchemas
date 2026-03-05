@@ -92,10 +92,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - mw: REL1_39
+          - mw: REL1_43
             php: '8.1'
-            smw: '5.1'
-            pf: '5.7'
+            smw: '6.0'
+            pf: '6.0'
           - mw: REL1_44
             php: '8.3'
             smw: '6.0'
