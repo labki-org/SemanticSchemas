@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
+use MediaWiki\Html\Html;
 use MediaWiki\Page\Article;
 use MediaWiki\SpecialPage\SpecialPage;
 use Skin;
@@ -67,11 +68,21 @@ class CategoryPageHooks {
 	 */
 	public static function onArticleViewFooter( Article $article, bool $patrolFooterShown ): bool {
 		$title = $article->getTitle();
-		if ( $title->getNamespace() !== NS_CATEGORY ) {
+		if ( !$title || !$title->inNamespace( NS_CATEGORY ) ) {
 			return true;
 		}
+		$category = $title->getText();
 		$output = $article->getContext()->getOutput();
-		$output->addWikiTextAsContent( '{{#semanticschemas_hierarchy:' . $title->getText() . '}}' );
+		$output->addModules( [ 'ext.semanticschemas.hierarchy' ] );
+		$output->addHTML( Html::rawElement(
+			'div',
+			[
+				'id' => 'ss-category-hierarchy-' . md5( $category ),
+				'class' => 'ss-hierarchy-block mw-collapsible',
+				'data-category' => $category
+			],
+			Html::element( 'p', [], wfMessage( 'semanticschemas-hierarchy-loading' )->text() )
+		) );
 		return true;
 	}
 }
