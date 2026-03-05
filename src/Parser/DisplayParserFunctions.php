@@ -84,19 +84,23 @@ class DisplayParserFunctions {
 		$output = $parser->getOutput();
 		$output->addModules( [ 'ext.semanticschemas.hierarchy' ] );
 
-		$id = 'ss-category-hierarchy-' . md5( $category );
+		return $this->htmlReturn( self::buildHierarchyHtml( $category ) );
+	}
 
-		$html = Html::rawElement(
+	/**
+	 * Build the hierarchy placeholder HTML for a given category.
+	 * Used by both the parser function and the ArticleViewFooter hook.
+	 */
+	public static function buildHierarchyHtml( string $category ): string {
+		return Html::rawElement(
 			'div',
 			[
-				'id' => $id,
+				'id' => 'ss-category-hierarchy-' . md5( $category ),
 				'class' => 'ss-hierarchy-block mw-collapsible',
 				'data-category' => $category
 			],
 			Html::element( 'p', [], wfMessage( 'semanticschemas-hierarchy-loading' )->text() )
 		);
-
-		return $this->htmlReturn( $html );
 	}
 
 	/* =====================================================================
