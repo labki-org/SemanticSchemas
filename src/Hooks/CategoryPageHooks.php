@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
-use MediaWiki\Page\Article;
+use Article;
 use MediaWiki\SpecialPage\SpecialPage;
 use Skin;
 
