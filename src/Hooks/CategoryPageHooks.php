@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
-use MediaWiki\Extension\SemanticSchemas\Parser\DisplayParserFunctions;
 use MediaWiki\Page\Article;
 use MediaWiki\SpecialPage\SpecialPage;
 use Skin;
@@ -71,10 +70,8 @@ class CategoryPageHooks {
 		if ( !$title || !$title->inNamespace( NS_CATEGORY ) ) {
 			return true;
 		}
-		$category = $title->getText();
 		$output = $article->getContext()->getOutput();
-		$output->addModules( [ 'ext.semanticschemas.hierarchy' ] );
-		$output->addHTML( DisplayParserFunctions::buildHierarchyHtml( $category ) );
+		$output->addWikiTextAsContent( '{{#semanticschemas_hierarchy:' . $title->getText() . '}}' );
 		return true;
 	}
 }
