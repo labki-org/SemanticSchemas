@@ -10,7 +10,7 @@ services:
       MW_DB_USER: wiki
       MW_DB_PASSWORD: wiki_pass
       MW_ADMIN_USER: Admin
-      MW_ADMIN_PASS: dockerpass
+      MW_ADMIN_PASS: DockerPass123!
     volumes:
       - ./:/mw-user-extensions/SemanticSchemas
       - ./tests/LocalSettings.test.php:/mw-config/LocalSettings.user.php

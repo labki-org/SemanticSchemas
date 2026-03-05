@@ -6,7 +6,7 @@ set -e
 : "${MW_DB_USER:=wiki}"
 : "${MW_DB_PASSWORD:=wiki_pass}"
 : "${MW_ADMIN_USER:=Admin}"
-: "${MW_ADMIN_PASS:=dockerpass}"
+: "${MW_ADMIN_PASS:=DockerPass123!}"
 : "${MW_SERVER:=http://localhost:8889}"
 
 MW_DIR="/var/www/html"

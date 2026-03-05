@@ -27,7 +27,7 @@ Once running, access the wiki at:
 **http://localhost:8889**
 
 - **Admin User**: `Admin`
-- **Password**: `dockerpass`
+- **Password**: `DockerPass123!`
 
 ## Configuration
 
