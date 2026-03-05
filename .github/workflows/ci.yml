@@ -130,7 +130,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/mediawiki
-          key: mw-${{ matrix.mw }}-smw${{ matrix.smw }}-pf${{ matrix.pf }}-php${{ matrix.php }}
+          key: mw-${{ matrix.mw }}-smw${{ matrix.smw }}-pf${{ matrix.pf }}-php${{ matrix.php }}-${{ hashFiles('.github/workflows/installMediaWiki.sh') }}
 
       - name: Checkout extension
         uses: actions/checkout@v4

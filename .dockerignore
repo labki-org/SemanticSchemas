@@ -1,0 +1,12 @@
+.git
+vendor
+node_modules
+.planning
+.idea
+.vscode
+coverage
+logs
+*.log
+.phpcs-cache
+.phpunit.result.cache
+db-data

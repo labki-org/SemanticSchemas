@@ -21,9 +21,6 @@ mv "mediawiki-${MW_BRANCH}" "$MW_DIR"
 
 cd "$MW_DIR"
 
-echo "==> Installing MediaWiki core Composer dependencies..."
-composer install --no-progress --prefer-dist
-
 echo "==> Creating composer.local.json (SMW ~${SMW_VERSION}, PageForms ~${PF_VERSION})..."
 cat > composer.local.json <<EOF
 {
@@ -34,7 +31,7 @@ cat > composer.local.json <<EOF
 }
 EOF
 
-echo "==> Installing SMW and PageForms..."
+echo "==> Installing all Composer dependencies (core + SMW + PageForms)..."
 composer update --no-progress --prefer-dist
 
 echo "==> MediaWiki installation complete at $MW_DIR"

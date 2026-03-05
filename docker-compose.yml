@@ -1,6 +1,7 @@
 services:
   wiki:
     build: .
+    image: semanticschemas-dev
     ports:
       - "8889:80"
     environment:
@@ -16,9 +17,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost/api.php?action=query"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 60s
 
   jobrunner:
-    build: .
+    image: semanticschemas-dev
     environment:
       MW_DB_HOST: db
       MW_DB_NAME: wiki
@@ -28,15 +35,11 @@ services:
       - ./:/mw-user-extensions/SemanticSchemas
       - ./tests/LocalSettings.test.php:/mw-config/LocalSettings.user.php
     depends_on:
-      db:
-        condition: service_healthy
       wiki:
-        condition: service_started
+        condition: service_healthy
     entrypoint: []
     command: >
       bash -c "
-        echo 'Waiting for wiki to be ready...' &&
-        sleep 10 &&
         echo 'Starting job runner...' &&
         while true; do
           php /var/www/html/maintenance/runJobs.php --wait --maxjobs=10;
