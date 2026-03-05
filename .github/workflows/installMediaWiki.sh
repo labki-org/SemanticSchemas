@@ -34,4 +34,9 @@ EOF
 echo "==> Installing all Composer dependencies (core + SMW + PageForms)..."
 composer update --no-progress --prefer-dist
 
+echo "==> Cloning ParserFunctions..."
+git clone --depth 1 -b "$MW_BRANCH" \
+	https://github.com/wikimedia/mediawiki-extensions-ParserFunctions.git \
+	extensions/ParserFunctions
+
 echo "==> MediaWiki installation complete at $MW_DIR"

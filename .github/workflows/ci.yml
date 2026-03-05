@@ -165,6 +165,7 @@ jobs:
           wfLoadExtension( 'SemanticMediaWiki' );
           enableSemantics( 'localhost' );
           wfLoadExtension( 'PageForms' );
+          wfLoadExtension( 'ParserFunctions' );
           wfLoadExtension( 'SemanticSchemas' );
 
           $smwgChangePropagationProtection = false;
