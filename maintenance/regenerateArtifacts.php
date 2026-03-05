@@ -7,7 +7,7 @@ use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
+use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
 if ( $IP === false ) {
@@ -40,10 +40,11 @@ class RegenerateArtifacts extends Maintenance {
 		$categoryName = $this->getOption( 'category' );
 		$generateDisplay = $this->hasOption( 'generate-display' );
 
-		$categoryStore = new WikiCategoryStore();
-		$templateGenerator = new TemplateGenerator();
-		$formGenerator = new FormGenerator();
-		$displayGenerator = new DisplayStubGenerator();
+		$services = $this->getServiceContainer();
+		$categoryStore = SemanticSchemasServices::getWikiCategoryStore( $services );
+		$templateGenerator = SemanticSchemasServices::getTemplateGenerator( $services );
+		$formGenerator = SemanticSchemasServices::getFormGenerator( $services );
+		$displayGenerator = SemanticSchemasServices::getDisplayStubGenerator( $services );
 
 		if ( $categoryName !== null ) {
 			// Regenerate for specific category
@@ -90,8 +91,8 @@ class RegenerateArtifacts extends Maintenance {
 		$this->output( "Processing: $name\n" );
 
 		// Get effective category and ancestor chain
-		$categoryStore = new WikiCategoryStore();
-		$allCategories = $categoryStore->getAllCategories();
+		$catStore = SemanticSchemasServices::getWikiCategoryStore( $this->getServiceContainer() );
+		$allCategories = $catStore->getAllCategories();
 		$categoryMap = [];
 		foreach ( $allCategories as $cat ) {
 			$categoryMap[$cat->getName()] = $cat;

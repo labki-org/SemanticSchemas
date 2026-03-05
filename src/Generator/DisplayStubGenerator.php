@@ -34,11 +34,11 @@ class DisplayStubGenerator {
 	private WikiPropertyStore $propertyStore;
 
 	public function __construct(
-		?PageCreator $pageCreator = null,
-		?WikiPropertyStore $propertyStore = null
+		PageCreator $pageCreator,
+		WikiPropertyStore $propertyStore
 	) {
-		$this->pageCreator = $pageCreator ?? new PageCreator();
-		$this->propertyStore = $propertyStore ?? new WikiPropertyStore( $this->pageCreator );
+		$this->pageCreator = $pageCreator;
+		$this->propertyStore = $propertyStore;
 	}
 
 	/**

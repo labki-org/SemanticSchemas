@@ -6,6 +6,7 @@ use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
+use MediaWiki\JobQueue\JobQueueGroup;
 
 /**
  * ExtensionConfigInstaller
@@ -43,22 +44,24 @@ class ExtensionConfigInstaller {
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
 	private WikiSubobjectStore $subobjectStore;
+	private JobQueueGroup $jobQueueGroup;
 
 	public function __construct(
-		?SchemaLoader $loader = null,
-		?SchemaValidator $validator = null,
-		?WikiCategoryStore $categoryStore = null,
-		?WikiPropertyStore $propertyStore = null,
-		?WikiSubobjectStore $subobjectStore = null,
-		?PageCreator $pageCreator = null
+		SchemaLoader $loader,
+		SchemaValidator $validator,
+		WikiCategoryStore $categoryStore,
+		WikiPropertyStore $propertyStore,
+		WikiSubobjectStore $subobjectStore,
+		PageCreator $pageCreator,
+		JobQueueGroup $jobQueueGroup
 	) {
-		$this->loader = $loader ?? new SchemaLoader();
-		$this->validator = $validator ?? new SchemaValidator();
-		$this->pageCreator = $pageCreator ?? new PageCreator();
-
-		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
-		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
-		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
+		$this->loader = $loader;
+		$this->validator = $validator;
+		$this->categoryStore = $categoryStore;
+		$this->propertyStore = $propertyStore;
+		$this->subobjectStore = $subobjectStore;
+		$this->pageCreator = $pageCreator;
+		$this->jobQueueGroup = $jobQueueGroup;
 	}
 
 	/**
@@ -312,13 +315,11 @@ class ExtensionConfigInstaller {
 	 * @return int
 	 */
 	public function getPendingJobCount(): int {
-		$jobQueueGroup = \MediaWiki\MediaWikiServices::getInstance()->getJobQueueGroup();
-
 		try {
-			$queuesWithJobs = $jobQueueGroup->getQueuesWithJobs();
+			$queuesWithJobs = $this->jobQueueGroup->getQueuesWithJobs();
 			$count = 0;
 			foreach ( $queuesWithJobs as $type ) {
-				$queue = $jobQueueGroup->get( $type );
+				$queue = $this->jobQueueGroup->get( $type );
 				$count += $queue->getSize();
 			}
 			return $count;

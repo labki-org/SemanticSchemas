@@ -17,8 +17,11 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		// Use null to let PageCreator create a system user
-		$this->pageCreator = new PageCreator( null );
+		$services = $this->getServiceContainer();
+		$this->pageCreator = new PageCreator(
+			$services->getWikiPageFactory(),
+			$services->getDeletePageFactory()
+		);
 	}
 
 	/* =========================================================================

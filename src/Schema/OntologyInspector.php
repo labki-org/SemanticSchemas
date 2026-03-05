@@ -28,18 +28,17 @@ class OntologyInspector {
 	private PageHashComputer $hashComputer;
 
 	public function __construct(
-		?WikiCategoryStore $categoryStore = null,
-		?WikiPropertyStore $propertyStore = null,
-		?WikiSubobjectStore $subobjectStore = null,
-		?StateManager $stateManager = null,
-		?PageHashComputer $hashComputer = null
+		WikiCategoryStore $categoryStore,
+		WikiPropertyStore $propertyStore,
+		WikiSubobjectStore $subobjectStore,
+		StateManager $stateManager,
+		PageHashComputer $hashComputer
 	) {
-		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
-		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
-		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
-
-		$this->stateManager = $stateManager ?? new StateManager();
-		$this->hashComputer = $hashComputer ?? new PageHashComputer();
+		$this->categoryStore = $categoryStore;
+		$this->propertyStore = $propertyStore;
+		$this->subobjectStore = $subobjectStore;
+		$this->stateManager = $stateManager;
+		$this->hashComputer = $hashComputer;
 	}
 
 	/**

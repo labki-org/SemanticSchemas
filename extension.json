@@ -17,6 +17,9 @@
 		}
 	},
 	"load_composer_autoloader": false,
+	"ServiceWiringFiles": [
+		"ServiceWiring.php"
+	],
 	"MessagesDirs": {
 		"SemanticSchemas": [
 			"i18n"
@@ -45,15 +48,23 @@
 	"contentNamespaces": [
 		"NS_SUBOBJECT"
 	],
-	"Hooks": {
-		"SetupAfterCache": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks::onSetupAfterCache",
-		"LoadExtensionSchemaUpdates": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks::onLoadExtensionSchemaUpdates",
-		"ParserFirstCallInit": "MediaWiki\\Extension\\SemanticSchemas\\Parser\\DisplayParserFunctions::onParserFirstCallInit",
-		"SkinTemplateNavigation::Universal": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\CategoryPageHooks::onSkinTemplateNavigation",
-		"ArticleViewFooter": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\CategoryPageHooks::onArticleViewFooter"
+	"HookHandlers": {
+		"CategoryPageHooks": {
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\CategoryPageHooks"
+		},
+		"SetupHooks": {
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks"
+		},
+		"ParserHooks": {
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Parser\\DisplayParserFunctions"
+		}
 	},
-	"AutoloadClasses": {
-		"MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks": "src/Hooks/SemanticSchemasSetupHooks.php"
+	"Hooks": {
+		"SetupAfterCache": "SetupHooks",
+		"LoadExtensionSchemaUpdates": "SetupHooks",
+		"ParserFirstCallInit": "ParserHooks",
+		"SkinTemplateNavigation::Universal": "CategoryPageHooks",
+		"ArticleViewFooter": "CategoryPageHooks"
 	},
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\SemanticSchemas\\": "src/"
@@ -138,11 +149,36 @@
 		}
 	},
 	"APIModules": {
-		"semanticschemas-hierarchy": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasHierarchy",
-		"semanticschemas-install": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasInstall"
+		"semanticschemas-hierarchy": {
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasHierarchy",
+			"services": [
+				"SemanticSchemas.CategoryHierarchyService"
+			]
+		},
+		"semanticschemas-install": {
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasInstall",
+			"services": [
+				"SemanticSchemas.ExtensionConfigInstaller"
+			]
+		}
 	},
 	"SpecialPages": {
-		"SemanticSchemas": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialSemanticSchemas"
+		"SemanticSchemas": {
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialSemanticSchemas",
+			"services": [
+				"SemanticSchemas.WikiCategoryStore",
+				"SemanticSchemas.WikiPropertyStore",
+				"SemanticSchemas.WikiSubobjectStore",
+				"SemanticSchemas.TemplateGenerator",
+				"SemanticSchemas.FormGenerator",
+				"SemanticSchemas.DisplayStubGenerator",
+				"SemanticSchemas.ExtensionConfigInstaller",
+				"SemanticSchemas.OntologyInspector",
+				"SemanticSchemas.StateManager",
+				"SemanticSchemas.PageHashComputer",
+				"ObjectCacheFactory"
+			]
+		}
 	},
 	"LogTypes": [
 		"semanticschemas"

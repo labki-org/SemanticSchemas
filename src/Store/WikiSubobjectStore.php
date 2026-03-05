@@ -4,8 +4,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
-use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
+use Wikimedia\Rdbms\IConnectionProvider;
 
 /**
  * WikiSubobjectStore
@@ -22,9 +22,14 @@ class WikiSubobjectStore {
 	private const MARKER_END   = '<!-- SemanticSchemas End -->';
 
 	private PageCreator $pageCreator;
+	private IConnectionProvider $connectionProvider;
 
-	public function __construct( ?PageCreator $pageCreator = null ) {
-		$this->pageCreator = $pageCreator ?? new PageCreator();
+	public function __construct(
+		PageCreator $pageCreator,
+		IConnectionProvider $connectionProvider
+	) {
+		$this->pageCreator = $pageCreator;
+		$this->connectionProvider = $connectionProvider;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -157,9 +162,7 @@ class WikiSubobjectStore {
 	public function getAllSubobjects(): array {
 		$out = [];
 
-		$dbr = MediaWikiServices::getInstance()
-			->getDBLoadBalancer()
-			->getConnection( DB_REPLICA );
+		$dbr = $this->connectionProvider->getReplicaDatabase();
 
 		$res = $dbr->newSelectQueryBuilder()
 			->select( 'page_title' )

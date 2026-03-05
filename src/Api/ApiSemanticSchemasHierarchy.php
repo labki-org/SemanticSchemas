@@ -24,6 +24,18 @@ use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
  */
 class ApiSemanticSchemasHierarchy extends ApiBase {
 
+	private CategoryHierarchyService $hierarchyService;
+
+	/**
+	 * @param \ApiMain $mainModule
+	 * @param string $moduleName
+	 * @param CategoryHierarchyService $hierarchyService
+	 */
+	public function __construct( $mainModule, $moduleName, CategoryHierarchyService $hierarchyService ) {
+		parent::__construct( $mainModule, $moduleName );
+		$this->hierarchyService = $hierarchyService;
+	}
+
 	/**
 	 * Execute the API request.
 	 */
@@ -38,15 +50,13 @@ class ApiSemanticSchemasHierarchy extends ApiBase {
 		$categoryName = $this->stripPrefix( $params['category'] );
 		$parentList = $params['parents'] ?? [];
 
-		$service = new CategoryHierarchyService();
-
 		if ( !empty( $parentList ) ) {
 			// Virtual mode: form preview request
 			$cleanParents = $this->sanitizeParentList( $parentList );
-			$data = $service->getVirtualHierarchyData( $categoryName, $cleanParents );
+			$data = $this->hierarchyService->getVirtualHierarchyData( $categoryName, $cleanParents );
 		} else {
 			// Normal mode
-			$data = $service->getHierarchyData( $categoryName );
+			$data = $this->hierarchyService->getHierarchyData( $categoryName );
 		}
 
 		// Convert required=true/false → integers (MediaWiki drops boolean false keys)

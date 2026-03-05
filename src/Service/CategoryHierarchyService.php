@@ -20,11 +20,10 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
  */
 class CategoryHierarchyService {
 
-	/** @var WikiCategoryStore */
 	private WikiCategoryStore $categoryStore;
 
-	public function __construct( ?WikiCategoryStore $categoryStore = null ) {
-		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
+	public function __construct( WikiCategoryStore $categoryStore ) {
+		$this->categoryStore = $categoryStore;
 	}
 
 	/* =====================================================================

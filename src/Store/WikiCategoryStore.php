@@ -4,8 +4,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
-use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
+use Wikimedia\Rdbms\IConnectionProvider;
 
 /**
  * WikiCategoryStore
@@ -23,13 +23,16 @@ class WikiCategoryStore {
 
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
+	private IConnectionProvider $connectionProvider;
 
 	public function __construct(
-		?PageCreator $pageCreator = null,
-		?WikiPropertyStore $propertyStore = null
+		PageCreator $pageCreator,
+		WikiPropertyStore $propertyStore,
+		IConnectionProvider $connectionProvider
 	) {
-		$this->pageCreator = $pageCreator ?? new PageCreator();
-		$this->propertyStore = $propertyStore ?? new WikiPropertyStore( $this->pageCreator );
+		$this->pageCreator = $pageCreator;
+		$this->propertyStore = $propertyStore;
+		$this->connectionProvider = $connectionProvider;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -95,9 +98,7 @@ class WikiCategoryStore {
 	public function getAllCategories(): array {
 		$out = [];
 
-		$dbr = MediaWikiServices::getInstance()
-			->getDBLoadBalancer()
-			->getConnection( DB_REPLICA );
+		$dbr = $this->connectionProvider->getReplicaDatabase();
 
 		$res = $dbr->newSelectQueryBuilder()
 			->select( 'page_title' )

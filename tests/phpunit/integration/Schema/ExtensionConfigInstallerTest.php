@@ -24,12 +24,21 @@ class ExtensionConfigInstallerTest extends MediaWikiIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->pageCreator = new PageCreator( null );
+		$services = $this->getServiceContainer();
+		$this->pageCreator = new PageCreator(
+			$services->getWikiPageFactory(),
+			$services->getDeletePageFactory()
+		);
+		$connectionProvider = $services->getConnectionProvider();
 		$loader = new SchemaLoader();
 		$validator = new SchemaValidator();
-		$categoryStore = new WikiCategoryStore( $this->pageCreator );
-		$propertyStore = new WikiPropertyStore( $this->pageCreator );
-		$subobjectStore = new WikiSubobjectStore( $this->pageCreator );
+		$propertyStore = new WikiPropertyStore( $this->pageCreator, $connectionProvider );
+		$categoryStore = new WikiCategoryStore(
+			$this->pageCreator,
+			$propertyStore,
+			$connectionProvider
+		);
+		$subobjectStore = new WikiSubobjectStore( $this->pageCreator, $connectionProvider );
 
 		$this->installer = new ExtensionConfigInstaller(
 			$loader,
@@ -37,7 +46,8 @@ class ExtensionConfigInstallerTest extends MediaWikiIntegrationTestCase {
 			$categoryStore,
 			$propertyStore,
 			$subobjectStore,
-			$this->pageCreator
+			$this->pageCreator,
+			$services->getJobQueueGroup()
 		);
 
 		// Create temp directory for test schema files

@@ -37,28 +37,18 @@ use MediaWiki\Title\Title;
  */
 class PageHashComputer {
 
-	/** @var WikiCategoryStore */
-	private $categoryStore;
+	private WikiCategoryStore $categoryStore;
+	private WikiPropertyStore $propertyStore;
+	private WikiSubobjectStore $subobjectStore;
 
-	/** @var WikiPropertyStore */
-	private $propertyStore;
-
-	/** @var WikiSubobjectStore */
-	private $subobjectStore;
-
-	/**
-	 * @param WikiCategoryStore|null $categoryStore
-	 * @param WikiPropertyStore|null $propertyStore
-	 * @param WikiSubobjectStore|null $subobjectStore
-	 */
 	public function __construct(
-		?WikiCategoryStore $categoryStore = null,
-		?WikiPropertyStore $propertyStore = null,
-		?WikiSubobjectStore $subobjectStore = null
+		WikiCategoryStore $categoryStore,
+		WikiPropertyStore $propertyStore,
+		WikiSubobjectStore $subobjectStore
 	) {
-		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
-		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
-		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
+		$this->categoryStore = $categoryStore;
+		$this->propertyStore = $propertyStore;
+		$this->subobjectStore = $subobjectStore;
 	}
 
 	/**

@@ -17,6 +17,7 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Html\Html;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
+use ObjectCacheFactory;
 
 /**
  * SpecialSemanticSchemas
@@ -45,25 +46,52 @@ use MediaWiki\Title\Title;
  */
 class SpecialSemanticSchemas extends SpecialPage {
 
-	/** @var int Default rate limit: max operations per hour per user */
 	private const DEFAULT_RATE_LIMIT_PER_HOUR = 20;
-
-	/** @var string Cache key for rate limiting */
 	private const RATE_LIMIT_CACHE_PREFIX = 'semanticschemas-ratelimit';
 
-	/**
-	 * Get the rate limit from configuration.
-	 *
-	 * @return int Maximum operations per hour
-	 */
+	private WikiCategoryStore $categoryStore;
+	private WikiPropertyStore $propertyStore;
+	private WikiSubobjectStore $subobjectStore;
+	private TemplateGenerator $templateGenerator;
+	private FormGenerator $formGenerator;
+	private DisplayStubGenerator $displayGenerator;
+	private ExtensionConfigInstaller $installer;
+	private OntologyInspector $inspector;
+	private StateManager $stateManager;
+	private PageHashComputer $hashComputer;
+	private ObjectCacheFactory $objectCacheFactory;
+
 	private function getRateLimitPerHour(): int {
 		$config = $this->getConfig();
 		return (int)$config->get( 'SemanticSchemasRateLimitPerHour' )
 			?: self::DEFAULT_RATE_LIMIT_PER_HOUR;
 	}
 
-	public function __construct() {
+	public function __construct(
+		WikiCategoryStore $categoryStore,
+		WikiPropertyStore $propertyStore,
+		WikiSubobjectStore $subobjectStore,
+		TemplateGenerator $templateGenerator,
+		FormGenerator $formGenerator,
+		DisplayStubGenerator $displayGenerator,
+		ExtensionConfigInstaller $installer,
+		OntologyInspector $inspector,
+		StateManager $stateManager,
+		PageHashComputer $hashComputer,
+		ObjectCacheFactory $objectCacheFactory
+	) {
 		parent::__construct( 'SemanticSchemas', 'editinterface' );
+		$this->categoryStore = $categoryStore;
+		$this->propertyStore = $propertyStore;
+		$this->subobjectStore = $subobjectStore;
+		$this->templateGenerator = $templateGenerator;
+		$this->formGenerator = $formGenerator;
+		$this->displayGenerator = $displayGenerator;
+		$this->installer = $installer;
+		$this->inspector = $inspector;
+		$this->stateManager = $stateManager;
+		$this->hashComputer = $hashComputer;
+		$this->objectCacheFactory = $objectCacheFactory;
 	}
 
 	/**
@@ -83,7 +111,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return false;
 		}
 
-		$cache = \ObjectCache::getLocalClusterInstance();
+		$cache = $this->objectCacheFactory->getLocalClusterInstance();
 		$key = $cache->makeKey( self::RATE_LIMIT_CACHE_PREFIX, $user->getId(), $operation );
 
 		$count = $cache->get( $key ) ?: 0;
@@ -230,8 +258,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		}
 
 		// Load the category
-		$categoryStore = new WikiCategoryStore();
-		$category = $categoryStore->readCategory( $categoryName );
+		$category = $this->categoryStore->readCategory( $categoryName );
 
 		if ( $category === null ) {
 			$output->addHTML( Html::errorBox(
@@ -242,15 +269,14 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		try {
 			// Build category map for inheritance resolution
-			$categoryMap = $this->buildCategoryMap( $categoryStore );
+			$categoryMap = $this->buildCategoryMap( $this->categoryStore );
 			$resolver = new InheritanceResolver( $categoryMap );
 
 			// Resolve inheritance to get effective category with all inherited properties
 			$effective = $resolver->getEffectiveCategory( $categoryName );
 
 			// Generate templates (always regenerate auto-generated ones)
-			$templateGenerator = new TemplateGenerator();
-			$templateResult = $templateGenerator->generateAllTemplates( $effective );
+			$templateResult = $this->templateGenerator->generateAllTemplates( $effective );
 
 			if ( !$templateResult['success'] ) {
 				$output->addHTML( Html::errorBox(
@@ -262,8 +288,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			}
 
 			// Generate form
-			$formGenerator = new FormGenerator();
-			$formSuccess = $formGenerator->generateAndSaveForm( $effective );
+			$formSuccess = $this->formGenerator->generateAndSaveForm( $effective );
 
 			if ( !$formSuccess ) {
 				$output->addHTML( Html::errorBox(
@@ -275,8 +300,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			}
 
 			// Generate display template conditionally (respect user customizations)
-			$displayGenerator = new DisplayStubGenerator();
-			$displayResult = $displayGenerator->generateIfAllowed( $effective );
+			$displayResult = $this->displayGenerator->generateIfAllowed( $effective );
 
 			// Log the operation
 			$this->logOperation( 'generate', "Form generated for $categoryName", [
@@ -358,8 +382,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		}
 
 		try {
-			$installer = new ExtensionConfigInstaller();
-			$result = $installer->applyFromFile( $configPath );
+			$result = $this->installer->applyFromFile( $configPath );
 
 			if ( !empty( $result['errors'] ) ) {
 				$output->addHTML( Html::errorBox(
@@ -449,12 +472,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$output->addModules( 'ext.semanticschemas.install' );
 
 		$configPath = __DIR__ . '/../../resources/extension-config.json';
-		$installer = new ExtensionConfigInstaller();
 
 		// Preview what will be installed
 		$preview = [];
 		if ( file_exists( $configPath ) ) {
-			$preview = $installer->previewInstallation( $configPath );
+			$preview = $this->installer->previewInstallation( $configPath );
 		}
 
 		$wouldCreate = $preview['would_create'] ?? [];
@@ -935,17 +957,14 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$output->setPageTitle( $this->msg( 'semanticschemas-overview' )->text() );
 
 		// Check if base config is installed and show banner if not
-		$installer = new ExtensionConfigInstaller();
 		$installBanner = '';
-		if ( !$installer->isInstalled() ) {
+		if ( !$this->installer->isInstalled() ) {
 			$installBanner = $this->renderInstallConfigBanner();
 		}
 
-		$inspector = new OntologyInspector();
-		$stats = $inspector->getStatistics();
-		$stateManager = new StateManager();
-		$state = $stateManager->getFullState();
-		$isDirty = $stateManager->isDirty();
+		$stats = $this->inspector->getStatistics();
+		$state = $this->stateManager->getFullState();
+		$isDirty = $this->stateManager->isDirty();
 
 		$hero = $this->renderOverviewHero( $isDirty );
 		$summaryGrid = $this->renderSummaryGrid( $stats, $state );
@@ -970,18 +989,14 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return array<string, bool> Map of page names to modification status
 	 */
 	private function detectModifiedPages( array $categories ): array {
-		$propertyStore = new WikiPropertyStore();
-		$stateManager = new StateManager();
-		$hashComputer = new PageHashComputer();
-
-		$storedHashes = $stateManager->getPageHashes();
+		$storedHashes = $this->stateManager->getPageHashes();
 		$modifiedPages = [];
 
 		foreach ( $categories as $category ) {
 			$categoryName = $category->getName();
 			$pageName = "Category:$categoryName";
 
-			$currentHash = $hashComputer->computeCategoryModelHash( $category );
+			$currentHash = $this->hashComputer->computeCategoryModelHash( $category );
 			$storedHash = $storedHashes[$pageName]['generated'] ?? '';
 			if ( $storedHash !== '' && $currentHash !== $storedHash ) {
 				$modifiedPages[$pageName] = true;
@@ -993,12 +1008,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 					continue;
 				}
 
-				$propModel = $propertyStore->readProperty( $propertyName );
+				$propModel = $this->propertyStore->readProperty( $propertyName );
 				if ( $propModel === null ) {
 					continue;
 				}
 
-				$currentHash = $hashComputer->computePropertyModelHash( $propModel );
+				$currentHash = $this->hashComputer->computePropertyModelHash( $propModel );
 				$storedHash = $storedHashes[$propPageName]['generated'] ?? '';
 				if ( $storedHash !== '' && $currentHash !== $storedHash ) {
 					$modifiedPages[$propPageName] = true;
@@ -1054,12 +1069,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return string HTML
 	 */
 	private function getCategoryStatusTable(): string {
-		$categoryStore = new WikiCategoryStore();
-		$templateGenerator = new TemplateGenerator();
-		$formGenerator = new FormGenerator();
-		$displayGenerator = new DisplayStubGenerator();
-
-		$categories = $categoryStore->getAllCategories();
+		$categories = $this->categoryStore->getAllCategories();
 
 		if ( empty( $categories ) ) {
 			return Html::rawElement(
@@ -1098,7 +1108,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'td',
 				[],
 				$this->renderAvailabilityBadge(
-					$templateGenerator->semanticTemplateExists( $name ),
+					$this->templateGenerator->semanticTemplateExists( $name ),
 					$this->getTemplateTitle( $name )
 				)
 			);
@@ -1106,7 +1116,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'td',
 				[],
 				$this->renderAvailabilityBadge(
-					$formGenerator->formExists( $name ),
+					$this->formGenerator->formExists( $name ),
 					$this->getFormTitle( $name )
 				)
 			);
@@ -1114,7 +1124,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'td',
 				[],
 				$this->renderAvailabilityBadge(
-					$displayGenerator->displayStubExists( $name ),
+					$this->displayGenerator->displayStubExists( $name ),
 					$this->getDisplayTitle( $name )
 				)
 			);
@@ -1144,8 +1154,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$output = $this->getOutput();
 		$output->setPageTitle( $this->msg( 'semanticschemas-validate-title' )->text() );
 
-		$inspector = new OntologyInspector();
-		$result = $inspector->validateWikiState();
+		$result = $this->inspector->validateWikiState();
 
 		$body = $this->renderCardHeader(
 			$this->msg( 'semanticschemas-validate-title' )->text(),
@@ -1201,8 +1210,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
-		$categoryStore = new WikiCategoryStore();
-		$categories = $categoryStore->getAllCategories();
+		$categories = $this->categoryStore->getAllCategories();
 
 		$form = Html::openElement( 'form', [
 			'id' => 'semski-generate-form',
@@ -1298,26 +1306,21 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return array<string, string> Map of page names to their computed hashes
 	 */
 	private function computeAllSchemaHashes(): array {
-		$categoryStore = new WikiCategoryStore();
-		$propertyStore = new WikiPropertyStore();
-		$subobjectStore = new WikiSubobjectStore();
-		$hashComputer = new PageHashComputer();
-
 		$pageHashes = [];
 
-		foreach ( $categoryStore->getAllCategories() as $category ) {
+		foreach ( $this->categoryStore->getAllCategories() as $category ) {
 			$name = $category->getName();
-			$pageHashes["Category:$name"] = $hashComputer->computeCategoryModelHash( $category );
+			$pageHashes["Category:$name"] = $this->hashComputer->computeCategoryModelHash( $category );
 		}
 
-		foreach ( $propertyStore->getAllProperties() as $property ) {
+		foreach ( $this->propertyStore->getAllProperties() as $property ) {
 			$name = $property->getName();
-			$pageHashes["Property:$name"] = $hashComputer->computePropertyModelHash( $property );
+			$pageHashes["Property:$name"] = $this->hashComputer->computePropertyModelHash( $property );
 		}
 
-		foreach ( $subobjectStore->getAllSubobjects() as $subobject ) {
+		foreach ( $this->subobjectStore->getAllSubobjects() as $subobject ) {
 			$name = $subobject->getName();
-			$pageHashes["Subobject:$name"] = $hashComputer->computeSubobjectModelHash( $subobject );
+			$pageHashes["Subobject:$name"] = $this->hashComputer->computeSubobjectModelHash( $subobject );
 		}
 
 		return $pageHashes;
@@ -1369,12 +1372,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 		}
 
 		$categoryName = trim( $request->getText( 'category' ) );
-		$categoryStore = new WikiCategoryStore();
-		$templateGenerator = new TemplateGenerator();
-		$formGenerator = new FormGenerator();
-		$displayGenerator = new DisplayStubGenerator();
 
-		$categories = $this->getTargetCategories( $categoryStore, $categoryName );
+		$categories = $this->getTargetCategories( $this->categoryStore, $categoryName );
 
 		if ( empty( $categories ) ) {
 			$output->addHTML( Html::errorBox(
@@ -1390,7 +1389,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		);
 
 		try {
-			$categoryMap = $this->buildCategoryMap( $categoryStore );
+			$categoryMap = $this->buildCategoryMap( $this->categoryStore );
 			$resolver = new InheritanceResolver( $categoryMap );
 			$generateDisplay = $request->getBool( 'generate-display' );
 
@@ -1411,11 +1410,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 				try {
 					$effective = $resolver->getEffectiveCategory( $name );
 
-					$templateGenerator->generateAllTemplates( $effective );
-					$formGenerator->generateAndSaveForm( $effective );
+					$this->templateGenerator->generateAllTemplates( $effective );
+					$this->formGenerator->generateAndSaveForm( $effective );
 
 					if ( $generateDisplay ) {
-						$displayGenerator->generateOrUpdateDisplayStub( $effective );
+						$this->displayGenerator->generateOrUpdateDisplayStub( $effective );
 					}
 
 					$successCount++;
@@ -1436,9 +1435,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$pageHashes = $this->computeAllSchemaHashes();
 
 			if ( !empty( $pageHashes ) ) {
-				$stateManager = new StateManager();
-				$stateManager->setPageHashes( $pageHashes );
-				$stateManager->clearDirty();
+				$this->stateManager->setPageHashes( $pageHashes );
+				$this->stateManager->clearDirty();
 			}
 
 			$this->logOperation( 'generate', 'Template/form generation completed', [

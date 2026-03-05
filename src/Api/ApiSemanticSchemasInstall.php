@@ -48,6 +48,18 @@ use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
  */
 class ApiSemanticSchemasInstall extends ApiBase {
 
+	private ExtensionConfigInstaller $installer;
+
+	/**
+	 * @param \ApiMain $mainModule
+	 * @param string $moduleName
+	 * @param ExtensionConfigInstaller $installer
+	 */
+	public function __construct( $mainModule, $moduleName, ExtensionConfigInstaller $installer ) {
+		parent::__construct( $mainModule, $moduleName );
+		$this->installer = $installer;
+	}
+
 	/**
 	 * Execute the API request.
 	 */
@@ -57,12 +69,11 @@ class ApiSemanticSchemasInstall extends ApiBase {
 		$params = $this->extractRequestParams();
 		$step = $params['step'];
 
-		$installer = new ExtensionConfigInstaller();
 		$configPath = __DIR__ . '/../../resources/extension-config.json';
 
 		switch ( $step ) {
 			case 'status':
-				$this->executeStatus( $installer, $configPath );
+				$this->executeStatus( $this->installer, $configPath );
 				break;
 
 			case 'layer0':
@@ -70,7 +81,7 @@ class ApiSemanticSchemasInstall extends ApiBase {
 			case 'layer2':
 			case 'layer3':
 			case 'layer4':
-				$this->executeLayer( $step, $installer, $configPath );
+				$this->executeLayer( $step, $this->installer, $configPath );
 				break;
 
 			default:
