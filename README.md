@@ -14,6 +14,7 @@ SemanticSchemas is a MediaWiki extension that treats Categories and Properties a
 - PHP 7.4+
 - [SemanticMediaWiki](https://www.semantic-mediawiki.org/)
 - [PageForms](https://www.mediawiki.org/wiki/Extension:Page_Forms)
+- [ParserFunctions](https://www.mediawiki.org/wiki/Extension:ParserFunctions)
 
 ## Installation
 

@@ -161,13 +161,6 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '{{Person/display', $result );
 	}
 
-	public function testGenerateDispatcherTemplateContainsHierarchyWidget(): void {
-		$category = new CategoryModel( 'Person' );
-		$result = $this->generator->generateDispatcherTemplate( $category );
-
-		$this->assertStringContainsString( '{{#semanticschemas_hierarchy:', $result );
-	}
-
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [

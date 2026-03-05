@@ -216,10 +216,6 @@ class TemplateGenerator {
 			$this->generateSubobjectDisplaySections( $category )
 		);
 
-		/* Hierarchy Widget (Bottom of page) */
-		$out[] = '';
-		$out[] = '{{#semanticschemas_hierarchy:' . $cat . '}}';
-
 		$out[] = '</includeonly>';
 
 		return implode( "\n", $out );
