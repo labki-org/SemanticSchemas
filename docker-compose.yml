@@ -14,6 +14,7 @@ services:
     volumes:
       - ./:/mw-user-extensions/SemanticSchemas
       - ./tests/LocalSettings.test.php:/mw-config/LocalSettings.user.php
+      - ./tests/LocalSettings.common.php:/mw-config/LocalSettings.common.php
     depends_on:
       db:
         condition: service_healthy
@@ -34,6 +35,7 @@ services:
     volumes:
       - ./:/mw-user-extensions/SemanticSchemas
       - ./tests/LocalSettings.test.php:/mw-config/LocalSettings.user.php
+      - ./tests/LocalSettings.common.php:/mw-config/LocalSettings.common.php
     depends_on:
       wiki:
         condition: service_healthy

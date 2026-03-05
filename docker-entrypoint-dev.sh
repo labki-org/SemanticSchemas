@@ -13,7 +13,7 @@ MW_DIR="/var/www/html"
 
 # Wait for database to be ready
 echo "Waiting for database at $MW_DB_HOST..."
-until mysqladmin ping -h "$MW_DB_HOST" -u "$MW_DB_USER" -p"$MW_DB_PASSWORD" --silent 2>/dev/null; do
+until mysqladmin ping -h "$MW_DB_HOST" -u "$MW_DB_USER" -p"$MW_DB_PASSWORD" --skip-ssl --silent 2>/dev/null; do
 	sleep 2
 done
 echo "Database is ready."
