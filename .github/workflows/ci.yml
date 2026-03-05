@@ -160,27 +160,7 @@ jobs:
 
       - name: Configure LocalSettings
         run: |
-          cat >> ~/mediawiki/LocalSettings.php <<'SETTINGS'
-
-          # Test settings for SemanticSchemas CI
-          wfLoadExtension( 'SemanticMediaWiki' );
-          enableSemantics( 'localhost' );
-          wfLoadExtension( 'PageForms' );
-          wfLoadExtension( 'ParserFunctions' );
-          wfLoadExtension( 'SemanticSchemas' );
-
-          $smwgChangePropagationProtection = false;
-          $smwgEnabledDeferredUpdate = false;
-          $smwgAutoSetupStore = false;
-          $smwgQMaxInlineLimit = 500;
-
-          $wgPageFormsAllowCreateInRestrictedNamespaces = true;
-          $wgPageFormsLinkAllRedLinksToForms = true;
-          $wgPageFormsFormCacheType = CACHE_NONE;
-          $wgNamespacesWithSemanticLinks[NS_CATEGORY] = true;
-
-          $wgShowExceptionDetails = true;
-          SETTINGS
+          echo "require_once '$GITHUB_WORKSPACE/SemanticSchemas/tests/LocalSettings.ci.php';" >> ~/mediawiki/LocalSettings.php
 
       - name: Update database schema
         run: php ~/mediawiki/maintenance/update.php --quick
