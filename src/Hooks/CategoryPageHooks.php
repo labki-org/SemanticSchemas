@@ -19,7 +19,8 @@ class CategoryPageHooks {
 	 *
 	 * Adds a "Generate form" action link to the dropdown menu on Category pages.
 	 */
-	public function onSkinTemplateNavigation( Skin $skin, array &$links ): void {
+	// phpcs:ignore MediaWiki.NamingConventions.LowerCamelFunctionsName.FunctionName
+	public function onSkinTemplateNavigation__Universal( Skin $skin, array &$links ): void {
 		$title = $skin->getTitle();
 		$user = $skin->getUser();
 
