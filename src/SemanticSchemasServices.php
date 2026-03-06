@@ -19,7 +19,19 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\MediaWikiServices;
 
 /**
- * Typed accessor for SemanticSchemas services registered in ServiceWiring.php.
+ * Typed accessors for SemanticSchemas services registered in ServiceWiring.php.
+ *
+ * This class is NOT injected itself -- it provides type-safe static getters that wrap
+ * the untyped MediaWikiServices::get( 'string' ) calls. It is only used in entry points
+ * where constructor injection via ObjectFactory is not available (e.g. maintenance scripts).
+ *
+ * All other consumers (Special pages, API modules, hook handlers) receive their
+ * dependencies via constructor injection declared in extension.json.
+ *
+ * This is a standard MediaWiki pattern; see CirrusSearchServices and
+ * GrowthExperimentsServices for reference implementations.
+ *
+ * @see ServiceWiring.php for service definitions
  */
 class SemanticSchemasServices {
 
