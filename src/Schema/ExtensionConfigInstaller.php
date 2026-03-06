@@ -2,11 +2,11 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
+use JobQueueGroup;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
-use MediaWiki\JobQueue\JobQueueGroup;
 
 /**
  * ExtensionConfigInstaller
