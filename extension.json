@@ -158,7 +158,8 @@
 		"semanticschemas-install": {
 			"class": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasInstall",
 			"services": [
-				"SemanticSchemas.ExtensionConfigInstaller"
+				"SemanticSchemas.ExtensionConfigInstaller",
+				"SemanticSchemas.SchemaLoader"
 			]
 		}
 	},

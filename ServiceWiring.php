@@ -41,8 +41,8 @@ return [
 		MediaWikiServices $services
 	): ExtensionConfigInstaller {
 		return new ExtensionConfigInstaller(
-			new SchemaLoader(),
-			new SchemaValidator(),
+			$services->get( 'SemanticSchemas.SchemaLoader' ),
+			$services->get( 'SemanticSchemas.SchemaValidator' ),
 			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
@@ -57,7 +57,7 @@ return [
 		return new FormGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			new PropertyInputMapper(),
+			$services->get( 'SemanticSchemas.PropertyInputMapper' ),
 			$services->get( 'SemanticSchemas.WikiSubobjectStore' )
 		);
 	},
@@ -70,7 +70,8 @@ return [
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
 			$services->get( 'SemanticSchemas.StateManager' ),
-			$services->get( 'SemanticSchemas.PageHashComputer' )
+			$services->get( 'SemanticSchemas.PageHashComputer' ),
+			$services->get( 'SemanticSchemas.SchemaValidator' )
 		);
 	},
 
@@ -91,6 +92,24 @@ return [
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.WikiSubobjectStore' )
 		);
+	},
+
+	'SemanticSchemas.PropertyInputMapper' => static function (
+		MediaWikiServices $services
+	): PropertyInputMapper {
+		return new PropertyInputMapper();
+	},
+
+	'SemanticSchemas.SchemaLoader' => static function (
+		MediaWikiServices $services
+	): SchemaLoader {
+		return new SchemaLoader();
+	},
+
+	'SemanticSchemas.SchemaValidator' => static function (
+		MediaWikiServices $services
+	): SchemaValidator {
+		return new SchemaValidator();
 	},
 
 	'SemanticSchemas.StateManager' => static function (

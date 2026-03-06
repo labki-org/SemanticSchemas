@@ -140,11 +140,10 @@ class PageHashComputer {
 	public function computeSchemaHash( array $schema ): string {
 		// Normalize schema: sort keys recursively for deterministic hashing
 		$normalized = $this->normalizeArray( $schema );
-		// JSON_SORT_KEYS was added in PHP 5.4.0, use numeric value if constant not defined
-		$jsonFlags = \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE;
-		$sortKeysFlag = defined( 'JSON_SORT_KEYS' ) ? constant( 'JSON_SORT_KEYS' ) : 64;
-		$jsonFlags |= $sortKeysFlag;
-		$json = json_encode( $normalized, $jsonFlags );
+		$json = json_encode(
+			$normalized,
+			\JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_SORT_KEYS
+		);
 		return $this->hashContent( $json );
 	}
 

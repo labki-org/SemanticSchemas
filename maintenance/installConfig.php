@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Maintenance;
 
 use Maintenance;
+use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
 
 $IP = getenv( 'MW_INSTALL_PATH' );

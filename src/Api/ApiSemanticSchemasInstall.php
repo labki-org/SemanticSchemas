@@ -49,15 +49,23 @@ use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 class ApiSemanticSchemasInstall extends ApiBase {
 
 	private ExtensionConfigInstaller $installer;
+	private SchemaLoader $loader;
 
 	/**
 	 * @param \ApiMain $mainModule
 	 * @param string $moduleName
 	 * @param ExtensionConfigInstaller $installer
+	 * @param SchemaLoader $loader
 	 */
-	public function __construct( $mainModule, $moduleName, ExtensionConfigInstaller $installer ) {
+	public function __construct(
+		$mainModule,
+		$moduleName,
+		ExtensionConfigInstaller $installer,
+		SchemaLoader $loader
+	) {
 		parent::__construct( $mainModule, $moduleName );
 		$this->installer = $installer;
+		$this->loader = $loader;
 	}
 
 	/**
@@ -116,23 +124,21 @@ class ApiSemanticSchemasInstall extends ApiBase {
 		string $step,
 		string $configPath
 	): void {
-		// Require POST for write operations
+		// Write operations require POST with a valid CSRF token
 		if ( !$this->getRequest()->wasPosted() ) {
-			$this->dieWithError( 'This action requires POST' );
+			$this->dieWithError( [ 'apierror-mustbeposted', $this->getModuleName() ] );
 		}
 
-		// Check CSRF token
 		$token = $this->getParameter( 'token' );
 		if ( !$this->getUser()->matchEditToken( $token ) ) {
-			$this->dieWithError( 'Invalid CSRF token' );
+			$this->dieWithError( 'apierror-badtoken' );
 		}
 
 		if ( !file_exists( $configPath ) ) {
 			$this->dieWithError( 'Configuration file not found' );
 		}
 
-		$loader = new SchemaLoader();
-		$schema = $loader->loadFromFile( $configPath );
+		$schema = $this->loader->loadFromFile( $configPath );
 
 		$result = [];
 		$layerName = '';

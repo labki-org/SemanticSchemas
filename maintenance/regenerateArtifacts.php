@@ -113,7 +113,7 @@ class RegenerateArtifacts extends Maintenance {
 		}
 
 		// Generate form
-		if ( $formGenerator->generateAndSaveForm( $effective, $ancestors ) ) {
+		if ( $formGenerator->generateAndSaveForm( $effective ) ) {
 			$this->output( "  ✓ Generated form\n" );
 		} else {
 			$this->output( "  ✗ Form generation failed\n" );
