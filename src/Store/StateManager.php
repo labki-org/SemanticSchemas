@@ -10,17 +10,12 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
  */
 class StateManager {
 
-	/** @var PageCreator */
-	private $pageCreator;
+	private PageCreator $pageCreator;
 
-	/** @var string */
 	private const STATE_PAGE = 'SemanticSchemasState.json';
 
-	/**
-	 * @param PageCreator|null $pageCreator
-	 */
-	public function __construct( ?PageCreator $pageCreator = null ) {
-		$this->pageCreator = $pageCreator ?? new PageCreator();
+	public function __construct( PageCreator $pageCreator ) {
+		$this->pageCreator = $pageCreator;
 	}
 
 	/**

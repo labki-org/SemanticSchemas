@@ -9,9 +9,8 @@ use Skin;
 /**
  * CategoryPageHooks
  *
- * Hook handler for adding "Generate Form" action to Category pages.
- * This allows users to quickly generate a PageForms form for any category
- * without navigating to the Special:SemanticSchemas page.
+ * Hook handler for adding "Generate Form" action to Category pages
+ * and rendering hierarchy footers.
  */
 class CategoryPageHooks {
 
@@ -19,16 +18,9 @@ class CategoryPageHooks {
 	 * Hook: SkinTemplateNavigation::Universal
 	 *
 	 * Adds a "Generate form" action link to the dropdown menu on Category pages.
-	 * The link only appears for:
-	 * - Existing Category pages
-	 * - Users with 'editinterface' permission (same as Special:SemanticSchemas)
-	 * - Categories that have schema data
-	 *
-	 * @param Skin $skin
-	 * @param array &$links Navigation links array
-	 * @return void
 	 */
-	public static function onSkinTemplateNavigation( Skin $skin, array &$links ): void {
+	// phpcs:ignore MediaWiki.NamingConventions.LowerCamelFunctionsName.FunctionName
+	public function onSkinTemplateNavigation__Universal( Skin $skin, array &$links ): void {
 		$title = $skin->getTitle();
 		$user = $skin->getUser();
 
@@ -61,11 +53,8 @@ class CategoryPageHooks {
 
 	/**
 	 * Displays the inheritance hierarchy in the footer of category pages
-	 * @param Article $article
-	 * @param bool $patrolFooterShown
-	 * @return bool
 	 */
-	public static function onArticleViewFooter( Article $article, bool $patrolFooterShown ): bool {
+	public function onArticleViewFooter( Article $article, bool $patrolFooterShown ): bool {
 		$title = $article->getTitle();
 		if ( !$title || !$title->inNamespace( NS_CATEGORY ) ) {
 			return true;

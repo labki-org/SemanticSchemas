@@ -50,4 +50,4 @@ EOF
 	echo "==> First-run setup complete."
 fi
 
-exec apache2-foreground
+exec "$@"

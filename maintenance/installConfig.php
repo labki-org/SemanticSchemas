@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Maintenance;
 
 use Maintenance;
 use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
+use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
 if ( $IP === false ) {
@@ -33,7 +34,9 @@ class InstallConfig extends Maintenance {
 			$this->fatalError( "Config file not found: $configPath" );
 		}
 
-		$installer = new ExtensionConfigInstaller();
+		$installer = SemanticSchemasServices::getExtensionConfigInstaller(
+			$this->getServiceContainer()
+		);
 		$dryRun = $this->hasOption( 'dry-run' );
 
 		if ( $dryRun ) {

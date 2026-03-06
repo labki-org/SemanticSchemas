@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
+use JobQueueGroup;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -43,22 +44,24 @@ class ExtensionConfigInstaller {
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
 	private WikiSubobjectStore $subobjectStore;
+	private JobQueueGroup $jobQueueGroup;
 
 	public function __construct(
-		?SchemaLoader $loader = null,
-		?SchemaValidator $validator = null,
-		?WikiCategoryStore $categoryStore = null,
-		?WikiPropertyStore $propertyStore = null,
-		?WikiSubobjectStore $subobjectStore = null,
-		?PageCreator $pageCreator = null
+		SchemaLoader $loader,
+		SchemaValidator $validator,
+		WikiCategoryStore $categoryStore,
+		WikiPropertyStore $propertyStore,
+		WikiSubobjectStore $subobjectStore,
+		PageCreator $pageCreator,
+		JobQueueGroup $jobQueueGroup
 	) {
-		$this->loader = $loader ?? new SchemaLoader();
-		$this->validator = $validator ?? new SchemaValidator();
-		$this->pageCreator = $pageCreator ?? new PageCreator();
-
-		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
-		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
-		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
+		$this->loader = $loader;
+		$this->validator = $validator;
+		$this->categoryStore = $categoryStore;
+		$this->propertyStore = $propertyStore;
+		$this->subobjectStore = $subobjectStore;
+		$this->pageCreator = $pageCreator;
+		$this->jobQueueGroup = $jobQueueGroup;
 	}
 
 	/**
@@ -77,12 +80,13 @@ class ExtensionConfigInstaller {
 			return false;
 		}
 
-		// Check all layers - templates, properties, subobjects, and categories
-		// If any layer is incomplete, we consider installation incomplete
-		return $this->areEntitiesInstalled( $configPath, 'templates', NS_TEMPLATE )
-			&& $this->areEntitiesInstalled( $configPath, 'properties', SMW_NS_PROPERTY )
-			&& $this->areEntitiesInstalled( $configPath, 'subobjects', NS_SUBOBJECT )
-			&& $this->areEntitiesInstalled( $configPath, 'categories', NS_CATEGORY );
+		// Load schema once and check all layers
+		$schema = $this->loader->loadFromFile( $configPath );
+
+		return $this->areSchemaEntitiesInstalled( $schema, 'templates', NS_TEMPLATE )
+			&& $this->areSchemaEntitiesInstalled( $schema, 'properties', SMW_NS_PROPERTY )
+			&& $this->areSchemaEntitiesInstalled( $schema, 'subobjects', NS_SUBOBJECT )
+			&& $this->areSchemaEntitiesInstalled( $schema, 'categories', NS_CATEGORY );
 	}
 
 	/**
@@ -176,7 +180,8 @@ class ExtensionConfigInstaller {
 	 * @return bool
 	 */
 	public function areTemplatesInstalled( string $filePath ): bool {
-		return $this->areEntitiesInstalled( $filePath, 'templates', NS_TEMPLATE );
+		$schema = $this->loader->loadFromFile( $filePath );
+		return $this->areSchemaEntitiesInstalled( $schema, 'templates', NS_TEMPLATE );
 	}
 
 	/**
@@ -186,7 +191,8 @@ class ExtensionConfigInstaller {
 	 * @return bool
 	 */
 	public function arePropertiesInstalled( string $filePath ): bool {
-		return $this->areEntitiesInstalled( $filePath, 'properties', SMW_NS_PROPERTY );
+		$schema = $this->loader->loadFromFile( $filePath );
+		return $this->areSchemaEntitiesInstalled( $schema, 'properties', SMW_NS_PROPERTY );
 	}
 
 	/**
@@ -196,7 +202,8 @@ class ExtensionConfigInstaller {
 	 * @return bool
 	 */
 	public function areSubobjectsInstalled( string $filePath ): bool {
-		return $this->areEntitiesInstalled( $filePath, 'subobjects', NS_SUBOBJECT );
+		$schema = $this->loader->loadFromFile( $filePath );
+		return $this->areSchemaEntitiesInstalled( $schema, 'subobjects', NS_SUBOBJECT );
 	}
 
 	/**
@@ -206,7 +213,8 @@ class ExtensionConfigInstaller {
 	 * @return bool
 	 */
 	public function areCategoriesInstalled( string $filePath ): bool {
-		return $this->areEntitiesInstalled( $filePath, 'categories', NS_CATEGORY );
+		$schema = $this->loader->loadFromFile( $filePath );
+		return $this->areSchemaEntitiesInstalled( $schema, 'categories', NS_CATEGORY );
 	}
 
 	/**
@@ -281,15 +289,14 @@ class ExtensionConfigInstaller {
 	}
 
 	/**
-	 * Check if entities of a given type from the schema are installed.
+	 * Check if entities of a given type from a parsed schema are installed.
 	 *
-	 * @param string $filePath Path to schema file
+	 * @param array $schema Parsed schema array
 	 * @param string $entityType Schema key: 'properties', 'categories', 'templates', or 'subobjects'
 	 * @param int $namespace MediaWiki namespace constant
 	 * @return bool
 	 */
-	private function areEntitiesInstalled( string $filePath, string $entityType, int $namespace ): bool {
-		$schema = $this->loader->loadFromFile( $filePath );
+	private function areSchemaEntitiesInstalled( array $schema, string $entityType, int $namespace ): bool {
 		$entities = $schema[$entityType] ?? [];
 
 		if ( empty( $entities ) ) {
@@ -312,13 +319,11 @@ class ExtensionConfigInstaller {
 	 * @return int
 	 */
 	public function getPendingJobCount(): int {
-		$jobQueueGroup = \MediaWiki\MediaWikiServices::getInstance()->getJobQueueGroup();
-
 		try {
-			$queuesWithJobs = $jobQueueGroup->getQueuesWithJobs();
+			$queuesWithJobs = $this->jobQueueGroup->getQueuesWithJobs();
 			$count = 0;
 			foreach ( $queuesWithJobs as $type ) {
-				$queue = $jobQueueGroup->get( $type );
+				$queue = $this->jobQueueGroup->get( $type );
 				$count += $queue->getSize();
 			}
 			return $count;

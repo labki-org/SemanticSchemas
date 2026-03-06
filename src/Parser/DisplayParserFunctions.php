@@ -25,28 +25,22 @@ use PPFrame;
  */
 class DisplayParserFunctions {
 
-	public function __construct() {
-		// No dependencies needed
-	}
-
 	/* =====================================================================
 	 * REGISTRATION
 	 * ===================================================================== */
 
-	public static function onParserFirstCallInit( Parser $parser ): void {
-		$instance = new self();
-
+	public function onParserFirstCallInit( Parser $parser ): void {
 		// Category hierarchy UI
 		$parser->setFunctionHook(
 			'semanticschemas_hierarchy',
-			[ $instance, 'renderHierarchy' ],
+			[ $this, 'renderHierarchy' ],
 			SFH_OBJECT_ARGS
 		);
 
 		// Form preview JS loader
 		$parser->setFunctionHook(
 			'semanticschemas_load_form_preview',
-			[ $instance, 'loadFormPreview' ],
+			[ $this, 'loadFormPreview' ],
 			SFH_OBJECT_ARGS
 		);
 	}
