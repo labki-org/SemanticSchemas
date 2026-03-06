@@ -48,19 +48,23 @@ class DisplayStubGenerator {
 	 * @return array Result array with keys: 'created' (bool), 'updated' (bool), 'message' (string)
 	 */
 	public function generateOrUpdateDisplayStub( CategoryModel $category ): array {
+		$existed = $this->displayStubExists( $category->getName() );
+
 		$titleText = $this->generateDisplayContent( $category );
 		if ( $titleText === '' ) {
 			return [
 				'created' => false,
 				'updated' => false,
-				'message' => 'Failed to generate content or title.'
+				'error' => 'Failed to generate content or title.',
 			];
 		}
 
 		return [
-			'created' => true,
-			'updated' => true,
-			'message' => "Display stub updated: $titleText"
+			'created' => !$existed,
+			'updated' => $existed,
+			'message' => $existed
+				? "Display template updated: $titleText"
+				: "Display template stub created: $titleText",
 		];
 	}
 
