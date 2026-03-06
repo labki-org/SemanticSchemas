@@ -22,84 +22,84 @@ use MediaWiki\MediaWikiServices;
 class SemanticSchemasServices {
 
 	public static function getPageCreator(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): PageCreator {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.PageCreator' );
 	}
 
 	public static function getWikiPropertyStore(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): WikiPropertyStore {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.WikiPropertyStore' );
 	}
 
 	public static function getWikiCategoryStore(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): WikiCategoryStore {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.WikiCategoryStore' );
 	}
 
 	public static function getWikiSubobjectStore(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): WikiSubobjectStore {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.WikiSubobjectStore' );
 	}
 
 	public static function getStateManager(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): StateManager {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.StateManager' );
 	}
 
 	public static function getPageHashComputer(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): PageHashComputer {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.PageHashComputer' );
 	}
 
 	public static function getTemplateGenerator(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): TemplateGenerator {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.TemplateGenerator' );
 	}
 
 	public static function getFormGenerator(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): FormGenerator {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.FormGenerator' );
 	}
 
 	public static function getDisplayStubGenerator(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): DisplayStubGenerator {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.DisplayStubGenerator' );
 	}
 
 	public static function getExtensionConfigInstaller(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): ExtensionConfigInstaller {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.ExtensionConfigInstaller' );
 	}
 
 	public static function getOntologyInspector(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): OntologyInspector {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.OntologyInspector' );
 	}
 
 	public static function getCategoryHierarchyService(
-		MediaWikiServices $services = null
+		MediaWikiServices|null $services = null
 	): CategoryHierarchyService {
 		return ( $services ?? MediaWikiServices::getInstance() )
 			->get( 'SemanticSchemas.CategoryHierarchyService' );
