@@ -269,7 +269,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		try {
 			// Build category map for inheritance resolution
-			$categoryMap = $this->buildCategoryMap( $this->categoryStore );
+			$categoryMap = $this->buildCategoryMap();
 			$resolver = new InheritanceResolver( $categoryMap );
 
 			// Resolve inheritance to get effective category with all inherited properties
@@ -1331,12 +1331,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 *
 	 * Ensures all categories are included so parent relationships resolve correctly.
 	 *
-	 * @param WikiCategoryStore $categoryStore
 	 * @return array<string, object> Map of category names to CategoryModel objects
 	 */
-	private function buildCategoryMap( WikiCategoryStore $categoryStore ): array {
+	private function buildCategoryMap(): array {
 		$categoryMap = [];
-		foreach ( $categoryStore->getAllCategories() as $cat ) {
+		foreach ( $this->categoryStore->getAllCategories() as $cat ) {
 			$categoryMap[$cat->getName()] = $cat;
 		}
 		return $categoryMap;
@@ -1373,7 +1372,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$categoryName = trim( $request->getText( 'category' ) );
 
-		$categories = $this->getTargetCategories( $this->categoryStore, $categoryName );
+		$categories = $this->getTargetCategories( $categoryName );
 
 		if ( empty( $categories ) ) {
 			$output->addHTML( Html::errorBox(
@@ -1389,7 +1388,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		);
 
 		try {
-			$categoryMap = $this->buildCategoryMap( $this->categoryStore );
+			$categoryMap = $this->buildCategoryMap();
 			$resolver = new InheritanceResolver( $categoryMap );
 			$generateDisplay = $request->getBool( 'generate-display' );
 
@@ -1470,16 +1469,15 @@ class SpecialSemanticSchemas extends SpecialPage {
 	/**
 	 * Get target categories for generation based on filter.
 	 *
-	 * @param WikiCategoryStore $categoryStore
 	 * @param string $categoryName Filter by name, or empty for all
 	 * @return array Array of CategoryModel objects
 	 */
-	private function getTargetCategories( WikiCategoryStore $categoryStore, string $categoryName ): array {
+	private function getTargetCategories( string $categoryName ): array {
 		if ( $categoryName === '' ) {
-			return $categoryStore->getAllCategories();
+			return $this->categoryStore->getAllCategories();
 		}
 
-		$single = $categoryStore->readCategory( $categoryName );
+		$single = $this->categoryStore->readCategory( $categoryName );
 		return $single ? [ $single ] : [];
 	}
 

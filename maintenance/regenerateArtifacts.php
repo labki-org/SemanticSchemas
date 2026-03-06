@@ -3,9 +3,6 @@
 namespace MediaWiki\Extension\SemanticSchemas\Maintenance;
 
 use Maintenance;
-use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
-use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
-use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
 
@@ -46,6 +43,14 @@ class RegenerateArtifacts extends Maintenance {
 		$formGenerator = SemanticSchemasServices::getFormGenerator( $services );
 		$displayGenerator = SemanticSchemasServices::getDisplayStubGenerator( $services );
 
+		// Build category map and resolver once for all categories
+		$allCategories = $categoryStore->getAllCategories();
+		$categoryMap = [];
+		foreach ( $allCategories as $cat ) {
+			$categoryMap[$cat->getName()] = $cat;
+		}
+		$resolver = new InheritanceResolver( $categoryMap );
+
 		if ( $categoryName !== null ) {
 			// Regenerate for specific category
 			$this->output( "Regenerating artifacts for category: $categoryName\n" );
@@ -56,18 +61,19 @@ class RegenerateArtifacts extends Maintenance {
 			}
 
 			$this->regenerateCategory(
-				$category, $templateGenerator, $formGenerator, $displayGenerator, $generateDisplay
+				$category, $resolver, $templateGenerator, $formGenerator,
+				$displayGenerator, $generateDisplay
 			);
 		} else {
 			// Regenerate for all categories
 			$this->output( "Regenerating artifacts for all categories...\n\n" );
-			$categories = $categoryStore->getAllCategories();
 
-			$this->output( "Found " . count( $categories ) . " categories\n\n" );
+			$this->output( "Found " . count( $allCategories ) . " categories\n\n" );
 
-			foreach ( $categories as $category ) {
+			foreach ( $allCategories as $category ) {
 				$this->regenerateCategory(
-					$category, $templateGenerator, $formGenerator, $displayGenerator, $generateDisplay
+					$category, $resolver, $templateGenerator, $formGenerator,
+					$displayGenerator, $generateDisplay
 				);
 			}
 		}
@@ -79,25 +85,19 @@ class RegenerateArtifacts extends Maintenance {
 	 * Regenerate artifacts for a single category
 	 *
 	 * @param \MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel $category
-	 * @param TemplateGenerator $templateGenerator
-	 * @param FormGenerator $formGenerator
-	 * @param DisplayStubGenerator $displayGenerator
+	 * @param InheritanceResolver $resolver
+	 * @param \MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator $templateGenerator
+	 * @param \MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator $formGenerator
+	 * @param \MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator $displayGenerator
 	 * @param bool $generateDisplay
 	 */
 	private function regenerateCategory(
-		$category, $templateGenerator, $formGenerator, $displayGenerator, $generateDisplay
+		$category, $resolver, $templateGenerator, $formGenerator,
+		$displayGenerator, $generateDisplay
 	) {
 		$name = $category->getName();
 		$this->output( "Processing: $name\n" );
 
-		// Get effective category and ancestor chain
-		$catStore = SemanticSchemasServices::getWikiCategoryStore( $this->getServiceContainer() );
-		$allCategories = $catStore->getAllCategories();
-		$categoryMap = [];
-		foreach ( $allCategories as $cat ) {
-			$categoryMap[$cat->getName()] = $cat;
-		}
-		$resolver = new InheritanceResolver( $categoryMap );
 		$effective = $resolver->getEffectiveCategory( $name );
 		$ancestors = $resolver->getAncestors( $name );
 
