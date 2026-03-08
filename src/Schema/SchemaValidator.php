@@ -726,7 +726,7 @@ class SchemaValidator {
 	 * WARNINGS (non-fatal)
 	 * ====================================================================== */
 
-	public function generateWarnings( array $schema ): array {
+	private function generateWarnings( array $schema ): array {
 		$warnings = [];
 
 		if ( !isset( $schema['categories'] ) ) {

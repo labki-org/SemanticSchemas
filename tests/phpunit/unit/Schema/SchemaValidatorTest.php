@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
+use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use PHPUnit\Framework\TestCase;
 
@@ -351,7 +352,7 @@ class SchemaValidatorTest extends TestCase {
 
 	public function testMetaCategoryDoesNotTriggerMissingDisplayFormWarnings(): void {
 		$schema = [
-			'schemaVersion' => '1.0',
+			'schemaVersion' => SchemaLoader::SCHEMA_VERSION,
 			'categories' => [
 				'Category' => [
 					'targetNamespace' => 'Category',
