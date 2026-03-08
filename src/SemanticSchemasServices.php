@@ -19,7 +19,7 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\MediaWikiServices;
 
 /**
- * Typed accessors for SemanticSchemas services registered in ServiceWiring.php.
+ * Typed accessors for SemanticSchemas services registered in src/ServiceWiring.php.
  *
  * This class is NOT injected itself -- it provides type-safe static getters that wrap
  * the untyped MediaWikiServices::get( 'string' ) calls. It is only used in entry points
@@ -31,7 +31,7 @@ use MediaWiki\MediaWikiServices;
  * This is a standard MediaWiki pattern; see CirrusSearchServices and
  * GrowthExperimentsServices for reference implementations.
  *
- * @see ServiceWiring.php for service definitions
+ * @see src/ServiceWiring.php for service definitions
  */
 class SemanticSchemasServices {
 
