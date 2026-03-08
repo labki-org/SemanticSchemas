@@ -39,15 +39,7 @@ services:
     depends_on:
       wiki:
         condition: service_healthy
-    entrypoint: []
-    command: >
-      bash -c "
-        echo 'Starting job runner...' &&
-        while true; do
-          php /var/www/html/maintenance/runJobs.php --wait --maxjobs=10;
-          sleep 1;
-        done
-      "
+    command: ["bash", "-c", "echo 'Starting job runner...' && while true; do php /var/www/html/maintenance/runJobs.php --wait --maxjobs=10; sleep 1; done"]
     restart: unless-stopped
 
   db:

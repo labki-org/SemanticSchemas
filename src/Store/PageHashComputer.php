@@ -37,28 +37,18 @@ use MediaWiki\Title\Title;
  */
 class PageHashComputer {
 
-	/** @var WikiCategoryStore */
-	private $categoryStore;
+	private WikiCategoryStore $categoryStore;
+	private WikiPropertyStore $propertyStore;
+	private WikiSubobjectStore $subobjectStore;
 
-	/** @var WikiPropertyStore */
-	private $propertyStore;
-
-	/** @var WikiSubobjectStore */
-	private $subobjectStore;
-
-	/**
-	 * @param WikiCategoryStore|null $categoryStore
-	 * @param WikiPropertyStore|null $propertyStore
-	 * @param WikiSubobjectStore|null $subobjectStore
-	 */
 	public function __construct(
-		?WikiCategoryStore $categoryStore = null,
-		?WikiPropertyStore $propertyStore = null,
-		?WikiSubobjectStore $subobjectStore = null
+		WikiCategoryStore $categoryStore,
+		WikiPropertyStore $propertyStore,
+		WikiSubobjectStore $subobjectStore
 	) {
-		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
-		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
-		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
+		$this->categoryStore = $categoryStore;
+		$this->propertyStore = $propertyStore;
+		$this->subobjectStore = $subobjectStore;
 	}
 
 	/**
@@ -150,11 +140,10 @@ class PageHashComputer {
 	public function computeSchemaHash( array $schema ): string {
 		// Normalize schema: sort keys recursively for deterministic hashing
 		$normalized = $this->normalizeArray( $schema );
-		// JSON_SORT_KEYS was added in PHP 5.4.0, use numeric value if constant not defined
-		$jsonFlags = \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE;
-		$sortKeysFlag = defined( 'JSON_SORT_KEYS' ) ? constant( 'JSON_SORT_KEYS' ) : 64;
-		$jsonFlags |= $sortKeysFlag;
-		$json = json_encode( $normalized, $jsonFlags );
+		$json = json_encode(
+			$normalized,
+			\JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE
+		);
 		return $this->hashContent( $json );
 	}
 

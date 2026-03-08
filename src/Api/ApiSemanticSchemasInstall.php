@@ -48,6 +48,26 @@ use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
  */
 class ApiSemanticSchemasInstall extends ApiBase {
 
+	private ExtensionConfigInstaller $installer;
+	private SchemaLoader $loader;
+
+	/**
+	 * @param \ApiMain $mainModule
+	 * @param string $moduleName
+	 * @param ExtensionConfigInstaller $installer
+	 * @param SchemaLoader $loader
+	 */
+	public function __construct(
+		$mainModule,
+		$moduleName,
+		ExtensionConfigInstaller $installer,
+		SchemaLoader $loader
+	) {
+		parent::__construct( $mainModule, $moduleName );
+		$this->installer = $installer;
+		$this->loader = $loader;
+	}
+
 	/**
 	 * Execute the API request.
 	 */
@@ -57,12 +77,11 @@ class ApiSemanticSchemasInstall extends ApiBase {
 		$params = $this->extractRequestParams();
 		$step = $params['step'];
 
-		$installer = new ExtensionConfigInstaller();
 		$configPath = __DIR__ . '/../../resources/extension-config.json';
 
 		switch ( $step ) {
 			case 'status':
-				$this->executeStatus( $installer, $configPath );
+				$this->executeStatus( $configPath );
 				break;
 
 			case 'layer0':
@@ -70,7 +89,7 @@ class ApiSemanticSchemasInstall extends ApiBase {
 			case 'layer2':
 			case 'layer3':
 			case 'layer4':
-				$this->executeLayer( $step, $installer, $configPath );
+				$this->executeLayer( $step, $configPath );
 				break;
 
 			default:
@@ -81,21 +100,18 @@ class ApiSemanticSchemasInstall extends ApiBase {
 	/**
 	 * Get current installation status.
 	 */
-	private function executeStatus( ExtensionConfigInstaller $installer, string $configPath ): void {
-		$jobCount = $installer->getPendingJobCount();
-		$templatesInstalled = $installer->areTemplatesInstalled( $configPath );
-		$propertiesInstalled = $installer->arePropertiesInstalled( $configPath );
-		$subobjectsInstalled = $installer->areSubobjectsInstalled( $configPath );
-		$categoriesInstalled = $installer->areCategoriesInstalled( $configPath );
+	private function executeStatus( string $configPath ): void {
+		$jobCount = $this->installer->getPendingJobCount();
+		$schema = $this->loader->loadFromFile( $configPath );
+		$status = $this->installer->getInstallationStatus( $schema );
 
-		$this->getResult()->addValue( null, 'status', [
-			'pendingJobs' => $jobCount,
-			'templatesInstalled' => $templatesInstalled,
-			'propertiesInstalled' => $propertiesInstalled,
-			'subobjectsInstalled' => $subobjectsInstalled,
-			'categoriesInstalled' => $categoriesInstalled,
-			'ready' => $jobCount === 0,
-		] );
+		$this->getResult()->addValue( null, 'status', array_merge(
+			$status,
+			[
+				'pendingJobs' => $jobCount,
+				'ready' => $jobCount === 0,
+			]
+		) );
 	}
 
 	/**
@@ -103,26 +119,23 @@ class ApiSemanticSchemasInstall extends ApiBase {
 	 */
 	private function executeLayer(
 		string $step,
-		ExtensionConfigInstaller $installer,
 		string $configPath
 	): void {
-		// Require POST for write operations
+		// Write operations require POST with a valid CSRF token
 		if ( !$this->getRequest()->wasPosted() ) {
-			$this->dieWithError( 'This action requires POST' );
+			$this->dieWithError( [ 'apierror-mustbeposted', $this->getModuleName() ] );
 		}
 
-		// Check CSRF token
 		$token = $this->getParameter( 'token' );
 		if ( !$this->getUser()->matchEditToken( $token ) ) {
-			$this->dieWithError( 'Invalid CSRF token' );
+			$this->dieWithError( 'apierror-badtoken' );
 		}
 
 		if ( !file_exists( $configPath ) ) {
 			$this->dieWithError( 'Configuration file not found' );
 		}
 
-		$loader = new SchemaLoader();
-		$schema = $loader->loadFromFile( $configPath );
+		$schema = $this->loader->loadFromFile( $configPath );
 
 		$result = [];
 		$layerName = '';
@@ -130,27 +143,27 @@ class ApiSemanticSchemasInstall extends ApiBase {
 		switch ( $step ) {
 			case 'layer0':
 				$layerName = 'Templates';
-				$result = $installer->applyTemplatesOnly( $schema );
+				$result = $this->installer->applyTemplatesOnly( $schema );
 				break;
 
 			case 'layer1':
 				$layerName = 'Property Types';
-				$result = $installer->applyPropertiesTypeOnly( $schema );
+				$result = $this->installer->applyPropertiesTypeOnly( $schema );
 				break;
 
 			case 'layer2':
 				$layerName = 'Property Annotations';
-				$result = $installer->applyPropertiesFull( $schema );
+				$result = $this->installer->applyPropertiesFull( $schema );
 				break;
 
 			case 'layer3':
 				$layerName = 'Subobjects';
-				$result = $installer->applySubobjectsOnly( $schema );
+				$result = $this->installer->applySubobjectsOnly( $schema );
 				break;
 
 			case 'layer4':
 				$layerName = 'Categories';
-				$result = $installer->applyCategoriesOnly( $schema );
+				$result = $this->installer->applyCategoriesOnly( $schema );
 				break;
 		}
 
@@ -165,7 +178,7 @@ class ApiSemanticSchemasInstall extends ApiBase {
 			'created' => $result['created'] ?? [],
 			'updated' => $result['updated'] ?? [],
 			'failed' => $result['failed'] ?? [],
-			'pendingJobs' => $installer->getPendingJobCount(),
+			'pendingJobs' => $this->installer->getPendingJobCount(),
 		] );
 	}
 

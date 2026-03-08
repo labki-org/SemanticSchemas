@@ -19,8 +19,15 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->pageCreator = new PageCreator( null );
-		$this->propertyStore = new WikiPropertyStore( $this->pageCreator );
+		$services = $this->getServiceContainer();
+		$this->pageCreator = new PageCreator(
+			$services->getWikiPageFactory(),
+			$services->getDeletePageFactory()
+		);
+		$this->propertyStore = new WikiPropertyStore(
+			$this->pageCreator,
+			$services->getConnectionProvider()
+		);
 	}
 
 	/* =========================================================================

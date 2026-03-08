@@ -26,20 +26,22 @@ class OntologyInspector {
 
 	private StateManager $stateManager;
 	private PageHashComputer $hashComputer;
+	private SchemaValidator $validator;
 
 	public function __construct(
-		?WikiCategoryStore $categoryStore = null,
-		?WikiPropertyStore $propertyStore = null,
-		?WikiSubobjectStore $subobjectStore = null,
-		?StateManager $stateManager = null,
-		?PageHashComputer $hashComputer = null
+		WikiCategoryStore $categoryStore,
+		WikiPropertyStore $propertyStore,
+		WikiSubobjectStore $subobjectStore,
+		StateManager $stateManager,
+		PageHashComputer $hashComputer,
+		SchemaValidator $validator
 	) {
-		$this->categoryStore = $categoryStore ?? new WikiCategoryStore();
-		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
-		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
-
-		$this->stateManager = $stateManager ?? new StateManager();
-		$this->hashComputer = $hashComputer ?? new PageHashComputer();
+		$this->categoryStore = $categoryStore;
+		$this->propertyStore = $propertyStore;
+		$this->subobjectStore = $subobjectStore;
+		$this->stateManager = $stateManager;
+		$this->hashComputer = $hashComputer;
+		$this->validator = $validator;
 	}
 
 	/**
@@ -140,10 +142,9 @@ class OntologyInspector {
 	 */
 	public function validateWikiState(): array {
 		$schema = $this->buildSchemaArray();
-		$validator = new SchemaValidator();
 
-		$errors = $validator->validateSchema( $schema );
-		$warnings = $validator->generateWarnings( $schema );
+		$errors = $this->validator->validateSchema( $schema );
+		$warnings = $this->validator->generateWarnings( $schema );
 		$modified = [];
 
 		$stored = $this->stateManager->getPageHashes();

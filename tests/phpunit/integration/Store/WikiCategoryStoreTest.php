@@ -20,9 +20,20 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->pageCreator = new PageCreator( null );
-		$propertyStore = new WikiPropertyStore( $this->pageCreator );
-		$this->categoryStore = new WikiCategoryStore( $this->pageCreator, $propertyStore );
+		$services = $this->getServiceContainer();
+		$this->pageCreator = new PageCreator(
+			$services->getWikiPageFactory(),
+			$services->getDeletePageFactory()
+		);
+		$propertyStore = new WikiPropertyStore(
+			$this->pageCreator,
+			$services->getConnectionProvider()
+		);
+		$this->categoryStore = new WikiCategoryStore(
+			$this->pageCreator,
+			$propertyStore,
+			$services->getConnectionProvider()
+		);
 	}
 
 	/* =========================================================================

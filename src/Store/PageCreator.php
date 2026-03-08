@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Content\TextContent;
-use MediaWiki\MediaWikiServices;
+use MediaWiki\Page\DeletePageFactory;
 use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
@@ -19,16 +19,18 @@ use MediaWiki\User\User;
  */
 class PageCreator {
 
-	/** @var User */
 	private User $user;
-
-	/** @var WikiPageFactory */
 	private WikiPageFactory $wikiPageFactory;
+	private DeletePageFactory $deletePageFactory;
 
-	public function __construct( ?User $user = null ) {
+	public function __construct(
+		WikiPageFactory $wikiPageFactory,
+		DeletePageFactory $deletePageFactory,
+		?User $user = null
+	) {
+		$this->wikiPageFactory = $wikiPageFactory;
+		$this->deletePageFactory = $deletePageFactory;
 		$this->user = $user ?? User::newSystemUser( 'SemanticSchemas', [ 'steal' => true ] );
-		$services = MediaWikiServices::getInstance();
-		$this->wikiPageFactory = $services->getWikiPageFactory();
 	}
 
 	/* =====================================================================
@@ -209,9 +211,8 @@ class PageCreator {
 		}
 
 		try {
-			$services = MediaWikiServices::getInstance();
 			$wikiPage = $this->wikiPageFactory->newFromTitle( $title );
-			$deletePage = $services->getDeletePageFactory()->newDeletePage( $wikiPage, $this->user );
+			$deletePage = $this->deletePageFactory->newDeletePage( $wikiPage, $this->user );
 
 			$status = $deletePage->deleteUnsafe( $reason );
 

@@ -21,7 +21,7 @@ class SemanticSchemasSetupHooks {
 	 * have semantic annotations enabled. Without this, SMW won't parse [[Property::value]]
 	 * annotations on Subobject: pages.
 	 */
-	public static function onSetupAfterCache() {
+	public function onSetupAfterCache() {
 		global $smwgNamespacesWithSemanticLinks;
 
 		// Enable semantic annotations in the Subobject namespace
@@ -49,7 +49,7 @@ class SemanticSchemasSetupHooks {
 	 * @param mixed $updater DatabaseUpdater (not used directly)
 	 * @return bool
 	 */
-	public static function onLoadExtensionSchemaUpdates( $updater ): bool {
+	public function onLoadExtensionSchemaUpdates( $updater ): bool {
 		// No automatic installation - see docblock above for rationale.
 		// The Special:SemanticSchemas page will show a banner prompting
 		// users to install the base configuration if it's missing.

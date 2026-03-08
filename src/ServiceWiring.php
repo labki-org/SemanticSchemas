@@ -1,0 +1,161 @@
+<?php
+
+use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
+use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
+use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
+use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
+use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
+use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
+use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
+use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
+use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
+use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
+use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
+use MediaWiki\MediaWikiServices;
+
+/** @phpcs-require-sorted-array */
+return [
+
+	'SemanticSchemas.CategoryHierarchyService' => static function (
+		MediaWikiServices $services
+	): CategoryHierarchyService {
+		return new CategoryHierarchyService(
+			$services->get( 'SemanticSchemas.WikiCategoryStore' )
+		);
+	},
+
+	'SemanticSchemas.DisplayStubGenerator' => static function (
+		MediaWikiServices $services
+	): DisplayStubGenerator {
+		return new DisplayStubGenerator(
+			$services->get( 'SemanticSchemas.PageCreator' ),
+			$services->get( 'SemanticSchemas.WikiPropertyStore' )
+		);
+	},
+
+	'SemanticSchemas.ExtensionConfigInstaller' => static function (
+		MediaWikiServices $services
+	): ExtensionConfigInstaller {
+		return new ExtensionConfigInstaller(
+			$services->get( 'SemanticSchemas.SchemaLoader' ),
+			$services->get( 'SemanticSchemas.SchemaValidator' ),
+			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
+			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
+			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
+			$services->get( 'SemanticSchemas.PageCreator' ),
+			$services->getJobQueueGroup()
+		);
+	},
+
+	'SemanticSchemas.FormGenerator' => static function (
+		MediaWikiServices $services
+	): FormGenerator {
+		return new FormGenerator(
+			$services->get( 'SemanticSchemas.PageCreator' ),
+			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
+			$services->get( 'SemanticSchemas.PropertyInputMapper' ),
+			$services->get( 'SemanticSchemas.WikiSubobjectStore' )
+		);
+	},
+
+	'SemanticSchemas.OntologyInspector' => static function (
+		MediaWikiServices $services
+	): OntologyInspector {
+		return new OntologyInspector(
+			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
+			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
+			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
+			$services->get( 'SemanticSchemas.StateManager' ),
+			$services->get( 'SemanticSchemas.PageHashComputer' ),
+			$services->get( 'SemanticSchemas.SchemaValidator' )
+		);
+	},
+
+	'SemanticSchemas.PageCreator' => static function (
+		MediaWikiServices $services
+	): PageCreator {
+		return new PageCreator(
+			$services->getWikiPageFactory(),
+			$services->getDeletePageFactory()
+		);
+	},
+
+	'SemanticSchemas.PageHashComputer' => static function (
+		MediaWikiServices $services
+	): PageHashComputer {
+		return new PageHashComputer(
+			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
+			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
+			$services->get( 'SemanticSchemas.WikiSubobjectStore' )
+		);
+	},
+
+	'SemanticSchemas.PropertyInputMapper' => static function (
+		MediaWikiServices $services
+	): PropertyInputMapper {
+		return new PropertyInputMapper();
+	},
+
+	'SemanticSchemas.SchemaLoader' => static function (
+		MediaWikiServices $services
+	): SchemaLoader {
+		return new SchemaLoader();
+	},
+
+	'SemanticSchemas.SchemaValidator' => static function (
+		MediaWikiServices $services
+	): SchemaValidator {
+		return new SchemaValidator();
+	},
+
+	'SemanticSchemas.StateManager' => static function (
+		MediaWikiServices $services
+	): StateManager {
+		return new StateManager(
+			$services->get( 'SemanticSchemas.PageCreator' )
+		);
+	},
+
+	'SemanticSchemas.TemplateGenerator' => static function (
+		MediaWikiServices $services
+	): TemplateGenerator {
+		return new TemplateGenerator(
+			$services->get( 'SemanticSchemas.PageCreator' ),
+			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
+			$services->get( 'SemanticSchemas.WikiPropertyStore' )
+		);
+	},
+
+	'SemanticSchemas.WikiCategoryStore' => static function (
+		MediaWikiServices $services
+	): WikiCategoryStore {
+		return new WikiCategoryStore(
+			$services->get( 'SemanticSchemas.PageCreator' ),
+			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
+			$services->getConnectionProvider()
+		);
+	},
+
+	'SemanticSchemas.WikiPropertyStore' => static function (
+		MediaWikiServices $services
+	): WikiPropertyStore {
+		return new WikiPropertyStore(
+			$services->get( 'SemanticSchemas.PageCreator' ),
+			$services->getConnectionProvider()
+		);
+	},
+
+	'SemanticSchemas.WikiSubobjectStore' => static function (
+		MediaWikiServices $services
+	): WikiSubobjectStore {
+		return new WikiSubobjectStore(
+			$services->get( 'SemanticSchemas.PageCreator' ),
+			$services->getConnectionProvider()
+		);
+	},
+
+];

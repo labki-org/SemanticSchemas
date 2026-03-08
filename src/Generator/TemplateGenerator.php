@@ -26,13 +26,13 @@ class TemplateGenerator {
 	private WikiPropertyStore $propertyStore;
 
 	public function __construct(
-		?PageCreator $pageCreator = null,
-		?WikiSubobjectStore $subobjectStore = null,
-		?WikiPropertyStore $propertyStore = null
+		PageCreator $pageCreator,
+		WikiSubobjectStore $subobjectStore,
+		WikiPropertyStore $propertyStore
 	) {
-		$this->pageCreator = $pageCreator ?? new PageCreator();
-		$this->subobjectStore = $subobjectStore ?? new WikiSubobjectStore();
-		$this->propertyStore = $propertyStore ?? new WikiPropertyStore();
+		$this->pageCreator = $pageCreator;
+		$this->subobjectStore = $subobjectStore;
+		$this->propertyStore = $propertyStore;
 	}
 
 	/* =====================================================================
