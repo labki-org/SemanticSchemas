@@ -142,7 +142,7 @@ class PageHashComputer {
 		$normalized = $this->normalizeArray( $schema );
 		$json = json_encode(
 			$normalized,
-			\JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_SORT_KEYS
+			\JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE
 		);
 		return $this->hashContent( $json );
 	}
