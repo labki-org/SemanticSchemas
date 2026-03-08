@@ -102,19 +102,16 @@ class ApiSemanticSchemasInstall extends ApiBase {
 	 */
 	private function executeStatus( string $configPath ): void {
 		$jobCount = $this->installer->getPendingJobCount();
-		$templatesInstalled = $this->installer->areTemplatesInstalled( $configPath );
-		$propertiesInstalled = $this->installer->arePropertiesInstalled( $configPath );
-		$subobjectsInstalled = $this->installer->areSubobjectsInstalled( $configPath );
-		$categoriesInstalled = $this->installer->areCategoriesInstalled( $configPath );
+		$schema = $this->loader->loadFromFile( $configPath );
+		$status = $this->installer->getInstallationStatus( $schema );
 
-		$this->getResult()->addValue( null, 'status', [
-			'pendingJobs' => $jobCount,
-			'templatesInstalled' => $templatesInstalled,
-			'propertiesInstalled' => $propertiesInstalled,
-			'subobjectsInstalled' => $subobjectsInstalled,
-			'categoriesInstalled' => $categoriesInstalled,
-			'ready' => $jobCount === 0,
-		] );
+		$this->getResult()->addValue( null, 'status', array_merge(
+			$status,
+			[
+				'pendingJobs' => $jobCount,
+				'ready' => $jobCount === 0,
+			]
+		) );
 	}
 
 	/**

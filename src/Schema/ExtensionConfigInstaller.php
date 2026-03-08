@@ -174,47 +174,23 @@ class ExtensionConfigInstaller {
 	}
 
 	/**
-	 * Check if templates from the schema are installed.
+	 * Check installation status of all entity types from a parsed schema.
 	 *
-	 * @param string $filePath Path to schema file
-	 * @return bool
+	 * @param array $schema Parsed schema array
+	 * @return array{
+	 *   templatesInstalled: bool,
+	 *   propertiesInstalled: bool,
+	 *   subobjectsInstalled: bool,
+	 *   categoriesInstalled: bool
+	 * }
 	 */
-	public function areTemplatesInstalled( string $filePath ): bool {
-		$schema = $this->loader->loadFromFile( $filePath );
-		return $this->areSchemaEntitiesInstalled( $schema, 'templates', NS_TEMPLATE );
-	}
-
-	/**
-	 * Check if properties from the schema are installed.
-	 *
-	 * @param string $filePath Path to schema file
-	 * @return bool
-	 */
-	public function arePropertiesInstalled( string $filePath ): bool {
-		$schema = $this->loader->loadFromFile( $filePath );
-		return $this->areSchemaEntitiesInstalled( $schema, 'properties', SMW_NS_PROPERTY );
-	}
-
-	/**
-	 * Check if subobjects from the schema are installed.
-	 *
-	 * @param string $filePath Path to schema file
-	 * @return bool
-	 */
-	public function areSubobjectsInstalled( string $filePath ): bool {
-		$schema = $this->loader->loadFromFile( $filePath );
-		return $this->areSchemaEntitiesInstalled( $schema, 'subobjects', NS_SUBOBJECT );
-	}
-
-	/**
-	 * Check if categories from the schema are installed.
-	 *
-	 * @param string $filePath Path to schema file
-	 * @return bool
-	 */
-	public function areCategoriesInstalled( string $filePath ): bool {
-		$schema = $this->loader->loadFromFile( $filePath );
-		return $this->areSchemaEntitiesInstalled( $schema, 'categories', NS_CATEGORY );
+	public function getInstallationStatus( array $schema ): array {
+		return [
+			'templatesInstalled' => $this->areSchemaEntitiesInstalled( $schema, 'templates', NS_TEMPLATE ),
+			'propertiesInstalled' => $this->areSchemaEntitiesInstalled( $schema, 'properties', SMW_NS_PROPERTY ),
+			'subobjectsInstalled' => $this->areSchemaEntitiesInstalled( $schema, 'subobjects', NS_SUBOBJECT ),
+			'categoriesInstalled' => $this->areSchemaEntitiesInstalled( $schema, 'categories', NS_CATEGORY ),
+		];
 	}
 
 	/**
