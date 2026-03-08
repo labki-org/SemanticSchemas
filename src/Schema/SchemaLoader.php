@@ -22,6 +22,7 @@ use Symfony\Component\Yaml\Yaml;
  */
 class SchemaLoader {
 
+	public const SCHEMA_VERSION = '1.0';
 	private const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 	/* -------------------------------------------------------------------------
@@ -208,7 +209,7 @@ class SchemaLoader {
 
 	public function createEmptySchema(): array {
 		return [
-			'schemaVersion' => '1.0',
+			'schemaVersion' => self::SCHEMA_VERSION,
 			'categories' => [],
 			'properties' => [],
 			'subobjects' => [],
