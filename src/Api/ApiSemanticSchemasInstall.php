@@ -31,6 +31,9 @@ use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
  *   Layer 3: Subobjects - can now reference properly-typed properties
  *   Layer 4: Categories - semantic annotations are now stored with correct types
  *
+ * After installation, the UI directs the user to the Generate tab to create
+ * templates, forms, and display stubs.
+ *
  * The JavaScript UI polls for job queue completion between layers to ensure SMW has
  * fully processed each layer before proceeding to the next.
  *
@@ -188,7 +191,9 @@ class ApiSemanticSchemasInstall extends ApiBase {
 	public function getAllowedParams() {
 		return [
 			'step' => [
-				ApiBase::PARAM_TYPE => [ 'status', 'layer0', 'layer1', 'layer2', 'layer3', 'layer4' ],
+				ApiBase::PARAM_TYPE => [
+					'status', 'layer0', 'layer1', 'layer2', 'layer3', 'layer4',
+				],
 				ApiBase::PARAM_REQUIRED => true,
 			],
 			'token' => [

@@ -443,6 +443,65 @@ class CategoryModelTest extends TestCase {
 		$this->assertEquals( $originalChildProps, $child->getRequiredProperties() );
 	}
 
+	/* =========================================================================
+	 * META-CATEGORY DETECTION
+	 * ========================================================================= */
+
+	public function testIsMetaCategoryReturnsTrueWhenTargetNamespaceMatchesName(): void {
+		$model = new CategoryModel( 'Category', [
+			'targetNamespace' => 'Category',
+			'properties' => [ 'required' => [], 'optional' => [] ],
+		] );
+		$this->assertTrue( $model->isMetaCategory() );
+	}
+
+	public function testIsMetaCategoryReturnsFalseForRegularCategory(): void {
+		$model = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [], 'optional' => [] ],
+		] );
+		$this->assertFalse( $model->isMetaCategory() );
+	}
+
+	public function testIsMetaCategoryReturnsFalseWhenTargetNamespaceDiffers(): void {
+		$model = new CategoryModel( 'Special', [
+			'targetNamespace' => 'Other',
+			'properties' => [ 'required' => [], 'optional' => [] ],
+		] );
+		$this->assertFalse( $model->isMetaCategory() );
+	}
+
+	/* =========================================================================
+	 * BUILD MAP FROM SCHEMA
+	 * ========================================================================= */
+
+	public function testBuildMapFromSchemaReturnsCorrectMap(): void {
+		$categories = [
+			'Person' => [
+				'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			],
+			'Organization' => [
+				'properties' => [ 'required' => [], 'optional' => [ 'Has name' ] ],
+			],
+		];
+
+		$map = CategoryModel::buildMapFromSchema( $categories );
+
+		$this->assertCount( 2, $map );
+		$this->assertArrayHasKey( 'Person', $map );
+		$this->assertArrayHasKey( 'Organization', $map );
+		$this->assertInstanceOf( CategoryModel::class, $map['Person'] );
+		$this->assertEquals( 'Person', $map['Person']->getName() );
+	}
+
+	public function testBuildMapFromSchemaReturnsEmptyForEmptyInput(): void {
+		$map = CategoryModel::buildMapFromSchema( [] );
+		$this->assertEmpty( $map );
+	}
+
+	/* =========================================================================
+	 * IMMUTABILITY (continued)
+	 * ========================================================================= */
+
 	public function testMergeDoesNotModifyOriginalParent(): void {
 		$parent = new CategoryModel( 'Parent', [
 			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],

@@ -97,12 +97,6 @@ class DisplayParserFunctions {
 		$output = $parser->getOutput();
 		$output->addModules( [ 'ext.semanticschemas.hierarchy.formpreview' ] );
 
-		// Ensure loading order in <head>
-		$output->addHeadItem(
-			'semanticschemas-formpreview-loader',
-			Html::inlineScript( 'mw.loader.using("ext.semanticschemas.hierarchy.formpreview");' )
-		);
-
 		return [ '', 'noparse' => false, 'isHTML' => false ];
 	}
 }

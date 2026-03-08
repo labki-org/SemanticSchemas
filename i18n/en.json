@@ -141,5 +141,7 @@
 	"semanticschemas-install-config-failed": "Failed to install base configuration: $1",
 	"semanticschemas-install-config-not-found": "Configuration file not found.",
 	"semanticschemas-install-config-would-create": "Will create $1 {{PLURAL:$1|page|pages}}.",
-	"semanticschemas-install-config-would-update": "Will update $1 {{PLURAL:$1|page|pages}}."
+	"semanticschemas-install-config-would-update": "Will update $1 {{PLURAL:$1|page|pages}}.",
+	"semanticschemas-generate-postinstall-title": "Base configuration installed successfully!",
+	"semanticschemas-generate-postinstall-description": "Click Generate below to create templates, forms, and display stubs for all categories."
 }

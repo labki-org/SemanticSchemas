@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas;
 
+use MediaWiki\Extension\SemanticSchemas\Generator\ArtifactGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
@@ -34,6 +35,10 @@ use MediaWiki\MediaWikiServices;
  * @see src/ServiceWiring.php for service definitions
  */
 class SemanticSchemasServices {
+
+	public static function getArtifactGenerator( MediaWikiServices $services ): ArtifactGenerator {
+		return $services->get( 'SemanticSchemas.ArtifactGenerator' );
+	}
 
 	public static function getPageCreator( MediaWikiServices $services ): PageCreator {
 		return $services->get( 'SemanticSchemas.PageCreator' );

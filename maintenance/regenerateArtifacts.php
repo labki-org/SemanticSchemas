@@ -3,7 +3,6 @@
 namespace MediaWiki\Extension\SemanticSchemas\Maintenance;
 
 use Maintenance;
-use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
@@ -39,99 +38,54 @@ class RegenerateArtifacts extends Maintenance {
 
 		$services = $this->getServiceContainer();
 		$categoryStore = SemanticSchemasServices::getWikiCategoryStore( $services );
-		$templateGenerator = SemanticSchemasServices::getTemplateGenerator( $services );
-		$formGenerator = SemanticSchemasServices::getFormGenerator( $services );
-		$displayGenerator = SemanticSchemasServices::getDisplayStubGenerator( $services );
+		$artifactGenerator = SemanticSchemasServices::getArtifactGenerator( $services );
 
-		// Build category map and resolver once for all categories
-		$allCategories = $categoryStore->getAllCategories();
-		$categoryMap = [];
-		foreach ( $allCategories as $cat ) {
-			$categoryMap[$cat->getName()] = $cat;
-		}
-		$resolver = new InheritanceResolver( $categoryMap );
+		// getAllCategories() returns a name-keyed map
+		$categoryMap = $categoryStore->getAllCategories();
 
 		if ( $categoryName !== null ) {
-			// Regenerate for specific category
-			$this->output( "Regenerating artifacts for category: $categoryName\n" );
-			$category = $categoryStore->readCategory( $categoryName );
-
-			if ( $category === null ) {
+			if ( !isset( $categoryMap[$categoryName] ) ) {
 				$this->fatalError( "Category not found: $categoryName" );
 			}
-
-			$this->regenerateCategory(
-				$category, $resolver, $templateGenerator, $formGenerator,
-				$displayGenerator, $generateDisplay
-			);
+			$this->output( "Regenerating artifacts for category: $categoryName\n" );
 		} else {
-			// Regenerate for all categories
 			$this->output( "Regenerating artifacts for all categories...\n\n" );
+			$this->output( "Found " . count( $categoryMap ) . " categories\n\n" );
+		}
 
-			$this->output( "Found " . count( $allCategories ) . " categories\n\n" );
+		$result = $artifactGenerator->generateAll(
+			$categoryMap,
+			$generateDisplay,
+			$categoryName !== null ? [ $categoryName ] : null
+		);
 
-			foreach ( $allCategories as $category ) {
-				$this->regenerateCategory(
-					$category, $resolver, $templateGenerator, $formGenerator,
-					$displayGenerator, $generateDisplay
-				);
+		foreach ( $result['results'] as $name => $genResult ) {
+			$this->output( "Processing: $name\n" );
+
+			if ( $genResult['success'] ) {
+				$this->output( "  ✓ Generated templates and form\n" );
+			} else {
+				$this->output( "  ✗ Generation failed\n" );
+				foreach ( $genResult['errors'] as $error ) {
+					$this->output( "    - $error\n" );
+				}
 			}
+
+			if ( $generateDisplay ) {
+				$displayResult = $genResult['displayResult'] ?? [];
+				if ( !empty( $displayResult['error'] ) ) {
+					$this->output( "  ✗ Display template failed: {$displayResult['error']}\n" );
+				} elseif ( $displayResult['created'] ?? false ) {
+					$this->output( "  ✓ Generated display template stub\n" );
+				} elseif ( $displayResult['updated'] ?? false ) {
+					$this->output( "  ✓ Updated display template\n" );
+				}
+			}
+
+			$this->output( "\n" );
 		}
 
 		$this->output( "\nRegeneration complete!\n" );
-	}
-
-	/**
-	 * Regenerate artifacts for a single category
-	 *
-	 * @param \MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel $category
-	 * @param InheritanceResolver $resolver
-	 * @param \MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator $templateGenerator
-	 * @param \MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator $formGenerator
-	 * @param \MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator $displayGenerator
-	 * @param bool $generateDisplay
-	 */
-	private function regenerateCategory(
-		$category, $resolver, $templateGenerator, $formGenerator,
-		$displayGenerator, $generateDisplay
-	) {
-		$name = $category->getName();
-		$this->output( "Processing: $name\n" );
-
-		$effective = $resolver->getEffectiveCategory( $name );
-		$ancestors = $resolver->getAncestors( $name );
-
-		// Generate semantic template
-		$result = $templateGenerator->generateAllTemplates( $effective );
-		if ( $result['success'] ) {
-			$this->output( "  ✓ Generated semantic and dispatcher templates\n" );
-		} else {
-			$this->output( "  ✗ Template generation failed\n" );
-			foreach ( $result['errors'] as $error ) {
-				$this->output( "    - $error\n" );
-			}
-		}
-
-		// Generate form
-		if ( $formGenerator->generateAndSaveForm( $effective ) ) {
-			$this->output( "  ✓ Generated form\n" );
-		} else {
-			$this->output( "  ✗ Form generation failed\n" );
-		}
-
-		// Generate or update display template if requested
-		if ( $generateDisplay ) {
-			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective );
-			if ( !empty( $displayResult['error'] ) ) {
-				$this->output( "  ✗ Display template failed: {$displayResult['error']}\n" );
-			} elseif ( $displayResult['created'] ) {
-				$this->output( "  ✓ Generated display template stub\n" );
-			} elseif ( $displayResult['updated'] ) {
-				$this->output( "  ✓ Updated display template\n" );
-			}
-		}
-
-		$this->output( "\n" );
 	}
 }
 

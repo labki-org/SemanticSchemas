@@ -2,12 +2,9 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Special;
 
-use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
-use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
-use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
+use MediaWiki\Extension\SemanticSchemas\Generator\ArtifactGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
-use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
@@ -52,9 +49,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
 	private WikiSubobjectStore $subobjectStore;
-	private TemplateGenerator $templateGenerator;
-	private FormGenerator $formGenerator;
-	private DisplayStubGenerator $displayGenerator;
+	private ArtifactGenerator $artifactGenerator;
 	private ExtensionConfigInstaller $installer;
 	private OntologyInspector $inspector;
 	private StateManager $stateManager;
@@ -71,9 +66,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		WikiCategoryStore $categoryStore,
 		WikiPropertyStore $propertyStore,
 		WikiSubobjectStore $subobjectStore,
-		TemplateGenerator $templateGenerator,
-		FormGenerator $formGenerator,
-		DisplayStubGenerator $displayGenerator,
+		ArtifactGenerator $artifactGenerator,
 		ExtensionConfigInstaller $installer,
 		OntologyInspector $inspector,
 		StateManager $stateManager,
@@ -84,9 +77,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
 		$this->subobjectStore = $subobjectStore;
-		$this->templateGenerator = $templateGenerator;
-		$this->formGenerator = $formGenerator;
-		$this->displayGenerator = $displayGenerator;
+		$this->artifactGenerator = $artifactGenerator;
 		$this->installer = $installer;
 		$this->inspector = $inspector;
 		$this->stateManager = $stateManager;
@@ -257,50 +248,29 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
-		// Load the category
-		$category = $this->categoryStore->readCategory( $categoryName );
-
-		if ( $category === null ) {
-			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-generate-form-no-schema' )->params( $categoryName )->text()
-			) );
-			return;
-		}
-
 		try {
-			// Build category map for inheritance resolution
+			// Build category map and check existence
 			$categoryMap = $this->buildCategoryMap();
-			$resolver = new InheritanceResolver( $categoryMap );
 
-			// Resolve inheritance to get effective category with all inherited properties
-			$effective = $resolver->getEffectiveCategory( $categoryName );
+			if ( !isset( $categoryMap[$categoryName] ) ) {
+				$output->addHTML( Html::errorBox(
+					$this->msg( 'semanticschemas-generate-form-no-schema' )->params( $categoryName )->text()
+				) );
+				return;
+			}
+			$genResults = $this->artifactGenerator->generateAll( $categoryMap, false, [ $categoryName ] );
+			$genResult = $genResults['results'][$categoryName] ?? null;
 
-			// Generate templates (always regenerate auto-generated ones)
-			$templateResult = $this->templateGenerator->generateAllTemplates( $effective );
-
-			if ( !$templateResult['success'] ) {
+			if ( $genResult === null || !$genResult['success'] ) {
+				$errors = $genResult['errors'] ?? [ 'Unknown error' ];
 				$output->addHTML( Html::errorBox(
 					$this->msg( 'semanticschemas-generate-form-failed' )
-						->params( $categoryName, implode( ', ', $templateResult['errors'] ) )
+						->params( $categoryName, implode( ', ', $errors ) )
 						->text()
 				) );
 				return;
 			}
-
-			// Generate form
-			$formSuccess = $this->formGenerator->generateAndSaveForm( $effective );
-
-			if ( !$formSuccess ) {
-				$output->addHTML( Html::errorBox(
-					$this->msg( 'semanticschemas-generate-form-failed' )
-						->params( $categoryName, 'Failed to save form' )
-						->text()
-				) );
-				return;
-			}
-
-			// Generate display template conditionally (respect user customizations)
-			$displayResult = $this->displayGenerator->generateIfAllowed( $effective );
+			$displayResult = $genResult['displayResult'];
 
 			// Log the operation
 			$this->logOperation( 'generate', "Form generated for $categoryName", [
@@ -1108,7 +1078,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'td',
 				[],
 				$this->renderAvailabilityBadge(
-					$this->templateGenerator->semanticTemplateExists( $name ),
+					$this->artifactGenerator->semanticTemplateExists( $name ),
 					$this->getTemplateTitle( $name )
 				)
 			);
@@ -1116,7 +1086,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'td',
 				[],
 				$this->renderAvailabilityBadge(
-					$this->formGenerator->formExists( $name ),
+					$this->artifactGenerator->formExists( $name ),
 					$this->getFormTitle( $name )
 				)
 			);
@@ -1124,7 +1094,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'td',
 				[],
 				$this->renderAvailabilityBadge(
-					$this->displayGenerator->displayStubExists( $name ),
+					$this->artifactGenerator->displayStubExists( $name ),
 					$this->getDisplayTitle( $name )
 				)
 			);
@@ -1200,6 +1170,15 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$request = $this->getRequest();
 
 		$output->setPageTitle( $this->msg( 'semanticschemas-generate-title' )->text() );
+
+		if ( $request->getVal( 'postinstall' ) ) {
+			$output->addHTML( Html::successBox(
+				Html::element( 'strong', [],
+					$this->msg( 'semanticschemas-generate-postinstall-title' )->text()
+				) . ' ' .
+				$this->msg( 'semanticschemas-generate-postinstall-description' )->text()
+			) );
+		}
 
 		if ( $request->wasPosted() && $request->getVal( 'action' ) === 'generate' ) {
 			if ( !$this->getUser()->matchEditToken( $request->getVal( 'token' ) ) ) {
@@ -1334,11 +1313,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return array<string, object> Map of category names to CategoryModel objects
 	 */
 	private function buildCategoryMap(): array {
-		$categoryMap = [];
-		foreach ( $this->categoryStore->getAllCategories() as $cat ) {
-			$categoryMap[$cat->getName()] = $cat;
-		}
-		return $categoryMap;
+		return $this->categoryStore->getAllCategories();
 	}
 
 	/**
@@ -1352,10 +1327,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 	}
 
 	/**
-	 * Process "Generate" POST:
-	 *   - Build inheritance graph from current categories.
-	 *   - For each category: compute effective category + ancestor chain.
-	 *   - Invoke TemplateGenerator, FormGenerator (with ancestors), DisplayStubGenerator.
+	 * Process "Generate" POST: build category map and delegate to
+	 * ArtifactGenerator::generateAll() for inheritance resolution and
+	 * template/form/display generation.
 	 */
 	private function processGenerate(): void {
 		$output = $this->getOutput();
@@ -1371,10 +1345,17 @@ class SpecialSemanticSchemas extends SpecialPage {
 		}
 
 		$categoryName = trim( $request->getText( 'category' ) );
+		$categoryMap = $this->buildCategoryMap();
+		$targetNames = $categoryName !== '' ? [ $categoryName ] : null;
 
-		$categories = $this->getTargetCategories( $categoryName );
+		if ( $targetNames !== null && !isset( $categoryMap[$categoryName] ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-generate-no-categories' )->text()
+			) );
+			return;
+		}
 
-		if ( empty( $categories ) ) {
+		if ( empty( $categoryMap ) ) {
 			$output->addHTML( Html::errorBox(
 				$this->msg( 'semanticschemas-generate-no-categories' )->text()
 			) );
@@ -1388,16 +1369,13 @@ class SpecialSemanticSchemas extends SpecialPage {
 		);
 
 		try {
-			$categoryMap = $this->buildCategoryMap();
-			$resolver = new InheritanceResolver( $categoryMap );
 			$generateDisplay = $request->getBool( 'generate-display' );
 
-			$successCount = 0;
-			$totalCount = count( $categories );
+			$genResults = $this->artifactGenerator->generateAll(
+				$categoryMap, $generateDisplay, $targetNames
+			);
 
-			foreach ( $categories as $category ) {
-				$name = $category->getName();
-
+			foreach ( $genResults['results'] as $name => $genResult ) {
 				$output->addHTML(
 					Html::element(
 						'div',
@@ -1406,25 +1384,15 @@ class SpecialSemanticSchemas extends SpecialPage {
 					)
 				);
 
-				try {
-					$effective = $resolver->getEffectiveCategory( $name );
-
-					$this->templateGenerator->generateAllTemplates( $effective );
-					$this->formGenerator->generateAndSaveForm( $effective );
-
-					if ( $generateDisplay ) {
-						$this->displayGenerator->generateOrUpdateDisplayStub( $effective );
-					}
-
-					$successCount++;
-				} catch ( \Exception $e ) {
-					wfLogWarning( "SemanticSchemas generate failed for category '$name': " . $e->getMessage() );
+				if ( !$genResult['success'] ) {
+					wfLogWarning( "SemanticSchemas generate failed for category '$name': "
+						. implode( ', ', $genResult['errors'] ) );
 					$output->addHTML(
 						Html::element(
 							'div',
 							[ 'class' => 'semanticschemas-progress-item semanticschemas-error' ],
 							$this->msg( 'semanticschemas-generate-category-error' )
-								->params( $name, $e->getMessage() )
+								->params( $name, implode( ', ', $genResult['errors'] ) )
 								->text()
 						)
 					);
@@ -1440,15 +1408,15 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			$this->logOperation( 'generate', 'Template/form generation completed', [
 				'categoryFilter' => $categoryName ?: 'all',
-				'categoriesProcessed' => $successCount,
-				'categoriesTotal' => $totalCount,
+				'categoriesProcessed' => $genResults['successCount'],
+				'categoriesTotal' => $genResults['totalCount'],
 				'pagesHashed' => count( $pageHashes ),
 			] );
 
 			$output->addHTML(
 				Html::successBox(
 					$this->msg( 'semanticschemas-generate-success' )
-						->numParams( $successCount, $totalCount )
+						->numParams( $genResults['successCount'], $genResults['totalCount'] )
 						->text()
 				)
 			);
@@ -1464,21 +1432,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		} finally {
 			$this->closeProgressContainer();
 		}
-	}
-
-	/**
-	 * Get target categories for generation based on filter.
-	 *
-	 * @param string $categoryName Filter by name, or empty for all
-	 * @return array Array of CategoryModel objects
-	 */
-	private function getTargetCategories( string $categoryName ): array {
-		if ( $categoryName === '' ) {
-			return $this->categoryStore->getAllCategories();
-		}
-
-		$single = $this->categoryStore->readCategory( $categoryName );
-		return $single ? [ $single ] : [];
 	}
 
 	/**

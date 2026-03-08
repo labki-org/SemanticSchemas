@@ -30,6 +30,9 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
  *   - Layer 3: applySubobjectsOnly() - Creates subobject definitions
  *   - Layer 4: applyCategoriesOnly() - Creates categories with semantic annotations
  *
+ * After installation, the user is directed to the Generate tab to create
+ * templates, forms, and display stubs via ArtifactGenerator.
+ *
  * The UI waits for SMW's job queue to complete between layers, ensuring property
  * types are registered before category annotations reference them.
  *
@@ -550,4 +553,5 @@ class ExtensionConfigInstaller {
 
 		return $result;
 	}
+
 }
