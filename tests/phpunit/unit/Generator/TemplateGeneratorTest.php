@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Generator;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
@@ -278,5 +279,106 @@ class TemplateGeneratorTest extends TestCase {
 		$result = $this->generator->generateSemanticTemplate( $category );
 
 		$this->assertStringContainsString( '[[Category:PhD Student]]', $result );
+	}
+
+	/* =========================================================================
+	 * MULTI-VALUE PROPERTY HANDLING
+	 * ========================================================================= */
+
+	/**
+	 * Create a TemplateGenerator whose WikiPropertyStore returns specific PropertyModel instances.
+	 *
+	 * @param array<string, PropertyModel> $propertyMap property name => PropertyModel
+	 * @return TemplateGenerator
+	 */
+	private function generatorWithProperties( array $propertyMap ): TemplateGenerator {
+		$propStore = $this->createMock( WikiPropertyStore::class );
+		$propStore->method( 'readProperty' )
+			->willReturnCallback( static fn ( string $name ) => $propertyMap[$name] ?? null );
+
+		return new TemplateGenerator(
+			$this->createMock( PageCreator::class ),
+			$this->createMock( WikiSubobjectStore::class ),
+			$propStore
+		);
+	}
+
+	public function testMultiValueTextPropertyUsesSepSyntax(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has tags' => new PropertyModel( 'Has tags', [
+				'datatype' => 'Text',
+				'allowsMultipleValues' => true,
+			] ),
+		] );
+
+		$category = new CategoryModel( 'Article', [
+			'properties' => [
+				'required' => [ 'Has tags' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $gen->generateSemanticTemplate( $category );
+		$this->assertStringContainsString( 'Has tags = {{{tags|}}} |+sep=,', $result );
+	}
+
+	public function testSingleValueTextPropertyDoesNotUseSep(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has title' => new PropertyModel( 'Has title', [
+				'datatype' => 'Text',
+				'allowsMultipleValues' => false,
+			] ),
+		] );
+
+		$category = new CategoryModel( 'Article', [
+			'properties' => [
+				'required' => [ 'Has title' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $gen->generateSemanticTemplate( $category );
+		$this->assertStringContainsString( 'Has title = {{{title|}}}', $result );
+		$this->assertStringNotContainsString( '+sep=', $result );
+	}
+
+	public function testMultiValuePagePropertyWithoutNamespaceUsesSep(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has related' => new PropertyModel( 'Has related', [
+				'datatype' => 'Page',
+				'allowsMultipleValues' => true,
+			] ),
+		] );
+
+		$category = new CategoryModel( 'Article', [
+			'properties' => [
+				'required' => [ 'Has related' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $gen->generateSemanticTemplate( $category );
+		$this->assertStringContainsString( 'Has related = {{{related|}}} |+sep=,', $result );
+	}
+
+	public function testMultiValuePagePropertyWithNamespaceUsesArraymap(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has author' => new PropertyModel( 'Has author', [
+				'datatype' => 'Page',
+				'allowsMultipleValues' => true,
+				'allowedNamespace' => 'User',
+			] ),
+		] );
+
+		$category = new CategoryModel( 'Article', [
+			'properties' => [
+				'required' => [ 'Has author' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $gen->generateSemanticTemplate( $category );
+		$this->assertStringContainsString( '#arraymap', $result );
+		$this->assertStringNotContainsString( '+sep=', $result );
 	}
 }
