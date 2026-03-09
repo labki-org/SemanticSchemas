@@ -8,8 +8,8 @@ use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 /**
  * Orchestrates artifact generation (templates, forms, display stubs) for a category.
  *
- * Consolidates the three-generator pattern used by the Special page,
- * maintenance scripts, and the extension config installer.
+ * Consolidates the three-generator pattern used by the Special page
+ * and maintenance scripts.
  */
 class ArtifactGenerator {
 
