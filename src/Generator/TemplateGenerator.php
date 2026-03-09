@@ -61,6 +61,9 @@ class TemplateGenerator {
 
 		// Non-Page or no namespace restriction: simple assignment
 		if ( !$propModel->isPageType() || $allowedNamespace === null || $allowedNamespace === '' ) {
+			if ( $propModel->allowsMultipleValues() ) {
+				return ' | ' . $propertyName . ' = {{{' . $param . '|}}} |+sep=,';
+			}
 			return ' | ' . $propertyName . ' = {{{' . $param . '|}}}';
 		}
 
