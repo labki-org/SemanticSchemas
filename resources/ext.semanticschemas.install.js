@@ -42,9 +42,12 @@
       (success ? '#d4edda' : '#f8d7da') + ';">' + message + '</div>';
 
     if (success) {
-      resultEl.innerHTML += '<p style="margin-top: 1em;"><a href="' +
-        mw.config.get('wgScript') + '/Special:SemanticSchemas" ' +
-        'class="mw-ui-button mw-ui-progressive">Return to Overview</a></p>';
+      var generateUrl = mw.config.get('wgScript') + '/Special:SemanticSchemas/generate?postinstall=1';
+      var overviewUrl = mw.config.get('wgScript') + '/Special:SemanticSchemas';
+      resultEl.innerHTML += '<p style="margin-top: 1em;">' +
+        '<a href="' + generateUrl + '" class="mw-ui-button mw-ui-progressive" ' +
+        'style="margin-right: 0.5em;">Generate Artifacts</a>' +
+        '<a href="' + overviewUrl + '" class="mw-ui-button">Return to Overview</a></p>';
     }
   }
 

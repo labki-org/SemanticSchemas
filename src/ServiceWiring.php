@@ -1,5 +1,6 @@
 <?php
 
+use MediaWiki\Extension\SemanticSchemas\Generator\ArtifactGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
@@ -19,6 +20,16 @@ use MediaWiki\MediaWikiServices;
 
 /** @phpcs-require-sorted-array */
 return [
+
+	'SemanticSchemas.ArtifactGenerator' => static function (
+		MediaWikiServices $services
+	): ArtifactGenerator {
+		return new ArtifactGenerator(
+			$services->get( 'SemanticSchemas.TemplateGenerator' ),
+			$services->get( 'SemanticSchemas.FormGenerator' ),
+			$services->get( 'SemanticSchemas.DisplayStubGenerator' )
+		);
+	},
 
 	'SemanticSchemas.CategoryHierarchyService' => static function (
 		MediaWikiServices $services

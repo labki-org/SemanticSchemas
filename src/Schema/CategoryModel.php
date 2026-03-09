@@ -180,6 +180,34 @@ class CategoryModel {
 		return $this->renderAs;
 	}
 
+	/**
+	 * Whether this is a meta-category (one whose target namespace matches its own name).
+	 *
+	 * Meta-categories (e.g. "Category" with targetNamespace "Category") represent
+	 * namespace-level organizational containers rather than user-facing data categories.
+	 */
+	public function isMetaCategory(): bool {
+		return $this->targetNamespace !== null && $this->targetNamespace === $this->name;
+	}
+
+	/* -------------------------------------------------------------------------
+	 * STATIC FACTORIES
+	 * ------------------------------------------------------------------------- */
+
+	/**
+	 * Build a name-keyed map of CategoryModel objects from raw schema category data.
+	 *
+	 * @param array<string, array> $categories Raw category arrays keyed by name
+	 * @return array<string, CategoryModel>
+	 */
+	public static function buildMapFromSchema( array $categories ): array {
+		$map = [];
+		foreach ( $categories as $name => $data ) {
+			$map[$name] = new self( $name, $data );
+		}
+		return $map;
+	}
+
 	/* -------------------- Properties -------------------- */
 
 	public function getRequiredProperties(): array {

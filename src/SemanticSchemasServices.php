@@ -2,9 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas;
 
-use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
-use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
-use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
+use MediaWiki\Extension\SemanticSchemas\Generator\ArtifactGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
@@ -35,6 +33,10 @@ use MediaWiki\MediaWikiServices;
  */
 class SemanticSchemasServices {
 
+	public static function getArtifactGenerator( MediaWikiServices $services ): ArtifactGenerator {
+		return $services->get( 'SemanticSchemas.ArtifactGenerator' );
+	}
+
 	public static function getPageCreator( MediaWikiServices $services ): PageCreator {
 		return $services->get( 'SemanticSchemas.PageCreator' );
 	}
@@ -57,18 +59,6 @@ class SemanticSchemasServices {
 
 	public static function getPageHashComputer( MediaWikiServices $services ): PageHashComputer {
 		return $services->get( 'SemanticSchemas.PageHashComputer' );
-	}
-
-	public static function getTemplateGenerator( MediaWikiServices $services ): TemplateGenerator {
-		return $services->get( 'SemanticSchemas.TemplateGenerator' );
-	}
-
-	public static function getFormGenerator( MediaWikiServices $services ): FormGenerator {
-		return $services->get( 'SemanticSchemas.FormGenerator' );
-	}
-
-	public static function getDisplayStubGenerator( MediaWikiServices $services ): DisplayStubGenerator {
-		return $services->get( 'SemanticSchemas.DisplayStubGenerator' );
 	}
 
 	public static function getExtensionConfigInstaller( MediaWikiServices $services ): ExtensionConfigInstaller {
