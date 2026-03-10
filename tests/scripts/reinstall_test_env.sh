@@ -24,14 +24,5 @@ for i in $(seq 1 60); do
 	sleep 2
 done
 
-echo "==> Stopping job runner during install..."
-docker compose stop jobrunner
-
-echo "==> Running SemanticSchemas Config Installer..."
-docker compose exec wiki php /mw-user-extensions/SemanticSchemas/maintenance/installConfig.php
-
-echo "==> Restarting job runner..."
-docker compose start jobrunner
-
 echo "==> Environment ready!"
 echo "Visit http://localhost:8889"
