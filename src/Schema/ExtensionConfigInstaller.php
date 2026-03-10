@@ -312,23 +312,13 @@ class ExtensionConfigInstaller {
 		// Templates - No SMW dependencies
 		// Create property display templates before anything else.
 		// =====================================================================
-		foreach ( $templates as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_TEMPLATE );
-			$existed = $title && $this->pageCreator->pageExists( $title );
-
-			$content = $data['content'] ?? '';
-			$ok = $this->pageCreator->createOrUpdatePage(
-				$title,
-				$content,
+		$this->writeEntities( $templates, NS_TEMPLATE, 'templates', $result,
+			fn ( $name, $data ) => $this->pageCreator->createOrUpdatePage(
+				$this->pageCreator->makeTitle( $name, NS_TEMPLATE ),
+				$data['content'] ?? '',
 				'SemanticSchemas: Install property template'
-			);
-
-			if ( $ok ) {
-				$result[$existed ? 'updated' : 'created']['templates'][] = $name;
-			} else {
-				$result['failed']['templates'][] = $name;
-			}
-		}
+			)
+		);
 
 		// =====================================================================
 		// Properties: Create pages with full annotations in one pass.
@@ -404,6 +394,9 @@ class ExtensionConfigInstaller {
 		// Derive canonical→SMW ID mapping from the shared SMW_TYPE_MAP constant
 		$typeMap = array_flip( WikiPropertyStore::SMW_TYPE_MAP );
 
+		// Collect DIWikiPage subjects for cache invalidation after the loop
+		$subjects = [];
+
 		foreach ( $properties as $name => $data ) {
 			$datatype = $data['datatype'] ?? 'Page';
 			$smwTypeId = $typeMap[$datatype] ?? '_wpg';
@@ -414,6 +407,7 @@ class ExtensionConfigInstaller {
 			}
 
 			$subject = \SMW\DIWikiPage::newFromTitle( $title );
+			$subjects[] = $subject;
 			$semanticData = new \SMW\SemanticData( $subject );
 
 			$typeURI = \SMWDIUri::doUnserialize(
@@ -440,14 +434,11 @@ class ExtensionConfigInstaller {
 		// This cache (backed by EntityCache with TTL_WEEK) is NOT cleared
 		// by $store->clear() and would return stale type lookups during
 		// the subsequent re-parse step.
-		if ( class_exists( \SMW\Services\ServicesFactory::class ) ) {
+		if ( $subjects && class_exists( \SMW\Services\ServicesFactory::class ) ) {
 			$lookup = \SMW\Services\ServicesFactory::getInstance()
 				->getPropertySpecificationLookup();
-			foreach ( $properties as $name => $data ) {
-				$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
-				if ( $title ) {
-					$lookup->invalidateCache( \SMW\DIWikiPage::newFromTitle( $title ) );
-				}
+			foreach ( $subjects as $subject ) {
+				$lookup->invalidateCache( $subject );
 			}
 		}
 	}
@@ -467,7 +458,8 @@ class ExtensionConfigInstaller {
 			return;
 		}
 
-		$lbFactory = \MediaWiki\MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
+		$services = \MediaWiki\MediaWikiServices::getInstance();
+		$lbFactory = $services->getDBLoadBalancerFactory();
 
 		if ( $this->isWebMode() ) {
 			$lbFactory->commitPrimaryChanges( __METHOD__ );
@@ -482,10 +474,10 @@ class ExtensionConfigInstaller {
 			);
 		}
 
-		$services = \MediaWiki\MediaWikiServices::getInstance();
 		$store = \SMW\StoreFactory::getStore();
 		$parser = $services->getParserFactory()->getInstance();
 		$parserOptions = \MediaWiki\Parser\ParserOptions::newFromAnon();
+		$wikiPageFactory = $services->getWikiPageFactory();
 
 		// Clear the LinkCache so Title::exists() sees pages created
 		// earlier in this request.
@@ -497,7 +489,7 @@ class ExtensionConfigInstaller {
 				if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
 					continue;
 				}
-				$this->updateSMWFromPage( $store, $title, $parser, $parserOptions );
+				$this->updateSMWFromPage( $store, $title, $parser, $parserOptions, $wikiPageFactory );
 			}
 		}
 
@@ -520,10 +512,10 @@ class ExtensionConfigInstaller {
 	 * @param \MediaWiki\Title\Title $title
 	 * @param \MediaWiki\Parser\Parser $parser
 	 * @param \MediaWiki\Parser\ParserOptions $parserOptions
+	 * @param \MediaWiki\Page\WikiPageFactory $wikiPageFactory
 	 */
-	private function updateSMWFromPage( $store, $title, $parser, $parserOptions ): void {
-		$wikiPage = \MediaWiki\MediaWikiServices::getInstance()
-			->getWikiPageFactory()->newFromTitle( $title );
+	private function updateSMWFromPage( $store, $title, $parser, $parserOptions, $wikiPageFactory ): void {
+		$wikiPage = $wikiPageFactory->newFromTitle( $title );
 
 		$content = $wikiPage->getContent();
 		if ( !$content instanceof \MediaWiki\Content\TextContent ) {
@@ -569,7 +561,8 @@ class ExtensionConfigInstaller {
 				$store->updateData( $semanticData );
 				return;
 			} catch ( \Wikimedia\Rdbms\DBQueryError $e ) {
-				if ( stripos( $e->getMessage(), 'Deadlock' ) !== false && $attempt < 2 ) {
+				// MySQL error 1213 = ER_LOCK_DEADLOCK
+				if ( (int)$e->errno === 1213 && $attempt < 2 ) {
 					usleep( 200000 );
 					continue;
 				}
