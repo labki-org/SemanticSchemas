@@ -24,7 +24,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Schema;
  *   - multi-parent inheritance consistency
  *   - circular category dependencies (via InheritanceResolver)
  *   - display/form section structure
- *   - naming conventions and best practices (warnings)
  */
 class SchemaValidator {
 
@@ -113,7 +112,7 @@ class SchemaValidator {
 				'schema',
 				'',
 				'Missing required field: schemaVersion',
-				'Add "schemaVersion": "1.0" to the schema root'
+				'Add "schemaVersion": "' . SchemaLoader::SCHEMA_VERSION . '" to the schema root'
 			);
 		}
 
@@ -668,14 +667,6 @@ class SchemaValidator {
 			return [ 'errors' => $errors, 'warnings' => $warnings ];
 		}
 
-		if ( !str_starts_with( $propertyName, 'Has ' ) ) {
-			$warnings[] = $this->formatWarning(
-				'property',
-				$propertyName,
-				'Property names should start with "Has " by SMW convention'
-			);
-		}
-
 		if ( !isset( $propertyData['datatype'] ) ) {
 			$errors[] = $this->formatError(
 				'property',
@@ -715,7 +706,6 @@ class SchemaValidator {
 
 	private function checkCircularDependencies( array $categories ): array {
 		$categoryModels = [];
-
 		foreach ( $categories as $name => $data ) {
 			try {
 				$categoryModels[$name] = new CategoryModel( $name, $data );
@@ -736,17 +726,25 @@ class SchemaValidator {
 	 * WARNINGS (non-fatal)
 	 * ====================================================================== */
 
-	public function generateWarnings( array $schema ): array {
+	private function generateWarnings( array $schema ): array {
 		$warnings = [];
 
-		if ( !isset( $schema['categories'] ) || !isset( $schema['properties'] ) ) {
+		if ( !isset( $schema['categories'] ) ) {
 			return $warnings;
 		}
 
 		$categories = $schema['categories'];
-		$properties = $schema['properties'];
 
 		foreach ( $categories as $name => $data ) {
+			// Meta-categories (targetNamespace === name) don't have display/forms
+			// config in extension-config.json yet — skip these warnings.
+			$isMetaCategory = isset( $data['targetNamespace'] )
+				&& $data['targetNamespace'] === $name;
+
+			if ( $isMetaCategory ) {
+				continue;
+			}
+
 			$req = $data['properties']['required'] ?? [];
 			$opt = $data['properties']['optional'] ?? [];
 
@@ -760,22 +758,6 @@ class SchemaValidator {
 
 			if ( empty( $data['forms'] ?? [] ) ) {
 				$warnings[] = "Category '$name': missing form configuration";
-			}
-		}
-
-		$used = [];
-		foreach ( $categories as $cat ) {
-			$used = array_merge(
-				$used,
-				$cat['properties']['required'] ?? [],
-				$cat['properties']['optional'] ?? []
-			);
-		}
-		$used = array_unique( $used );
-
-		foreach ( array_keys( $properties ) as $p ) {
-			if ( !in_array( $p, $used, true ) ) {
-				$warnings[] = "Property '$p': not used by any category";
 			}
 		}
 

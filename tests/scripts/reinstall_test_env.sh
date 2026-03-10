@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+SKIP_INSTALL=false
+for arg in "$@"; do
+	case "$arg" in
+		--skip-install) SKIP_INSTALL=true ;;
+	esac
+done
+
 echo "==> Shutting down existing containers and removing volumes..."
 docker compose down -v
 
@@ -24,8 +31,12 @@ for i in $(seq 1 60); do
 	sleep 2
 done
 
-echo "==> Running SemanticSchemas Config Installer..."
-docker compose exec wiki php /mw-user-extensions/SemanticSchemas/maintenance/installConfig.php
+if [ "$SKIP_INSTALL" = true ]; then
+	echo "==> Skipping config installation (--skip-install)"
+else
+	echo "==> Running SemanticSchemas Config Installer..."
+	docker compose exec wiki php /mw-user-extensions/SemanticSchemas/maintenance/installConfig.php
+fi
 
 echo "==> Environment ready!"
 echo "Visit http://localhost:8889"
