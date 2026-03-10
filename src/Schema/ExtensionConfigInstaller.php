@@ -193,58 +193,6 @@ class ExtensionConfigInstaller {
 	}
 
 	/**
-	 * Validate schema and apply entities using a write callable.
-	 *
-	 * Handles the common pattern: validate → init result → iterate entities →
-	 * check existence → call writer → classify as created/updated/failed.
-	 *
-	 * @param array $schema Full schema array
-	 * @param string $entityKey Schema key (e.g. 'properties', 'categories')
-	 * @param int $namespace MediaWiki namespace constant
-	 * @param string $resultKey Result array key (e.g. 'properties', 'categories')
-	 * @param callable $writeEntity fn(string $name, array $data): bool
-	 * @return array
-	 */
-	private function applyValidatedEntities(
-		array $schema,
-		string $entityKey,
-		int $namespace,
-		string $resultKey,
-		callable $writeEntity
-	): array {
-		$validation = $this->validator->validateSchemaWithSeverity( $schema );
-
-		$result = [
-			'errors' => $validation['errors'],
-			'warnings' => $validation['warnings'],
-			'created' => [ $resultKey => [] ],
-			'updated' => [ $resultKey => [] ],
-			'failed' => [ $resultKey => [] ],
-		];
-
-		if ( $validation['errors'] ) {
-			return $result;
-		}
-
-		$entities = $schema[$entityKey] ?? [];
-
-		foreach ( $entities as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, $namespace );
-			$existed = $title && $this->pageCreator->pageExists( $title );
-
-			$ok = $writeEntity( $name, $data ?? [] );
-
-			if ( $ok ) {
-				$result[$existed ? 'updated' : 'created'][$resultKey][] = $name;
-			} else {
-				$result['failed'][$resultKey][] = $name;
-			}
-		}
-
-		return $result;
-	}
-
-	/**
 	 * Check if entities of a given type from a parsed schema are installed.
 	 *
 	 * @param array $schema Parsed schema array
@@ -267,6 +215,46 @@ class ExtensionConfigInstaller {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Write entities, classifying each as created/updated/failed.
+	 *
+	 * @param array $entities Entity definitions keyed by name
+	 * @param int $namespace MediaWiki namespace constant
+	 * @param string $resultKey Result array key (e.g. 'properties')
+	 * @param array &$result Result array to populate
+	 * @param callable $writeEntity fn(string $name, array $data): bool
+	 */
+	private function writeEntities(
+		array $entities,
+		int $namespace,
+		string $resultKey,
+		array &$result,
+		callable $writeEntity
+	): void {
+		foreach ( $entities as $name => $data ) {
+			$title = $this->pageCreator->makeTitle( $name, $namespace );
+			$existed = $title && $this->pageCreator->pageExists( $title );
+
+			$ok = $writeEntity( $name, $data ?? [] );
+
+			if ( $ok ) {
+				$result[$existed ? 'updated' : 'created'][$resultKey][] = $name;
+			} else {
+				$result['failed'][$resultKey][] = $name;
+			}
+		}
+	}
+
+	/**
+	 * Whether we are running in web mode (not CLI).
+	 *
+	 * In web mode, DB commits and deferred update flushes are needed
+	 * because LinksUpdate is dispatched via job queue, not synchronously.
+	 */
+	private function isWebMode(): bool {
+		return !defined( 'MW_ENTRY_POINT' ) || MW_ENTRY_POINT !== 'cli';
 	}
 
 	/**
@@ -342,30 +330,12 @@ class ExtensionConfigInstaller {
 			}
 		}
 
-		// Track which properties existed before installation
-		$propertyExisted = [];
-		foreach ( $properties as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
-			$propertyExisted[$name] = $title && $this->pageCreator->pageExists( $title );
-		}
-
 		// =====================================================================
 		// Properties: Create pages with full annotations in one pass.
 		// =====================================================================
-		foreach ( $properties as $name => $data ) {
-			$model = new PropertyModel( $name, $data ?? [] );
-			$ok = $this->propertyStore->writeProperty( $model );
-
-			if ( $ok ) {
-				if ( $propertyExisted[$name] ) {
-					$result['updated']['properties'][] = $name;
-				} else {
-					$result['created']['properties'][] = $name;
-				}
-			} else {
-				$result['failed']['properties'][] = $name;
-			}
-		}
+		$this->writeEntities( $properties, SMW_NS_PROPERTY, 'properties', $result,
+			fn ( $name, $data ) => $this->propertyStore->writeProperty( new PropertyModel( $name, $data ) )
+		);
 
 		// Commit page writes, then register property types directly in SMW's
 		// store so they are immediately available for subsequent lookups.
@@ -373,54 +343,25 @@ class ExtensionConfigInstaller {
 		// allowedNamespace, etc.) — types must be registered first so SMW can
 		// correctly interpret referenced properties during parsing.
 		$this->commitAndRegisterPropertyTypes( $properties );
-		$this->commitAndUpdateSMWData( $properties, [], SMW_NS_PROPERTY );
+		$this->commitAndUpdateSMWData( [ [ $properties, SMW_NS_PROPERTY ] ] );
 
 		// =====================================================================
-		// Subobjects
+		// Subobjects & Categories
 		// =====================================================================
-		foreach ( $subobjects as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_SUBOBJECT );
-			$existed = $title && $this->pageCreator->pageExists( $title );
-
-			$model = new SubobjectModel( $name, $data ?? [] );
-			$ok = $this->subobjectStore->writeSubobject( $model );
-
-			if ( $ok ) {
-				if ( $existed ) {
-					$result['updated']['subobjects'][] = $name;
-				} else {
-					$result['created']['subobjects'][] = $name;
-				}
-			} else {
-				$result['failed']['subobjects'][] = $name;
-			}
-		}
-
-		// =====================================================================
-		// Categories
-		// =====================================================================
-		foreach ( $categories as $name => $data ) {
-			$categoryTitle = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
-			$existed = $categoryTitle && $this->pageCreator->pageExists( $categoryTitle );
-
-			$model = new CategoryModel( $name, $data ?? [] );
-			$ok = $this->categoryStore->writeCategory( $model );
-
-			if ( $ok ) {
-				if ( $existed ) {
-					$result['updated']['categories'][] = $name;
-				} else {
-					$result['created']['categories'][] = $name;
-				}
-			} else {
-				$result['failed']['categories'][] = $name;
-			}
-		}
+		$this->writeEntities( $subobjects, NS_SUBOBJECT, 'subobjects', $result,
+			fn ( $name, $data ) => $this->subobjectStore->writeSubobject( new SubobjectModel( $name, $data ) )
+		);
+		$this->writeEntities( $categories, NS_CATEGORY, 'categories', $result,
+			fn ( $name, $data ) => $this->categoryStore->writeCategory( new CategoryModel( $name, $data ) )
+		);
 
 		// Commit all remaining writes (subobjects, categories) and write
 		// their semantic data directly to SMW's store so it is immediately
 		// available for artifact generation.
-		$this->commitAndUpdateSMWData( $subobjects, $categories, NS_SUBOBJECT, NS_CATEGORY );
+		$this->commitAndUpdateSMWData( [
+			[ $subobjects, NS_SUBOBJECT ],
+			[ $categories, NS_CATEGORY ],
+		] );
 
 		return $result;
 	}
@@ -448,30 +389,20 @@ class ExtensionConfigInstaller {
 			return;
 		}
 
-		$isWeb = !defined( 'MW_ENTRY_POINT' ) || MW_ENTRY_POINT !== 'cli';
 		$lbFactory = \MediaWiki\MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
 
 		// In web mode, commit pending page writes so pages exist in the DB
 		// before we write SMW data for them. In CLI mode, all writes are
 		// visible within the same auto-transaction and committing would
 		// conflict with PageUpdater's atomic sections.
-		if ( $isWeb ) {
+		if ( $this->isWebMode() ) {
 			$lbFactory->commitPrimaryChanges( __METHOD__ );
 		}
 
 		$store = \SMW\StoreFactory::getStore();
 
-		// Canonical datatype → SMW internal type ID mapping
-		$typeMap = [
-			'Text' => '_txt', 'Page' => '_wpg', 'Date' => '_dat',
-			'Number' => '_num', 'Boolean' => '_boo', 'URL' => '_uri',
-			'Email' => '_ema', 'Telephone number' => '_tel', 'Code' => '_cod',
-			'Geographic coordinate' => '_geo', 'Quantity' => '_qty',
-			'Temperature' => '_tem', 'Annotation URI' => '_anu',
-			'External identifier' => '_eid', 'Keyword' => '_key',
-			'Monolingual text' => '_mlt_rec', 'Record' => '_rec',
-			'Reference' => '_ref_rec',
-		];
+		// Derive canonical→SMW ID mapping from the shared SMW_TYPE_MAP constant
+		$typeMap = array_flip( WikiPropertyStore::SMW_TYPE_MAP );
 
 		foreach ( $properties as $name => $data ) {
 			$datatype = $data['datatype'] ?? 'Page';
@@ -496,7 +427,7 @@ class ExtensionConfigInstaller {
 			$this->safeUpdateData( $store, $semanticData );
 		}
 
-		if ( $isWeb ) {
+		if ( $this->isWebMode() ) {
 			$lbFactory->commitPrimaryChanges( __METHOD__ );
 			// Flush the replica DB snapshot so subsequent reads (e.g., SMW's
 			// SpecificationLookup) see the types we just committed on PRIMARY.
@@ -529,25 +460,16 @@ class ExtensionConfigInstaller {
 	 *
 	 * Works in both CLI and web mode.
 	 *
-	 * @param array $group1 Entity definitions from the schema
-	 * @param array $group2 Entity definitions from the schema
-	 * @param int $ns1 Namespace for group1
-	 * @param int $ns2 Namespace for group2 (ignored if group2 is empty)
+	 * @param array $entityGroups Array of [ entities, namespace ] pairs
 	 */
-	private function commitAndUpdateSMWData(
-		array $group1,
-		array $group2 = [],
-		int $ns1 = NS_SUBOBJECT,
-		int $ns2 = NS_CATEGORY
-	): void {
+	private function commitAndUpdateSMWData( array $entityGroups ): void {
 		if ( !class_exists( \SMW\StoreFactory::class ) ) {
 			return;
 		}
 
-		$isWeb = !defined( 'MW_ENTRY_POINT' ) || MW_ENTRY_POINT !== 'cli';
 		$lbFactory = \MediaWiki\MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
 
-		if ( $isWeb ) {
+		if ( $this->isWebMode() ) {
 			$lbFactory->commitPrimaryChanges( __METHOD__ );
 
 			// Flush ALL pending DeferredUpdates (PRESEND + POSTSEND) BEFORE
@@ -560,23 +482,26 @@ class ExtensionConfigInstaller {
 			);
 		}
 
+		$services = \MediaWiki\MediaWikiServices::getInstance();
 		$store = \SMW\StoreFactory::getStore();
+		$parser = $services->getParserFactory()->getInstance();
+		$parserOptions = \MediaWiki\Parser\ParserOptions::newFromAnon();
 
 		// Clear the LinkCache so Title::exists() sees pages created
 		// earlier in this request.
-		\MediaWiki\MediaWikiServices::getInstance()->getLinkCache()->clear();
+		$services->getLinkCache()->clear();
 
-		foreach ( [ [ $group1, $ns1 ], [ $group2, $ns2 ] ] as [ $entities, $ns ] ) {
+		foreach ( $entityGroups as [ $entities, $ns ] ) {
 			foreach ( $entities as $name => $data ) {
 				$title = $this->pageCreator->makeTitle( $name, $ns );
 				if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
 					continue;
 				}
-				$this->updateSMWFromPage( $store, $title );
+				$this->updateSMWFromPage( $store, $title, $parser, $parserOptions );
 			}
 		}
 
-		if ( $isWeb ) {
+		if ( $this->isWebMode() ) {
 			$lbFactory->commitPrimaryChanges( __METHOD__ );
 		}
 
@@ -593,10 +518,12 @@ class ExtensionConfigInstaller {
 	 *
 	 * @param \SMW\Store $store
 	 * @param \MediaWiki\Title\Title $title
+	 * @param \MediaWiki\Parser\Parser $parser
+	 * @param \MediaWiki\Parser\ParserOptions $parserOptions
 	 */
-	private function updateSMWFromPage( $store, $title ): void {
-		$services = \MediaWiki\MediaWikiServices::getInstance();
-		$wikiPage = $services->getWikiPageFactory()->newFromTitle( $title );
+	private function updateSMWFromPage( $store, $title, $parser, $parserOptions ): void {
+		$wikiPage = \MediaWiki\MediaWikiServices::getInstance()
+			->getWikiPageFactory()->newFromTitle( $title );
 
 		$content = $wikiPage->getContent();
 		if ( !$content instanceof \MediaWiki\Content\TextContent ) {
@@ -605,8 +532,6 @@ class ExtensionConfigInstaller {
 
 		// Force a completely fresh parse so SMW's hooks re-process all
 		// inline annotations with the now-registered property types.
-		$parser = $services->getParserFactory()->getInstance();
-		$parserOptions = \MediaWiki\Parser\ParserOptions::newFromAnon();
 		$parserOutput = $parser->parse( $content->getText(), $title, $parserOptions );
 
 		$smwData = $parserOutput->getExtensionData( \SMW\ParserData::DATA_ID );
