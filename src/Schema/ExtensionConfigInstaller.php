@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
-use JobQueueGroup;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -18,22 +17,24 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
  * This is a minimal, internal helper that reuses the canonical
  * schema models + Wiki*Store classes, and writes via PageCreator.
  *
- * ## Layer-by-Layer Installation
+ * ## Two-Pass Installation with Direct SMW Store Writes
  *
- * The installer provides methods for layer-by-layer installation to work around
- * SMW's asynchronous property type registration. When called via the API
- * (ApiSemanticSchemasInstall), installation happens in 5 layers:
+ * SMW has a chicken-and-egg problem: when updateData() writes both a
+ * property's _TYPE declaration and annotations referencing that property
+ * in the same call, the type isn't in the store yet when SMW determines
+ * which table to write values to. This causes text values to land in
+ * smw_di_wikipage (Page table) instead of smw_di_blob (Text table).
  *
- *   - Layer 0: applyTemplatesOnly() - Creates property display templates (no SMW dependencies)
- *   - Layer 1: applyPropertiesTypeOnly() - Creates properties with just [[Has type::...]]
- *   - Layer 2: applyPropertiesFull() - Updates properties with all annotations
- *   - Layer 3: applySubobjectsOnly() - Creates subobject definitions
- *   - Layer 4: applyCategoriesOnly() - Creates categories with semantic annotations
+ * Additionally, in web mode (MW 1.44), LinksUpdate is dispatched via
+ * domain events → job queue, so types are never indexed without a
+ * running job runner.
  *
- * The UI waits for SMW's job queue to complete between layers, ensuring property
- * types are registered before category annotations reference them.
+ * The installer solves both issues with a two-pass approach:
+ * 1. Register property types via updateData() with ONLY _TYPE values
+ * 2. Re-parse pages and write full semantic data via updateData()
  *
- * @see ApiSemanticSchemasInstall for detailed explanation of why this is necessary
+ * This ensures all types are in the store before any annotation data
+ * is written, so SMW maps values to the correct storage tables.
  */
 class ExtensionConfigInstaller {
 
@@ -44,7 +45,6 @@ class ExtensionConfigInstaller {
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
 	private WikiSubobjectStore $subobjectStore;
-	private JobQueueGroup $jobQueueGroup;
 
 	public function __construct(
 		SchemaLoader $loader,
@@ -52,8 +52,7 @@ class ExtensionConfigInstaller {
 		WikiCategoryStore $categoryStore,
 		WikiPropertyStore $propertyStore,
 		WikiSubobjectStore $subobjectStore,
-		PageCreator $pageCreator,
-		JobQueueGroup $jobQueueGroup
+		PageCreator $pageCreator
 	) {
 		$this->loader = $loader;
 		$this->validator = $validator;
@@ -61,7 +60,6 @@ class ExtensionConfigInstaller {
 		$this->propertyStore = $propertyStore;
 		$this->subobjectStore = $subobjectStore;
 		$this->pageCreator = $pageCreator;
-		$this->jobQueueGroup = $jobQueueGroup;
 	}
 
 	/**
@@ -153,24 +151,6 @@ class ExtensionConfigInstaller {
 		$this->previewEntities( array_keys( $categories ), NS_CATEGORY, 'categories', $result );
 
 		return $result;
-	}
-
-	/**
-	 * Apply only the categories from a schema (Step 2 of 2).
-	 *
-	 * This should only be called after applyPropertiesOnly() and after
-	 * SMW has finished processing property types (job queue is empty).
-	 *
-	 * @param array $schema
-	 * @return array
-	 */
-	public function applyCategoriesOnly( array $schema ): array {
-		return $this->applyValidatedEntities(
-			$schema, 'categories', NS_CATEGORY, 'categories',
-			fn ( string $name, array $data ) => $this->categoryStore->writeCategory(
-				new CategoryModel( $name, $data )
-			)
-		);
 	}
 
 	/**
@@ -290,123 +270,16 @@ class ExtensionConfigInstaller {
 	}
 
 	/**
-	 * Get the count of pending jobs (all types).
-	 *
-	 * @return int
-	 */
-	public function getPendingJobCount(): int {
-		try {
-			$queuesWithJobs = $this->jobQueueGroup->getQueuesWithJobs();
-			$count = 0;
-			foreach ( $queuesWithJobs as $type ) {
-				$queue = $this->jobQueueGroup->get( $type );
-				$count += $queue->getSize();
-			}
-			return $count;
-		} catch ( \Throwable $e ) {
-			return 0;
-		}
-	}
-
-	/**
-	 * Apply templates only (Layer 0).
-	 * This creates property display template pages with no SMW dependencies.
-	 *
-	 * @param array $schema
-	 * @return array
-	 */
-	public function applyTemplatesOnly( array $schema ): array {
-		$result = [
-			'errors' => [],
-			'warnings' => [],
-			'created' => [ 'templates' => [] ],
-			'updated' => [ 'templates' => [] ],
-			'failed' => [ 'templates' => [] ],
-		];
-
-		$templates = $schema['templates'] ?? [];
-
-		foreach ( $templates as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_TEMPLATE );
-			$existed = $title && $this->pageCreator->pageExists( $title );
-
-			$content = $data['content'] ?? '';
-			$ok = $this->pageCreator->createOrUpdatePage(
-				$title,
-				$content,
-				'SemanticSchemas: Install property template'
-			);
-
-			if ( $ok ) {
-				$result[$existed ? 'updated' : 'created']['templates'][] = $name;
-			} else {
-				$result['failed']['templates'][] = $name;
-			}
-		}
-
-		return $result;
-	}
-
-	/**
-	 * Apply properties with TYPE ONLY (Layer 1).
-	 * This creates property pages with just [[Has type::...]] to register types in SMW.
-	 *
-	 * @param array $schema
-	 * @return array
-	 */
-	public function applyPropertiesTypeOnly( array $schema ): array {
-		// Layer 1: register property types only (writePropertyTypeOnly)
-		return $this->applyValidatedEntities(
-			$schema, 'properties', SMW_NS_PROPERTY, 'properties',
-			fn ( string $name, array $data ) => $this->propertyStore->writePropertyTypeOnly(
-				new PropertyModel( $name, $data )
-			)
-		);
-	}
-
-	/**
-	 * Apply properties with FULL annotations (Layer 2).
-	 * This updates property pages with all semantic annotations.
-	 *
-	 * @param array $schema
-	 * @return array
-	 */
-	public function applyPropertiesFull( array $schema ): array {
-		// Layer 2: full property annotations (writeProperty)
-		return $this->applyValidatedEntities(
-			$schema, 'properties', SMW_NS_PROPERTY, 'properties',
-			fn ( string $name, array $data ) => $this->propertyStore->writeProperty(
-				new PropertyModel( $name, $data )
-			)
-		);
-	}
-
-	/**
-	 * Apply subobjects only (Layer 3).
-	 *
-	 * @param array $schema
-	 * @return array
-	 */
-	public function applySubobjectsOnly( array $schema ): array {
-		return $this->applyValidatedEntities(
-			$schema, 'subobjects', NS_SUBOBJECT, 'subobjects',
-			fn ( string $name, array $data ) => $this->subobjectStore->writeSubobject(
-				new SubobjectModel( $name, $data )
-			)
-		);
-	}
-
-	/**
 	 * Apply a parsed extension config schema array.
 	 *
 	 * If validation errors are present, no pages are written and the
 	 * errors are returned to the caller.
 	 *
-	 * Uses a two-pass approach for properties to avoid circular dependencies:
-	 * - Pass A: Create properties with ONLY [[Has type::...]] declarations
-	 * - Rebuild SMW data so property types are indexed
-	 * - Pass B: Update properties with all other annotations
-	 * - Then create categories which can now reference correctly-typed properties
+	 * Uses a two-pass approach for properties to solve SMW's chicken-and-egg
+	 * type registration problem:
+	 * - Pass 1: Create property pages, then register ONLY _TYPE in SMW's store
+	 * - Pass 2: Re-parse property pages and write full semantic data
+	 * - Then create subobjects and categories which reference correctly-typed properties
 	 *
 	 * @param array $schema
 	 * @return array See applyFromFile()
@@ -448,7 +321,7 @@ class ExtensionConfigInstaller {
 		$subobjects = $schema['subobjects'] ?? [];
 
 		// =====================================================================
-		// Templates (Layer 0) - No SMW dependencies
+		// Templates - No SMW dependencies
 		// Create property display templates before anything else.
 		// =====================================================================
 		foreach ( $templates as $name => $data ) {
@@ -477,17 +350,7 @@ class ExtensionConfigInstaller {
 		}
 
 		// =====================================================================
-		// PASS A: Create properties with ONLY type declarations
-		// This ensures SMW knows the datatypes before any other annotations are added.
-		// =====================================================================
-		foreach ( $properties as $name => $data ) {
-			$model = new PropertyModel( $name, $data ?? [] );
-			$this->propertyStore->writePropertyTypeOnly( $model );
-		}
-
-		// =====================================================================
-		// PASS B: Update properties with full annotations
-		// Now that SMW knows the types, we can safely add [[Has description::...]] etc.
+		// Properties: Create pages with full annotations in one pass.
 		// =====================================================================
 		foreach ( $properties as $name => $data ) {
 			$model = new PropertyModel( $name, $data ?? [] );
@@ -503,6 +366,14 @@ class ExtensionConfigInstaller {
 				$result['failed']['properties'][] = $name;
 			}
 		}
+
+		// Commit page writes, then register property types directly in SMW's
+		// store so they are immediately available for subsequent lookups.
+		// Then parse property pages to write their full semantic data (inputType,
+		// allowedNamespace, etc.) — types must be registered first so SMW can
+		// correctly interpret referenced properties during parsing.
+		$this->commitAndRegisterPropertyTypes( $properties );
+		$this->commitAndUpdateSMWData( $properties, [], SMW_NS_PROPERTY );
 
 		// =====================================================================
 		// Subobjects
@@ -527,8 +398,6 @@ class ExtensionConfigInstaller {
 
 		// =====================================================================
 		// Categories
-		// Now that all property types are correctly indexed, categories can
-		// use properties like [[Has target namespace::Category]] correctly.
 		// =====================================================================
 		foreach ( $categories as $name => $data ) {
 			$categoryTitle = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
@@ -548,6 +417,271 @@ class ExtensionConfigInstaller {
 			}
 		}
 
+		// Commit all remaining writes (subobjects, categories) and write
+		// their semantic data directly to SMW's store so it is immediately
+		// available for artifact generation.
+		$this->commitAndUpdateSMWData( $subobjects, $categories, NS_SUBOBJECT, NS_CATEGORY );
+
 		return $result;
+	}
+
+	/**
+	 * Register property types directly in SMW's store tables.
+	 *
+	 * SMW has a chicken-and-egg problem: when updateData() writes both
+	 * _TYPE and annotation values in the same call, it determines the
+	 * target table (smw_di_blob vs smw_di_wikipage) by looking up the
+	 * property's type in the store — but the type hasn't been written
+	 * yet. This causes text values to land in smw_di_wikipage.
+	 *
+	 * This method solves it by writing ONLY _TYPE for each property in
+	 * a separate pass, ensuring all types are in the store before the
+	 * full semantic data is written in commitAndUpdateSMWData().
+	 *
+	 * Works in both CLI and web mode. In web mode, also commits pending
+	 * page writes since LinksUpdate is dispatched via job queue.
+	 *
+	 * @param array $properties Property definitions from the schema
+	 */
+	private function commitAndRegisterPropertyTypes( array $properties ): void {
+		if ( !class_exists( \SMW\StoreFactory::class ) ) {
+			return;
+		}
+
+		$isWeb = !defined( 'MW_ENTRY_POINT' ) || MW_ENTRY_POINT !== 'cli';
+		$lbFactory = \MediaWiki\MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
+
+		// In web mode, commit pending page writes so pages exist in the DB
+		// before we write SMW data for them. In CLI mode, all writes are
+		// visible within the same auto-transaction and committing would
+		// conflict with PageUpdater's atomic sections.
+		if ( $isWeb ) {
+			$lbFactory->commitPrimaryChanges( __METHOD__ );
+		}
+
+		$store = \SMW\StoreFactory::getStore();
+
+		// Canonical datatype → SMW internal type ID mapping
+		$typeMap = [
+			'Text' => '_txt', 'Page' => '_wpg', 'Date' => '_dat',
+			'Number' => '_num', 'Boolean' => '_boo', 'URL' => '_uri',
+			'Email' => '_ema', 'Telephone number' => '_tel', 'Code' => '_cod',
+			'Geographic coordinate' => '_geo', 'Quantity' => '_qty',
+			'Temperature' => '_tem', 'Annotation URI' => '_anu',
+			'External identifier' => '_eid', 'Keyword' => '_key',
+			'Monolingual text' => '_mlt_rec', 'Record' => '_rec',
+			'Reference' => '_ref_rec',
+		];
+
+		foreach ( $properties as $name => $data ) {
+			$datatype = $data['datatype'] ?? 'Page';
+			$smwTypeId = $typeMap[$datatype] ?? '_wpg';
+
+			$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
+			if ( !$title ) {
+				continue;
+			}
+
+			$subject = \SMW\DIWikiPage::newFromTitle( $title );
+			$semanticData = new \SMW\SemanticData( $subject );
+
+			$typeURI = \SMWDIUri::doUnserialize(
+				'http://semantic-mediawiki.org/swivt/1.0#' . $smwTypeId
+			);
+			$semanticData->addPropertyObjectValue(
+				new \SMW\DIProperty( '_TYPE' ),
+				$typeURI
+			);
+
+			$this->safeUpdateData( $store, $semanticData );
+		}
+
+		if ( $isWeb ) {
+			$lbFactory->commitPrimaryChanges( __METHOD__ );
+			// Flush the replica DB snapshot so subsequent reads (e.g., SMW's
+			// SpecificationLookup) see the types we just committed on PRIMARY.
+			$lbFactory->flushReplicaSnapshots( __METHOD__ );
+		}
+
+		$this->clearSMWCaches();
+
+		// Invalidate SMW's SpecificationLookup cache for each property.
+		// This cache (backed by EntityCache with TTL_WEEK) is NOT cleared
+		// by $store->clear() and would return stale type lookups during
+		// the subsequent re-parse step.
+		if ( class_exists( \SMW\Services\ServicesFactory::class ) ) {
+			$lookup = \SMW\Services\ServicesFactory::getInstance()
+				->getPropertySpecificationLookup();
+			foreach ( $properties as $name => $data ) {
+				$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
+				if ( $title ) {
+					$lookup->invalidateCache( \SMW\DIWikiPage::newFromTitle( $title ) );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Write semantic data directly to SMW's store via fresh re-parse.
+	 *
+	 * Property types must already be registered (via commitAndRegisterPropertyTypes)
+	 * before calling this method — otherwise SMW maps values to wrong tables.
+	 *
+	 * Works in both CLI and web mode.
+	 *
+	 * @param array $group1 Entity definitions from the schema
+	 * @param array $group2 Entity definitions from the schema
+	 * @param int $ns1 Namespace for group1
+	 * @param int $ns2 Namespace for group2 (ignored if group2 is empty)
+	 */
+	private function commitAndUpdateSMWData(
+		array $group1,
+		array $group2 = [],
+		int $ns1 = NS_SUBOBJECT,
+		int $ns2 = NS_CATEGORY
+	): void {
+		if ( !class_exists( \SMW\StoreFactory::class ) ) {
+			return;
+		}
+
+		$isWeb = !defined( 'MW_ENTRY_POINT' ) || MW_ENTRY_POINT !== 'cli';
+		$lbFactory = \MediaWiki\MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
+
+		if ( $isWeb ) {
+			$lbFactory->commitPrimaryChanges( __METHOD__ );
+
+			// Flush ALL pending DeferredUpdates (PRESEND + POSTSEND) BEFORE
+			// our re-parse. During page creation, MW/SMW queue deferred updates
+			// carrying stale semantic data parsed before types were registered.
+			// These must be flushed first so our subsequent updateData() calls
+			// have the final word on what's stored in SMW's tables.
+			\MediaWiki\Deferred\DeferredUpdates::doUpdates(
+				\MediaWiki\Deferred\DeferredUpdates::ALL
+			);
+		}
+
+		$store = \SMW\StoreFactory::getStore();
+
+		// Clear the LinkCache so Title::exists() sees pages created
+		// earlier in this request.
+		\MediaWiki\MediaWikiServices::getInstance()->getLinkCache()->clear();
+
+		foreach ( [ [ $group1, $ns1 ], [ $group2, $ns2 ] ] as [ $entities, $ns ] ) {
+			foreach ( $entities as $name => $data ) {
+				$title = $this->pageCreator->makeTitle( $name, $ns );
+				if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
+					continue;
+				}
+				$this->updateSMWFromPage( $store, $title );
+			}
+		}
+
+		if ( $isWeb ) {
+			$lbFactory->commitPrimaryChanges( __METHOD__ );
+		}
+
+		$this->clearSMWCaches();
+	}
+
+	/**
+	 * Force a fresh parse of a wiki page and write its semantic data to SMW.
+	 *
+	 * We must re-parse rather than use the cached ParserOutput from page
+	 * creation, because that cache was built BEFORE property types were
+	 * registered in the store. A stale parse treats all custom property
+	 * values as Page references (the default) instead of their real types.
+	 *
+	 * @param \SMW\Store $store
+	 * @param \MediaWiki\Title\Title $title
+	 */
+	private function updateSMWFromPage( $store, $title ): void {
+		$services = \MediaWiki\MediaWikiServices::getInstance();
+		$wikiPage = $services->getWikiPageFactory()->newFromTitle( $title );
+
+		$content = $wikiPage->getContent();
+		if ( !$content instanceof \MediaWiki\Content\TextContent ) {
+			return;
+		}
+
+		// Force a completely fresh parse so SMW's hooks re-process all
+		// inline annotations with the now-registered property types.
+		$parser = $services->getParserFactory()->getInstance();
+		$parserOptions = \MediaWiki\Parser\ParserOptions::newFromAnon();
+		$parserOutput = $parser->parse( $content->getText(), $title, $parserOptions );
+
+		$smwData = $parserOutput->getExtensionData( \SMW\ParserData::DATA_ID );
+		if ( $smwData instanceof \SMW\SemanticData ) {
+			$this->safeUpdateData( $store, $smwData );
+		}
+	}
+
+	/**
+	 * Clear SMW's in-memory caches so subsequent lookups re-read from DB.
+	 */
+	private function clearSMWCaches(): void {
+		if ( class_exists( \SMW\StoreFactory::class ) ) {
+			\SMW\StoreFactory::getStore()->clear();
+		}
+		if ( class_exists( \SMW\Services\ServicesFactory::class ) ) {
+			\SMW\Services\ServicesFactory::clear();
+		}
+	}
+
+	/**
+	 * Call $store->updateData() with deadlock retry and section transaction recovery.
+	 *
+	 * On a fresh environment, SMW's section transactions can be left open
+	 * by failed LinksUpdate processing. Deadlocks can also occur if a job
+	 * runner is processing the same pages concurrently.
+	 *
+	 * @param \SMW\Store $store
+	 * @param \SMW\SemanticData $semanticData
+	 */
+	private function safeUpdateData( $store, $semanticData ): void {
+		for ( $attempt = 0; $attempt < 3; $attempt++ ) {
+			$this->clearStaleSMWSectionTransaction( $store );
+			try {
+				$store->updateData( $semanticData );
+				return;
+			} catch ( \Wikimedia\Rdbms\DBQueryError $e ) {
+				if ( stripos( $e->getMessage(), 'Deadlock' ) !== false && $attempt < 2 ) {
+					usleep( 200000 );
+					continue;
+				}
+				throw $e;
+			} catch ( \RuntimeException $e ) {
+				if ( stripos( $e->getMessage(), 'section transaction' ) !== false && $attempt < 2 ) {
+					continue;
+				}
+				throw $e;
+			}
+		}
+	}
+
+	/**
+	 * Clear any stale SMW section transaction left by a failed updateData().
+	 *
+	 * During page creation in CLI mode, SMW's LinksUpdate processing can
+	 * open a 'sql/transaction/update' section transaction. If that processing
+	 * throws (e.g., on first run with freshly-initialised SMW tables), the
+	 * section transaction is left open and blocks all subsequent updateData()
+	 * calls. This method detects and clears that stale state.
+	 *
+	 * @param \SMW\Store $store
+	 */
+	private function clearStaleSMWSectionTransaction( $store ): void {
+		try {
+			$connection = $store->getConnection( 'mw.db' );
+			if ( method_exists( $connection, 'inSectionTransaction' )
+				&& $connection->inSectionTransaction( 'sql/transaction/update' )
+			) {
+				$connection->endSectionTransaction( 'sql/transaction/update' );
+			}
+		} catch ( \Exception $e ) {
+			// The MW atomic section may be in an inconsistent state,
+			// but the TransactionHandler marker has been cleared
+			// (detachSectionTransaction runs first). Proceeding with
+			// a fresh updateData() call should work.
+		}
 	}
 }

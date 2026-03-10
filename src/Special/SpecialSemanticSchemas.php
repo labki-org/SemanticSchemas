@@ -183,18 +183,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
-		// Check for install-properties action (Step 1)
-		if ( $action === 'install-properties' ) {
-			$this->showAutomatedInstaller();
-			return;
-		}
-
-		// Check for install-categories action (Step 2)
-		if ( $action === 'install-categories' ) {
-			$this->showAutomatedInstaller();
-			return;
-		}
-
 		// Add ResourceLoader styles
 		$output->addModuleStyles( 'ext.semanticschemas.styles' );
 
@@ -452,18 +440,13 @@ class SpecialSemanticSchemas extends SpecialPage {
 	}
 
 	/**
-	 * Show the automated layer-by-layer installer with JavaScript progress monitoring.
+	 * Show the automated installer UI.
 	 *
-	 * This installer creates wiki pages in 4 layers via separate API calls, waiting for
-	 * SMW's job queue to complete between each layer. This is necessary because SMW's
-	 * property type registry is updated asynchronously - if we create properties and
-	 * categories in the same request, category annotations may be stored with incorrect
-	 * data types (e.g., text values stored as page references).
+	 * Installation completes in a single API request. DeferredUpdates::doUpdates()
+	 * forces SMW's property type registration to complete synchronously, so no
+	 * job queue polling is needed.
 	 *
-	 * The JavaScript polls the API every 2 seconds to check job queue status, automatically
-	 * proceeding to the next layer once all jobs are complete.
-	 *
-	 * @see ApiSemanticSchemasInstall for layer definitions and detailed explanation
+	 * @see ApiSemanticSchemasInstall
 	 */
 	private function showAutomatedInstaller(): void {
 		$output = $this->getOutput();
@@ -489,8 +472,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$html = Html::rawElement( 'div', [ 'id' => 'ss-installer' ],
 			Html::element( 'h3', [], 'Automated Installation' ) .
 			Html::element( 'p', [],
-				'This installer will create pages in layers, waiting for SMW to process each layer ' .
-				'before proceeding to the next.'
+				'This will install the base configuration (properties, categories, ' .
+				'templates, and subobjects) required by SemanticSchemas.'
 			) .
 			Html::rawElement( 'div', [ 'class' => 'ss-install-preview' ],
 				Html::element( 'strong', [], 'Items to install:' ) .
@@ -502,13 +485,10 @@ class SpecialSemanticSchemas extends SpecialPage {
 				)
 			) .
 
-			// Progress display
+			// Progress spinner
 			Html::rawElement( 'div', [ 'id' => 'ss-progress' ],
-				$this->renderLayerProgressItems() .
-				Html::rawElement( 'div', [ 'id' => 'ss-jobs' ],
-					Html::element( 'span', [], 'Waiting for SMW jobs: ' ) .
-					Html::element( 'span', [ 'id' => 'ss-job-count' ], '0' )
-				)
+				Html::element( 'span', [ 'class' => 'ss-spinner' ] ) .
+				Html::element( 'span', [], ' Installing configuration...' )
 			) .
 
 			// Result display
@@ -540,31 +520,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'data-api-url' => $apiUrl,
 			] )
 		);
-	}
-
-	/**
-	 * Render the layer progress items for the automated installer.
-	 *
-	 * @return string HTML
-	 */
-	private function renderLayerProgressItems(): string {
-		$layers = [
-			[ 'ss-layer0', 'Layer 0: Templates' ],
-			[ 'ss-layer1', 'Layer 1: Property Types' ],
-			[ 'ss-layer2', 'Layer 2: Property Annotations' ],
-			[ 'ss-layer3', 'Layer 3: Subobjects' ],
-			[ 'ss-layer4', 'Layer 4: Categories' ],
-		];
-
-		$html = '';
-		foreach ( $layers as [ $id, $label ] ) {
-			$html .= Html::rawElement( 'div', [ 'id' => $id, 'class' => 'ss-layer' ],
-				Html::rawElement( 'span', [ 'class' => 'ss-layer-status' ], '○' ) . ' ' .
-				Html::element( 'span', [ 'class' => 'ss-layer-name' ], $label ) .
-				Html::element( 'span', [ 'class' => 'ss-layer-info' ], '' )
-			);
-		}
-		return $html;
 	}
 
 	/**
