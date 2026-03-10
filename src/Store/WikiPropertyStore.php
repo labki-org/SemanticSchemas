@@ -22,6 +22,28 @@ class WikiPropertyStore {
 	private const MARKER_START = '<!-- SemanticSchemas Start -->';
 	private const MARKER_END = '<!-- SemanticSchemas End -->';
 
+	/** Mapping from SMW internal type IDs to canonical datatype names. */
+	public const SMW_TYPE_MAP = [
+		'_txt' => 'Text',
+		'_wpg' => 'Page',
+		'_dat' => 'Date',
+		'_num' => 'Number',
+		'_boo' => 'Boolean',
+		'_uri' => 'URL',
+		'_ema' => 'Email',
+		'_tel' => 'Telephone number',
+		'_cod' => 'Code',
+		'_geo' => 'Geographic coordinate',
+		'_qty' => 'Quantity',
+		'_tem' => 'Temperature',
+		'_anu' => 'Annotation URI',
+		'_eid' => 'External identifier',
+		'_key' => 'Keyword',
+		'_mlt_rec' => 'Monolingual text',
+		'_rec' => 'Record',
+		'_ref_rec' => 'Reference',
+	];
+
 	private PageCreator $pageCreator;
 	private IConnectionProvider $connectionProvider;
 
@@ -297,34 +319,12 @@ class WikiPropertyStore {
 	 * @return string Canonical datatype name
 	 */
 	private function convertSMWTypeIdToCanonical( string $typeId ): string {
-		// Mapping from SMW internal type IDs to canonical names
-		static $typeMap = [
-		'_txt' => 'Text',
-		'_wpg' => 'Page',
-		'_dat' => 'Date',
-		'_num' => 'Number',
-		'_boo' => 'Boolean',
-		'_uri' => 'URL',
-		'_ema' => 'Email',
-		'_tel' => 'Telephone number',
-		'_cod' => 'Code',
-		'_geo' => 'Geographic coordinate',
-		'_qty' => 'Quantity',
-		'_tem' => 'Temperature',
-		'_anu' => 'Annotation URI',
-		'_eid' => 'External identifier',
-		'_key' => 'Keyword',
-		'_mlt_rec' => 'Monolingual text',
-		'_rec' => 'Record',
-		'_ref_rec' => 'Reference',
-		];
-
 		// If it's already a canonical name, return as-is
 		if ( substr( $typeId, 0, 1 ) !== '_' ) {
 			return $typeId;
 		}
 
-		return $typeMap[$typeId] ?? 'Text';
+		return self::SMW_TYPE_MAP[$typeId] ?? 'Text';
 	}
 
 	/* -------------------------------------------------------------------------

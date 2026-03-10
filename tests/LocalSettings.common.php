@@ -7,7 +7,6 @@ wfLoadExtension( 'PageForms' );
 wfLoadExtension( 'ParserFunctions' );
 
 $smwgChangePropagationProtection = false;
-$smwgEnabledDeferredUpdate = false;
 $smwgAutoSetupStore = false;
 $smwgQMaxInlineLimit = 500;
 

@@ -9,38 +9,15 @@ use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 /**
  * ApiSemanticSchemasInstall
  * -------------------------
- * Handles layer-by-layer installation of extension configuration.
+ * Handles installation of extension configuration in a single request.
  *
- * ## Why Layer-by-Layer Installation?
- *
- * SMW (Semantic MediaWiki) maintains an internal property type registry that is updated
- * asynchronously via the job queue. When properties and categories are created in the
- * same HTTP request, SMW may not recognize the property types when parsing category pages.
- *
- * For example, if we create `Property:Has target namespace` with `[[Has type::Text]]` and
- * then immediately create `Category:Category` with `[[Has target namespace::Category]]`,
- * SMW may store the value as a DIWikiPage (page reference) instead of DIBlob (text string)
- * because it hasn't yet registered "Has target namespace" as a Text-type property.
- *
- * The solution is to install in layers with separate HTTP requests, allowing SMW's job
- * queue to process each layer before proceeding:
- *
- *   Layer 0: Templates - property display templates (no SMW dependencies)
- *   Layer 1: Property types only (just [[Has type::...]]) - establishes type registry
- *   Layer 2: Full property annotations - adds labels, descriptions, constraints
- *   Layer 3: Subobjects - can now reference properly-typed properties
- *   Layer 4: Categories - semantic annotations are now stored with correct types
- *
- * The JavaScript UI polls for job queue completion between layers to ensure SMW has
- * fully processed each layer before proceeding to the next.
+ * The installer uses DeferredUpdates::doUpdates() to force SMW's property type
+ * registration to complete synchronously, so all entities can be created in one
+ * request without needing job queue polling between layers.
  *
  * Endpoints:
- *   api.php?action=semanticschemas-install&step=status    - Get job count and install status
- *   api.php?action=semanticschemas-install&step=layer0    - Install property display templates
- *   api.php?action=semanticschemas-install&step=layer1    - Install property types only
- *   api.php?action=semanticschemas-install&step=layer2    - Install properties with full annotations
- *   api.php?action=semanticschemas-install&step=layer3    - Install subobjects
- *   api.php?action=semanticschemas-install&step=layer4    - Install categories
+ *   api.php?action=semanticschemas-install&step=status   - Get install status
+ *   api.php?action=semanticschemas-install&step=install  - Install all entities
  *
  * Security:
  *   - Requires 'edit' permission
@@ -84,12 +61,8 @@ class ApiSemanticSchemasInstall extends ApiBase {
 				$this->executeStatus( $configPath );
 				break;
 
-			case 'layer0':
-			case 'layer1':
-			case 'layer2':
-			case 'layer3':
-			case 'layer4':
-				$this->executeLayer( $step, $configPath );
+			case 'install':
+				$this->executeInstall( $configPath );
 				break;
 
 			default:
@@ -101,27 +74,16 @@ class ApiSemanticSchemasInstall extends ApiBase {
 	 * Get current installation status.
 	 */
 	private function executeStatus( string $configPath ): void {
-		$jobCount = $this->installer->getPendingJobCount();
 		$schema = $this->loader->loadFromFile( $configPath );
 		$status = $this->installer->getInstallationStatus( $schema );
 
-		$this->getResult()->addValue( null, 'status', array_merge(
-			$status,
-			[
-				'pendingJobs' => $jobCount,
-				'ready' => $jobCount === 0,
-			]
-		) );
+		$this->getResult()->addValue( null, 'status', $status );
 	}
 
 	/**
-	 * Execute a specific installation layer.
+	 * Execute full installation in a single request.
 	 */
-	private function executeLayer(
-		string $step,
-		string $configPath
-	): void {
-		// Write operations require POST with a valid CSRF token
+	private function executeInstall( string $configPath ): void {
 		if ( !$this->getRequest()->wasPosted() ) {
 			$this->dieWithError( [ 'apierror-mustbeposted', $this->getModuleName() ] );
 		}
@@ -135,50 +97,16 @@ class ApiSemanticSchemasInstall extends ApiBase {
 			$this->dieWithError( 'Configuration file not found' );
 		}
 
-		$schema = $this->loader->loadFromFile( $configPath );
+		$result = $this->installer->applyFromFile( $configPath );
 
-		$result = [];
-		$layerName = '';
-
-		switch ( $step ) {
-			case 'layer0':
-				$layerName = 'Templates';
-				$result = $this->installer->applyTemplatesOnly( $schema );
-				break;
-
-			case 'layer1':
-				$layerName = 'Property Types';
-				$result = $this->installer->applyPropertiesTypeOnly( $schema );
-				break;
-
-			case 'layer2':
-				$layerName = 'Property Annotations';
-				$result = $this->installer->applyPropertiesFull( $schema );
-				break;
-
-			case 'layer3':
-				$layerName = 'Subobjects';
-				$result = $this->installer->applySubobjectsOnly( $schema );
-				break;
-
-			case 'layer4':
-				$layerName = 'Categories';
-				$result = $this->installer->applyCategoriesOnly( $schema );
-				break;
-		}
-
-		// Use string "true"/"false" to avoid MediaWiki API boolean quirks
 		$success = empty( $result['errors'] ) ? 'true' : 'false';
 
 		$this->getResult()->addValue( null, 'install', [
 			'success' => $success,
-			'layer' => $step,
-			'layerName' => $layerName,
 			'errors' => $result['errors'] ?? [],
 			'created' => $result['created'] ?? [],
 			'updated' => $result['updated'] ?? [],
 			'failed' => $result['failed'] ?? [],
-			'pendingJobs' => $this->installer->getPendingJobCount(),
 		] );
 	}
 
@@ -188,7 +116,7 @@ class ApiSemanticSchemasInstall extends ApiBase {
 	public function getAllowedParams() {
 		return [
 			'step' => [
-				ApiBase::PARAM_TYPE => [ 'status', 'layer0', 'layer1', 'layer2', 'layer3', 'layer4' ],
+				ApiBase::PARAM_TYPE => [ 'status', 'install' ],
 				ApiBase::PARAM_REQUIRED => true,
 			],
 			'token' => [
@@ -220,8 +148,8 @@ class ApiSemanticSchemasInstall extends ApiBase {
 		return [
 			'action=semanticschemas-install&step=status'
 				=> 'apihelp-semanticschemas-install-example-status',
-			'action=semanticschemas-install&step=layer1&token=TOKEN'
-				=> 'apihelp-semanticschemas-install-example-layer1',
+			'action=semanticschemas-install&step=install&token=TOKEN'
+				=> 'apihelp-semanticschemas-install-example-install',
 		];
 	}
 }

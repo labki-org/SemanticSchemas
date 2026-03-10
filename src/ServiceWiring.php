@@ -46,8 +46,7 @@ return [
 			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
-			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->getJobQueueGroup()
+			$services->get( 'SemanticSchemas.PageCreator' )
 		);
 	},
 
