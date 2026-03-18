@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Maintenance;
 
 use Maintenance;
+use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
@@ -18,6 +19,13 @@ require_once "$IP/maintenance/Maintenance.php";
  * as wiki pages via PageCreator.
  */
 class InstallConfig extends Maintenance {
+
+	private const NAMESPACE_LABELS = [
+		'templates'  => 'Template',
+		'properties' => 'Property',
+		'subobjects' => 'Subobject',
+		'categories' => 'Category',
+	];
 
 	public function __construct() {
 		parent::__construct();
@@ -38,23 +46,16 @@ class InstallConfig extends Maintenance {
 		}
 	}
 
-	private function executeDryRun( $installer ): void {
+	private function executeDryRun( ExtensionConfigInstaller $installer ): void {
 		$this->output( "DRY RUN - No changes will be made\n" );
 		$this->output( str_repeat( '=', 50 ) . "\n\n" );
 
 		$result = $installer->preview();
 
-		$namespaceLabels = [
-			'templates' => 'Template',
-			'properties' => 'Property',
-			'subobjects' => 'Subobject',
-			'categories' => 'Category',
-		];
-
 		$totalCreate = 0;
 		$totalUpdate = 0;
 
-		foreach ( $namespaceLabels as $key => $prefix ) {
+		foreach ( self::NAMESPACE_LABELS as $key => $prefix ) {
 			$create = $result['would_create'][$key] ?? [];
 			$update = $result['would_update'][$key] ?? [];
 			$totalCreate += count( $create );
@@ -72,24 +73,17 @@ class InstallConfig extends Maintenance {
 		$this->output( "Summary: $totalCreate would be created, $totalUpdate would be updated\n" );
 	}
 
-	private function executeInstall( $installer ): void {
+	private function executeInstall( ExtensionConfigInstaller $installer ): void {
 		$this->output( "Installing SemanticSchemas base configuration...\n" );
 		$this->output( str_repeat( '=', 50 ) . "\n\n" );
 
 		$result = $installer->install();
 
-		$namespaceLabels = [
-			'templates' => 'Template',
-			'properties' => 'Property',
-			'subobjects' => 'Subobject',
-			'categories' => 'Category',
-		];
-
 		$totalCreated = 0;
 		$totalUpdated = 0;
 		$totalFailed = 0;
 
-		foreach ( $namespaceLabels as $key => $prefix ) {
+		foreach ( self::NAMESPACE_LABELS as $key => $prefix ) {
 			$created = $result['created'][$key] ?? [];
 			$updated = $result['updated'][$key] ?? [];
 			$failed = $result['failed'][$key] ?? [];

@@ -26,6 +26,7 @@ class ExtensionConfigInstaller {
 	];
 
 	private PageCreator $pageCreator;
+	private ?array $cachedEntries = null;
 
 	public function __construct( PageCreator $pageCreator ) {
 		$this->pageCreator = $pageCreator;
@@ -123,6 +124,10 @@ class ExtensionConfigInstaller {
 	 * @return array<array{string, int, string, string}> [type, namespace, pageName, filePath]
 	 */
 	private function getBaseConfigEntries(): array {
+		if ( $this->cachedEntries !== null ) {
+			return $this->cachedEntries;
+		}
+
 		$entries = [];
 		$baseDir = self::BASE_CONFIG_DIR;
 
@@ -134,11 +139,12 @@ class ExtensionConfigInstaller {
 
 			$files = $this->scanWikitextFiles( $dirPath );
 			foreach ( $files as $filePath ) {
-				$pageName = $this->fileToPageName( $filePath, $dirPath );
+				$pageName = $this->fileToPageName( $filePath, $dirPath, $dir );
 				$entries[] = [ $dir, $namespace, $pageName, $filePath ];
 			}
 		}
 
+		$this->cachedEntries = $entries;
 		return $entries;
 	}
 
@@ -172,9 +178,10 @@ class ExtensionConfigInstaller {
 	 *
 	 * @param string $filePath Absolute path to the .wikitext file
 	 * @param string $dirPath Absolute path to the entity type directory
+	 * @param string $entityType Key from ENTITY_DIRS (e.g., 'templates', 'properties')
 	 * @return string
 	 */
-	private function fileToPageName( string $filePath, string $dirPath ): string {
+	private function fileToPageName( string $filePath, string $dirPath, string $entityType ): string {
 		// Get relative path from the entity directory
 		$relative = substr( $filePath, strlen( $dirPath ) + 1 );
 		// Strip .wikitext extension
@@ -182,7 +189,7 @@ class ExtensionConfigInstaller {
 
 		// Templates: preserve subdirectory slashes, no underscore conversion
 		// (Property/Default stays as Property/Default)
-		if ( str_contains( $dirPath, '/templates' ) ) {
+		if ( $entityType === 'templates' ) {
 			return $name;
 		}
 
