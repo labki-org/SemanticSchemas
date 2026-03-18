@@ -170,6 +170,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
+		if ( !$this->installer->isInstalled() ) {
+			$output->addHTML( $this->renderInstallConfigBanner() );
+			return;
+		}
+
 		// Check for generate-form action (from Category page link)
 		$action = $request->getVal( 'action' );
 		if ( $action === 'generate-form' ) {
@@ -326,6 +331,17 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return string HTML
 	 */
 	private function renderInstallConfigBanner(): string {
+		$step1 = Html::rawElement( 'li', [],
+			$this->msg( 'semanticschemas-install-config-banner-step1' )->text() .
+			Html::rawElement( 'pre', [],
+				'php maintenance/run.php update' )
+		);
+		$step2 = Html::rawElement( 'li', [],
+			$this->msg( 'semanticschemas-install-config-banner-step2' )->text() .
+			Html::rawElement( 'pre', [],
+				'php maintenance/run.php runJobs' )
+		);
+
 		$content = Html::rawElement(
 			'div',
 			[ 'class' => 'semanticschemas-install-banner' ],
@@ -334,11 +350,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				[],
 				$this->msg( 'semanticschemas-install-config-banner-title' )->text()
 			) .
-			Html::rawElement(
-				'p',
-				[],
-				$this->msg( 'semanticschemas-install-config-banner-message' )->text()
-			)
+			Html::rawElement( 'ol', [], $step1 . $step2 )
 		);
 
 		return Html::warningBox( $content );
@@ -701,12 +713,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$output = $this->getOutput();
 		$output->setPageTitle( $this->msg( 'semanticschemas-overview' )->text() );
 
-		// Check if base config is installed and show banner if not
-		$installBanner = '';
-		if ( !$this->installer->isInstalled() ) {
-			$installBanner = $this->renderInstallConfigBanner();
-		}
-
 		$stats = $this->inspector->getStatistics();
 		$state = $this->stateManager->getFullState();
 		$isDirty = $this->stateManager->isDirty();
@@ -720,7 +726,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			Html::rawElement( 'div', [ 'class' => 'semanticschemas-table-wrapper' ], $this->getCategoryStatusTable() )
 		);
 
-		$content = $installBanner . $hero . $summaryGrid . $categoryCard;
+		$content = $hero . $summaryGrid . $categoryCard;
 		$output->addHTML( $this->wrapShell( $content ) );
 	}
 
