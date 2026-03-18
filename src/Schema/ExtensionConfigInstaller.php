@@ -17,12 +17,25 @@ class ExtensionConfigInstaller {
 
 	private const BASE_CONFIG_DIR = __DIR__ . '/../../resources/base-config';
 
+	private const TEMPLATES_DIR = 'templates';
+
 	/** @var array<string,int> Directory name → MediaWiki namespace constant */
 	private const ENTITY_DIRS = [
-		'templates'  => NS_TEMPLATE,
-		'properties' => SMW_NS_PROPERTY,
-		'subobjects' => NS_SUBOBJECT,
-		'categories' => NS_CATEGORY,
+		self::TEMPLATES_DIR => NS_TEMPLATE,
+		'properties'        => SMW_NS_PROPERTY,
+		'subobjects'        => NS_SUBOBJECT,
+		'categories'        => NS_CATEGORY,
+	];
+
+	/**
+	 * Human-readable namespace prefix for each entity directory.
+	 * @var array<string,string>
+	 */
+	public const ENTITY_LABELS = [
+		self::TEMPLATES_DIR => 'Template',
+		'properties'        => 'Property',
+		'subobjects'        => 'Subobject',
+		'categories'        => 'Category',
 	];
 
 	private PageCreator $pageCreator;
@@ -189,7 +202,7 @@ class ExtensionConfigInstaller {
 
 		// Templates: preserve subdirectory slashes, no underscore conversion
 		// (Property/Default stays as Property/Default)
-		if ( $entityType === 'templates' ) {
+		if ( $entityType === self::TEMPLATES_DIR ) {
 			return $name;
 		}
 

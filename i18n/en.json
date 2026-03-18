@@ -131,10 +131,7 @@
 	"semanticschemas-generate-form-failed": "Failed to generate form for category \"$1\": $2",
 	"semanticschemas-generate-form-no-category": "No category specified.",
 	"semanticschemas-generate-form-no-schema": "Category \"$1\" does not have schema data. Import a schema first.",
-	"semanticschemas-install-config-title": "Install Base Configuration",
 	"semanticschemas-install-config-banner-title": "Base Configuration Required",
 	"semanticschemas-install-config-banner-step1": "Install the base configuration by running:",
-	"semanticschemas-install-config-banner-step2": "Then process the job queue so Semantic MediaWiki registers property types:",
-	"semanticschemas-install-config-success": "Base configuration installed successfully.",
-	"semanticschemas-install-config-failed": "Failed to install base configuration: $1"
+	"semanticschemas-install-config-banner-step2": "Then process the job queue so Semantic MediaWiki registers property types:"
 }

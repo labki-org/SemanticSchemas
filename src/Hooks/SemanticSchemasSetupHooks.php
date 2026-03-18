@@ -27,7 +27,9 @@ class SemanticSchemasSetupHooks {
 			$smwgNamespacesWithSemanticLinks[NS_SUBOBJECT] = true;
 		}
 
-		// Register SMW hook for auto-install during update.php
+		// Register SMW hook for auto-install during update.php.
+		// Must register unconditionally because SetupAfterCache fires
+		// before LoadExtensionSchemaUpdates sets $isUpdatePhp.
 		if ( defined( 'SMW_EXTENSION_LOADED' ) ) {
 			$hookContainer = MediaWikiServices::getInstance()->getHookContainer();
 			$hookContainer->register(

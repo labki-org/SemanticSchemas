@@ -20,13 +20,6 @@ require_once "$IP/maintenance/Maintenance.php";
  */
 class InstallConfig extends Maintenance {
 
-	private const NAMESPACE_LABELS = [
-		'templates'  => 'Template',
-		'properties' => 'Property',
-		'subobjects' => 'Subobject',
-		'categories' => 'Category',
-	];
-
 	public function __construct() {
 		parent::__construct();
 		$this->addDescription( 'Install SemanticSchemas base configuration (categories, properties, templates)' );
@@ -55,7 +48,7 @@ class InstallConfig extends Maintenance {
 		$totalCreate = 0;
 		$totalUpdate = 0;
 
-		foreach ( self::NAMESPACE_LABELS as $key => $prefix ) {
+		foreach ( ExtensionConfigInstaller::ENTITY_LABELS as $key => $prefix ) {
 			$create = $result['would_create'][$key] ?? [];
 			$update = $result['would_update'][$key] ?? [];
 			$totalCreate += count( $create );
@@ -83,7 +76,7 @@ class InstallConfig extends Maintenance {
 		$totalUpdated = 0;
 		$totalFailed = 0;
 
-		foreach ( self::NAMESPACE_LABELS as $key => $prefix ) {
+		foreach ( ExtensionConfigInstaller::ENTITY_LABELS as $key => $prefix ) {
 			$created = $result['created'][$key] ?? [];
 			$updated = $result['updated'][$key] ?? [];
 			$failed = $result['failed'][$key] ?? [];
