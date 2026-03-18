@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+SKIP_INSTALL=false
+for arg in "$@"; do
+	case "$arg" in
+		--skip-install) SKIP_INSTALL=true ;;
+	esac
+done
+
 echo "==> Shutting down existing containers and removing volumes..."
 docker compose down -v
 
@@ -24,10 +31,14 @@ for i in $(seq 1 60); do
 	sleep 2
 done
 
-# Base config is auto-installed during update.php via SMW hook.
-# Run update.php to trigger it.
-echo "==> Running update.php (triggers SemanticSchemas auto-install)..."
-docker compose exec wiki php maintenance/run.php update --quick
+if [ "$SKIP_INSTALL" = true ]; then
+	echo "==> Skipping update.php (--skip-install) — base config will NOT be installed."
+	echo "    Use this mode to test the Special:SemanticSchemas install guidance UX."
+else
+	# Base config is auto-installed during update.php via SMW hook.
+	echo "==> Running update.php (triggers SemanticSchemas auto-install)..."
+	docker compose exec wiki php maintenance/run.php update --quick
+fi
 
 echo "==> Environment ready!"
 echo "Visit http://localhost:8889"
