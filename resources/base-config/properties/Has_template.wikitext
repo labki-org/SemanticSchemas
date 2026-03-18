@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::Custom template for rendering this property's value.]]
+[[Display label::Display template]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

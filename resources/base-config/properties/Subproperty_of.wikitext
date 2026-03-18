@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::Parent property that this property specializes.]]
+[[Allows value from namespace::Property]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

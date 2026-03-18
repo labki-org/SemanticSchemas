@@ -1,0 +1,15 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::The type of data this property stores (e.g., Text, Page, Number, Date).]]
+[[Display label::Data type]]
+[[Allows value::Text]]
+[[Allows value::Page]]
+[[Allows value::Number]]
+[[Allows value::Date]]
+[[Allows value::Boolean]]
+[[Allows value::URL]]
+[[Allows value::Email]]
+[[Allows value::Telephone number]]
+[[Allows value::Code]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

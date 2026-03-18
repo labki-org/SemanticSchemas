@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Human-readable name shown instead of the internal name.]]
+[[Display label::Display name]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

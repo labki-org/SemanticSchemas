@@ -24,8 +24,10 @@ for i in $(seq 1 60); do
 	sleep 2
 done
 
-echo "==> Running SemanticSchemas Config Installer..."
-docker compose exec wiki php /mw-user-extensions/SemanticSchemas/maintenance/installConfig.php
+# Base config is auto-installed during update.php via SMW hook.
+# Run update.php to trigger it.
+echo "==> Running update.php (triggers SemanticSchemas auto-install)..."
+docker compose exec wiki php maintenance/run.php update --quick
 
 echo "==> Environment ready!"
 echo "Visit http://localhost:8889"

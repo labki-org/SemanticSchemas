@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Text shown between sections or fields.]]
+[[Display label::Section separator]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

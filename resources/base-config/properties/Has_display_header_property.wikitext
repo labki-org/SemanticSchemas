@@ -1,0 +1,8 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::Fields to display prominently in the page header.]]
+[[Allows multiple values::true]]
+[[Display label::Header fields]]
+[[Allows value from namespace::Property]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

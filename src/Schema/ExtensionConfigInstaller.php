@@ -2,552 +2,219 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
-use JobQueueGroup;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 
 /**
- * ExtensionConfigInstaller
- * ------------------------
- * Applies the bundled extension configuration schema
- * (resources/extension-config.json) to the wiki by creating or
- * updating Category:, Property:, Template:, and Subobject: pages.
+ * Installs pre-compiled base configuration pages from static .wikitext files.
  *
- * This is a minimal, internal helper that reuses the canonical
- * schema models + Wiki*Store classes, and writes via PageCreator.
+ * Reads from resources/base-config/{templates,properties,subobjects,categories}/
+ * and writes each file as a wiki page via PageCreator.
  *
- * ## Layer-by-Layer Installation
- *
- * The installer provides methods for layer-by-layer installation to work around
- * SMW's asynchronous property type registration. When called via the API
- * (ApiSemanticSchemasInstall), installation happens in 5 layers:
- *
- *   - Layer 0: applyTemplatesOnly() - Creates property display templates (no SMW dependencies)
- *   - Layer 1: applyPropertiesTypeOnly() - Creates properties with just [[Has type::...]]
- *   - Layer 2: applyPropertiesFull() - Updates properties with all annotations
- *   - Layer 3: applySubobjectsOnly() - Creates subobject definitions
- *   - Layer 4: applyCategoriesOnly() - Creates categories with semantic annotations
- *
- * The UI waits for SMW's job queue to complete between layers, ensuring property
- * types are registered before category annotations reference them.
- *
- * @see ApiSemanticSchemasInstall for detailed explanation of why this is necessary
+ * Processing order matters: properties must be created before categories/subobjects
+ * so SMW registers types in CLI mode (LinksUpdate is synchronous in CLI).
  */
 class ExtensionConfigInstaller {
 
-	private SchemaLoader $loader;
-	private SchemaValidator $validator;
+	private const BASE_CONFIG_DIR = __DIR__ . '/../../resources/base-config';
+
+	/** @var array<string,int> Directory name → MediaWiki namespace constant */
+	private const ENTITY_DIRS = [
+		'templates'  => NS_TEMPLATE,
+		'properties' => SMW_NS_PROPERTY,
+		'subobjects' => NS_SUBOBJECT,
+		'categories' => NS_CATEGORY,
+	];
+
 	private PageCreator $pageCreator;
 
-	private WikiCategoryStore $categoryStore;
-	private WikiPropertyStore $propertyStore;
-	private WikiSubobjectStore $subobjectStore;
-	private JobQueueGroup $jobQueueGroup;
-
-	public function __construct(
-		SchemaLoader $loader,
-		SchemaValidator $validator,
-		WikiCategoryStore $categoryStore,
-		WikiPropertyStore $propertyStore,
-		WikiSubobjectStore $subobjectStore,
-		PageCreator $pageCreator,
-		JobQueueGroup $jobQueueGroup
-	) {
-		$this->loader = $loader;
-		$this->validator = $validator;
-		$this->categoryStore = $categoryStore;
-		$this->propertyStore = $propertyStore;
-		$this->subobjectStore = $subobjectStore;
+	public function __construct( PageCreator $pageCreator ) {
 		$this->pageCreator = $pageCreator;
-		$this->jobQueueGroup = $jobQueueGroup;
 	}
 
 	/**
-	 * Check if the base extension configuration has been fully installed.
+	 * Check if all base configuration pages exist.
 	 *
-	 * Checks for the existence of key items from each layer to ensure
-	 * the full installation completed successfully. This prevents the
-	 * install button from disappearing if installation was interrupted.
-	 *
-	 * @return bool True if the base configuration appears to be fully installed
+	 * @return bool True if every .wikitext file has a corresponding wiki page
 	 */
 	public function isInstalled(): bool {
-		$configPath = __DIR__ . '/../../resources/extension-config.json';
-
-		if ( !file_exists( $configPath ) ) {
-			return false;
-		}
-
-		// Load schema once and check all layers
-		$schema = $this->loader->loadFromFile( $configPath );
-
-		return $this->areSchemaEntitiesInstalled( $schema, 'templates', NS_TEMPLATE )
-			&& $this->areSchemaEntitiesInstalled( $schema, 'properties', SMW_NS_PROPERTY )
-			&& $this->areSchemaEntitiesInstalled( $schema, 'subobjects', NS_SUBOBJECT )
-			&& $this->areSchemaEntitiesInstalled( $schema, 'categories', NS_CATEGORY );
-	}
-
-	/**
-	 * Load and apply an extension config schema from a JSON/YAML file.
-	 *
-	 * @param string $filePath
-	 * @return array{
-	 *   errors:array,
-	 *   warnings:array,
-	 *   created:array{properties:string[],categories:string[],subobjects:string[]},
-	 *   updated:array{properties:string[],categories:string[],subobjects:string[]},
-	 *   failed:array{properties:string[],categories:string[],subobjects:string[]}
-	 * }
-	 */
-	public function applyFromFile( string $filePath ): array {
-		$schema = $this->loader->loadFromFile( $filePath );
-		return $this->applySchema( $schema );
-	}
-
-	/**
-	 * Preview what installation would do without actually writing.
-	 *
-	 * @param string $filePath Path to schema file
-	 * @return array{
-	 *   errors:array,
-	 *   warnings:array,
-	 *   would_create:array{properties:string[],categories:string[],subobjects:string[]},
-	 *   would_update:array{properties:string[],categories:string[],subobjects:string[]}
-	 * }
-	 */
-	public function previewInstallation( string $filePath ): array {
-		$schema = $this->loader->loadFromFile( $filePath );
-		$validation = $this->validator->validateSchemaWithSeverity( $schema );
-
-		$result = [
-			'errors' => $validation['errors'],
-			'warnings' => $validation['warnings'],
-			'would_create' => [
-				'templates' => [],
-				'properties' => [],
-				'categories' => [],
-				'subobjects' => [],
-			],
-			'would_update' => [
-				'templates' => [],
-				'properties' => [],
-				'categories' => [],
-				'subobjects' => [],
-			],
-		];
-
-		if ( $validation['errors'] ) {
-			return $result;
-		}
-
-		$templates = $schema['templates'] ?? [];
-		$properties = $schema['properties'] ?? [];
-		$categories = $schema['categories'] ?? [];
-		$subobjects = $schema['subobjects'] ?? [];
-
-		$this->previewEntities( array_keys( $templates ), NS_TEMPLATE, 'templates', $result );
-		$this->previewEntities( array_keys( $properties ), SMW_NS_PROPERTY, 'properties', $result );
-		$this->previewEntities( array_keys( $subobjects ), NS_SUBOBJECT, 'subobjects', $result );
-		$this->previewEntities( array_keys( $categories ), NS_CATEGORY, 'categories', $result );
-
-		return $result;
-	}
-
-	/**
-	 * Apply only the categories from a schema (Step 2 of 2).
-	 *
-	 * This should only be called after applyPropertiesOnly() and after
-	 * SMW has finished processing property types (job queue is empty).
-	 *
-	 * @param array $schema
-	 * @return array
-	 */
-	public function applyCategoriesOnly( array $schema ): array {
-		return $this->applyValidatedEntities(
-			$schema, 'categories', NS_CATEGORY, 'categories',
-			fn ( string $name, array $data ) => $this->categoryStore->writeCategory(
-				new CategoryModel( $name, $data )
-			)
-		);
-	}
-
-	/**
-	 * Check installation status of all entity types from a parsed schema.
-	 *
-	 * @param array $schema Parsed schema array
-	 * @return array{
-	 *   templatesInstalled: bool,
-	 *   propertiesInstalled: bool,
-	 *   subobjectsInstalled: bool,
-	 *   categoriesInstalled: bool
-	 * }
-	 */
-	public function getInstallationStatus( array $schema ): array {
-		return [
-			'templatesInstalled' => $this->areSchemaEntitiesInstalled( $schema, 'templates', NS_TEMPLATE ),
-			'propertiesInstalled' => $this->areSchemaEntitiesInstalled( $schema, 'properties', SMW_NS_PROPERTY ),
-			'subobjectsInstalled' => $this->areSchemaEntitiesInstalled( $schema, 'subobjects', NS_SUBOBJECT ),
-			'categoriesInstalled' => $this->areSchemaEntitiesInstalled( $schema, 'categories', NS_CATEGORY ),
-		];
-	}
-
-	/**
-	 * Classify entity names as would_create or would_update based on page existence.
-	 *
-	 * @param string[] $names Entity names to check
-	 * @param int $namespace MediaWiki namespace constant
-	 * @param string $key Result key (e.g. 'templates', 'properties')
-	 * @param array &$result Preview result array to populate
-	 */
-	private function previewEntities( array $names, int $namespace, string $key, array &$result ): void {
-		foreach ( $names as $name ) {
-			$title = $this->pageCreator->makeTitle( $name, $namespace );
-			if ( $title && $this->pageCreator->pageExists( $title ) ) {
-				$result['would_update'][$key][] = $name;
-			} else {
-				$result['would_create'][$key][] = $name;
-			}
-		}
-	}
-
-	/**
-	 * Validate schema and apply entities using a write callable.
-	 *
-	 * Handles the common pattern: validate → init result → iterate entities →
-	 * check existence → call writer → classify as created/updated/failed.
-	 *
-	 * @param array $schema Full schema array
-	 * @param string $entityKey Schema key (e.g. 'properties', 'categories')
-	 * @param int $namespace MediaWiki namespace constant
-	 * @param string $resultKey Result array key (e.g. 'properties', 'categories')
-	 * @param callable $writeEntity fn(string $name, array $data): bool
-	 * @return array
-	 */
-	private function applyValidatedEntities(
-		array $schema,
-		string $entityKey,
-		int $namespace,
-		string $resultKey,
-		callable $writeEntity
-	): array {
-		$validation = $this->validator->validateSchemaWithSeverity( $schema );
-
-		$result = [
-			'errors' => $validation['errors'],
-			'warnings' => $validation['warnings'],
-			'created' => [ $resultKey => [] ],
-			'updated' => [ $resultKey => [] ],
-			'failed' => [ $resultKey => [] ],
-		];
-
-		if ( $validation['errors'] ) {
-			return $result;
-		}
-
-		$entities = $schema[$entityKey] ?? [];
-
-		foreach ( $entities as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, $namespace );
-			$existed = $title && $this->pageCreator->pageExists( $title );
-
-			$ok = $writeEntity( $name, $data ?? [] );
-
-			if ( $ok ) {
-				$result[$existed ? 'updated' : 'created'][$resultKey][] = $name;
-			} else {
-				$result['failed'][$resultKey][] = $name;
-			}
-		}
-
-		return $result;
-	}
-
-	/**
-	 * Check if entities of a given type from a parsed schema are installed.
-	 *
-	 * @param array $schema Parsed schema array
-	 * @param string $entityType Schema key: 'properties', 'categories', 'templates', or 'subobjects'
-	 * @param int $namespace MediaWiki namespace constant
-	 * @return bool
-	 */
-	private function areSchemaEntitiesInstalled( array $schema, string $entityType, int $namespace ): bool {
-		$entities = $schema[$entityType] ?? [];
-
-		if ( empty( $entities ) ) {
-			return true;
-		}
-
-		foreach ( array_keys( $entities ) as $name ) {
-			$title = $this->pageCreator->makeTitle( $name, $namespace );
+		foreach ( $this->getBaseConfigEntries() as [ $type, $namespace, $pageName, $filePath ] ) {
+			$title = $this->pageCreator->makeTitle( $pageName, $namespace );
 			if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
 				return false;
 			}
 		}
-
 		return true;
 	}
 
 	/**
-	 * Get the count of pending jobs (all types).
+	 * Install or update all base configuration pages.
 	 *
-	 * @return int
+	 * @return array{
+	 *   created: array<string, string[]>,
+	 *   updated: array<string, string[]>,
+	 *   failed: array<string, string[]>,
+	 *   errors: string[]
+	 * }
 	 */
-	public function getPendingJobCount(): int {
-		try {
-			$queuesWithJobs = $this->jobQueueGroup->getQueuesWithJobs();
-			$count = 0;
-			foreach ( $queuesWithJobs as $type ) {
-				$queue = $this->jobQueueGroup->get( $type );
-				$count += $queue->getSize();
+	public function install(): array {
+		$result = $this->initResult();
+
+		foreach ( $this->getBaseConfigEntries() as [ $type, $namespace, $pageName, $filePath ] ) {
+			$content = file_get_contents( $filePath );
+			if ( $content === false ) {
+				$result['errors'][] = "Failed to read: $filePath";
+				$result['failed'][$type][] = $pageName;
+				continue;
 			}
-			return $count;
-		} catch ( \Throwable $e ) {
-			return 0;
+
+			$title = $this->pageCreator->makeTitle( $pageName, $namespace );
+			if ( !$title ) {
+				$result['errors'][] = "Invalid title: $pageName (ns=$namespace)";
+				$result['failed'][$type][] = $pageName;
+				continue;
+			}
+
+			$existed = $this->pageCreator->pageExists( $title );
+			$ok = $this->pageCreator->createOrUpdatePage(
+				$title,
+				$content,
+				'SemanticSchemas: Install base configuration'
+			);
+
+			if ( $ok ) {
+				$result[$existed ? 'updated' : 'created'][$type][] = $pageName;
+			} else {
+				$result['failed'][$type][] = $pageName;
+			}
 		}
+
+		return $result;
 	}
 
 	/**
-	 * Apply templates only (Layer 0).
-	 * This creates property display template pages with no SMW dependencies.
+	 * Preview what install() would do without writing.
 	 *
-	 * @param array $schema
-	 * @return array
+	 * @return array{
+	 *   would_create: array<string, string[]>,
+	 *   would_update: array<string, string[]>
+	 * }
 	 */
-	public function applyTemplatesOnly( array $schema ): array {
+	public function preview(): array {
 		$result = [
+			'would_create' => $this->initEntityArrays(),
+			'would_update' => $this->initEntityArrays(),
+		];
+
+		foreach ( $this->getBaseConfigEntries() as [ $type, $namespace, $pageName, $filePath ] ) {
+			$title = $this->pageCreator->makeTitle( $pageName, $namespace );
+			if ( $title && $this->pageCreator->pageExists( $title ) ) {
+				$result['would_update'][$type][] = $pageName;
+			} else {
+				$result['would_create'][$type][] = $pageName;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Scan base-config directories and return entry tuples.
+	 *
+	 * @return array<array{string, int, string, string}> [type, namespace, pageName, filePath]
+	 */
+	private function getBaseConfigEntries(): array {
+		$entries = [];
+		$baseDir = self::BASE_CONFIG_DIR;
+
+		foreach ( self::ENTITY_DIRS as $dir => $namespace ) {
+			$dirPath = "$baseDir/$dir";
+			if ( !is_dir( $dirPath ) ) {
+				continue;
+			}
+
+			$files = $this->scanWikitextFiles( $dirPath );
+			foreach ( $files as $filePath ) {
+				$pageName = $this->fileToPageName( $filePath, $dirPath );
+				$entries[] = [ $dir, $namespace, $pageName, $filePath ];
+			}
+		}
+
+		return $entries;
+	}
+
+	/**
+	 * Recursively find all .wikitext files in a directory.
+	 *
+	 * @param string $dir
+	 * @return string[]
+	 */
+	private function scanWikitextFiles( string $dir ): array {
+		$files = [];
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS )
+		);
+
+		foreach ( $iterator as $file ) {
+			if ( $file->isFile() && $file->getExtension() === 'wikitext' ) {
+				$files[] = $file->getPathname();
+			}
+		}
+
+		sort( $files );
+		return $files;
+	}
+
+	/**
+	 * Convert a file path to a wiki page name.
+	 *
+	 * Templates preserve subdirectory structure (Property/Default.wikitext → Property/Default).
+	 * Other types convert underscores to spaces (Has_description.wikitext → Has description).
+	 *
+	 * @param string $filePath Absolute path to the .wikitext file
+	 * @param string $dirPath Absolute path to the entity type directory
+	 * @return string
+	 */
+	private function fileToPageName( string $filePath, string $dirPath ): string {
+		// Get relative path from the entity directory
+		$relative = substr( $filePath, strlen( $dirPath ) + 1 );
+		// Strip .wikitext extension
+		$name = preg_replace( '/\.wikitext$/', '', $relative );
+
+		// Templates: preserve subdirectory slashes, no underscore conversion
+		// (Property/Default stays as Property/Default)
+		if ( str_contains( $dirPath, '/templates' ) ) {
+			return $name;
+		}
+
+		// Others: underscores → spaces
+		return str_replace( '_', ' ', $name );
+	}
+
+	/**
+	 * @return array<string, string[]>
+	 */
+	private function initEntityArrays(): array {
+		$arrays = [];
+		foreach ( array_keys( self::ENTITY_DIRS ) as $dir ) {
+			$arrays[$dir] = [];
+		}
+		return $arrays;
+	}
+
+	/**
+	 * @return array{
+	 *   created: array<string, string[]>,
+	 *   updated: array<string, string[]>,
+	 *   failed: array<string, string[]>,
+	 *   errors: string[]
+	 * }
+	 */
+	private function initResult(): array {
+		return [
+			'created' => $this->initEntityArrays(),
+			'updated' => $this->initEntityArrays(),
+			'failed' => $this->initEntityArrays(),
 			'errors' => [],
-			'warnings' => [],
-			'created' => [ 'templates' => [] ],
-			'updated' => [ 'templates' => [] ],
-			'failed' => [ 'templates' => [] ],
 		];
-
-		$templates = $schema['templates'] ?? [];
-
-		foreach ( $templates as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_TEMPLATE );
-			$existed = $title && $this->pageCreator->pageExists( $title );
-
-			$content = $data['content'] ?? '';
-			$ok = $this->pageCreator->createOrUpdatePage(
-				$title,
-				$content,
-				'SemanticSchemas: Install property template'
-			);
-
-			if ( $ok ) {
-				$result[$existed ? 'updated' : 'created']['templates'][] = $name;
-			} else {
-				$result['failed']['templates'][] = $name;
-			}
-		}
-
-		return $result;
-	}
-
-	/**
-	 * Apply properties with TYPE ONLY (Layer 1).
-	 * This creates property pages with just [[Has type::...]] to register types in SMW.
-	 *
-	 * @param array $schema
-	 * @return array
-	 */
-	public function applyPropertiesTypeOnly( array $schema ): array {
-		// Layer 1: register property types only (writePropertyTypeOnly)
-		return $this->applyValidatedEntities(
-			$schema, 'properties', SMW_NS_PROPERTY, 'properties',
-			fn ( string $name, array $data ) => $this->propertyStore->writePropertyTypeOnly(
-				new PropertyModel( $name, $data )
-			)
-		);
-	}
-
-	/**
-	 * Apply properties with FULL annotations (Layer 2).
-	 * This updates property pages with all semantic annotations.
-	 *
-	 * @param array $schema
-	 * @return array
-	 */
-	public function applyPropertiesFull( array $schema ): array {
-		// Layer 2: full property annotations (writeProperty)
-		return $this->applyValidatedEntities(
-			$schema, 'properties', SMW_NS_PROPERTY, 'properties',
-			fn ( string $name, array $data ) => $this->propertyStore->writeProperty(
-				new PropertyModel( $name, $data )
-			)
-		);
-	}
-
-	/**
-	 * Apply subobjects only (Layer 3).
-	 *
-	 * @param array $schema
-	 * @return array
-	 */
-	public function applySubobjectsOnly( array $schema ): array {
-		return $this->applyValidatedEntities(
-			$schema, 'subobjects', NS_SUBOBJECT, 'subobjects',
-			fn ( string $name, array $data ) => $this->subobjectStore->writeSubobject(
-				new SubobjectModel( $name, $data )
-			)
-		);
-	}
-
-	/**
-	 * Apply a parsed extension config schema array.
-	 *
-	 * If validation errors are present, no pages are written and the
-	 * errors are returned to the caller.
-	 *
-	 * Uses a two-pass approach for properties to avoid circular dependencies:
-	 * - Pass A: Create properties with ONLY [[Has type::...]] declarations
-	 * - Rebuild SMW data so property types are indexed
-	 * - Pass B: Update properties with all other annotations
-	 * - Then create categories which can now reference correctly-typed properties
-	 *
-	 * @param array $schema
-	 * @return array See applyFromFile()
-	 */
-	public function applySchema( array $schema ): array {
-		$validation = $this->validator->validateSchemaWithSeverity( $schema );
-
-		$result = [
-			'errors' => $validation['errors'],
-			'warnings' => $validation['warnings'],
-			'created' => [
-				'templates' => [],
-				'properties' => [],
-				'categories' => [],
-				'subobjects' => [],
-			],
-			'updated' => [
-				'templates' => [],
-				'properties' => [],
-				'categories' => [],
-				'subobjects' => [],
-			],
-			'failed' => [
-				'templates' => [],
-				'properties' => [],
-				'categories' => [],
-				'subobjects' => [],
-			],
-		];
-
-		// Do not write anything if the schema is invalid.
-		if ( $validation['errors'] ) {
-			return $result;
-		}
-
-		$templates = $schema['templates'] ?? [];
-		$categories = $schema['categories'] ?? [];
-		$properties = $schema['properties'] ?? [];
-		$subobjects = $schema['subobjects'] ?? [];
-
-		// =====================================================================
-		// Templates (Layer 0) - No SMW dependencies
-		// Create property display templates before anything else.
-		// =====================================================================
-		foreach ( $templates as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_TEMPLATE );
-			$existed = $title && $this->pageCreator->pageExists( $title );
-
-			$content = $data['content'] ?? '';
-			$ok = $this->pageCreator->createOrUpdatePage(
-				$title,
-				$content,
-				'SemanticSchemas: Install property template'
-			);
-
-			if ( $ok ) {
-				$result[$existed ? 'updated' : 'created']['templates'][] = $name;
-			} else {
-				$result['failed']['templates'][] = $name;
-			}
-		}
-
-		// Track which properties existed before installation
-		$propertyExisted = [];
-		foreach ( $properties as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
-			$propertyExisted[$name] = $title && $this->pageCreator->pageExists( $title );
-		}
-
-		// =====================================================================
-		// PASS A: Create properties with ONLY type declarations
-		// This ensures SMW knows the datatypes before any other annotations are added.
-		// =====================================================================
-		foreach ( $properties as $name => $data ) {
-			$model = new PropertyModel( $name, $data ?? [] );
-			$this->propertyStore->writePropertyTypeOnly( $model );
-		}
-
-		// =====================================================================
-		// PASS B: Update properties with full annotations
-		// Now that SMW knows the types, we can safely add [[Has description::...]] etc.
-		// =====================================================================
-		foreach ( $properties as $name => $data ) {
-			$model = new PropertyModel( $name, $data ?? [] );
-			$ok = $this->propertyStore->writeProperty( $model );
-
-			if ( $ok ) {
-				if ( $propertyExisted[$name] ) {
-					$result['updated']['properties'][] = $name;
-				} else {
-					$result['created']['properties'][] = $name;
-				}
-			} else {
-				$result['failed']['properties'][] = $name;
-			}
-		}
-
-		// =====================================================================
-		// Subobjects
-		// =====================================================================
-		foreach ( $subobjects as $name => $data ) {
-			$title = $this->pageCreator->makeTitle( $name, NS_SUBOBJECT );
-			$existed = $title && $this->pageCreator->pageExists( $title );
-
-			$model = new SubobjectModel( $name, $data ?? [] );
-			$ok = $this->subobjectStore->writeSubobject( $model );
-
-			if ( $ok ) {
-				if ( $existed ) {
-					$result['updated']['subobjects'][] = $name;
-				} else {
-					$result['created']['subobjects'][] = $name;
-				}
-			} else {
-				$result['failed']['subobjects'][] = $name;
-			}
-		}
-
-		// =====================================================================
-		// Categories
-		// Now that all property types are correctly indexed, categories can
-		// use properties like [[Has target namespace::Category]] correctly.
-		// =====================================================================
-		foreach ( $categories as $name => $data ) {
-			$categoryTitle = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
-			$existed = $categoryTitle && $this->pageCreator->pageExists( $categoryTitle );
-
-			$model = new CategoryModel( $name, $data ?? [] );
-			$ok = $this->categoryStore->writeCategory( $model );
-
-			if ( $ok ) {
-				if ( $existed ) {
-					$result['updated']['categories'][] = $name;
-				} else {
-					$result['created']['categories'][] = $name;
-				}
-			} else {
-				$result['failed']['categories'][] = $name;
-			}
-		}
-
-		return $result;
 	}
 }

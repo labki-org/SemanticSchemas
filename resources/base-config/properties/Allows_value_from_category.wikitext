@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Category to use for autocomplete suggestions.]]
+[[Display label::Autocomplete from category]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

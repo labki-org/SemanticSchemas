@@ -1,0 +1,8 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::Parent categories whose properties and subobjects are inherited.]]
+[[Allows multiple values::true]]
+[[Display label::Inherits from]]
+[[Allows value from namespace::Category]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Boolean]]
+[[Has description::Whether this field can hold more than one value.]]
+[[Display label::Allow multiple values]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

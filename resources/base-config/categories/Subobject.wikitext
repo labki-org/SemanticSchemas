@@ -1,0 +1,9 @@
+<!-- SemanticSchemas Start -->
+[[Has description::Defines a subobject type for nested data structures within pages.]]
+[[Has target namespace::Subobject]]
+[[Has required property::Property:Has description]]
+[[Has optional property::Property:Display label]]
+[[Has optional property::Property:Has required property]]
+[[Has optional property::Property:Has optional property]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed]]

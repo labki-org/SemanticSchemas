@@ -41,13 +41,7 @@ return [
 		MediaWikiServices $services
 	): ExtensionConfigInstaller {
 		return new ExtensionConfigInstaller(
-			$services->get( 'SemanticSchemas.SchemaLoader' ),
-			$services->get( 'SemanticSchemas.SchemaValidator' ),
-			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
-			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->getJobQueueGroup()
+			$services->get( 'SemanticSchemas.PageCreator' )
 		);
 	},
 

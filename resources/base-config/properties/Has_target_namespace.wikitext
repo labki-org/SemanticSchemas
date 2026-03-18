@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Where pages of this category are created (e.g., Main, User).]]
+[[Display label::Target namespace]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

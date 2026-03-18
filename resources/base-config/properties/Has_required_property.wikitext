@@ -1,0 +1,8 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::Fields that must be filled in when creating pages of this type.]]
+[[Allows multiple values::true]]
+[[Display label::Required fields]]
+[[Allows value from namespace::Property]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

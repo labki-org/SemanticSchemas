@@ -2,9 +2,10 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
+use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
+use MediaWiki\MediaWikiServices;
+
 /**
- * SemanticSchemasSetupHooks
- *
  * Extension setup hooks for SemanticSchemas that configure MediaWiki and SMW
  * for proper operation with our custom namespaces.
  */
@@ -13,46 +14,83 @@ class SemanticSchemasSetupHooks {
 	/**
 	 * Hook: SetupAfterCache
 	 *
-	 * Called early in the setup process, after configuration is loaded but before
-	 * extensions are fully initialized. This is the right place to modify global
-	 * configuration variables.
-	 *
-	 * We use this to tell Semantic MediaWiki that the Subobject namespace should
-	 * have semantic annotations enabled. Without this, SMW won't parse [[Property::value]]
-	 * annotations on Subobject: pages.
+	 * Enable semantic annotations in the Subobject namespace and register
+	 * the SMW hook for auto-installing base config during update.php.
 	 */
 	public function onSetupAfterCache() {
 		global $smwgNamespacesWithSemanticLinks;
 
-		// Enable semantic annotations in the Subobject namespace
-		// This allows Subobject pages to use [[Has required property::...]] and similar
 		if ( defined( 'NS_SUBOBJECT' ) ) {
 			$smwgNamespacesWithSemanticLinks[NS_SUBOBJECT] = true;
 		}
+
+		// Register SMW hook for auto-install during update.php
+		if ( defined( 'SMW_EXTENSION_LOADED' ) ) {
+			$hookContainer = MediaWikiServices::getInstance()->getHookContainer();
+			$hookContainer->register(
+				'SMW::SQLStore::Installer::AfterCreateTablesComplete',
+				[ self::class, 'onAfterCreateTablesComplete' ]
+			);
+		}
+	}
+
+	/**
+	 * Hook: SMW::SQLStore::Installer::AfterCreateTablesComplete
+	 *
+	 * Auto-install base configuration after SMW's tables are ready.
+	 * This fires during update.php after SMW has set up its tables.
+	 *
+	 * @param mixed $tableBuilder
+	 * @param mixed $messageReporter
+	 * @param mixed $options
+	 * @return bool
+	 */
+	public static function onAfterCreateTablesComplete( $tableBuilder, $messageReporter, $options ) {
+		$services = MediaWikiServices::getInstance();
+		$installer = SemanticSchemasServices::getExtensionConfigInstaller( $services );
+
+		if ( $installer->isInstalled() ) {
+			$messageReporter->reportMessage(
+				"\n   ... SemanticSchemas base configuration already installed.\n"
+			);
+			return true;
+		}
+
+		$messageReporter->reportMessage( "\n   ... installing SemanticSchemas base configuration...\n" );
+
+		try {
+			$result = $installer->install();
+			$created = array_sum( array_map( 'count', $result['created'] ) );
+			$updated = array_sum( array_map( 'count', $result['updated'] ) );
+			$failed = array_sum( array_map( 'count', $result['failed'] ) );
+
+			$messageReporter->reportMessage(
+				"   ... done (created: $created, updated: $updated, failed: $failed).\n"
+			);
+
+			foreach ( $result['errors'] as $error ) {
+				$messageReporter->reportMessage( "   ... error: $error\n" );
+			}
+		} catch ( \Exception $e ) {
+			// Never block update.php
+			$messageReporter->reportMessage(
+				"   ... SemanticSchemas install failed: " . $e->getMessage() . "\n"
+			);
+		}
+
+		return true;
 	}
 
 	/**
 	 * Hook: LoadExtensionSchemaUpdates
 	 *
-	 * Invoked from maintenance/update.php. We deliberately do NOT auto-install
-	 * the base configuration here because:
+	 * No-op: SMW tables may not exist yet when this fires.
+	 * Base config is installed via the SMW hook above instead.
 	 *
-	 * 1. SMW's own table setup runs during update.php, and creating Properties
-	 *    triggers SMW operations that conflict with the ongoing setup.
-	 * 2. DeferredUpdates still run within the same process, causing the same issues.
-	 * 3. The extension may not be fully initialized when this hook fires.
-	 *
-	 * Instead, users should:
-	 * - Use the "Install Base Configuration" UI at Special:SemanticSchemas
-	 * - Or run: php maintenance/run.php SemanticSchemas:InstallConfig
-	 *
-	 * @param mixed $updater DatabaseUpdater (not used directly)
+	 * @param mixed $updater
 	 * @return bool
 	 */
 	public function onLoadExtensionSchemaUpdates( $updater ): bool {
-		// No automatic installation - see docblock above for rationale.
-		// The Special:SemanticSchemas page will show a banner prompting
-		// users to install the base configuration if it's missing.
 		return true;
 	}
 

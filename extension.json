@@ -135,17 +135,6 @@
 				"desktop",
 				"mobile"
 			]
-		},
-		"ext.semanticschemas.install": {
-			"scripts": [
-				"resources/ext.semanticschemas.install.js"
-			],
-			"localBasePath": "",
-			"remoteExtPath": "SemanticSchemas",
-			"targets": [
-				"desktop",
-				"mobile"
-			]
 		}
 	},
 	"APIModules": {
@@ -153,13 +142,6 @@
 			"class": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasHierarchy",
 			"services": [
 				"SemanticSchemas.CategoryHierarchyService"
-			]
-		},
-		"semanticschemas-install": {
-			"class": "MediaWiki\\Extension\\SemanticSchemas\\Api\\ApiSemanticSchemasInstall",
-			"services": [
-				"SemanticSchemas.ExtensionConfigInstaller",
-				"SemanticSchemas.SchemaLoader"
 			]
 		}
 	},
