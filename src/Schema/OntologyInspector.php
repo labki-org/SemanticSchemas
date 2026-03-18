@@ -60,6 +60,7 @@ class OntologyInspector {
 		ksort( $subobjects );
 
 		$schema = [
+			'schemaVersion' => SchemaLoader::SCHEMA_VERSION,
 			'categories' => [],
 			'properties' => [],
 			'subobjects' => [],
@@ -143,8 +144,9 @@ class OntologyInspector {
 	public function validateWikiState(): array {
 		$schema = $this->buildSchemaArray();
 
-		$errors = $this->validator->validateSchema( $schema );
-		$warnings = $this->validator->generateWarnings( $schema );
+		$validation = $this->validator->validateSchemaWithSeverity( $schema );
+		$errors = $validation['errors'];
+		$warnings = $validation['warnings'];
 		$modified = [];
 
 		$stored = $this->stateManager->getPageHashes();

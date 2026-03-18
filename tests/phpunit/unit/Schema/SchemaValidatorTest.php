@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
+use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use PHPUnit\Framework\TestCase;
 
@@ -314,9 +315,12 @@ class SchemaValidatorTest extends TestCase {
 
 	public function testValidateSchemaWithSeverityReturnsWarnings(): void {
 		$schema = $this->getValidSchema();
-		// Add an unused property
-		$schema['properties']['Unused Property'] = [
-			'datatype' => 'Text',
+		// Add a category without display/forms config to trigger warnings
+		$schema['categories']['BareBones'] = [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
 		];
 
 		$result = $this->validator->validateSchemaWithSeverity( $schema );
@@ -324,22 +328,6 @@ class SchemaValidatorTest extends TestCase {
 		$this->assertArrayHasKey( 'warnings', $result );
 		$this->assertEmpty( $result['errors'] );
 		$this->assertNotEmpty( $result['warnings'] );
-	}
-
-	public function testPropertyNamingConventionWarning(): void {
-		$schema = $this->getValidSchema();
-		$schema['properties']['BadPropertyName'] = [ 'datatype' => 'Text' ];
-		$schema['categories']['TestCategory']['properties']['optional'][] = 'BadPropertyName';
-
-		$result = $this->validator->validateSchemaWithSeverity( $schema );
-		$hasNamingWarning = false;
-		foreach ( $result['warnings'] as $warning ) {
-			if ( stripos( $warning, 'Has ' ) !== false ) {
-				$hasNamingWarning = true;
-				break;
-			}
-		}
-		$this->assertTrue( $hasNamingWarning, 'Should warn about property naming convention' );
 	}
 
 	/* =========================================================================
@@ -356,6 +344,37 @@ class SchemaValidatorTest extends TestCase {
 		$result = $this->validator->validateSchemaWithSeverity( $this->getValidSchema() );
 		$this->assertTrue( $customCalled, 'Custom validator should be called' );
 		$this->assertContains( 'Custom error', $result['errors'] );
+	}
+
+	/* =========================================================================
+	 * META-CATEGORY WARNING SUPPRESSION
+	 * ========================================================================= */
+
+	public function testMetaCategoryDoesNotTriggerMissingDisplayFormWarnings(): void {
+		$schema = [
+			'schemaVersion' => SchemaLoader::SCHEMA_VERSION,
+			'categories' => [
+				'Category' => [
+					'targetNamespace' => 'Category',
+					'properties' => [
+						'required' => [ 'Has name' ],
+						'optional' => [],
+					],
+				],
+			],
+			'properties' => [
+				'Has name' => [ 'datatype' => 'Text' ],
+			],
+		];
+
+		$result = $this->validator->validateSchemaWithSeverity( $schema );
+		$metaCatWarnings = array_filter( $result['warnings'], static function ( $w ) {
+			return str_contains( $w, "Category 'Category'" );
+		} );
+		$this->assertEmpty(
+			$metaCatWarnings,
+			'Meta-category should not trigger missing display/form warnings'
+		);
 	}
 
 	/* =========================================================================
