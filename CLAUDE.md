@@ -28,8 +28,14 @@ php vendor/bin/phpunit tests/phpunit/YourTest.php
 ## Test Environment
 
 ```bash
-# Setup/reset Docker test environment
-bash ./tests/scripts/reinstall_test_env.sh
+# Setup/reset Docker test environment (see --help for all flags)
+bash tests/scripts/reinstall_test_env.sh
+
+# Full setup: install + drain jobs + stop background jobrunner
+bash tests/scripts/reinstall_test_env.sh --run-jobs --no-jobrunner
+
+# Bare wiki for testing install guidance UX
+bash tests/scripts/reinstall_test_env.sh --skip-install --no-jobrunner
 
 # Populate test data
 bash tests/scripts/populate_test_data.sh

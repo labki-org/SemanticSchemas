@@ -11,6 +11,9 @@ use MediaWiki\MediaWikiServices;
  */
 class SemanticSchemasSetupHooks {
 
+	/** @var bool Set to true by LoadExtensionSchemaUpdates (only fires during update.php) */
+	private static bool $isUpdatePhp = false;
+
 	/**
 	 * Hook: SetupAfterCache
 	 *
@@ -46,6 +49,11 @@ class SemanticSchemasSetupHooks {
 	 * @return bool
 	 */
 	public static function onAfterCreateTablesComplete( $tableBuilder, $messageReporter, $options ) {
+		// Only auto-install during update.php, not setupStore.php
+		if ( !self::$isUpdatePhp ) {
+			return true;
+		}
+
 		$services = MediaWikiServices::getInstance();
 		$installer = SemanticSchemasServices::getExtensionConfigInstaller( $services );
 
@@ -84,13 +92,14 @@ class SemanticSchemasSetupHooks {
 	/**
 	 * Hook: LoadExtensionSchemaUpdates
 	 *
-	 * No-op: SMW tables may not exist yet when this fires.
-	 * Base config is installed via the SMW hook above instead.
+	 * Signals that we're running update.php. The actual install happens
+	 * in the SMW hook above (which fires later, after SMW tables exist).
 	 *
 	 * @param mixed $updater
 	 * @return bool
 	 */
 	public function onLoadExtensionSchemaUpdates( $updater ): bool {
+		self::$isUpdatePhp = true;
 		return true;
 	}
 

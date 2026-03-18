@@ -41,9 +41,6 @@ if ( file_exists( '/mw-config/LocalSettings.user.php' ) ) {
 }
 EOF
 
-	echo "==> Running update.php..."
-	php "$MW_DIR/maintenance/update.php" --quick
-
 	echo "==> Setting up SMW store..."
 	php "$MW_DIR/extensions/SemanticMediaWiki/maintenance/setupStore.php"
 
