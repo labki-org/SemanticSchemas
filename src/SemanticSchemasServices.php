@@ -5,7 +5,6 @@ namespace MediaWiki\Extension\SemanticSchemas;
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
-use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
@@ -69,10 +68,6 @@ class SemanticSchemasServices {
 
 	public static function getDisplayStubGenerator( MediaWikiServices $services ): DisplayStubGenerator {
 		return $services->get( 'SemanticSchemas.DisplayStubGenerator' );
-	}
-
-	public static function getExtensionConfigInstaller( MediaWikiServices $services ): ExtensionConfigInstaller {
-		return $services->get( 'SemanticSchemas.ExtensionConfigInstaller' );
 	}
 
 	public static function getOntologyInspector( MediaWikiServices $services ): OntologyInspector {

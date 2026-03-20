@@ -61,7 +61,6 @@
 	},
 	"Hooks": {
 		"SetupAfterCache": "SetupHooks",
-		"LoadExtensionSchemaUpdates": "SetupHooks",
 		"ParserFirstCallInit": "ParserHooks",
 		"SkinTemplateNavigation::Universal": "CategoryPageHooks",
 		"ArticleViewFooter": "CategoryPageHooks"
@@ -155,7 +154,6 @@
 				"SemanticSchemas.TemplateGenerator",
 				"SemanticSchemas.FormGenerator",
 				"SemanticSchemas.DisplayStubGenerator",
-				"SemanticSchemas.ExtensionConfigInstaller",
 				"SemanticSchemas.OntologyInspector",
 				"SemanticSchemas.StateManager",
 				"SemanticSchemas.PageHashComputer",
@@ -174,9 +172,6 @@
 	},
 	"LogActionsHandlers": {
 		"semanticschemas/generate": "LogFormatter"
-	},
-	"MaintenanceScripts": {
-		"SemanticSchemas:InstallConfig": "maintenance/installConfig.php"
 	},
 	"config": {
 		"SemanticSchemasRequireApiAuth": {

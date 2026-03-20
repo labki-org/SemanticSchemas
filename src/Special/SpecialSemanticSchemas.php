@@ -6,7 +6,6 @@ use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
@@ -55,7 +54,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private TemplateGenerator $templateGenerator;
 	private FormGenerator $formGenerator;
 	private DisplayStubGenerator $displayGenerator;
-	private ExtensionConfigInstaller $installer;
 	private OntologyInspector $inspector;
 	private StateManager $stateManager;
 	private PageHashComputer $hashComputer;
@@ -74,7 +72,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		TemplateGenerator $templateGenerator,
 		FormGenerator $formGenerator,
 		DisplayStubGenerator $displayGenerator,
-		ExtensionConfigInstaller $installer,
 		OntologyInspector $inspector,
 		StateManager $stateManager,
 		PageHashComputer $hashComputer,
@@ -87,7 +84,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$this->templateGenerator = $templateGenerator;
 		$this->formGenerator = $formGenerator;
 		$this->displayGenerator = $displayGenerator;
-		$this->installer = $installer;
 		$this->inspector = $inspector;
 		$this->stateManager = $stateManager;
 		$this->hashComputer = $hashComputer;
@@ -170,7 +166,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
-		if ( !$this->installer->isInstalled() ) {
+		$sentinel = Title::makeTitleSafe( SMW_NS_PROPERTY, 'Has type' );
+		if ( !$sentinel || !$sentinel->exists() ) {
 			$output->addHTML( $this->renderInstallConfigBanner() );
 			return;
 		}

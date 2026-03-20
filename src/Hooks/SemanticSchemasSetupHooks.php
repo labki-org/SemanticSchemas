@@ -2,107 +2,28 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
-use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
-use MediaWiki\MediaWikiServices;
-
 /**
  * Extension setup hooks for SemanticSchemas that configure MediaWiki and SMW
  * for proper operation with our custom namespaces.
  */
 class SemanticSchemasSetupHooks {
 
-	/** @var bool Set to true by LoadExtensionSchemaUpdates (only fires during update.php) */
-	private static bool $isUpdatePhp = false;
-
 	/**
 	 * Hook: SetupAfterCache
 	 *
 	 * Enable semantic annotations in the Subobject namespace and register
-	 * the SMW hook for auto-installing base config during update.php.
+	 * the base-config directory with SMW's content importer.
 	 */
 	public function onSetupAfterCache() {
-		global $smwgNamespacesWithSemanticLinks;
+		global $smwgNamespacesWithSemanticLinks, $smwgImportFileDirs;
 
 		if ( defined( 'NS_SUBOBJECT' ) ) {
 			$smwgNamespacesWithSemanticLinks[NS_SUBOBJECT] = true;
 		}
 
-		// Register SMW hook for auto-install during update.php.
-		// Must register unconditionally because SetupAfterCache fires
-		// before LoadExtensionSchemaUpdates sets $isUpdatePhp.
 		if ( defined( 'SMW_EXTENSION_LOADED' ) ) {
-			$hookContainer = MediaWikiServices::getInstance()->getHookContainer();
-			$hookContainer->register(
-				'SMW::SQLStore::Installer::AfterCreateTablesComplete',
-				[ self::class, 'onAfterCreateTablesComplete' ]
-			);
+			$smwgImportFileDirs['semanticschemas'] = __DIR__ . '/../../resources/base-config';
 		}
-	}
-
-	/**
-	 * Hook: SMW::SQLStore::Installer::AfterCreateTablesComplete
-	 *
-	 * Auto-install base configuration after SMW's tables are ready.
-	 * This fires during update.php after SMW has set up its tables.
-	 *
-	 * @param mixed $tableBuilder
-	 * @param mixed $messageReporter
-	 * @param mixed $options
-	 * @return bool
-	 */
-	public static function onAfterCreateTablesComplete( $tableBuilder, $messageReporter, $options ) {
-		// Only auto-install during update.php, not setupStore.php
-		if ( !self::$isUpdatePhp ) {
-			return true;
-		}
-
-		$services = MediaWikiServices::getInstance();
-		$installer = SemanticSchemasServices::getExtensionConfigInstaller( $services );
-
-		if ( $installer->isInstalled() ) {
-			$messageReporter->reportMessage(
-				"\n   ... SemanticSchemas base configuration already installed.\n"
-			);
-			return true;
-		}
-
-		$messageReporter->reportMessage( "\n   ... installing SemanticSchemas base configuration...\n" );
-
-		try {
-			$result = $installer->install();
-			$created = array_sum( array_map( 'count', $result['created'] ) );
-			$updated = array_sum( array_map( 'count', $result['updated'] ) );
-			$failed = array_sum( array_map( 'count', $result['failed'] ) );
-
-			$messageReporter->reportMessage(
-				"   ... done (created: $created, updated: $updated, failed: $failed).\n"
-			);
-
-			foreach ( $result['errors'] as $error ) {
-				$messageReporter->reportMessage( "   ... error: $error\n" );
-			}
-		} catch ( \Exception $e ) {
-			// Never block update.php
-			$messageReporter->reportMessage(
-				"   ... SemanticSchemas install failed: " . $e->getMessage() . "\n"
-			);
-		}
-
-		return true;
-	}
-
-	/**
-	 * Hook: LoadExtensionSchemaUpdates
-	 *
-	 * Signals that we're running update.php. The actual install happens
-	 * in the SMW hook above (which fires later, after SMW tables exist).
-	 *
-	 * @param mixed $updater
-	 * @return bool
-	 */
-	public function onLoadExtensionSchemaUpdates( $updater ): bool {
-		self::$isUpdatePhp = true;
-		return true;
 	}
 
 }

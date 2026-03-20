@@ -2,8 +2,6 @@
 // Server Config
 $wgServer = 'http://localhost:8889';
 
-require_once __DIR__ . '/LocalSettings.common.php';
-
 // SemanticSchemas
 wfLoadExtension( 'SemanticSchemas', '/mw-user-extensions/SemanticSchemas/extension.json' );
 

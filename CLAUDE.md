@@ -81,7 +81,7 @@ Each category generates three templates:
 - **Special page**: `Special:SemanticSchemas` - Main admin interface for import/export/validation
 - **API**: `api.php?action=semanticschemas-hierarchy` - Hierarchy data for visualization
 - **Parser functions**: `{{#SemanticSchemasRenderAllProperties:Category}}`, `{{#SemanticSchemasRenderSection:Category|Section}}`
-- **Maintenance scripts**: `maintenance/installConfig.php`, `maintenance/regenerateArtifacts.php`
+- **Maintenance scripts**: `maintenance/regenerateArtifacts.php`
 
 ### Custom Namespace
 
@@ -89,18 +89,11 @@ Defines namespace 3300/3301 (Subobject/Subobject_talk) for subobject storage wit
 
 ### Base Configuration
 
-The extension requires foundational wiki pages to be installed before use. These are defined in `resources/extension-config.json` and installed via `Special:SemanticSchemas` or `maintenance/installConfig.php`.
+The extension requires foundational wiki pages (meta-properties, meta-categories, display templates) to be installed before use. These are managed by SMW's built-in content import system.
 
-**Installation layers (in order):**
-- Layer 0: Property display templates (`Template:Property/Default`, `Template:Property/Email`, `Template:Property/Link`)
-- Layer 1: Property type declarations (registers datatypes with SMW)
-- Layer 2: Full property annotations (labels, descriptions, constraints)
-- Layer 3: Subobject definitions (`Display section`)
-- Layer 4: Meta-categories (`Category`, `Property`, `Subobject`)
-
-**Key files:**
-- `resources/extension-config.json` - Defines all base configuration items
-- `src/Schema/ExtensionConfigInstaller.php` - Handles layer-by-layer installation
-- `src/Api/ApiSemanticSchemasInstall.php` - API endpoint for UI-driven installation
-
-The `isInstalled()` method checks ALL layers before hiding the install button, ensuring partial installations can be completed.
+**How it works:**
+- `resources/base-config/semanticschemas.vocab.json` — JSON manifest declaring all base config pages
+- `resources/base-config/{templates,properties,subobjects,categories}/` — `.wikitext` source files
+- `src/Hooks/SemanticSchemasSetupHooks.php` registers the base-config directory via `$smwgImportFileDirs`
+- Running `php maintenance/run.php update` triggers SMW's importer, which creates/updates all pages automatically
+- `Special:SemanticSchemas` checks for sentinel page `Property:Has type` to show/hide the install guidance banner

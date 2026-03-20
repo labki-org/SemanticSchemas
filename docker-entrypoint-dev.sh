@@ -32,17 +32,26 @@ if [ ! -f "$MW_DIR/LocalSettings.php" ]; then
 		"SemanticSchemasDev" \
 		"$MW_ADMIN_USER"
 
-	# Include user settings file
+	# Load SMW + dependencies (needed before setupStore.php)
 	cat >> "$MW_DIR/LocalSettings.php" <<'EOF'
 
-# Load user settings
-if ( file_exists( '/mw-config/LocalSettings.user.php' ) ) {
-	require_once '/mw-config/LocalSettings.user.php';
+# Load SMW and shared dependencies (before store setup)
+if ( file_exists( '/mw-config/LocalSettings.common.php' ) ) {
+	require_once '/mw-config/LocalSettings.common.php';
 }
 EOF
 
 	echo "==> Setting up SMW store..."
 	php "$MW_DIR/extensions/SemanticMediaWiki/maintenance/setupStore.php"
+
+	# Load SemanticSchemas + user settings (after store setup, like a real admin adding the extension later)
+	cat >> "$MW_DIR/LocalSettings.php" <<'EOF'
+
+# Load user-specific settings and additional extensions
+if ( file_exists( '/mw-config/LocalSettings.user.php' ) ) {
+	require_once '/mw-config/LocalSettings.user.php';
+}
+EOF
 
 	echo "==> First-run setup complete."
 fi
