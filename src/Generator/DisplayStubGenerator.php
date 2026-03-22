@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
@@ -44,13 +45,17 @@ class DisplayStubGenerator {
 	/**
 	 * Generate and save the display template stub.
 	 *
-	 * @param CategoryModel $category
+	 * @param CategoryModel $effectiveCategory Fully merged category
+	 * @param CategoryModel[] $inheritanceChain C3-linearized chain [child, parent1, ..., root]
 	 * @return array Result array with keys: 'created' (bool), 'updated' (bool), 'message' (string)
 	 */
-	public function generateOrUpdateDisplayStub( CategoryModel $category ): array {
-		$existed = $this->displayStubExists( $category->getName() );
+	public function generateOrUpdateDisplayStub(
+		CategoryModel $effectiveCategory,
+		array $inheritanceChain = []
+	): array {
+		$existed = $this->displayStubExists( $effectiveCategory->getName() );
 
-		$titleText = $this->generateDisplayContent( $category );
+		$titleText = $this->generateDisplayContent( $effectiveCategory, $inheritanceChain );
 		if ( $titleText === '' ) {
 			return [
 				'created' => false,
@@ -72,17 +77,17 @@ class DisplayStubGenerator {
 	 * Internal generation logic.
 	 *
 	 * @param CategoryModel $category
+	 * @param CategoryModel[] $inheritanceChain
 	 * @return string The prefixed title string of the generated page, or empty string on failure.
 	 */
-	private function generateDisplayContent( CategoryModel $category ): string {
+	private function generateDisplayContent( CategoryModel $category, array $inheritanceChain = [] ): string {
 		$categoryName = $category->getName();
-		// Use NS_TEMPLATE constant
 		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
 		if ( !$title ) {
 			return '';
 		}
 
-		$content = $this->buildWikitext( $category );
+		$content = $this->buildWikitext( $category, $inheritanceChain );
 
 		$this->pageCreator->createOrUpdatePage(
 			$title,
@@ -97,31 +102,97 @@ class DisplayStubGenerator {
 	 * Construct the wikitext content for the display template.
 	 *
 	 * @param CategoryModel $category
+	 * @param CategoryModel[] $inheritanceChain
 	 * @return string
 	 */
-	private function buildWikitext( CategoryModel $category ): string {
+	private function buildWikitext( CategoryModel $category, array $inheritanceChain = [] ): string {
 		$format = $category->getDisplayFormat();
 
 		if ( $format === 'sidebox' ) {
 			wfDebugLog( 'SemanticSchemas', 'Generating sidebox display for ' . $category->getName() );
-			return $this->generateSideboxWikitext( $category );
+			return $this->generateSideboxWikitext( $category, $inheritanceChain );
 		}
 
 		if ( $format === 'sections' ) {
-			return $this->generateSectionsWikitext( $category );
+			return $this->generateSectionsWikitext( $category, $inheritanceChain );
 		}
 
 		// Default to table
-		return $this->generateTableWikitext( $category );
+		return $this->generateTableWikitext( $category, $inheritanceChain );
 	}
 
-	private function generateTableWikitext( CategoryModel $category ): string {
+	/**
+	 * Generate property rows grouped by origin category when there's inheritance.
+	 *
+	 * @param CategoryModel $effectiveCategory
+	 * @param CategoryModel[] $inheritanceChain
+	 * @return string Wikitext for grouped property rows
+	 */
+	private function generateGroupedPropertyRows(
+		CategoryModel $effectiveCategory,
+		array $inheritanceChain
+	): string {
+		$propertyOwner = InheritanceResolver::buildPropertyOwnerMap( $inheritanceChain );
+		$content = '';
+
+		// Iterate root-first
+		foreach ( array_reverse( $inheritanceChain ) as $chainCat ) {
+			$catName = $chainCat->getName();
+			$ownProps = $this->getOwnedProperties( $propertyOwner, $catName );
+
+			if ( empty( $ownProps ) ) {
+				continue;
+			}
+
+			$content .= $this->buildCategoryHeadingRow( $catName, $chainCat->getLabel() );
+			$content .= $this->generatePropertyRows( $effectiveCategory, $ownProps );
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Build a category heading row with inline edit link for display tables.
+	 */
+	private function buildCategoryHeadingRow( string $catName, string $catLabel ): string {
+		$editLink = '<span style="float: right; font-weight: normal; font-size: 0.8em;">'
+			. '[[Special:FormEdit/' . $catName . '/{{FULLPAGENAME}}|edit]]</span>';
+		return "|-\n"
+			. '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
+			. $catLabel . ' ' . $editLink . "\n";
+	}
+
+	/**
+	 * Collect properties owned by a specific category from the ownership map.
+	 *
+	 * @param array<string,string> $propertyOwner
+	 * @param string $catName
+	 * @return string[]
+	 */
+	private function getOwnedProperties( array $propertyOwner, string $catName ): array {
+		$ownProps = [];
+		foreach ( $propertyOwner as $prop => $owner ) {
+			if ( $owner === $catName ) {
+				$ownProps[] = $prop;
+			}
+		}
+		return $ownProps;
+	}
+
+	private function generateTableWikitext(
+		CategoryModel $category,
+		array $inheritanceChain = []
+	): string {
 		$content = self::AUTO_REGENERATE_MARKER . "\n";
 		$content .= "<includeonly>\n";
 		$content .= "{| class=\"wikitable source-semanticschemas\"\n";
-		$content .= "! Property !! Value\n";
 
-		$content .= $this->generatePropertyRows( $category );
+		if ( !empty( $inheritanceChain ) ) {
+			$content .= $this->generateGroupedPropertyRows( $category, $inheritanceChain );
+		} else {
+			$content .= "! Property !! Value\n";
+			$content .= $this->generatePropertyRows( $category );
+		}
 
 		$content .= "|}\n";
 		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
@@ -129,8 +200,10 @@ class DisplayStubGenerator {
 		return $content;
 	}
 
-	private function generateSideboxWikitext( CategoryModel $category ): string {
-		// Infobox style: floated right, distinct styling
+	private function generateSideboxWikitext(
+		CategoryModel $category,
+		array $inheritanceChain = []
+	): string {
 		$content = self::AUTO_REGENERATE_MARKER . "\n";
 		$content .= "<includeonly>\n";
 		$tableStyle = 'float: right; clear: right; margin: 0 0 1em 1em; width: 300px; '
@@ -139,7 +212,11 @@ class DisplayStubGenerator {
 		$captionStyle = 'font-size: 120%; font-weight: bold; background-color: #eaecf0;';
 		$content .= '|+ style="' . $captionStyle . '" | ' . $category->getLabel() . "\n";
 
-		$content .= $this->generatePropertyRows( $category );
+		if ( !empty( $inheritanceChain ) ) {
+			$content .= $this->generateGroupedPropertyRows( $category, $inheritanceChain );
+		} else {
+			$content .= $this->generatePropertyRows( $category );
+		}
 
 		$content .= "|}\n";
 		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
@@ -147,45 +224,86 @@ class DisplayStubGenerator {
 		return $content;
 	}
 
-	private function generateSectionsWikitext( CategoryModel $category ): string {
+	private function generateSectionsWikitext(
+		CategoryModel $category,
+		array $inheritanceChain = []
+	): string {
 		$content = self::AUTO_REGENERATE_MARKER . "\n";
 		$content .= "<includeonly>\n";
 		$content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
 
-		$sections = $category->getDisplaySections();
+		if ( !empty( $inheritanceChain ) ) {
+			$propertyOwner = InheritanceResolver::buildPropertyOwnerMap( $inheritanceChain );
 
-		// Convert sections to map to track used properties
-		$usedProperties = [];
+			// Iterate root-first; within each category, render custom sections if defined
+			foreach ( array_reverse( $inheritanceChain ) as $chainCat ) {
+				$catName = $chainCat->getName();
+				$ownProps = $this->getOwnedProperties( $propertyOwner, $catName );
 
-		foreach ( $sections as $section ) {
-			$name = $section['name'];
-			$props = $section['properties'];
+				if ( empty( $ownProps ) ) {
+					continue;
+				}
 
-			// Section Header
-			$content .= "|-\n";
-			$content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | " . $name . "\n";
+				$content .= $this->buildCategoryHeadingRow( $catName, $chainCat->getLabel() );
 
-			// Section Properties
-			$content .= $this->generatePropertyRows( $category, $props );
-
-			foreach ( $props as $p ) {
-				$usedProperties[$p] = true;
+				// Check for custom sections within this category
+				$sections = $chainCat->getDisplaySections();
+				if ( !empty( $sections ) ) {
+					$usedProps = [];
+					foreach ( $sections as $section ) {
+						$sectionProps = array_intersect( $section['properties'], $ownProps );
+						if ( empty( $sectionProps ) ) {
+							continue;
+						}
+						$content .= "|-\n";
+						$content .= '! colspan="2" style="background-color: #f0f0f0; text-align: center;'
+							. ' font-size: 0.9em;" | ' . $section['name'] . "\n";
+						$content .= $this->generatePropertyRows( $category, $sectionProps );
+						foreach ( $sectionProps as $p ) {
+							$usedProps[$p] = true;
+						}
+					}
+					$remaining = array_filter( $ownProps, static fn ( $p ) => !isset( $usedProps[$p] ) );
+					if ( !empty( $remaining ) ) {
+						$content .= $this->generatePropertyRows( $category, $remaining );
+					}
+				} else {
+					$content .= $this->generatePropertyRows( $category, $ownProps );
+				}
 			}
-		}
+		} else {
+			// No inheritance — use original sections logic
+			$sections = $category->getDisplaySections();
+			$usedProperties = [];
 
-		// Catch-all for properties NOT in any section
-		$allProps = $category->getAllProperties();
-		$remaining = [];
-		foreach ( $allProps as $p ) {
-			if ( !isset( $usedProperties[$p] ) ) {
-				$remaining[] = $p;
+			foreach ( $sections as $section ) {
+				$name = $section['name'];
+				$props = $section['properties'];
+
+				$content .= "|-\n";
+				$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
+					. $name . "\n";
+				$content .= $this->generatePropertyRows( $category, $props );
+
+				foreach ( $props as $p ) {
+					$usedProperties[$p] = true;
+				}
 			}
-		}
 
-		if ( !empty( $remaining ) ) {
-			$content .= "|-\n";
-			$content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | Other Properties\n";
-			$content .= $this->generatePropertyRows( $category, $remaining );
+			$allProps = $category->getAllProperties();
+			$remaining = [];
+			foreach ( $allProps as $p ) {
+				if ( !isset( $usedProperties[$p] ) ) {
+					$remaining[] = $p;
+				}
+			}
+
+			if ( !empty( $remaining ) ) {
+				$content .= "|-\n";
+				$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;"'
+					. " | Other Properties\n";
+				$content .= $this->generatePropertyRows( $category, $remaining );
+			}
 		}
 
 		$content .= "|}\n";
@@ -275,17 +393,11 @@ class DisplayStubGenerator {
 	/**
 	 * Generate display template only if allowed by the auto-regenerate marker.
 	 *
-	 * This method implements the conditional regeneration logic:
-	 * - If the display template doesn't exist, generate it (with marker)
-	 * - If it exists AND has the marker, regenerate it (user hasn't customized)
-	 * - If it exists but NO marker, preserve it (user customized)
-	 *
 	 * @param CategoryModel $category
-	 * @return array Result array with keys:
-	 *   - 'status' (string): 'created', 'updated', or 'preserved'
-	 *   - 'message' (string): Human-readable status message
+	 * @param CategoryModel[] $inheritanceChain
+	 * @return array{status: string, message: string}
 	 */
-	public function generateIfAllowed( CategoryModel $category ): array {
+	public function generateIfAllowed( CategoryModel $category, array $inheritanceChain = [] ): array {
 		$categoryName = $category->getName();
 		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
 
@@ -299,7 +411,7 @@ class DisplayStubGenerator {
 		// Check if the page exists
 		if ( !$this->pageCreator->pageExists( $title ) ) {
 			// Template doesn't exist - create it
-			$this->generateDisplayContent( $category );
+			$this->generateDisplayContent( $category, $inheritanceChain );
 			return [
 				'status' => 'created',
 				'message' => "Display template created: {$title->getPrefixedText()}"
@@ -309,7 +421,7 @@ class DisplayStubGenerator {
 		// Template exists - check for the auto-regenerate marker
 		if ( $this->hasAutoRegenerateMarker( $title ) ) {
 			// Safe to regenerate
-			$this->generateDisplayContent( $category );
+			$this->generateDisplayContent( $category, $inheritanceChain );
 			return [
 				'status' => 'updated',
 				'message' => "Display template updated: {$title->getPrefixedText()}"

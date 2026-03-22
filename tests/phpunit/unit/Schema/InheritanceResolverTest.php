@@ -248,4 +248,140 @@ class InheritanceResolverTest extends TestCase {
 		$ancestors = $resolver->getAncestors( 'Unknown' );
 		$this->assertEquals( [ 'Unknown' ], $ancestors );
 	}
+
+	/* =========================================================================
+	 * INHERITANCE CHAIN (RAW MODELS)
+	 * ========================================================================= */
+
+	public function testGetInheritanceChainRootReturnsSelf(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$resolver = new InheritanceResolver( [ 'Person' => $person ] );
+
+		$chain = $resolver->getInheritanceChain( 'Person' );
+		$this->assertCount( 1, $chain );
+		$this->assertEquals( 'Person', $chain[0]->getName() );
+		$this->assertContains( 'Has name', $chain[0]->getAllProperties() );
+	}
+
+	public function testGetInheritanceChainSingleParent(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$student = new CategoryModel( 'Student', [
+			'parents' => [ 'Person' ],
+			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'Student' => $student,
+		] );
+
+		$chain = $resolver->getInheritanceChain( 'Student' );
+		$this->assertCount( 2, $chain );
+		$this->assertEquals( 'Student', $chain[0]->getName() );
+		$this->assertEquals( 'Person', $chain[1]->getName() );
+
+		// Each model should have only its own properties
+		$this->assertContains( 'Has student ID', $chain[0]->getAllProperties() );
+		$this->assertNotContains( 'Has name', $chain[0]->getAllProperties() );
+		$this->assertContains( 'Has name', $chain[1]->getAllProperties() );
+		$this->assertNotContains( 'Has student ID', $chain[1]->getAllProperties() );
+	}
+
+	public function testGetInheritanceChainMultiParent(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$labMember = new CategoryModel( 'LabMember', [
+			'properties' => [ 'required' => [ 'Has lab role' ], 'optional' => [] ],
+		] );
+		$gradStudent = new CategoryModel( 'GradStudent', [
+			'parents' => [ 'Person', 'LabMember' ],
+			'properties' => [ 'required' => [ 'Has advisor' ], 'optional' => [] ],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'LabMember' => $labMember,
+			'GradStudent' => $gradStudent,
+		] );
+
+		$chain = $resolver->getInheritanceChain( 'GradStudent' );
+		$this->assertCount( 3, $chain );
+		$this->assertEquals( 'GradStudent', $chain[0]->getName() );
+		// Each has own properties only
+		$this->assertContains( 'Has advisor', $chain[0]->getAllProperties() );
+		$this->assertNotContains( 'Has name', $chain[0]->getAllProperties() );
+	}
+
+	public function testGetInheritanceChainForUnknownReturnsStandalone(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$chain = $resolver->getInheritanceChain( 'Unknown' );
+		$this->assertCount( 1, $chain );
+		$this->assertEquals( 'Unknown', $chain[0]->getName() );
+		$this->assertEmpty( $chain[0]->getAllProperties() );
+	}
+
+	/* =========================================================================
+	 * CHAIN EFFECTIVES
+	 * ========================================================================= */
+
+	public function testGetChainEffectivesReturnsEffectiveForEachAncestor(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$student = new CategoryModel( 'Student', [
+			'parents' => [ 'Person' ],
+			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'Student' => $student,
+		] );
+
+		$effectives = $resolver->getChainEffectives( 'Student' );
+		$this->assertArrayHasKey( 'Student', $effectives );
+		$this->assertArrayHasKey( 'Person', $effectives );
+		// Student effective should have both props
+		$this->assertContains( 'Has name', $effectives['Student']->getAllProperties() );
+		$this->assertContains( 'Has student ID', $effectives['Student']->getAllProperties() );
+		// Person effective should have only its own props
+		$this->assertContains( 'Has name', $effectives['Person']->getAllProperties() );
+		$this->assertNotContains( 'Has student ID', $effectives['Person']->getAllProperties() );
+	}
+
+	/* =========================================================================
+	 * PROPERTY OWNER MAP
+	 * ========================================================================= */
+
+	public function testBuildPropertyOwnerMapChildOverridesParent(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name', 'Has email' ], 'optional' => [] ],
+		] );
+		$student = new CategoryModel( 'Student', [
+			'parents' => [ 'Person' ],
+			'properties' => [ 'required' => [ 'Has name', 'Has student ID' ], 'optional' => [] ],
+		] );
+
+		$chain = [ $student, $person ];
+		$map = InheritanceResolver::buildPropertyOwnerMap( $chain );
+
+		// Has name overridden by Student (most-specific wins)
+		$this->assertEquals( 'Student', $map['Has name'] );
+		$this->assertEquals( 'Person', $map['Has email'] );
+		$this->assertEquals( 'Student', $map['Has student ID'] );
+	}
+
+	public function testBuildPropertyOwnerMapSingleCategory(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+
+		$map = InheritanceResolver::buildPropertyOwnerMap( [ $person ] );
+		$this->assertEquals( [ 'Has name' => 'Person' ], $map );
+	}
 }

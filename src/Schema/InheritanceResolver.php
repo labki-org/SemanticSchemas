@@ -99,6 +99,57 @@ class InheritanceResolver {
 	}
 
 	/**
+	 * Return the C3-linearized list of raw (unmerged) CategoryModel objects.
+	 *
+	 * Order: [child, parent1, parent2, ..., root]
+	 * Each model contains only its own declared properties.
+	 *
+	 * @param string $categoryName
+	 * @return CategoryModel[]
+	 */
+	public function getInheritanceChain( string $categoryName ): array {
+		$ancestors = $this->getAncestors( $categoryName );
+		return array_map(
+			fn ( $name ) => $this->categoryMap[$name] ?? new CategoryModel( $name ),
+			$ancestors
+		);
+	}
+
+	/**
+	 * Build a map of category name → effective CategoryModel for each category in the chain.
+	 *
+	 * @param string $categoryName
+	 * @return array<string,CategoryModel>
+	 */
+	public function getChainEffectives( string $categoryName ): array {
+		$chain = $this->getInheritanceChain( $categoryName );
+		$effectives = [];
+		foreach ( $chain as $cat ) {
+			$effectives[$cat->getName()] = $this->getEffectiveCategory( $cat->getName() );
+		}
+		return $effectives;
+	}
+
+	/**
+	 * Build a property → owner-category-name map from an inheritance chain.
+	 *
+	 * Iterates root-first so that the most specific (child) category wins
+	 * when a property appears in multiple categories.
+	 *
+	 * @param CategoryModel[] $inheritanceChain C3-linearized chain [child, parent1, ..., root]
+	 * @return array<string,string> Property name → owning category name
+	 */
+	public static function buildPropertyOwnerMap( array $inheritanceChain ): array {
+		$propertyOwner = [];
+		foreach ( array_reverse( $inheritanceChain ) as $cat ) {
+			foreach ( $cat->getAllProperties() as $prop ) {
+				$propertyOwner[$prop] = $cat->getName();
+			}
+		}
+		return $propertyOwner;
+	}
+
+	/**
 	 * Validate inheritance and return error messages.
 	 */
 	public function validateInheritance(): array {

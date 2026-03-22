@@ -98,11 +98,12 @@ class RegenerateArtifacts extends Maintenance {
 		$name = $category->getName();
 		$this->output( "Processing: $name\n" );
 
+		$chain = $resolver->getInheritanceChain( $name );
 		$effective = $resolver->getEffectiveCategory( $name );
-		$ancestors = $resolver->getAncestors( $name );
+		$chainEffectives = $resolver->getChainEffectives( $name );
 
-		// Generate semantic template
-		$result = $templateGenerator->generateAllTemplates( $effective );
+		// Generate semantic + dispatcher templates
+		$result = $templateGenerator->generateAllTemplates( $category, $chain, $effective, $chainEffectives );
 		if ( $result['success'] ) {
 			$this->output( "  ✓ Generated semantic and dispatcher templates\n" );
 		} else {
@@ -113,7 +114,7 @@ class RegenerateArtifacts extends Maintenance {
 		}
 
 		// Generate form
-		if ( $formGenerator->generateAndSaveForm( $effective ) ) {
+		if ( $formGenerator->generateAndSaveForm( $category, $chain ) ) {
 			$this->output( "  ✓ Generated form\n" );
 		} else {
 			$this->output( "  ✗ Form generation failed\n" );
@@ -121,7 +122,7 @@ class RegenerateArtifacts extends Maintenance {
 
 		// Generate or update display template if requested
 		if ( $generateDisplay ) {
-			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective );
+			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective, $chain );
 			if ( !empty( $displayResult['error'] ) ) {
 				$this->output( "  ✗ Display template failed: {$displayResult['error']}\n" );
 			} elseif ( $displayResult['created'] ) {
