@@ -157,11 +157,13 @@ class DisplayStubGenerator {
 				continue;
 			}
 
-			// Category heading
+			// Category heading with inline edit link
 			$catLabel = $chainCat->getLabel();
+			$editLink = '<span style="float: right; font-weight: normal; font-size: 0.8em;">'
+				. '[[Special:FormEdit/' . $catName . '/{{FULLPAGENAME}}|edit]]</span>';
 			$content .= "|-\n";
 			$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
-				. $catLabel . "\n";
+				. $catLabel . ' ' . $editLink . "\n";
 
 			// Render properties for this category
 			$content .= $this->generatePropertyRows( $effectiveCategory, $ownProps );
@@ -247,11 +249,13 @@ class DisplayStubGenerator {
 					continue;
 				}
 
-				// Category heading
+				// Category heading with inline edit link
 				$catLabel = $chainCat->getLabel();
+				$editLink = '<span style="float: right; font-weight: normal; font-size: 0.8em;">'
+					. '[[Special:FormEdit/' . $catName . '/{{FULLPAGENAME}}|edit]]</span>';
 				$content .= "|-\n";
 				$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
-					. $catLabel . "\n";
+					. $catLabel . ' ' . $editLink . "\n";
 
 				// Check for custom sections within this category
 				$sections = $chainCat->getDisplaySections();
