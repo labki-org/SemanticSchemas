@@ -50,21 +50,25 @@ class CategoryPageHooks {
 			return;
 		}
 
-		$this->addCategoryEditActions( $title, $links );
+		if ( $this->addCategoryEditActions( $title, $links ) ) {
+			$skin->getOutput()->addModules( 'ext.semanticschemas.actionmenu' );
+		}
 	}
 
 	/**
 	 * Add "Edit [Category] fields" action links for each SemanticSchemas-managed
 	 * category the page belongs to, plus an "Add category" link.
+	 *
+	 * @return bool True if items were added
 	 */
-	private function addCategoryEditActions( \MediaWiki\Title\Title $title, array &$links ): void {
+	private function addCategoryEditActions( \MediaWiki\Title\Title $title, array &$links ): bool {
 		$services = \MediaWiki\MediaWikiServices::getInstance();
 		$categoryStore = SemanticSchemasServices::getWikiCategoryStore( $services );
 
 		// Get all managed category names
 		$allCategories = $categoryStore->getAllCategories();
 		if ( empty( $allCategories ) ) {
-			return;
+			return false;
 		}
 
 		$managedNames = [];
@@ -84,7 +88,7 @@ class CategoryPageHooks {
 		}
 
 		if ( empty( $matchedCategories ) ) {
-			return;
+			return false;
 		}
 
 		// Add "Edit [Category] fields" for each managed category
@@ -114,6 +118,8 @@ class CategoryPageHooks {
 				'ss-existing' => implode( '|', $matchedCategories ),
 			] ),
 		];
+
+		return true;
 	}
 
 	/**
