@@ -103,6 +103,9 @@ class CategoryPageHooks {
 			}
 		}
 
+		// Remove PageForms' generic "Edit with form" — our per-category links replace it
+		unset( $links['views']['formedit'] );
+
 		// Add "Add category" action — pass existing categories so the form can pre-check them
 		$links['actions']['ss-add-category'] = [
 			'text' => wfMessage( 'semanticschemas-action-add-category' )->text(),
