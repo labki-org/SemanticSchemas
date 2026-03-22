@@ -8,6 +8,7 @@ use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
+use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
@@ -199,6 +200,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 			case 'hierarchy':
 				$this->showHierarchy();
 				break;
+			case 'create':
+				$this->showCreatePage();
+				break;
 			case 'overview':
 			default:
 				$this->showOverview();
@@ -256,11 +260,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$categoryMap = $this->buildCategoryMap();
 			$resolver = new InheritanceResolver( $categoryMap );
 
-			// Resolve inheritance to get effective category with all inherited properties
+			// Resolve inheritance
+			$chain = $resolver->getInheritanceChain( $categoryName );
 			$effective = $resolver->getEffectiveCategory( $categoryName );
 
 			// Generate templates (always regenerate auto-generated ones)
-			$templateResult = $this->templateGenerator->generateAllTemplates( $effective );
+			$templateResult = $this->templateGenerator->generateAllTemplates( $category, $chain, $effective );
 
 			if ( !$templateResult['success'] ) {
 				$output->addHTML( Html::errorBox(
@@ -272,7 +277,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			}
 
 			// Generate form
-			$formSuccess = $this->formGenerator->generateAndSaveForm( $effective );
+			$formSuccess = $this->formGenerator->generateAndSaveForm( $category, $chain );
 
 			if ( !$formSuccess ) {
 				$output->addHTML( Html::errorBox(
@@ -284,7 +289,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			}
 
 			// Generate display template conditionally (respect user customizations)
-			$displayResult = $this->displayGenerator->generateIfAllowed( $effective );
+			$displayResult = $this->displayGenerator->generateIfAllowed( $effective, $chain );
 
 			// Log the operation
 			$this->logOperation( 'generate', "Form generated for $categoryName", [
@@ -375,6 +380,10 @@ class SpecialSemanticSchemas extends SpecialPage {
 			'hierarchy' => [
 				'label' => $this->msg( 'semanticschemas-hierarchy' )->text(),
 				'subtext' => $this->msg( 'semanticschemas-tab-hierarchy-subtext' )->text(),
+			],
+			'create' => [
+				'label' => $this->msg( 'semanticschemas-create' )->text(),
+				'subtext' => $this->msg( 'semanticschemas-tab-create-subtext' )->text(),
 			],
 		];
 
@@ -1155,13 +1164,14 @@ class SpecialSemanticSchemas extends SpecialPage {
 				);
 
 				try {
+					$chain = $resolver->getInheritanceChain( $name );
 					$effective = $resolver->getEffectiveCategory( $name );
 
-					$this->templateGenerator->generateAllTemplates( $effective );
-					$this->formGenerator->generateAndSaveForm( $effective );
+					$this->templateGenerator->generateAllTemplates( $category, $chain, $effective );
+					$this->formGenerator->generateAndSaveForm( $category, $chain );
 
 					if ( $generateDisplay ) {
-						$this->displayGenerator->generateOrUpdateDisplayStub( $effective );
+						$this->displayGenerator->generateOrUpdateDisplayStub( $effective, $chain );
 					}
 
 					$successCount++;
@@ -1300,6 +1310,192 @@ class SpecialSemanticSchemas extends SpecialPage {
 		);
 
 		$output->addHTML( $this->wrapShell( $card ) );
+	}
+
+	/* =====================================================================
+	 * CREATE PAGE (Composition UX)
+	 * ===================================================================== */
+
+	/**
+	 * Show the "Create Page" tab for multi-category composition.
+	 */
+	private function showCreatePage(): void {
+		$output = $this->getOutput();
+		$request = $this->getRequest();
+		$output->setPageTitle( $this->msg( 'semanticschemas-create-title' )->text() );
+
+		// Handle POST
+		if ( $request->wasPosted() && $request->getVal( 'ss-action' ) === 'create-page' ) {
+			if ( !$this->getUser()->matchEditToken( $request->getVal( 'wpEditToken' ) ) ) {
+				$output->addHTML( Html::errorBox( 'Invalid session token. Please try again.' ) );
+			} else {
+				$this->processCreatePage();
+				return;
+			}
+		}
+
+		// Build form
+		$categories = $this->categoryStore->getAllCategories();
+		if ( empty( $categories ) ) {
+			$output->addHTML( $this->wrapShell( $this->renderCard(
+				$this->msg( 'semanticschemas-create-title' )->text(),
+				$this->msg( 'semanticschemas-tab-create-subtext' )->text(),
+				Html::element( 'p', [],
+					$this->msg( 'semanticschemas-create-no-categories' )->text()
+				)
+			) ) );
+			return;
+		}
+
+		$formHtml = '';
+
+		// Page name input
+		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group' ],
+			Html::element( 'label', [ 'for' => 'ss-page-name' ],
+				$this->msg( 'semanticschemas-create-page-name' )->text()
+			) .
+			Html::input( 'ss-page-name', '', 'text', [
+				'id' => 'ss-page-name',
+				'class' => 'semanticschemas-input',
+				'required' => true,
+				'placeholder' => $this->msg( 'semanticschemas-create-page-name-placeholder' )->text(),
+			] )
+		);
+
+		// Category checkboxes
+		$checkboxes = '';
+		foreach ( $categories as $cat ) {
+			$catName = $cat->getName();
+			$catLabel = $cat->getLabel();
+			$checkboxes .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-checkbox-row' ],
+				Html::check( 'ss-categories[]', false, [
+					'id' => 'ss-cat-' . htmlspecialchars( $catName ),
+					'value' => $catName,
+				] ) .
+				Html::element( 'label', [
+					'for' => 'ss-cat-' . htmlspecialchars( $catName ),
+				], $catLabel )
+			);
+		}
+
+		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group' ],
+			Html::element( 'label', [],
+				$this->msg( 'semanticschemas-create-select-categories' )->text()
+			) .
+			Html::rawElement( 'div', [ 'class' => 'semanticschemas-checkbox-group' ],
+				$checkboxes
+			)
+		);
+
+		// Submit
+		$formHtml .= Html::hidden( 'ss-action', 'create-page' );
+		$formHtml .= Html::hidden( 'wpEditToken', $this->getUser()->getEditToken() );
+		$formHtml .= Html::submitButton(
+			$this->msg( 'semanticschemas-create-submit' )->text(),
+			[ 'class' => 'semanticschemas-btn semanticschemas-btn-primary' ]
+		);
+
+		$form = Html::rawElement( 'form', [
+			'method' => 'post',
+			'action' => $this->getPageTitle( 'create' )->getLocalURL(),
+			'class' => 'semanticschemas-create-form',
+		], $formHtml );
+
+		$output->addHTML( $this->wrapShell( $this->renderCard(
+			$this->msg( 'semanticschemas-create-title' )->text(),
+			$this->msg( 'semanticschemas-tab-create-subtext' )->text(),
+			$form
+		) ) );
+	}
+
+	/**
+	 * Process the "Create Page" form submission.
+	 */
+	private function processCreatePage(): void {
+		$output = $this->getOutput();
+		$request = $this->getRequest();
+
+		$pageName = trim( $request->getText( 'ss-page-name' ) );
+		$selectedCategories = $request->getArray( 'ss-categories', [] );
+
+		if ( $pageName === '' ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-create-no-page-name' )->text()
+			) );
+			return;
+		}
+
+		if ( empty( $selectedCategories ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-create-no-selection' )->text()
+			) );
+			return;
+		}
+
+		// Single category: redirect directly to FormEdit
+		if ( count( $selectedCategories ) === 1 ) {
+			$catName = $selectedCategories[0];
+			$formEditTitle = Title::makeTitleSafe( NS_SPECIAL, 'FormEdit/' . $catName . '/' . $pageName );
+			if ( $formEditTitle ) {
+				$output->redirect( $formEditTitle->getFullURL() );
+				return;
+			}
+		}
+
+		// Multiple categories: create page with empty dispatcher calls, then redirect
+		$pageContent = '';
+		foreach ( $selectedCategories as $catName ) {
+			$pageContent .= '{{' . $catName . "\n}}\n\n";
+		}
+		$pageContent = rtrim( $pageContent );
+
+		// Determine namespace from first category
+		$firstCat = $this->categoryStore->readCategory( $selectedCategories[0] );
+		$ns = NS_MAIN;
+		if ( $firstCat && $firstCat->getTargetNamespace() !== null ) {
+			$nsIndex = \MediaWiki\MediaWikiServices::getInstance()
+				->getNamespaceInfo()
+				->getCanonicalIndex( strtolower( $firstCat->getTargetNamespace() ) );
+			if ( $nsIndex !== null ) {
+				$ns = $nsIndex;
+			}
+		}
+
+		$pageTitle = Title::makeTitleSafe( $ns, $pageName );
+		if ( !$pageTitle ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-create-invalid-title' )->text()
+			) );
+			return;
+		}
+
+		// Create the page with boilerplate
+		$pageCreator = SemanticSchemasServices::getPageCreator(
+			\MediaWiki\MediaWikiServices::getInstance()
+		);
+		$success = $pageCreator->createOrUpdatePage(
+			$pageTitle,
+			$pageContent,
+			'SemanticSchemas: Created multi-category page'
+		);
+
+		if ( !$success ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-create-failed' )->params( $pageName )->text()
+			) );
+			return;
+		}
+
+		// Redirect to FormEdit for the first category
+		$formEditTitle = Title::makeTitleSafe(
+			NS_SPECIAL,
+			'FormEdit/' . $selectedCategories[0] . '/' . $pageTitle->getPrefixedText()
+		);
+		if ( $formEditTitle ) {
+			$output->redirect( $formEditTitle->getFullURL() );
+		} else {
+			$output->redirect( $pageTitle->getFullURL() );
+		}
 	}
 
 	/**

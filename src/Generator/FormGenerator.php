@@ -47,16 +47,29 @@ class FormGenerator {
 
 	/**
 	 * Generate the full PageForms form for a category.
+	 *
+	 * When an inheritance chain is provided, fields are grouped under
+	 * category subheadings (root-first order). For root categories
+	 * with no parents, no redundant heading is rendered.
+	 *
+	 * @param CategoryModel $leafCategory The leaf (unmerged) category
+	 * @param CategoryModel[] $inheritanceChain C3-linearized chain [child, parent1, ..., root]
+	 * @return string
 	 */
-	public function generateForm( CategoryModel $category ): string {
-		$name = trim( $category->getName() );
-		$label = trim( $category->getLabel() );
+	public function generateForm( CategoryModel $leafCategory, array $inheritanceChain = [] ): string {
+		$name = trim( $leafCategory->getName() );
+		$label = trim( $leafCategory->getLabel() );
 
 		if ( $name === '' ) {
 			throw new \InvalidArgumentException( "Category name cannot be empty" );
 		}
 		if ( $label === '' ) {
 			throw new \InvalidArgumentException( "Category label cannot be empty" );
+		}
+
+		// Default: single-element chain for backward compatibility
+		if ( $inheritanceChain === [] ) {
+			$inheritanceChain = [ $leafCategory ];
 		}
 
 		$lines = [];
@@ -74,8 +87,8 @@ class FormGenerator {
 			'autocomplete on category=' . $this->s( $name ),
 		];
 
-		if ( $category->getTargetNamespace() !== null ) {
-			$formInput[] = 'namespace=' . $this->s( $category->getTargetNamespace() );
+		if ( $leafCategory->getTargetNamespace() !== null ) {
+			$formInput[] = 'namespace=' . $this->s( $leafCategory->getTargetNamespace() );
 		}
 
 		$lines[] = '{{#forminput:' . implode( '|', $formInput ) . '}}';
@@ -86,11 +99,8 @@ class FormGenerator {
 		/* ----------------------------------------------------------
 		 * Page name info (for namespace targeting)
 		 * -------------------------------------------------------- */
-		if ( $category->getTargetNamespace() !== null ) {
-			// PageForms requires {{{info|page name=Namespace:<page name>}}} to create
-			// pages in a specific namespace. The <page name> placeholder is filled by
-			// PageForms with the user-entered page name.
-			$lines[] = '{{{info|page name=' . $this->s( $category->getTargetNamespace() ) . ':<page name>}}}';
+		if ( $leafCategory->getTargetNamespace() !== null ) {
+			$lines[] = '{{{info|page name=' . $this->s( $leafCategory->getTargetNamespace() ) . ':<page name>}}}';
 			$lines[] = '';
 		}
 
@@ -101,9 +111,9 @@ class FormGenerator {
 		$lines[] = '';
 
 		/* ----------------------------------------------------------
-		 * Property fields in table format
+		 * Property fields grouped by origin category
 		 * -------------------------------------------------------- */
-		$lines = array_merge( $lines, $this->generatePropertyTable( $category ) );
+		$lines = array_merge( $lines, $this->generateGroupedPropertyFields( $inheritanceChain ) );
 
 		$lines[] = '{{{end template}}}';
 		$lines[] = '';
@@ -111,7 +121,16 @@ class FormGenerator {
 		/* ----------------------------------------------------------
 		 * Hierarchy Preview (if parent category property exists)
 		 * -------------------------------------------------------- */
-		$parentProp = $this->findParentCategoryProperty( $category );
+		// Build an effective properties list from the chain for parent property detection
+		$allPropsForDetection = [];
+		foreach ( $inheritanceChain as $cat ) {
+			$allPropsForDetection = array_merge(
+				$allPropsForDetection,
+				$cat->getRequiredProperties(),
+				$cat->getOptionalProperties()
+			);
+		}
+		$parentProp = $this->findParentCategoryPropertyFromList( array_unique( $allPropsForDetection ) );
 		if ( $parentProp !== null ) {
 			$lines[] = '{{#semanticschemas_load_form_preview:}}';
 			$lines[] = '';
@@ -130,9 +149,9 @@ class FormGenerator {
 		}
 
 		/* ----------------------------------------------------------
-		 * Subobject sections
+		 * Subobject sections — collect from the full chain
 		 * -------------------------------------------------------- */
-		$lines = array_merge( $lines, $this->generateSubobjectSections( $category ) );
+		$lines = array_merge( $lines, $this->generateSubobjectSectionsFromChain( $inheritanceChain ) );
 
 		/* ----------------------------------------------------------
 		 * Free text section
@@ -157,52 +176,73 @@ class FormGenerator {
 	}
 
 	/**
-	 * Generate property fields in a table format.
-	 * Separates required and optional properties into distinct sections.
-	 */
-	private function generatePropertyTable( CategoryModel $category ): array {
-		$required = array_unique( $category->getRequiredProperties() );
-		$optional = array_unique( $category->getOptionalProperties() );
-		sort( $required );
-		sort( $optional );
-
-		$out = [];
-		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields', $category, true ) );
-		$out = array_merge( $out, $this->generatePropertySection( $optional, 'Optional fields', $category, false ) );
-
-		return $out;
-	}
-
-	/**
-	 * Generate a property section with label and table.
+	 * Generate property fields grouped by origin category.
 	 *
-	 * @param array $props List of property names
-	 * @param string $label Section label
-	 * @param CategoryModel $category The category model
-	 * @param bool $isRequired Whether properties in this section are required
+	 * Iterates the inheritance chain root-first so the most general category's
+	 * fields appear at the top. Within each category section, required fields
+	 * come before optional. For a single category with no parents, no
+	 * redundant category heading is rendered.
+	 *
+	 * @param CategoryModel[] $inheritanceChain C3-linearized chain [child, parent1, ..., root]
 	 * @return array Lines of wikitext
 	 */
-	private function generatePropertySection(
-		array $props,
-		string $label,
-		CategoryModel $category,
-		bool $isRequired
-	): array {
-		if ( empty( $props ) ) {
-			return [];
-		}
-
+	private function generateGroupedPropertyFields( array $inheritanceChain ): array {
 		$out = [];
-		$out[] = "'''" . $label . ":'''";
-		$out[] = '';
-		$out[] = '{| class="formtable"';
+		$hasInheritance = count( $inheritanceChain ) > 1;
 
-		foreach ( $props as $prop ) {
-			$out = array_merge( $out, $this->generateTableField( $prop, $category, $isRequired ) );
+		// Build property ownership map (most-specific wins)
+		$propertyOwner = [];
+		foreach ( array_reverse( $inheritanceChain ) as $cat ) {
+			foreach ( $cat->getAllProperties() as $prop ) {
+				$propertyOwner[$prop] = $cat->getName();
+			}
 		}
 
-		$out[] = '|}';
-		$out[] = '';
+		// Iterate root-first
+		foreach ( array_reverse( $inheritanceChain ) as $chainCat ) {
+			$catName = $chainCat->getName();
+
+			// Collect properties owned by this category
+			$ownRequired = [];
+			$ownOptional = [];
+			foreach ( $propertyOwner as $prop => $owner ) {
+				if ( $owner !== $catName ) {
+					continue;
+				}
+				if ( in_array( $prop, $chainCat->getRequiredProperties(), true ) ) {
+					$ownRequired[] = $prop;
+				} else {
+					$ownOptional[] = $prop;
+				}
+			}
+
+			sort( $ownRequired );
+			sort( $ownOptional );
+
+			if ( empty( $ownRequired ) && empty( $ownOptional ) ) {
+				continue;
+			}
+
+			// Category heading (only when there's actual inheritance)
+			if ( $hasInheritance ) {
+				$catLabel = $chainCat->getLabel();
+				$out[] = "=== $catLabel ===";
+				$out[] = '';
+			}
+
+			// Single table for this category's fields (required first, then optional)
+			$out[] = '{| class="formtable"';
+
+			foreach ( $ownRequired as $prop ) {
+				$out = array_merge( $out, $this->generateTableField( $prop, $chainCat, true ) );
+			}
+			foreach ( $ownOptional as $prop ) {
+				$out = array_merge( $out, $this->generateTableField( $prop, $chainCat, false ) );
+			}
+
+			$out[] = '|}';
+			$out[] = '';
+		}
 
 		return $out;
 	}
@@ -272,25 +312,33 @@ class FormGenerator {
 	}
 
 	/**
-	 * Subobject repeatable blocks.
+	 * Subobject repeatable blocks collected from the full inheritance chain.
+	 *
+	 * @param CategoryModel[] $inheritanceChain
+	 * @return array Lines of wikitext
 	 */
-	private function generateSubobjectSections( CategoryModel $category ): array {
-		$required = $category->getRequiredSubobjects();
-		$optional = $category->getOptionalSubobjects();
-
+	private function generateSubobjectSectionsFromChain( array $inheritanceChain ): array {
+		// Collect subobjects from all categories in the chain, deduped
 		$all = [];
-		foreach ( $required as $n ) {
-			$all[$n] = true;
-		}
-		foreach ( $optional as $n ) {
-			if ( !isset( $all[$n] ) ) {
-				$all[$n] = false;
+		foreach ( $inheritanceChain as $cat ) {
+			foreach ( $cat->getRequiredSubobjects() as $n ) {
+				if ( !isset( $all[$n] ) ) {
+					$all[$n] = true;
+				}
+			}
+			foreach ( $cat->getOptionalSubobjects() as $n ) {
+				if ( !isset( $all[$n] ) ) {
+					$all[$n] = false;
+				}
 			}
 		}
 
 		if ( empty( $all ) ) {
 			return [];
 		}
+
+		// Use the leaf category for field generation context
+		$leafCategory = $inheritanceChain[0];
 
 		$out = [];
 
@@ -324,7 +372,7 @@ class FormGenerator {
 
 				foreach ( $subProps as $p ) {
 					$must = $model->isPropertyRequired( $p );
-					$out = array_merge( $out, $this->generateTableField( $p, $category, $must ) );
+					$out = array_merge( $out, $this->generateTableField( $p, $leafCategory, $must ) );
 				}
 
 				$out[] = '|}';
@@ -369,13 +417,18 @@ class FormGenerator {
 		return $result;
 	}
 
-	public function generateAndSaveForm( CategoryModel $category ): bool {
+	/**
+	 * @param CategoryModel $leafCategory The leaf (unmerged) category
+	 * @param CategoryModel[] $inheritanceChain C3-linearized chain [child, parent1, ..., root]
+	 * @return bool
+	 */
+	public function generateAndSaveForm( CategoryModel $leafCategory, array $inheritanceChain = [] ): bool {
 		try {
-			$txt = $this->generateForm( $category );
-			return $this->updateForm( $category->getName(), $txt );
+			$txt = $this->generateForm( $leafCategory, $inheritanceChain );
+			return $this->updateForm( $leafCategory->getName(), $txt );
 		} catch ( \Exception $e ) {
 			wfLogWarning(
-				"SemanticSchemas: Failed to gen/save form for {$category->getName()}: "
+				"SemanticSchemas: Failed to gen/save form for {$leafCategory->getName()}: "
 				. $e->getMessage()
 			);
 			return false;
@@ -388,14 +441,12 @@ class FormGenerator {
 	}
 
 	/**
-	 * Find the parent category property in a category's schema.
+	 * Find the parent category property from a list of property names.
+	 *
+	 * @param array $props List of property names
+	 * @return string|null
 	 */
-	private function findParentCategoryProperty( CategoryModel $category ): ?string {
-		$props = array_merge(
-			$category->getRequiredProperties(),
-			$category->getOptionalProperties()
-		);
-
+	private function findParentCategoryPropertyFromList( array $props ): ?string {
 		foreach ( $props as $p ) {
 			$lc = strtolower( $p );
 

@@ -99,6 +99,23 @@ class InheritanceResolver {
 	}
 
 	/**
+	 * Return the C3-linearized list of raw (unmerged) CategoryModel objects.
+	 *
+	 * Order: [child, parent1, parent2, ..., root]
+	 * Each model contains only its own declared properties.
+	 *
+	 * @param string $categoryName
+	 * @return CategoryModel[]
+	 */
+	public function getInheritanceChain( string $categoryName ): array {
+		$ancestors = $this->getAncestors( $categoryName );
+		return array_map(
+			fn ( $name ) => $this->categoryMap[$name] ?? new CategoryModel( $name ),
+			$ancestors
+		);
+	}
+
+	/**
 	 * Validate inheritance and return error messages.
 	 */
 	public function validateInheritance(): array {

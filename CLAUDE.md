@@ -48,11 +48,21 @@ Access wiki at http://localhost:8889 (Admin/DockerPass123!)
 
 ## Architecture
 
-### Three-Template System
+### Modular Template System
 Each category generates three templates:
-1. **Dispatcher** (`Template:<Category>`) - Entry point coordinating the other two
-2. **Semantic** (`Template:<Category>/semantic`) - Stores SMW data with `{{#set:...}}`
-3. **Display** (`Template:<Category>/display`) - Renders properties (user-editable stub)
+1. **Semantic** (`Template:<Category>/semantic`) — Stores **own** declared properties only via `{{#set:...}}` + stamps `[[Category:<Category>]]`
+2. **Dispatcher** (`Template:<Category>`) — Chains ancestor semantic templates, then calls display. For a category with parents, the dispatcher calls `Parent/semantic`, then `Child/semantic`, then `Child/display`
+3. **Display** (`Template:<Category>/display`) — Renders all properties grouped by origin category (user-editable stub)
+
+### Inheritance vs Composition
+
+**Inheritance** (IS-A, schema-time): Declared via `parents: [...]` in the schema. A child category's dispatcher chains all ancestor semantic templates automatically. One form, one display, one page template call. Properties grouped under category subheadings.
+
+**Composition** (HAS-ROLES-IN, page-time): Multiple category dispatchers placed on a single wiki page. Each category maintains its own display, form, and semantic storage independently. Users edit each category via `Special:FormEdit/CategoryName/PageName`.
+
+Both rely on modular semantic templates (own-properties-only + own category stamp):
+- Inheritance: pre-generated dispatcher assembles the chain
+- Composition: the page itself assembles by including multiple dispatchers
 
 ### Key Data Flows
 
@@ -78,7 +88,7 @@ Each category generates three templates:
 
 ### Entry Points
 
-- **Special page**: `Special:SemanticSchemas` - Main admin interface for import/export/validation
+- **Special page**: `Special:SemanticSchemas` - Main admin interface for import/export/validation/create
 - **API**: `api.php?action=semanticschemas-hierarchy` - Hierarchy data for visualization
 - **Parser functions**: `{{#SemanticSchemasRenderAllProperties:Category}}`, `{{#SemanticSchemasRenderSection:Category|Section}}`
 - **Maintenance scripts**: `maintenance/regenerateArtifacts.php`
