@@ -15,8 +15,8 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Html\Html;
-use MediaWiki\Language\NamespaceInfo;
 use MediaWiki\SpecialPage\SpecialPage;
+use MediaWiki\Title\NamespaceInfo;
 use MediaWiki\Title\Title;
 use ObjectCacheFactory;
 
@@ -286,8 +286,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			// Generate form
-			$formSuccess = $this->formGenerator->generateAndSaveForm( $category, $chain );
+			// Generate form + composite slot
+			$formSuccess = $this->formGenerator->generateAndSaveAllForms( $category, $chain );
 
 			if ( !$formSuccess ) {
 				$output->addHTML( Html::errorBox(
@@ -1176,12 +1176,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 				try {
 					$chain = $resolver->getInheritanceChain( $name );
 					$effective = $resolver->getEffectiveCategory( $name );
-					$chainEffectives = $resolver->getChainEffectives( $categoryName );
+					$chainEffectives = $resolver->getChainEffectives( $name );
 
 					$this->templateGenerator->generateAllTemplates(
 						$category, $chain, $effective, $chainEffectives
 					);
-					$this->formGenerator->generateAndSaveForm( $category, $chain );
+					$this->formGenerator->generateAndSaveAllForms( $category, $chain );
 
 					if ( $generateDisplay ) {
 						$this->displayGenerator->generateOrUpdateDisplayStub( $effective, $chain );
@@ -1552,16 +1552,10 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
-		// Redirect to FormEdit for the first category
-		$formEditTitle = Title::makeTitleSafe(
-			NS_SPECIAL,
-			'FormEdit/' . $selectedCategories[0] . '/' . $pageTitle->getPrefixedText()
-		);
-		if ( $formEditTitle ) {
-			$output->redirect( $formEditTitle->getFullURL() );
-		} else {
-			$output->redirect( $pageTitle->getFullURL() );
-		}
+		// Redirect to the page itself — CompositeForm needs SMW to index
+		// the categories first (via the job queue), so redirect to the page
+		// view where the user can click "Edit with form" when ready.
+		$output->redirect( $pageTitle->getFullURL() );
 	}
 
 	/**

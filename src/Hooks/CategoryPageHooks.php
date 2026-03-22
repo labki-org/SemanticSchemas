@@ -11,7 +11,7 @@ use Skin;
  * CategoryPageHooks
  *
  * Hook handler for adding "Generate Form" action to Category pages,
- * per-category "Edit fields" actions on content pages, and
+ * composite form editing on multi-category content pages, and
  * rendering hierarchy footers.
  */
 class CategoryPageHooks {
@@ -26,6 +26,8 @@ class CategoryPageHooks {
 	 * Hook: SkinTemplateNavigation::Universal
 	 *
 	 * Adds a "Generate form" action link to the dropdown menu on Category pages.
+	 * For content pages with managed categories, rewrites "Edit with form"
+	 * to use CompositeForm for multi-category pages.
 	 */
 	// phpcs:ignore MediaWiki.NamingConventions.LowerCamelFunctionsName.FunctionName
 	public function onSkinTemplateNavigation__Universal( Skin $skin, array &$links ): void {
@@ -51,21 +53,21 @@ class CategoryPageHooks {
 			return;
 		}
 
-		// Content pages: add per-category "Edit fields" actions
+		// Content pages: rewrite formedit for multi-category, add "Add category"
 		if ( !$title->isContentPage() ) {
 			return;
 		}
 
-		if ( $this->addCategoryEditActions( $title, $links ) ) {
-			$skin->getOutput()->addModules( 'ext.semanticschemas.actionmenu' );
-		}
+		$this->addCategoryEditActions( $title, $links );
 	}
 
 	/**
-	 * Add "Edit [Category] fields" action links for each SemanticSchemas-managed
-	 * category the page belongs to, plus an "Add category" link.
+	 * For content pages with managed categories:
+	 * - 1 category: leave PF's formedit link alone
+	 * - 2+ categories: rewrite formedit href to CompositeForm
+	 * - Always: add "Add category" to views section
 	 *
-	 * @return bool True if items were added
+	 * @return bool True if the page has managed categories
 	 */
 	private function addCategoryEditActions( \MediaWiki\Title\Title $title, array &$links ): bool {
 		$allCategories = $this->categoryStore->getAllCategories();
@@ -93,33 +95,40 @@ class CategoryPageHooks {
 			return false;
 		}
 
-		// Add "Edit [Category] fields" for each managed category
-		$pageName = $title->getPrefixedText();
-		foreach ( $matchedCategories as $catName ) {
-			$formEditTitle = \MediaWiki\Title\Title::makeTitleSafe(
+		// Multi-category: rewrite formedit to use CompositeForm
+		if ( count( $matchedCategories ) > 1 && isset( $links['views']['formedit'] ) ) {
+			$compositeTitle = \MediaWiki\Title\Title::makeTitleSafe(
 				NS_SPECIAL,
-				'FormEdit/' . $catName . '/' . $pageName
+				'FormEdit/CompositeForm/' . $title->getPrefixedText()
 			);
-			if ( $formEditTitle ) {
-				$links['actions']['ss-edit-' . strtolower( str_replace( ' ', '-', $catName ) )] = [
-					'text' => wfMessage( 'semanticschemas-action-edit-fields' )
-						->params( $catName )->text(),
-					'href' => $formEditTitle->getLocalURL(),
-				];
+			if ( $compositeTitle ) {
+				$links['views']['formedit']['href'] = $compositeTitle->getLocalURL();
 			}
 		}
 
-		// Remove PageForms' generic "Edit with form" — our per-category links replace it
-		unset( $links['views']['formedit'] );
-
-		// Add "Add category" action — pass existing categories so the form can pre-check them
-		$links['actions']['ss-add-category'] = [
+		// Insert "Add category" right after formedit so it stays visible
+		// (Vector collapses overflow tabs from the right end)
+		$addCategoryTab = [
 			'text' => wfMessage( 'semanticschemas-action-add-category' )->text(),
 			'href' => SpecialPage::getTitleFor( 'SemanticSchemas', 'create' )->getLocalURL( [
 				'ss-page-name' => $title->getText(),
 				'ss-existing' => implode( '|', $matchedCategories ),
 			] ),
 		];
+
+		$newViews = [];
+		$inserted = false;
+		foreach ( $links['views'] as $key => $value ) {
+			$newViews[$key] = $value;
+			if ( $key === 'formedit' && !$inserted ) {
+				$newViews['ss-add-category'] = $addCategoryTab;
+				$inserted = true;
+			}
+		}
+		if ( !$inserted ) {
+			$newViews['ss-add-category'] = $addCategoryTab;
+		}
+		$links['views'] = $newViews;
 
 		return true;
 	}

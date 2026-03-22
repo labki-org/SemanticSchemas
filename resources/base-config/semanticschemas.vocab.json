@@ -320,6 +320,16 @@
 			"options": {
 				"replaceable": true
 			}
+		},
+		{
+			"page": "CompositeForm",
+			"namespace": "PF_NS_FORM",
+			"contents": {
+				"importFrom": "forms/CompositeForm.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
 		}
 	],
 	"meta": {
