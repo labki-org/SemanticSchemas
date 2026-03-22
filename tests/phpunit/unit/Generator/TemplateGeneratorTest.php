@@ -94,9 +94,17 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '{{{email|}}}', $result );
 	}
 
-	public function testGenerateSemanticTemplateContainsCategoryLink(): void {
+	public function testSemanticTemplateDoesNotContainCategoryStamp(): void {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generator->generateSemanticTemplate( $category );
+
+		// Category stamp moved to dispatcher — semantic template is pure property storage
+		$this->assertStringNotContainsString( '[[Category:', $result );
+	}
+
+	public function testDispatcherTemplateContainsCategoryStamp(): void {
+		$category = new CategoryModel( 'Person' );
+		$result = $this->generateDispatcher( $category );
 
 		$this->assertStringContainsString( '[[Category:Person]]', $result );
 	}
@@ -283,12 +291,11 @@ class TemplateGeneratorTest extends TestCase {
 
 		// Should still generate valid template structure
 		$this->assertStringContainsString( '{{#set:', $result );
-		$this->assertStringContainsString( '[[Category:EmptyCategory]]', $result );
 	}
 
-	public function testCategoryNameWithSpacesHandledCorrectly(): void {
+	public function testCategoryNameWithSpacesInDispatcher(): void {
 		$category = new CategoryModel( 'PhD Student' );
-		$result = $this->generator->generateSemanticTemplate( $category );
+		$result = $this->generateDispatcher( $category );
 
 		$this->assertStringContainsString( '[[Category:PhD Student]]', $result );
 	}
@@ -539,6 +546,25 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringNotContainsString( 'name', $studentSection );
 	}
 
+	public function testDispatcherStampsOnlyLeafCategory(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$student = new CategoryModel( 'Student', [
+			'parents' => [ 'Person' ],
+			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+		] );
+
+		$effective = $student->mergeWithParent( $person );
+		$chain = [ $student, $person ];
+
+		$result = $this->generator->generateDispatcherTemplate( $student, $chain, $effective );
+
+		// Only leaf category should be stamped
+		$this->assertStringContainsString( '[[Category:Student]]', $result );
+		$this->assertStringNotContainsString( '[[Category:Person]]', $result );
+	}
+
 	public function testDispatcherChildOverridesParentProperty(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
@@ -580,17 +606,17 @@ class TemplateGeneratorTest extends TestCase {
 			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
 		] );
 
-		// Person/semantic should have Person's own props + Person category
+		// Person/semantic should have Person's own props only (no category stamp)
 		$personSemantic = $this->generator->generateSemanticTemplate( $person );
 		$this->assertStringContainsString( 'Has name', $personSemantic );
-		$this->assertStringContainsString( '[[Category:Person]]', $personSemantic );
 		$this->assertStringNotContainsString( 'Has student ID', $personSemantic );
+		$this->assertStringNotContainsString( '[[Category:', $personSemantic );
 
-		// Student/semantic should have Student's own props + Student category
+		// Student/semantic should have Student's own props only (no category stamp)
 		$studentSemantic = $this->generator->generateSemanticTemplate( $student );
 		$this->assertStringContainsString( 'Has student ID', $studentSemantic );
-		$this->assertStringContainsString( '[[Category:Student]]', $studentSemantic );
 		$this->assertStringNotContainsString( 'Has name', $studentSemantic );
+		$this->assertStringNotContainsString( '[[Category:', $studentSemantic );
 	}
 
 	/**

@@ -151,8 +151,6 @@ class TemplateGenerator {
 			$out[] = $annotation;
 		}
 
-		$out[] = '';
-		$out[] = '[[Category:' . $name . ']]';
 		$out[] = '</includeonly>';
 
 		return implode( "\n", $out );
@@ -249,6 +247,10 @@ class TemplateGenerator {
 			$this->generateSubobjectDisplaySections( $effectiveCategory )
 		);
 
+		/* Category stamp — leaf category only.
+		 * Ancestor categories are reached via SMW subcategory traversal,
+		 * so we don't stamp them on every page. */
+		$out[] = '[[Category:' . $name . ']]';
 		$out[] = '</includeonly>';
 
 		return implode( "\n", $out );
