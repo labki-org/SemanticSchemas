@@ -770,3 +770,76 @@
 	box-shadow: 0 0 0 3px var(--ss-accent-100);
 }
 
+/* ========================================================
+   Create Page
+   ======================================================== */
+
+.ss-create-cat-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	border: 1px solid var(--ss-slate-200);
+	border-radius: var(--ss-radius-md);
+	overflow: hidden;
+}
+
+.ss-create-cat-item {
+	display: flex;
+	align-items: center;
+	gap: var(--ss-space-3);
+	padding: var(--ss-space-2) var(--ss-space-3);
+	background: #fff;
+	cursor: pointer;
+	transition: background var(--ss-transition-fast);
+	border-bottom: 1px solid var(--ss-slate-100);
+}
+
+.ss-create-cat-item:last-child {
+	border-bottom: none;
+}
+
+.ss-create-cat-item:hover {
+	background: var(--ss-accent-50);
+}
+
+.ss-create-cat-item.is-existing {
+	background: var(--ss-slate-50);
+	opacity: 0.6;
+	cursor: default;
+}
+
+.ss-create-cat-item.is-existing:hover {
+	background: var(--ss-slate-50);
+}
+
+.ss-create-cat-item input[type="checkbox"] {
+	flex-shrink: 0;
+}
+
+.ss-create-cat-label {
+	display: flex;
+	align-items: baseline;
+	gap: var(--ss-space-2);
+	min-width: 0;
+}
+
+.ss-create-cat-label strong {
+	font-size: 0.875rem;
+	color: var(--ss-slate-900);
+	white-space: nowrap;
+}
+
+.ss-create-cat-desc {
+	font-size: 0.8125rem;
+	color: var(--ss-slate-400);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ss-create-actions {
+	margin-top: var(--ss-space-5);
+	padding-top: var(--ss-space-4);
+	border-top: 1px solid var(--ss-slate-100);
+}
+

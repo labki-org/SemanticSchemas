@@ -1354,16 +1354,22 @@ class SpecialSemanticSchemas extends SpecialPage {
 			? array_flip( explode( '|', $existingRaw ) )
 			: [];
 
+		$isAddMode = $prefilledPageName !== '';
 		$formHtml = '';
+
+		// Contextual description
+		$descMsg = $isAddMode
+			? $this->msg( 'semanticschemas-create-add-description' )->params( $prefilledPageName )->text()
+			: $this->msg( 'semanticschemas-create-description' )->text();
+		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-callout' ], $descMsg );
 
 		// Page name input
 		$pageNameAttrs = [
 			'id' => 'ss-page-name',
-			'class' => 'semanticschemas-input',
 			'required' => true,
 			'placeholder' => $this->msg( 'semanticschemas-create-page-name-placeholder' )->text(),
 		];
-		if ( $prefilledPageName !== '' ) {
+		if ( $isAddMode ) {
 			$pageNameAttrs['readonly'] = true;
 		}
 		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group' ],
@@ -1378,6 +1384,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		foreach ( $categories as $cat ) {
 			$catName = $cat->getName();
 			$catLabel = $cat->getLabel();
+			$catDesc = $cat->getDescription();
 			$isExisting = isset( $existingCategories[$catName] );
 			$attrs = [
 				'id' => 'ss-cat-' . htmlspecialchars( $catName ),
@@ -1386,15 +1393,33 @@ class SpecialSemanticSchemas extends SpecialPage {
 			if ( $isExisting ) {
 				$attrs['disabled'] = true;
 			}
-			$checkboxes .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-checkbox-row' ],
+
+			$labelHtml = Html::element( 'strong', [], $catLabel );
+			if ( $isExisting ) {
+				$labelHtml .= Html::rawElement( 'span',
+					[ 'class' => 'semanticschemas-badge is-ok', 'style' => 'margin-left: 8px;' ],
+					'on page'
+				);
+			}
+			if ( $catDesc !== '' ) {
+				$labelHtml .= Html::element( 'span',
+					[ 'class' => 'ss-create-cat-desc' ],
+					$catDesc
+				);
+			}
+
+			$rowClass = 'ss-create-cat-item';
+			if ( $isExisting ) {
+				$rowClass .= ' is-existing';
+			}
+
+			$checkboxes .= Html::rawElement( 'label', [
+				'class' => $rowClass,
+				'for' => 'ss-cat-' . htmlspecialchars( $catName ),
+			],
 				Html::check( 'ss-categories[]', $isExisting, $attrs ) .
-				// Hidden input to ensure disabled checkboxes still submit their value
-				( $isExisting
-					? Html::hidden( 'ss-categories[]', $catName )
-					: '' ) .
-				Html::element( 'label', [
-					'for' => 'ss-cat-' . htmlspecialchars( $catName ),
-				], $catLabel . ( $isExisting ? ' (already on page)' : '' ) )
+				( $isExisting ? Html::hidden( 'ss-categories[]', $catName ) : '' ) .
+				Html::rawElement( 'span', [ 'class' => 'ss-create-cat-label' ], $labelHtml )
 			);
 		}
 
@@ -1402,7 +1427,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			Html::element( 'label', [],
 				$this->msg( 'semanticschemas-create-select-categories' )->text()
 			) .
-			Html::rawElement( 'div', [ 'class' => 'semanticschemas-checkbox-group' ],
+			Html::rawElement( 'div', [ 'class' => 'ss-create-cat-grid' ],
 				$checkboxes
 			)
 		);
@@ -1410,9 +1435,13 @@ class SpecialSemanticSchemas extends SpecialPage {
 		// Submit
 		$formHtml .= Html::hidden( 'ss-action', 'create-page' );
 		$formHtml .= Html::hidden( 'wpEditToken', $this->getUser()->getEditToken() );
-		$formHtml .= Html::submitButton(
-			$this->msg( 'semanticschemas-create-submit' )->text(),
-			[ 'class' => 'semanticschemas-btn semanticschemas-btn-primary' ]
+		$formHtml .= Html::rawElement( 'div', [ 'class' => 'ss-create-actions' ],
+			Html::submitButton(
+				$isAddMode
+					? $this->msg( 'semanticschemas-create-add-submit' )->text()
+					: $this->msg( 'semanticschemas-create-submit' )->text(),
+				[ 'class' => 'mw-ui-button mw-ui-progressive' ]
+			)
 		);
 
 		$form = Html::rawElement( 'form', [
@@ -1421,9 +1450,16 @@ class SpecialSemanticSchemas extends SpecialPage {
 			'class' => 'semanticschemas-create-form',
 		], $formHtml );
 
+		$cardTitle = $isAddMode
+			? $this->msg( 'semanticschemas-create-add-title' )->text()
+			: $this->msg( 'semanticschemas-create-title' )->text();
+		$cardSubtitle = $isAddMode
+			? $this->msg( 'semanticschemas-create-add-subtitle' )->params( $prefilledPageName )->text()
+			: $this->msg( 'semanticschemas-tab-create-subtext' )->text();
+
 		$output->addHTML( $this->wrapShell( $this->renderCard(
-			$this->msg( 'semanticschemas-create-title' )->text(),
-			$this->msg( 'semanticschemas-tab-create-subtext' )->text(),
+			$cardTitle,
+			$cardSubtitle,
 			$form
 		) ) );
 	}
