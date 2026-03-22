@@ -50,7 +50,10 @@
 	],
 	"HookHandlers": {
 		"CategoryPageHooks": {
-			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\CategoryPageHooks"
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\CategoryPageHooks",
+			"services": [
+				"SemanticSchemas.WikiCategoryStore"
+			]
 		},
 		"SetupHooks": {
 			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks"
@@ -83,6 +86,9 @@
 		"ext.semanticschemas.actionmenu": {
 			"scripts": [
 				"resources/ext.semanticschemas.actionmenu.js"
+			],
+			"messages": [
+				"semanticschemas-action-menu-label"
 			],
 			"localBasePath": "",
 			"remoteExtPath": "SemanticSchemas",
@@ -168,7 +174,9 @@
 				"SemanticSchemas.OntologyInspector",
 				"SemanticSchemas.StateManager",
 				"SemanticSchemas.PageHashComputer",
-				"ObjectCacheFactory"
+				"ObjectCacheFactory",
+				"SemanticSchemas.PageCreator",
+				"NamespaceInfo"
 			]
 		}
 	},

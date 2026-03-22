@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -121,16 +122,10 @@ class FormGenerator {
 		/* ----------------------------------------------------------
 		 * Hierarchy Preview (if parent category property exists)
 		 * -------------------------------------------------------- */
-		// Build an effective properties list from the chain for parent property detection
-		$allPropsForDetection = [];
-		foreach ( $inheritanceChain as $cat ) {
-			$allPropsForDetection = array_merge(
-				$allPropsForDetection,
-				$cat->getRequiredProperties(),
-				$cat->getOptionalProperties()
-			);
-		}
-		$parentProp = $this->findParentCategoryPropertyFromList( array_unique( $allPropsForDetection ) );
+		$allPropsForDetection = array_unique( array_merge(
+			...array_map( static fn ( $cat ) => $cat->getAllProperties(), $inheritanceChain )
+		) );
+		$parentProp = $this->findParentCategoryPropertyFromList( $allPropsForDetection );
 		if ( $parentProp !== null ) {
 			$lines[] = '{{#semanticschemas_load_form_preview:}}';
 			$lines[] = '';
@@ -190,13 +185,7 @@ class FormGenerator {
 		$out = [];
 		$hasInheritance = count( $inheritanceChain ) > 1;
 
-		// Build property ownership map (most-specific wins)
-		$propertyOwner = [];
-		foreach ( array_reverse( $inheritanceChain ) as $cat ) {
-			foreach ( $cat->getAllProperties() as $prop ) {
-				$propertyOwner[$prop] = $cat->getName();
-			}
-		}
+		$propertyOwner = InheritanceResolver::buildPropertyOwnerMap( $inheritanceChain );
 
 		// Iterate root-first
 		foreach ( array_reverse( $inheritanceChain ) as $chainCat ) {

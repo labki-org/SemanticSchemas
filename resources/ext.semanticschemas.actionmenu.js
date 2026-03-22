@@ -35,7 +35,7 @@
 
 		var label = document.createElement( 'span' );
 		label.className = 'vector-menu-heading-label';
-		label.textContent = 'SemanticSchemas';
+		label.textContent = mw.msg( 'semanticschemas-action-menu-label' );
 		heading.appendChild( label );
 
 		var content = document.createElement( 'div' );

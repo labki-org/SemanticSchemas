@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
-use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Page\Article;
 use MediaWiki\SpecialPage\SpecialPage;
 use Skin;
@@ -15,6 +15,12 @@ use Skin;
  * rendering hierarchy footers.
  */
 class CategoryPageHooks {
+
+	private WikiCategoryStore $categoryStore;
+
+	public function __construct( WikiCategoryStore $categoryStore ) {
+		$this->categoryStore = $categoryStore;
+	}
 
 	/**
 	 * Hook: SkinTemplateNavigation::Universal
@@ -62,11 +68,7 @@ class CategoryPageHooks {
 	 * @return bool True if items were added
 	 */
 	private function addCategoryEditActions( \MediaWiki\Title\Title $title, array &$links ): bool {
-		$services = \MediaWiki\MediaWikiServices::getInstance();
-		$categoryStore = SemanticSchemasServices::getWikiCategoryStore( $services );
-
-		// Get all managed category names
-		$allCategories = $categoryStore->getAllCategories();
+		$allCategories = $this->categoryStore->getAllCategories();
 		if ( empty( $allCategories ) ) {
 			return false;
 		}

@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
@@ -131,45 +132,51 @@ class DisplayStubGenerator {
 		CategoryModel $effectiveCategory,
 		array $inheritanceChain
 	): string {
-		// Build property ownership map (most-specific wins)
-		$propertyOwner = [];
-		foreach ( array_reverse( $inheritanceChain ) as $cat ) {
-			foreach ( $cat->getAllProperties() as $prop ) {
-				$propertyOwner[$prop] = $cat->getName();
-			}
-		}
-
+		$propertyOwner = InheritanceResolver::buildPropertyOwnerMap( $inheritanceChain );
 		$content = '';
 
 		// Iterate root-first
 		foreach ( array_reverse( $inheritanceChain ) as $chainCat ) {
 			$catName = $chainCat->getName();
-
-			// Collect properties owned by this category
-			$ownProps = [];
-			foreach ( $propertyOwner as $prop => $owner ) {
-				if ( $owner === $catName ) {
-					$ownProps[] = $prop;
-				}
-			}
+			$ownProps = $this->getOwnedProperties( $propertyOwner, $catName );
 
 			if ( empty( $ownProps ) ) {
 				continue;
 			}
 
-			// Category heading with inline edit link
-			$catLabel = $chainCat->getLabel();
-			$editLink = '<span style="float: right; font-weight: normal; font-size: 0.8em;">'
-				. '[[Special:FormEdit/' . $catName . '/{{FULLPAGENAME}}|edit]]</span>';
-			$content .= "|-\n";
-			$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
-				. $catLabel . ' ' . $editLink . "\n";
-
-			// Render properties for this category
+			$content .= $this->buildCategoryHeadingRow( $catName, $chainCat->getLabel() );
 			$content .= $this->generatePropertyRows( $effectiveCategory, $ownProps );
 		}
 
 		return $content;
+	}
+
+	/**
+	 * Build a category heading row with inline edit link for display tables.
+	 */
+	private function buildCategoryHeadingRow( string $catName, string $catLabel ): string {
+		$editLink = '<span style="float: right; font-weight: normal; font-size: 0.8em;">'
+			. '[[Special:FormEdit/' . $catName . '/{{FULLPAGENAME}}|edit]]</span>';
+		return "|-\n"
+			. '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
+			. $catLabel . ' ' . $editLink . "\n";
+	}
+
+	/**
+	 * Collect properties owned by a specific category from the ownership map.
+	 *
+	 * @param array<string,string> $propertyOwner
+	 * @param string $catName
+	 * @return string[]
+	 */
+	private function getOwnedProperties( array $propertyOwner, string $catName ): array {
+		$ownProps = [];
+		foreach ( $propertyOwner as $prop => $owner ) {
+			if ( $owner === $catName ) {
+				$ownProps[] = $prop;
+			}
+		}
+		return $ownProps;
 	}
 
 	private function generateTableWikitext(
@@ -226,36 +233,18 @@ class DisplayStubGenerator {
 		$content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
 
 		if ( !empty( $inheritanceChain ) ) {
-			// Build property ownership map (most-specific wins)
-			$propertyOwner = [];
-			foreach ( array_reverse( $inheritanceChain ) as $cat ) {
-				foreach ( $cat->getAllProperties() as $prop ) {
-					$propertyOwner[$prop] = $cat->getName();
-				}
-			}
+			$propertyOwner = InheritanceResolver::buildPropertyOwnerMap( $inheritanceChain );
 
 			// Iterate root-first; within each category, render custom sections if defined
 			foreach ( array_reverse( $inheritanceChain ) as $chainCat ) {
 				$catName = $chainCat->getName();
-
-				$ownProps = [];
-				foreach ( $propertyOwner as $prop => $owner ) {
-					if ( $owner === $catName ) {
-						$ownProps[] = $prop;
-					}
-				}
+				$ownProps = $this->getOwnedProperties( $propertyOwner, $catName );
 
 				if ( empty( $ownProps ) ) {
 					continue;
 				}
 
-				// Category heading with inline edit link
-				$catLabel = $chainCat->getLabel();
-				$editLink = '<span style="float: right; font-weight: normal; font-size: 0.8em;">'
-					. '[[Special:FormEdit/' . $catName . '/{{FULLPAGENAME}}|edit]]</span>';
-				$content .= "|-\n";
-				$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
-					. $catLabel . ' ' . $editLink . "\n";
+				$content .= $this->buildCategoryHeadingRow( $catName, $chainCat->getLabel() );
 
 				// Check for custom sections within this category
 				$sections = $chainCat->getDisplaySections();

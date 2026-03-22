@@ -8,13 +8,14 @@ use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
-use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
+use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Html\Html;
+use MediaWiki\Language\NamespaceInfo;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
 use ObjectCacheFactory;
@@ -59,6 +60,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private StateManager $stateManager;
 	private PageHashComputer $hashComputer;
 	private ObjectCacheFactory $objectCacheFactory;
+	private PageCreator $pageCreator;
+	private NamespaceInfo $namespaceInfo;
 
 	private function getRateLimitPerHour(): int {
 		$config = $this->getConfig();
@@ -76,7 +79,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 		OntologyInspector $inspector,
 		StateManager $stateManager,
 		PageHashComputer $hashComputer,
-		ObjectCacheFactory $objectCacheFactory
+		ObjectCacheFactory $objectCacheFactory,
+		PageCreator $pageCreator,
+		NamespaceInfo $namespaceInfo
 	) {
 		parent::__construct( 'SemanticSchemas', 'editinterface' );
 		$this->categoryStore = $categoryStore;
@@ -89,6 +94,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$this->stateManager = $stateManager;
 		$this->hashComputer = $hashComputer;
 		$this->objectCacheFactory = $objectCacheFactory;
+		$this->pageCreator = $pageCreator;
+		$this->namespaceInfo = $namespaceInfo;
 	}
 
 	/**
@@ -263,7 +270,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			// Resolve inheritance
 			$chain = $resolver->getInheritanceChain( $categoryName );
 			$effective = $resolver->getEffectiveCategory( $categoryName );
-			$chainEffectives = $this->buildChainEffectives( $chain, $resolver );
+			$chainEffectives = $resolver->getChainEffectives( $categoryName );
 
 			// Generate templates (always regenerate auto-generated ones)
 			$templateResult = $this->templateGenerator->generateAllTemplates(
@@ -1169,7 +1176,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				try {
 					$chain = $resolver->getInheritanceChain( $name );
 					$effective = $resolver->getEffectiveCategory( $name );
-					$chainEffectives = $this->buildChainEffectives( $chain, $resolver );
+					$chainEffectives = $resolver->getChainEffectives( $categoryName );
 
 					$this->templateGenerator->generateAllTemplates(
 						$category, $chain, $effective, $chainEffectives
@@ -1243,21 +1250,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$single = $this->categoryStore->readCategory( $categoryName );
 		return $single ? [ $single ] : [];
-	}
-
-	/**
-	 * Build a map of category name → effective CategoryModel for each category in the chain.
-	 *
-	 * @param CategoryModel[] $chain
-	 * @param InheritanceResolver $resolver
-	 * @return array<string,CategoryModel>
-	 */
-	private function buildChainEffectives( array $chain, InheritanceResolver $resolver ): array {
-		$effectives = [];
-		foreach ( $chain as $cat ) {
-			$effectives[$cat->getName()] = $resolver->getEffectiveCategory( $cat->getName() );
-		}
-		return $effectives;
 	}
 
 	/**
@@ -1419,7 +1411,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			if ( $isExisting ) {
 				$labelHtml .= Html::rawElement( 'span',
 					[ 'class' => 'semanticschemas-badge is-ok', 'style' => 'margin-left: 8px;' ],
-					'on page'
+					$this->msg( 'semanticschemas-create-on-page' )->text()
 				);
 			}
 			if ( $catDesc !== '' ) {
@@ -1493,7 +1485,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$request = $this->getRequest();
 
 		$pageName = trim( $request->getText( 'ss-page-name' ) );
-		$selectedCategories = $request->getArray( 'ss-categories', [] );
+		$selectedCategories = array_values( array_unique(
+			$request->getArray( 'ss-categories', [] )
+		) );
 
 		if ( $pageName === '' ) {
 			$output->addHTML( Html::errorBox(
@@ -1530,8 +1524,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$firstCat = $this->categoryStore->readCategory( $selectedCategories[0] );
 		$ns = NS_MAIN;
 		if ( $firstCat && $firstCat->getTargetNamespace() !== null ) {
-			$nsIndex = \MediaWiki\MediaWikiServices::getInstance()
-				->getNamespaceInfo()
+			$nsIndex = $this->namespaceInfo
 				->getCanonicalIndex( strtolower( $firstCat->getTargetNamespace() ) );
 			if ( $nsIndex !== null ) {
 				$ns = $nsIndex;
@@ -1546,11 +1539,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
-		// Create the page with boilerplate
-		$pageCreator = SemanticSchemasServices::getPageCreator(
-			\MediaWiki\MediaWikiServices::getInstance()
-		);
-		$success = $pageCreator->createOrUpdatePage(
+		$success = $this->pageCreator->createOrUpdatePage(
 			$pageTitle,
 			$pageContent,
 			'SemanticSchemas: Created multi-category page'

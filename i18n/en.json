@@ -152,5 +152,7 @@
 	"semanticschemas-create-add-submit": "Add Category",
 	"semanticschemas-create-failed": "Failed to create page \"$1\".",
 	"semanticschemas-action-edit-fields": "Edit $1 fields",
-	"semanticschemas-action-add-category": "Add category"
+	"semanticschemas-action-add-category": "Add category",
+	"semanticschemas-create-on-page": "on page",
+	"semanticschemas-action-menu-label": "SemanticSchemas"
 }
