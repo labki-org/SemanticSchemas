@@ -1347,19 +1347,30 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return;
 		}
 
+		// Pre-populate from query params (e.g. when arriving via "Add category" action)
+		$prefilledPageName = $request->getText( 'ss-page-name', '' );
+		$existingRaw = $request->getText( 'ss-existing', '' );
+		$existingCategories = $existingRaw !== ''
+			? array_flip( explode( '|', $existingRaw ) )
+			: [];
+
 		$formHtml = '';
 
 		// Page name input
+		$pageNameAttrs = [
+			'id' => 'ss-page-name',
+			'class' => 'semanticschemas-input',
+			'required' => true,
+			'placeholder' => $this->msg( 'semanticschemas-create-page-name-placeholder' )->text(),
+		];
+		if ( $prefilledPageName !== '' ) {
+			$pageNameAttrs['readonly'] = true;
+		}
 		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group' ],
 			Html::element( 'label', [ 'for' => 'ss-page-name' ],
 				$this->msg( 'semanticschemas-create-page-name' )->text()
 			) .
-			Html::input( 'ss-page-name', '', 'text', [
-				'id' => 'ss-page-name',
-				'class' => 'semanticschemas-input',
-				'required' => true,
-				'placeholder' => $this->msg( 'semanticschemas-create-page-name-placeholder' )->text(),
-			] )
+			Html::input( 'ss-page-name', $prefilledPageName, 'text', $pageNameAttrs )
 		);
 
 		// Category checkboxes
@@ -1367,14 +1378,23 @@ class SpecialSemanticSchemas extends SpecialPage {
 		foreach ( $categories as $cat ) {
 			$catName = $cat->getName();
 			$catLabel = $cat->getLabel();
+			$isExisting = isset( $existingCategories[$catName] );
+			$attrs = [
+				'id' => 'ss-cat-' . htmlspecialchars( $catName ),
+				'value' => $catName,
+			];
+			if ( $isExisting ) {
+				$attrs['disabled'] = true;
+			}
 			$checkboxes .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-checkbox-row' ],
-				Html::check( 'ss-categories[]', false, [
-					'id' => 'ss-cat-' . htmlspecialchars( $catName ),
-					'value' => $catName,
-				] ) .
+				Html::check( 'ss-categories[]', $isExisting, $attrs ) .
+				// Hidden input to ensure disabled checkboxes still submit their value
+				( $isExisting
+					? Html::hidden( 'ss-categories[]', $catName )
+					: '' ) .
 				Html::element( 'label', [
 					'for' => 'ss-cat-' . htmlspecialchars( $catName ),
-				], $catLabel )
+				], $catLabel . ( $isExisting ? ' (already on page)' : '' ) )
 			);
 		}
 
