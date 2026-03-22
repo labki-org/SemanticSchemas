@@ -263,9 +263,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 			// Resolve inheritance
 			$chain = $resolver->getInheritanceChain( $categoryName );
 			$effective = $resolver->getEffectiveCategory( $categoryName );
+			$chainEffectives = $this->buildChainEffectives( $chain, $resolver );
 
 			// Generate templates (always regenerate auto-generated ones)
-			$templateResult = $this->templateGenerator->generateAllTemplates( $category, $chain, $effective );
+			$templateResult = $this->templateGenerator->generateAllTemplates(
+				$category, $chain, $effective, $chainEffectives
+			);
 
 			if ( !$templateResult['success'] ) {
 				$output->addHTML( Html::errorBox(
@@ -1166,8 +1169,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 				try {
 					$chain = $resolver->getInheritanceChain( $name );
 					$effective = $resolver->getEffectiveCategory( $name );
+					$chainEffectives = $this->buildChainEffectives( $chain, $resolver );
 
-					$this->templateGenerator->generateAllTemplates( $category, $chain, $effective );
+					$this->templateGenerator->generateAllTemplates(
+						$category, $chain, $effective, $chainEffectives
+					);
 					$this->formGenerator->generateAndSaveForm( $category, $chain );
 
 					if ( $generateDisplay ) {
@@ -1237,6 +1243,21 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$single = $this->categoryStore->readCategory( $categoryName );
 		return $single ? [ $single ] : [];
+	}
+
+	/**
+	 * Build a map of category name → effective CategoryModel for each category in the chain.
+	 *
+	 * @param CategoryModel[] $chain
+	 * @param InheritanceResolver $resolver
+	 * @return array<string,CategoryModel>
+	 */
+	private function buildChainEffectives( array $chain, InheritanceResolver $resolver ): array {
+		$effectives = [];
+		foreach ( $chain as $cat ) {
+			$effectives[$cat->getName()] = $resolver->getEffectiveCategory( $cat->getName() );
+		}
+		return $effectives;
 	}
 
 	/**

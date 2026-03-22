@@ -100,9 +100,13 @@ class RegenerateArtifacts extends Maintenance {
 
 		$chain = $resolver->getInheritanceChain( $name );
 		$effective = $resolver->getEffectiveCategory( $name );
+		$chainEffectives = [];
+		foreach ( $chain as $cat ) {
+			$chainEffectives[$cat->getName()] = $resolver->getEffectiveCategory( $cat->getName() );
+		}
 
 		// Generate semantic + dispatcher templates
-		$result = $templateGenerator->generateAllTemplates( $category, $chain, $effective );
+		$result = $templateGenerator->generateAllTemplates( $category, $chain, $effective, $chainEffectives );
 		if ( $result['success'] ) {
 			$this->output( "  ✓ Generated semantic and dispatcher templates\n" );
 		} else {
