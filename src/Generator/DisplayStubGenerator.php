@@ -178,13 +178,11 @@ class DisplayStubGenerator {
 		$content .= "<includeonly>\n";
 		$content .= "{| class=\"wikitable source-semanticschemas\"\n";
 
-		$hasInheritance = count( $inheritanceChain ) > 1;
-
-		if ( !$hasInheritance ) {
+		if ( !empty( $inheritanceChain ) ) {
+			$content .= $this->generateGroupedPropertyRows( $category, $inheritanceChain );
+		} else {
 			$content .= "! Property !! Value\n";
 			$content .= $this->generatePropertyRows( $category );
-		} else {
-			$content .= $this->generateGroupedPropertyRows( $category, $inheritanceChain );
 		}
 
 		$content .= "|}\n";
@@ -205,11 +203,10 @@ class DisplayStubGenerator {
 		$captionStyle = 'font-size: 120%; font-weight: bold; background-color: #eaecf0;';
 		$content .= '|+ style="' . $captionStyle . '" | ' . $category->getLabel() . "\n";
 
-		$hasInheritance = count( $inheritanceChain ) > 1;
-		if ( !$hasInheritance ) {
-			$content .= $this->generatePropertyRows( $category );
-		} else {
+		if ( !empty( $inheritanceChain ) ) {
 			$content .= $this->generateGroupedPropertyRows( $category, $inheritanceChain );
+		} else {
+			$content .= $this->generatePropertyRows( $category );
 		}
 
 		$content .= "|}\n";
@@ -226,9 +223,7 @@ class DisplayStubGenerator {
 		$content .= "<includeonly>\n";
 		$content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
 
-		$hasInheritance = count( $inheritanceChain ) > 1;
-
-		if ( $hasInheritance ) {
+		if ( !empty( $inheritanceChain ) ) {
 			// Build property ownership map (most-specific wins)
 			$propertyOwner = [];
 			foreach ( array_reverse( $inheritanceChain ) as $cat ) {
