@@ -106,20 +106,18 @@ class TemplateGenerator {
 	 *
 	 * Semantic templates embed their parent templates via MW template transclusion,
 	 * forming a self-chaining inheritance hierarchy. Each template:
-	 * 1. Calls its direct parents' semantic templates (forwarding all effective params)
+	 * 1. Calls its direct parents' semantic templates (forwarding only that parent's
+	 *    effective props — the minimum needed for the parent's subtree)
 	 * 2. Stores its own properties via #set
 	 *
-	 * Extra named params are silently ignored by MW, so forwarding the full
-	 * effective param set to each parent is safe.
-	 *
 	 * @param CategoryModel $category The raw (unmerged) category
-	 * @param string[] $allEffectiveProps All properties from the effective category
-	 *                                   (used for param forwarding to parents)
+	 * @param array<string,CategoryModel> $chainEffectives Map of category name → effective
+	 *        model, used to determine which params each parent needs
 	 * @return string
 	 */
 	public function generateSemanticTemplate(
 		CategoryModel $category,
-		array $allEffectiveProps = []
+		array $chainEffectives = []
 	): string {
 		$name = trim( $category->getName() );
 		if ( $name === '' ) {
@@ -135,16 +133,22 @@ class TemplateGenerator {
 		$out[] = 'Semantic template for Category:' . $name;
 		$out[] = '</noinclude><includeonly>';
 
-		/* Embed direct parent semantic templates (MW template inheritance) */
+		/* Embed direct parent semantic templates (MW template inheritance).
+		 * Each parent call forwards only that parent's effective props —
+		 * the minimum set needed for the parent's own subtree. */
 		$parents = $category->getParents();
-		if ( !empty( $parents ) && !empty( $allEffectiveProps ) ) {
-			sort( $allEffectiveProps );
+		if ( !empty( $parents ) && !empty( $chainEffectives ) ) {
 			foreach ( $parents as $parentName ) {
-				$out = array_merge(
-					$out,
-					$this->generateTemplateCall( $parentName . '/semantic', $allEffectiveProps )
-				);
-				$out[] = '';
+				$parentEffective = $chainEffectives[$parentName] ?? null;
+				if ( $parentEffective ) {
+					$parentProps = $parentEffective->getAllProperties();
+					sort( $parentProps );
+					$out = array_merge(
+						$out,
+						$this->generateTemplateCall( $parentName . '/semantic', $parentProps )
+					);
+					$out[] = '';
+				}
 			}
 		}
 
@@ -407,9 +411,7 @@ class TemplateGenerator {
 		foreach ( $inheritanceChain as $chainCat ) {
 			$catName = $chainCat->getName();
 			try {
-				$catEffective = $chainEffectives[$catName] ?? $chainCat;
-				$allEffectiveProps = $catEffective->getAllProperties();
-				$content = $this->generateSemanticTemplate( $chainCat, $allEffectiveProps );
+				$content = $this->generateSemanticTemplate( $chainCat, $chainEffectives );
 				$this->updateTemplate( $catName . '/semantic', $content );
 			} catch ( \Exception $e ) {
 				$errors[] = "Error generating semantic template for $catName: " . $e->getMessage();

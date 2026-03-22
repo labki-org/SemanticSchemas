@@ -540,21 +540,29 @@ class TemplateGeneratorTest extends TestCase {
 
 		$studentEffectiveProps = [ 'Has name', 'Has student ID' ];
 
+		// Build chain effectives map
+		$personEffective = $person;
+		$studentEffective = $student->mergeWithParent( $person );
+		$chainEffectives = [
+			'Person' => $personEffective,
+			'Student' => $studentEffective,
+		];
+
 		// Person/semantic: own props only, no parent calls, no category stamp
-		$personSemantic = $this->generator->generateSemanticTemplate( $person );
+		$personSemantic = $this->generator->generateSemanticTemplate( $person, $chainEffectives );
 		$this->assertStringContainsString( 'Has name', $personSemantic );
 		$this->assertStringNotContainsString( 'Has student ID', $personSemantic );
 		$this->assertStringNotContainsString( '[[Category:', $personSemantic );
 		$this->assertStringNotContainsString( '/semantic', $personSemantic );
 
 		// Student/semantic: embeds Person/semantic, then #set own props
-		$studentSemantic = $this->generator->generateSemanticTemplate( $student, $studentEffectiveProps );
+		$studentSemantic = $this->generator->generateSemanticTemplate( $student, $chainEffectives );
 		$this->assertStringContainsString( '{{Person/semantic', $studentSemantic );
 		$this->assertStringContainsString( 'Has student ID', $studentSemantic );
 		$this->assertStringNotContainsString( '[[Category:', $studentSemantic );
 	}
 
-	public function testSemanticTemplateForwardsAllEffectiveParamsToParent(): void {
+	public function testSemanticTemplateForwardsOnlyParentEffectiveParams(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
 		] );
@@ -563,14 +571,18 @@ class TemplateGeneratorTest extends TestCase {
 			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
 		] );
 
-		$effectiveProps = [ 'Has name', 'Has student ID' ];
+		$chainEffectives = [
+			'Person' => $person,
+			'Student' => $student->mergeWithParent( $person ),
+		];
 
-		$result = $this->generator->generateSemanticTemplate( $student, $effectiveProps );
+		$result = $this->generator->generateSemanticTemplate( $student, $chainEffectives );
 
-		// The Person/semantic call should forward ALL effective params
+		// The Person/semantic call should forward only Person's effective params
 		$personCall = $this->extractTemplateCall( $result, 'Person/semantic' );
 		$this->assertStringContainsString( 'name', $personCall );
-		$this->assertStringContainsString( 'student_id', $personCall );
+		// Student-only param should NOT be forwarded to Person
+		$this->assertStringNotContainsString( 'student_id', $personCall );
 	}
 
 	/**
