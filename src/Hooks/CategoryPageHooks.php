@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Page\Article;
 use MediaWiki\SpecialPage\SpecialPage;
 use Skin;
@@ -9,10 +10,17 @@ use Skin;
 /**
  * CategoryPageHooks
  *
- * Hook handler for adding "Generate Form" action to Category pages
- * and rendering hierarchy footers.
+ * Hook handler for adding "Generate Form" action to Category pages,
+ * per-category "Edit fields" actions on content pages, and
+ * rendering hierarchy footers.
  */
 class CategoryPageHooks {
+
+	private WikiCategoryStore $categoryStore;
+
+	public function __construct( WikiCategoryStore $categoryStore ) {
+		$this->categoryStore = $categoryStore;
+	}
 
 	/**
 	 * Hook: SkinTemplateNavigation::Universal
@@ -24,31 +32,96 @@ class CategoryPageHooks {
 		$title = $skin->getTitle();
 		$user = $skin->getUser();
 
-		// Only on Category pages
-		if ( !$title || !$title->inNamespace( NS_CATEGORY ) ) {
+		if ( !$title || !$title->exists() ) {
 			return;
 		}
 
-		// Only on existing pages
-		if ( !$title->exists() ) {
+		// Category pages: add "Generate Form" action
+		if ( $title->inNamespace( NS_CATEGORY ) ) {
+			if ( $user->isAllowed( 'editinterface' ) ) {
+				$categoryName = $title->getText();
+				$links['actions']['ss-generate-form'] = [
+					'text' => wfMessage( 'semanticschemas-action-generate-form' )->text(),
+					'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [
+						'action' => 'generate-form',
+						'category' => $categoryName,
+					] ),
+				];
+			}
 			return;
 		}
 
-		// Check permission (same as Special:SemanticSchemas)
-		if ( !$user->isAllowed( 'editinterface' ) ) {
+		// Content pages: add per-category "Edit fields" actions
+		if ( !$title->isContentPage() ) {
 			return;
 		}
 
-		$categoryName = $title->getText();
+		if ( $this->addCategoryEditActions( $title, $links ) ) {
+			$skin->getOutput()->addModules( 'ext.semanticschemas.actionmenu' );
+		}
+	}
 
-		// Add "Generate Form" action to the dropdown menu
-		$links['actions']['ss-generate-form'] = [
-			'text' => wfMessage( 'semanticschemas-action-generate-form' )->text(),
-			'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [
-				'action' => 'generate-form',
-				'category' => $categoryName,
+	/**
+	 * Add "Edit [Category] fields" action links for each SemanticSchemas-managed
+	 * category the page belongs to, plus an "Add category" link.
+	 *
+	 * @return bool True if items were added
+	 */
+	private function addCategoryEditActions( \MediaWiki\Title\Title $title, array &$links ): bool {
+		$allCategories = $this->categoryStore->getAllCategories();
+		if ( empty( $allCategories ) ) {
+			return false;
+		}
+
+		$managedNames = [];
+		foreach ( $allCategories as $cat ) {
+			$managedNames[$cat->getName()] = true;
+		}
+
+		// Get this page's categories
+		$pageCategories = $title->getParentCategories();
+		$matchedCategories = [];
+		foreach ( $pageCategories as $catTitle => $pageName ) {
+			// $catTitle is like "Category:Person"
+			$catName = preg_replace( '/^[^:]+:/', '', $catTitle );
+			if ( isset( $managedNames[$catName] ) ) {
+				$matchedCategories[] = $catName;
+			}
+		}
+
+		if ( empty( $matchedCategories ) ) {
+			return false;
+		}
+
+		// Add "Edit [Category] fields" for each managed category
+		$pageName = $title->getPrefixedText();
+		foreach ( $matchedCategories as $catName ) {
+			$formEditTitle = \MediaWiki\Title\Title::makeTitleSafe(
+				NS_SPECIAL,
+				'FormEdit/' . $catName . '/' . $pageName
+			);
+			if ( $formEditTitle ) {
+				$links['actions']['ss-edit-' . strtolower( str_replace( ' ', '-', $catName ) )] = [
+					'text' => wfMessage( 'semanticschemas-action-edit-fields' )
+						->params( $catName )->text(),
+					'href' => $formEditTitle->getLocalURL(),
+				];
+			}
+		}
+
+		// Remove PageForms' generic "Edit with form" — our per-category links replace it
+		unset( $links['views']['formedit'] );
+
+		// Add "Add category" action — pass existing categories so the form can pre-check them
+		$links['actions']['ss-add-category'] = [
+			'text' => wfMessage( 'semanticschemas-action-add-category' )->text(),
+			'href' => SpecialPage::getTitleFor( 'SemanticSchemas', 'create' )->getLocalURL( [
+				'ss-page-name' => $title->getText(),
+				'ss-existing' => implode( '|', $matchedCategories ),
 			] ),
 		];
+
+		return true;
 	}
 
 	/**
