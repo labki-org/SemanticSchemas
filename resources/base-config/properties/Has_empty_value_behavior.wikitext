@@ -1,0 +1,9 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::What to do when a field has no value.]]
+[[Display label::Empty value behavior]]
+[[Allows value::show]]
+[[Allows value::hide]]
+[[Has input type::radiobutton]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

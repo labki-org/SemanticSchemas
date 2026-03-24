@@ -736,8 +736,8 @@ class SchemaValidator {
 		$categories = $schema['categories'];
 
 		foreach ( $categories as $name => $data ) {
-			// Meta-categories (targetNamespace === name) don't have display/forms
-			// config in extension-config.json yet — skip these warnings.
+			// Meta-categories (targetNamespace === name) legitimately have no
+			// display format or form config — skip these warnings.
 			$isMetaCategory = isset( $data['targetNamespace'] )
 				&& $data['targetNamespace'] === $name;
 

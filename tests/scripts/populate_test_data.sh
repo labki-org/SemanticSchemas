@@ -81,7 +81,7 @@ create_property "Has template" "Points to a template for generic usage." "Page" 
 # ==========================================
 # Core Meta-Properties
 # ==========================================
-echo "  - Core meta-properties (created by extension-config.json)..."
+echo "  - Core meta-properties (created by SMW importer via update.php)..."
 
 # ==========================================
 # Property Type 1: Text Properties
@@ -769,9 +769,9 @@ echo ""
 
 echo "==> Creating Template Infrastructure..."
 
-# Note: Template:Property/Default, Template:Property/Email, and Template:Property/Link
-# are now installed automatically by the extension via extension-config.json
-# (See resources/extension-config.json "templates" section)
+# Note: Template:Property/Default, Template:Property/Email, Template:Property/Link,
+# and Template:Property/Page are installed automatically by SMW's content importer
+# (See resources/base-config/semanticschemas.vocab.json)
 
 # Template:Property/Typography (for Biography) - custom styling, not bundled with extension
 create_page "Template:Property/Typography" "<includeonly>'''{{{value|}}}'''</includeonly>"

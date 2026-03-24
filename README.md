@@ -25,8 +25,7 @@ Quick start:
 1. Clone to your MediaWiki `extensions` directory
 2. Install Composer dependencies: `composer install --no-dev`
 3. Add `wfLoadExtension( 'SemanticSchemas' );` to `LocalSettings.php`
-4. Run `php maintenance/run.php SemanticSchemas:InstallConfig` to install necessary pages
-5. Run `php maintenance/update.php`
+4. Run `php maintenance/run.php update` (installs base configuration automatically via SMW's content importer)
 
 ## Configuration
 

@@ -40,48 +40,21 @@ wfLoadExtension( 'SemanticSchemas' );
 
 ### Step 4: Run Database Updates
 
-Run the MediaWiki update script to set up the extension:
+Run the MediaWiki update script to set up the extension and install base configuration:
 
 ```bash
 php maintenance/update.php
 ```
 
-### Step 5: Install Base Configuration
-
-SemanticSchemas requires a set of foundational wiki pages (meta-categories, meta-properties, and display templates) to function properly. These pages define the schema structure that the extension uses to manage your ontology.
-
-**Via the Web Interface (Recommended):**
-
-1. Navigate to `Special:SemanticSchemas`
-2. You will see a banner prompting you to install the base configuration
-3. Click **"Install Base Configuration"**
-4. The automated installer will create pages in 5 layers:
-   - **Layer 0: Templates** - Property display templates (e.g., `Template:Property/Default`)
-   - **Layer 1: Property Types** - Registers property datatypes with SMW
-   - **Layer 2: Property Annotations** - Adds labels, descriptions, and constraints
-   - **Layer 3: Subobjects** - Creates subobject type definitions
-   - **Layer 4: Categories** - Creates meta-categories (Category, Property, Subobject)
-5. Wait for each layer to complete before the next begins (the UI handles this automatically)
-
-**Via Command Line:**
-
-Alternatively, you can install via the maintenance script:
-
-```bash
-php extensions/SemanticSchemas/maintenance/installConfig.php
-```
-
-**What Gets Installed:**
-
-The base configuration includes:
-- **Templates:** `Template:Property/Default`, `Template:Property/Email`, `Template:Property/Link`
-- **Properties:** ~25 meta-properties like `Has type`, `Has description`, `Has parent category`, etc.
+This automatically installs all required base configuration pages via SMW's built-in content importer:
+- **Templates:** `Template:Property/Default`, `Template:Property/Email`, `Template:Property/Link`, `Template:Property/Page`
+- **Properties:** ~24 meta-properties like `Has type`, `Has description`, `Has parent category`, etc.
 - **Subobjects:** `Display section` for organizing property display
 - **Categories:** `Category`, `Property`, `Subobject` meta-categories
 
-These pages are defined in `resources/extension-config.json` and serve as the foundation for all schema management.
+These pages are defined in `resources/base-config/` and serve as the foundation for all schema management.
 
-> **Note:** If installation is interrupted or fails partway through, the "Install Base Configuration" button will remain visible until all layers complete successfully. You can safely re-run the installation to complete any missing layers.
+> **Note:** If base config pages are missing or outdated, re-running `update.php` will create or replace them automatically.
 
 ## Configuration
 
@@ -104,24 +77,14 @@ To verify the installation was successful:
 
 ### Base Configuration Installation Issues
 
-If the base configuration installation fails or is interrupted:
+If base configuration pages are missing after running `update.php`:
 
-- **Install button still visible after installation:** This means some layers didn't complete. Simply click "Install Base Configuration" again to retry. The installer checks all layers (templates, properties, subobjects, categories) and will only mark installation as complete when everything is present.
+- **Banner still visible on Special:SemanticSchemas:** Re-run `php maintenance/run.php update` to trigger SMW's content importer. The importer creates any missing pages automatically.
 
-- **Layer fails with errors:** Check the MediaWiki error log for details. Common causes include:
+- **Import errors during update.php:** Check the MediaWiki error log for details. Common causes include:
   - Database permission issues
-  - SMW job queue not processing (run `php maintenance/runJobs.php`)
+  - SMW not fully initialized (ensure SMW's setup has completed)
   - Insufficient PHP memory (increase `memory_limit` in php.ini)
-
-- **"Waiting for SMW jobs" stuck:** The installer waits for Semantic MediaWiki's job queue to process between layers. If this takes too long:
-  ```bash
-  php maintenance/runJobs.php --maxjobs=100
-  ```
-
-- **Manual recovery:** If the web installer consistently fails, use the maintenance script:
-  ```bash
-  php extensions/SemanticSchemas/maintenance/installConfig.php --force
-  ```
 
 ### Extension Not Appearing
 

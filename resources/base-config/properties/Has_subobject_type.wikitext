@@ -1,0 +1,7 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::Which subobject schema this instance conforms to.]]
+[[Display label::Subobject type]]
+[[Allows value from namespace::Subobject]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

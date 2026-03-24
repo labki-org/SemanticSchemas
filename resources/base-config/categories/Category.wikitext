@@ -1,0 +1,16 @@
+<!-- SemanticSchemas Start -->
+[[Has description::Defines the schema metadata for categories managed by SemanticSchemas.]]
+[[Has target namespace::Category]]
+[[Has required property::Property:Has description]]
+[[Has optional property::Property:Display label]]
+[[Has optional property::Property:Has target namespace]]
+[[Has optional property::Property:Has parent category]]
+[[Has optional property::Property:Has required property]]
+[[Has optional property::Property:Has optional property]]
+[[Has optional property::Property:Has required subobject]]
+[[Has optional property::Property:Has optional subobject]]
+[[Has optional property::Property:Has display header property]]
+[[Has optional property::Property:Has display format]]
+[[Has optional subobject::Subobject:Display section]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed]]

@@ -1,0 +1,7 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Specific values that this property can have (creates a dropdown).]]
+[[Allows multiple values::true]]
+[[Display label::Allowed values]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

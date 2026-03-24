@@ -4,7 +4,6 @@ use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
-use MediaWiki\Extension\SemanticSchemas\Schema\ExtensionConfigInstaller;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
@@ -34,20 +33,6 @@ return [
 		return new DisplayStubGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' )
-		);
-	},
-
-	'SemanticSchemas.ExtensionConfigInstaller' => static function (
-		MediaWikiServices $services
-	): ExtensionConfigInstaller {
-		return new ExtensionConfigInstaller(
-			$services->get( 'SemanticSchemas.SchemaLoader' ),
-			$services->get( 'SemanticSchemas.SchemaValidator' ),
-			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
-			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->getJobQueueGroup()
 		);
 	},
 

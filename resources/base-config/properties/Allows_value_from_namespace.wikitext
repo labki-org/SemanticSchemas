@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Namespace to use for autocomplete suggestions.]]
+[[Display label::Autocomplete from namespace]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]
