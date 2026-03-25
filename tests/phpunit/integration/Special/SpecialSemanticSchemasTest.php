@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Special;
 
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWikiIntegrationTestCase;
+use RequestContext;
 
 /**
  * Smoke tests for Special:SemanticSchemas.
@@ -26,13 +27,18 @@ class SpecialSemanticSchemasTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public function testSpecialPageExecutesWithoutFatalError(): void {
-		[ $html, ] = $this->executeSpecialPage(
-			'',
-			null,
-			null,
-			static::getTestSysop()->getAuthority()
-		);
+		$page = $this->getServiceContainer()
+			->getSpecialPageFactory()
+			->getPage( 'SemanticSchemas' );
 
+		$context = new RequestContext();
+		$context->setUser( static::getTestSysop()->getUser() );
+		$context->setTitle( $page->getPageTitle() );
+		$page->setContext( $context );
+
+		$page->execute( '' );
+
+		$html = $context->getOutput()->getHTML();
 		$this->assertIsString( $html );
 		$this->assertStringNotContainsString( 'Fatal error', $html );
 	}
