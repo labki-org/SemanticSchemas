@@ -8,14 +8,12 @@ use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
-use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Html\Html;
-use MediaWiki\Language\NamespaceInfo;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
 use ObjectCacheFactory;
@@ -60,8 +58,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private StateManager $stateManager;
 	private PageHashComputer $hashComputer;
 	private ObjectCacheFactory $objectCacheFactory;
-	private PageCreator $pageCreator;
-	private NamespaceInfo $namespaceInfo;
 
 	private function getRateLimitPerHour(): int {
 		$config = $this->getConfig();
@@ -79,9 +75,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		OntologyInspector $inspector,
 		StateManager $stateManager,
 		PageHashComputer $hashComputer,
-		ObjectCacheFactory $objectCacheFactory,
-		PageCreator $pageCreator,
-		NamespaceInfo $namespaceInfo
+		ObjectCacheFactory $objectCacheFactory
 	) {
 		parent::__construct( 'SemanticSchemas', 'editinterface' );
 		$this->categoryStore = $categoryStore;
@@ -94,8 +88,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$this->stateManager = $stateManager;
 		$this->hashComputer = $hashComputer;
 		$this->objectCacheFactory = $objectCacheFactory;
-		$this->pageCreator = $pageCreator;
-		$this->namespaceInfo = $namespaceInfo;
 	}
 
 	/**
@@ -264,14 +256,10 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$categoryMap = $this->buildCategoryMap();
 			$resolver = new InheritanceResolver( $categoryMap );
 
-			// Resolve inheritance
 			$chain = $resolver->getInheritanceChain( $categoryName );
-			$effective = $resolver->getEffectiveCategory( $categoryName );
-			$chainEffectives = $resolver->getChainEffectives( $categoryName );
 
-			// Generate templates (always regenerate auto-generated ones)
 			$templateResult = $this->templateGenerator->generateAllTemplates(
-				$category, $chain, $effective, $chainEffectives
+				$category, $chain
 			);
 
 			if ( !$templateResult['success'] ) {
@@ -283,8 +271,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			// Generate form
-			$formSuccess = $this->formGenerator->generateAndSaveForm( $category, $chain );
+			$formSuccess = $this->formGenerator->generateAndSaveForm( $category->effective() );
 
 			if ( !$formSuccess ) {
 				$output->addHTML( Html::errorBox(
@@ -295,8 +282,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			// Generate display template conditionally (respect user customizations)
-			$displayResult = $this->displayGenerator->generateIfAllowed( $effective, $chain );
+			$displayResult = $this->displayGenerator->generateIfAllowed( $category->effective() );
 
 			// Log the operation
 			$this->logOperation( 'generate', "Form generated for $categoryName", [
@@ -1168,16 +1154,14 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 				try {
 					$chain = $resolver->getInheritanceChain( $name );
-					$effective = $resolver->getEffectiveCategory( $name );
-					$chainEffectives = $resolver->getChainEffectives( $categoryName );
 
 					$this->templateGenerator->generateAllTemplates(
-						$category, $chain, $effective, $chainEffectives
+						$category, $chain
 					);
-					$this->formGenerator->generateAndSaveForm( $category, $chain );
+					$this->formGenerator->generateAndSaveForm( $category->effective() );
 
 					if ( $generateDisplay ) {
-						$this->displayGenerator->generateOrUpdateDisplayStub( $effective, $chain );
+						$this->displayGenerator->generateOrUpdateDisplayStub( $category->effective() );
 					}
 
 					$successCount++;

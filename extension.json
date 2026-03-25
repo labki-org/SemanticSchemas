@@ -157,9 +157,7 @@
 				"SemanticSchemas.OntologyInspector",
 				"SemanticSchemas.StateManager",
 				"SemanticSchemas.PageHashComputer",
-				"ObjectCacheFactory",
-				"SemanticSchemas.PageCreator",
-				"NamespaceInfo"
+				"ObjectCacheFactory"
 			]
 		}
 	},
