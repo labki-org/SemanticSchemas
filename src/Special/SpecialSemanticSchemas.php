@@ -271,7 +271,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			$formSuccess = $this->formGenerator->generateAndSaveForm( $category->effective() );
+			$effective = $category->effective();
+			$formSuccess = $this->formGenerator->generateAndSaveForm( $effective );
 
 			if ( !$formSuccess ) {
 				$output->addHTML( Html::errorBox(
@@ -282,7 +283,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			$displayResult = $this->displayGenerator->generateIfAllowed( $category->effective() );
+			$displayResult = $this->displayGenerator->generateIfAllowed( $effective );
 
 			// Log the operation
 			$this->logOperation( 'generate', "Form generated for $categoryName", [
@@ -1154,14 +1155,15 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 				try {
 					$chain = $resolver->getInheritanceChain( $name );
+					$effective = $category->effective();
 
 					$this->templateGenerator->generateAllTemplates(
 						$category, $chain
 					);
-					$this->formGenerator->generateAndSaveForm( $category->effective() );
+					$this->formGenerator->generateAndSaveForm( $effective );
 
 					if ( $generateDisplay ) {
-						$this->displayGenerator->generateOrUpdateDisplayStub( $category->effective() );
+						$this->displayGenerator->generateOrUpdateDisplayStub( $effective );
 					}
 
 					$successCount++;

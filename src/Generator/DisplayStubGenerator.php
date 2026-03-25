@@ -98,54 +98,43 @@ class DisplayStubGenerator {
 		$format = $category->getDisplayFormat();
 
 		if ( $format === 'sidebox' ) {
-			wfDebugLog( 'SemanticSchemas', 'Generating sidebox display for ' . $category->getName() );
-			$wikitext = $this->generateSideboxWikitext( $category );
+			$tableBody = $this->generateSideboxBody( $category );
 		} elseif ( $format === 'sections' ) {
-			$wikitext = $this->generateSectionsWikitext( $category );
+			$tableBody = $this->generateSectionsBody( $category );
 		} else {
-			$wikitext = $this->generateTableWikitext( $category );
+			$tableBody = $this->generateTableBody( $category );
 		}
 
-		// Inject category stamp before the closing </includeonly>
-		$stamp = '[[Category:' . $category->getName() . ']]';
-		return str_replace(
-			'</includeonly>',
-			$stamp . "\n</includeonly>",
-			$wikitext
-		);
+		return self::AUTO_REGENERATE_MARKER . "\n"
+			. "<includeonly>\n"
+			. $tableBody
+			. '[[Category:' . $category->getName() . "]]" . "\n"
+			. "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 	}
 
-	private function generateTableWikitext( CategoryModel $category ): string {
-		$content = self::AUTO_REGENERATE_MARKER . "\n";
-		$content .= "<includeonly>\n";
-		$content .= "{| class=\"wikitable source-semanticschemas\"\n";
+	private function generateTableBody( CategoryModel $category ): string {
+		$content = "{| class=\"wikitable source-semanticschemas\"\n";
 		$content .= "! Property !! Value\n";
 		$content .= $this->generatePropertyRows( $category );
 		$content .= "|}\n";
-		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
 		return $content;
 	}
 
-	private function generateSideboxWikitext( CategoryModel $category ): string {
-		$content = self::AUTO_REGENERATE_MARKER . "\n";
-		$content .= "<includeonly>\n";
+	private function generateSideboxBody( CategoryModel $category ): string {
 		$tableStyle = 'float: right; clear: right; margin: 0 0 1em 1em; width: 300px; '
 			. 'background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
-		$content .= '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
+		$content = '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
 		$captionStyle = 'font-size: 120%; font-weight: bold; background-color: #eaecf0;';
 		$content .= '|+ style="' . $captionStyle . '" | ' . $category->getLabel() . "\n";
 		$content .= $this->generatePropertyRows( $category );
 		$content .= "|}\n";
-		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
 		return $content;
 	}
 
-	private function generateSectionsWikitext( CategoryModel $category ): string {
-		$content = self::AUTO_REGENERATE_MARKER . "\n";
-		$content .= "<includeonly>\n";
-		$content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
+	private function generateSectionsBody( CategoryModel $category ): string {
+		$content = "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
 
 		$sections = $category->getDisplaySections();
 		$usedProperties = [];
@@ -180,7 +169,6 @@ class DisplayStubGenerator {
 		}
 
 		$content .= "|}\n";
-		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
 		return $content;
 	}

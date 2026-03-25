@@ -24,6 +24,9 @@ class InheritanceResolver {
 	/** @var array<string,string[]> */
 	private array $ancestorCache = [];
 
+	/** @var array<string,CategoryModel> */
+	private array $effectiveCache = [];
+
 	/**
 	 * @param array<string,CategoryModel> $categoryMap
 	 */
@@ -77,12 +80,15 @@ class InheritanceResolver {
 	 *   Then merge the result with the next parent in lineage.
 	 */
 	public function getEffectiveCategory( string $categoryName ): CategoryModel {
+		if ( isset( $this->effectiveCache[$categoryName] ) ) {
+			return $this->effectiveCache[$categoryName];
+		}
+
 		if ( !isset( $this->categoryMap[$categoryName] ) ) {
 			return new CategoryModel( $categoryName );
 		}
 
 		$linear = $this->getAncestors( $categoryName );
-		// linear[0] = child, then direct parent, then their parents, etc.
 
 		/** @var CategoryModel|null $effective */
 		$effective = null;
@@ -93,12 +99,11 @@ class InheritanceResolver {
 			if ( $effective === null ) {
 				$effective = $current;
 			} else {
-				// Correct direction:
-				// child.mergeWithParent(parent)
 				$effective = $effective->mergeWithParent( $current );
 			}
 		}
 
+		$this->effectiveCache[$categoryName] = $effective;
 		return $effective;
 	}
 

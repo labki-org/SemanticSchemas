@@ -36,7 +36,8 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *        [ 'name' => string, 'properties' => string[] ],
  *     ]
  *
- * Fully immutable. No parsing or backward-compatibility.
+ * Schema data is immutable after construction. The resolver reference
+ * (set by InheritanceResolver) enables lazy effective() computation.
  */
 class CategoryModel {
 

@@ -145,14 +145,14 @@ class FormGenerator {
 	 * Separates required and optional properties into distinct sections.
 	 */
 	private function generatePropertyTable( CategoryModel $category ): array {
-		$required = array_unique( $category->getRequiredProperties() );
-		$optional = array_unique( $category->getOptionalProperties() );
+		$required = $category->getRequiredProperties();
+		$optional = $category->getOptionalProperties();
 		sort( $required );
 		sort( $optional );
 
 		$out = [];
-		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields', $category, true ) );
-		$out = array_merge( $out, $this->generatePropertySection( $optional, 'Optional fields', $category, false ) );
+		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields', true ) );
+		$out = array_merge( $out, $this->generatePropertySection( $optional, 'Optional fields', false ) );
 
 		return $out;
 	}
@@ -163,7 +163,6 @@ class FormGenerator {
 	private function generatePropertySection(
 		array $props,
 		string $label,
-		CategoryModel $category,
 		bool $isRequired
 	): array {
 		if ( empty( $props ) ) {
@@ -176,7 +175,7 @@ class FormGenerator {
 		$out[] = '{| class="formtable"';
 
 		foreach ( $props as $prop ) {
-			$out = array_merge( $out, $this->generateTableField( $prop, $category, $isRequired ) );
+			$out = array_merge( $out, $this->generateTableField( $prop, $isRequired ) );
 		}
 
 		$out[] = '|}';
@@ -190,15 +189,12 @@ class FormGenerator {
 	 */
 	private function generateTableField(
 		string $propertyName,
-		CategoryModel $category,
-		?bool $isRequired = null
+		bool $isRequired
 	): array {
 		$prop = $this->propertyStore->readProperty( $propertyName )
 			?: new PropertyModel( $propertyName, [ 'datatype' => 'Page' ] );
 
-		$isReq = ( $isRequired !== null )
-			? $isRequired
-			: in_array( $propertyName, $category->getRequiredProperties(), true );
+		$isReq = $isRequired;
 
 		$param = NamingHelper::propertyToParameter( $propertyName );
 		$label = $this->s( $prop->getLabel() );
@@ -301,7 +297,7 @@ class FormGenerator {
 
 				foreach ( $subProps as $p ) {
 					$must = $model->isPropertyRequired( $p );
-					$out = array_merge( $out, $this->generateTableField( $p, $category, $must ) );
+					$out = array_merge( $out, $this->generateTableField( $p, $must ) );
 				}
 
 				$out[] = '|}';
@@ -368,12 +364,7 @@ class FormGenerator {
 	 * Find the parent category property in a category's schema.
 	 */
 	private function findParentCategoryProperty( CategoryModel $category ): ?string {
-		$props = array_merge(
-			$category->getRequiredProperties(),
-			$category->getOptionalProperties()
-		);
-
-		foreach ( $props as $p ) {
+		foreach ( $category->getAllProperties() as $p ) {
 			$lc = strtolower( $p );
 
 			if (

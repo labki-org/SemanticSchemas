@@ -99,6 +99,7 @@ class RegenerateArtifacts extends Maintenance {
 		$this->output( "Processing: $name\n" );
 
 		$chain = $resolver->getInheritanceChain( $name );
+		$effective = $category->effective();
 
 		$result = $templateGenerator->generateAllTemplates( $category, $chain );
 		if ( $result['success'] ) {
@@ -110,14 +111,14 @@ class RegenerateArtifacts extends Maintenance {
 			}
 		}
 
-		if ( $formGenerator->generateAndSaveForm( $category->effective() ) ) {
+		if ( $formGenerator->generateAndSaveForm( $effective ) ) {
 			$this->output( "  ✓ Generated form\n" );
 		} else {
 			$this->output( "  ✗ Form generation failed\n" );
 		}
 
 		if ( $generateDisplay ) {
-			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $category->effective() );
+			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective );
 			if ( !empty( $displayResult['error'] ) ) {
 				$this->output( "  ✗ Display template failed: {$displayResult['error']}\n" );
 			} elseif ( $displayResult['created'] ) {
