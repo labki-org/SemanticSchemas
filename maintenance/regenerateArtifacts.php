@@ -52,9 +52,8 @@ class RegenerateArtifacts extends Maintenance {
 		$resolver = new InheritanceResolver( $categoryMap );
 
 		if ( $categoryName !== null ) {
-			// Regenerate for specific category
 			$this->output( "Regenerating artifacts for category: $categoryName\n" );
-			$category = $categoryStore->readCategory( $categoryName );
+			$category = $categoryMap[$categoryName] ?? null;
 
 			if ( $category === null ) {
 				$this->fatalError( "Category not found: $categoryName" );

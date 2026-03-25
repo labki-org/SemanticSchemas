@@ -252,10 +252,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 		}
 
 		try {
-			// Build category map for inheritance resolution
 			$categoryMap = $this->buildCategoryMap();
 			$resolver = new InheritanceResolver( $categoryMap );
 
+			// Use the model from the map so it has the resolver wired
+			$category = $categoryMap[$categoryName] ?? $category;
 			$chain = $resolver->getInheritanceChain( $categoryName );
 
 			$templateResult = $this->templateGenerator->generateAllTemplates(
@@ -1144,6 +1145,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			foreach ( $categories as $category ) {
 				$name = $category->getName();
+				// Use the model from the map so it has the resolver wired
+				$category = $categoryMap[$name] ?? $category;
 
 				$output->addHTML(
 					Html::element(
