@@ -104,21 +104,13 @@ class TemplateGenerator {
 	/**
 	 * Generate content for the semantic template.
 	 *
-	 * Semantic templates embed their parent templates via MW template transclusion,
-	 * forming a self-chaining inheritance hierarchy. Each template:
-	 * 1. Calls its direct parents' semantic templates (forwarding only that parent's
-	 *    effective props — the minimum needed for the parent's subtree)
-	 * 2. Stores its own properties via #set
+	 * Each semantic template calls its direct parents' semantic templates
+	 * (forwarding effective props) and stores its own properties via #set.
 	 *
 	 * @param CategoryModel $category The raw (unmerged) category
-	 * @param array<string,CategoryModel> $chainEffectives Map of category name → effective
-	 *        model, used to determine which params each parent needs
 	 * @return string
 	 */
-	public function generateSemanticTemplate(
-		CategoryModel $category,
-		array $chainEffectives = []
-	): string {
+	public function generateSemanticTemplate( CategoryModel $category ): string {
 		$name = trim( $category->getName() );
 		if ( $name === '' ) {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
@@ -133,23 +125,15 @@ class TemplateGenerator {
 		$out[] = 'Semantic template for Category:' . $name;
 		$out[] = '</noinclude><includeonly>';
 
-		/* Embed direct parent semantic templates (MW template inheritance).
-		 * Each parent call forwards only that parent's effective props —
-		 * the minimum set needed for the parent's own subtree. */
-		$parents = $category->getParents();
-		if ( !empty( $parents ) && !empty( $chainEffectives ) ) {
-			foreach ( $parents as $parentName ) {
-				$parentEffective = $chainEffectives[$parentName] ?? null;
-				if ( $parentEffective ) {
-					$parentProps = $parentEffective->getAllProperties();
-					sort( $parentProps );
-					$out = array_merge(
-						$out,
-						$this->generateTemplateCall( $parentName . '/semantic', $parentProps )
-					);
-					$out[] = '';
-				}
-			}
+		/* Embed parent semantic templates */
+		foreach ( $category->getParentEffectiveModels() as $parentName => $parentEffective ) {
+			$parentProps = $parentEffective->getAllProperties();
+			sort( $parentProps );
+			$out = array_merge(
+				$out,
+				$this->generateTemplateCall( $parentName . '/semantic', $parentProps )
+			);
+			$out[] = '';
 		}
 
 		/* Own property storage */
@@ -213,24 +197,17 @@ class TemplateGenerator {
 	/**
 	 * Generate content for the dispatcher template.
 	 *
-	 * The dispatcher is intentionally simple: it calls the leaf's semantic template
-	 * (which self-chains its ancestors via MW template embedding) and the display
-	 * template. All params are forwarded; unused ones are silently ignored.
-	 *
-	 * @param CategoryModel $leafCategory The raw (unmerged) leaf category
-	 * @param CategoryModel $effectiveCategory Fully merged category with all inherited properties
+	 * @param CategoryModel $category The raw (unmerged) leaf category
 	 * @return string
 	 */
-	public function generateDispatcherTemplate(
-		CategoryModel $leafCategory,
-		CategoryModel $effectiveCategory
-	): string {
-		$name = trim( $leafCategory->getName() );
+	public function generateDispatcherTemplate( CategoryModel $category ): string {
+		$name = trim( $category->getName() );
 		if ( $name === '' ) {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$allProps = $effectiveCategory->getAllProperties();
+		$effective = $category->effective();
+		$allProps = $effective->getAllProperties();
 		sort( $allProps );
 
 		$out = [];
@@ -241,22 +218,17 @@ class TemplateGenerator {
 		$out[] = '{{#default_form:' . $name . '}}';
 		$out[] = '';
 
-		/* Semantic storage — self-chaining handles the full ancestor chain */
 		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allProps ) );
 		$out[] = '';
 
-		/* Display */
 		$out = array_merge( $out, $this->generateTemplateCall( $name . '/display', $allProps ) );
 		$out[] = '';
 
-		/* Subobject Sections */
 		$out = array_merge(
 			$out,
-			$this->generateSubobjectDisplaySections( $effectiveCategory )
+			$this->generateSubobjectDisplaySections( $effective )
 		);
 
-		/* Category stamp — leaf only; ancestors via SMW subcategory traversal */
-		$out[] = '[[Category:' . $name . ']]';
 		$out[] = '</includeonly>';
 
 		return implode( "\n", $out );
@@ -387,54 +359,42 @@ class TemplateGenerator {
 	/**
 	 * Generate all artifacts for a category (semantic, dispatcher, subobjects).
 	 *
-	 * Each semantic template embeds its direct parents via MW template transclusion,
-	 * so the dispatcher only needs to call the leaf's semantic template.
-	 *
-	 * @param CategoryModel $rawCategory The raw (unmerged) leaf category
+	 * @param CategoryModel $category The raw (unmerged) leaf category
 	 * @param CategoryModel[] $inheritanceChain C3-linearized chain [child, parent1, ..., root]
-	 * @param CategoryModel $effectiveCategory Fully merged category with all inherited properties
-	 * @param array<string,CategoryModel> $chainEffectives Map of category name → effective model
-	 *        for each category in the chain (used for param forwarding in semantic templates)
 	 * @return array{success: bool, errors: string[]}
 	 */
 	public function generateAllTemplates(
-		CategoryModel $rawCategory,
-		array $inheritanceChain,
-		CategoryModel $effectiveCategory,
-		array $chainEffectives = []
+		CategoryModel $category,
+		array $inheritanceChain
 	): array {
 		$errors = [];
-		$name = $rawCategory->getName();
+		$name = $category->getName();
 
-		/* Semantic template for each category in the chain.
-		 * Each embeds its direct parents via MW template transclusion. */
+		/* Semantic template for each category in the chain */
 		foreach ( $inheritanceChain as $chainCat ) {
 			$catName = $chainCat->getName();
 			try {
-				$content = $this->generateSemanticTemplate( $chainCat, $chainEffectives );
+				$content = $this->generateSemanticTemplate( $chainCat );
 				$this->updateTemplate( $catName . '/semantic', $content );
 			} catch ( \Exception $e ) {
 				$errors[] = "Error generating semantic template for $catName: " . $e->getMessage();
 			}
 		}
 
-		/* Dispatcher template — simplified, just calls leaf semantic + display */
+		/* Dispatcher */
 		try {
-			$content = $this->generateDispatcherTemplate( $rawCategory, $effectiveCategory );
+			$content = $this->generateDispatcherTemplate( $category );
 			$this->updateTemplate( $name, $content );
 		} catch ( \Exception $e ) {
 			$errors[] = "Error generating dispatcher template for $name: " . $e->getMessage();
 		}
 
 		/* Subobject templates — collect from the full chain */
-		$subs = [];
-		foreach ( $inheritanceChain as $chainCat ) {
-			$subs = array_merge(
-				$subs,
-				$chainCat->getRequiredSubobjects(),
-				$chainCat->getOptionalSubobjects()
-			);
-		}
+		$effective = $category->effective();
+		$subs = array_merge(
+			$effective->getRequiredSubobjects(),
+			$effective->getOptionalSubobjects()
+		);
 		$subs = array_unique( $subs );
 
 		foreach ( $subs as $subName ) {

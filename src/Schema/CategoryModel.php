@@ -58,6 +58,11 @@ class CategoryModel {
 	private array $displayConfig;
 	private array $formConfig;
 
+	/* -------------------- Inheritance -------------------- */
+
+	private ?InheritanceResolver $resolver = null;
+	private ?CategoryModel $effectiveCache = null;
+
 	/* -------------------- New Display System -------------------- */
 
 	/** @var ?PropertyModel Property defining the display format */
@@ -262,6 +267,46 @@ class CategoryModel {
 
 	public function getFormConfig(): array {
 		return $this->formConfig;
+	}
+
+	/* -------------------------------------------------------------------------
+	 * INHERITANCE RESOLUTION
+	 * ------------------------------------------------------------------------- */
+
+	public function setResolver( InheritanceResolver $resolver ): void {
+		$this->resolver = $resolver;
+		$this->effectiveCache = null;
+	}
+
+	/**
+	 * Return the effective (fully merged) form of this category.
+	 *
+	 * If a resolver has been set, this returns the merged model with all
+	 * inherited properties. Otherwise returns $this unchanged.
+	 */
+	public function effective(): CategoryModel {
+		if ( $this->effectiveCache === null ) {
+			$this->effectiveCache = $this->resolver
+				? $this->resolver->getEffectiveCategory( $this->name )
+				: $this;
+		}
+		return $this->effectiveCache;
+	}
+
+	/**
+	 * Return effective models for each direct parent.
+	 *
+	 * @return array<string,CategoryModel> Parent name → effective model
+	 */
+	public function getParentEffectiveModels(): array {
+		if ( !$this->resolver ) {
+			return [];
+		}
+		$result = [];
+		foreach ( $this->parents as $parentName ) {
+			$result[$parentName] = $this->resolver->getEffectiveCategory( $parentName );
+		}
+		return $result;
 	}
 
 	/* -------------------------------------------------------------------------
