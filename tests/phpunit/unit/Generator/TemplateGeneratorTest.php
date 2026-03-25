@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Generator;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -98,15 +99,14 @@ class TemplateGeneratorTest extends TestCase {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generator->generateSemanticTemplate( $category );
 
-		// Category stamp moved to dispatcher — semantic template is pure property storage
 		$this->assertStringNotContainsString( '[[Category:', $result );
 	}
 
-	public function testDispatcherTemplateContainsCategoryStamp(): void {
+	public function testDispatcherTemplateDoesNotContainCategoryStamp(): void {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( '[[Category:Person]]', $result );
+		$this->assertStringNotContainsString( '[[Category:', $result );
 	}
 
 	public function testGenerateSemanticTemplateWithEmptyNameThrowsException(): void {
@@ -147,7 +147,7 @@ class TemplateGeneratorTest extends TestCase {
 	 * Helper: generate dispatcher for a single category (no inheritance).
 	 */
 	private function generateDispatcher( CategoryModel $category ): string {
-		return $this->generator->generateDispatcherTemplate( $category, $category );
+		return $this->generator->generateDispatcherTemplate( $category );
 	}
 
 	public function testGenerateDispatcherTemplateReturnsString(): void {
@@ -196,11 +196,8 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = $this->createMock( CategoryModel::class );
 		$category->method( 'getName' )->willReturn( '' );
-		$category->method( 'getAllProperties' )->willReturn( [] );
-		$category->method( 'getRequiredSubobjects' )->willReturn( [] );
-		$category->method( 'getOptionalSubobjects' )->willReturn( [] );
 
-		$this->generator->generateDispatcherTemplate( $category, $category );
+		$this->generator->generateDispatcherTemplate( $category );
 	}
 
 	/* =========================================================================
@@ -242,7 +239,7 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testGenerateAllTemplatesReturnsArray(): void {
 		$category = new CategoryModel( 'Person' );
-		$result = $this->generator->generateAllTemplates( $category, [ $category ], $category );
+		$result = $this->generator->generateAllTemplates( $category, [ $category ] );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'success', $result );
@@ -251,7 +248,7 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testGenerateAllTemplatesSuccessWhenNoErrors(): void {
 		$category = new CategoryModel( 'Person' );
-		$result = $this->generator->generateAllTemplates( $category, [ $category ], $category );
+		$result = $this->generator->generateAllTemplates( $category, [ $category ] );
 
 		$this->assertTrue( $result['success'] );
 		$this->assertEmpty( $result['errors'] );
@@ -293,7 +290,8 @@ class TemplateGeneratorTest extends TestCase {
 		$category = new CategoryModel( 'PhD Student' );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( '[[Category:PhD Student]]', $result );
+		$this->assertStringContainsString( '{{#default_form:PhD Student}}', $result );
+		$this->assertStringContainsString( '{{PhD Student/semantic', $result );
 	}
 
 	/* =========================================================================
@@ -463,7 +461,7 @@ class TemplateGeneratorTest extends TestCase {
 			],
 		] );
 
-		$gen->generateAllTemplates( $category, [ $category ], $category );
+		$gen->generateAllTemplates( $category, [ $category ] );
 
 		// Find the subobject semantic template (contains #subobject:)
 		$subobjectContent = null;
@@ -497,36 +495,20 @@ class TemplateGeneratorTest extends TestCase {
 			],
 		] );
 
-		$effective = $student->mergeWithParent( $person );
+		$categoryMap = [ 'Person' => $person, 'Student' => $student ];
+		new InheritanceResolver( $categoryMap );
 
-		$result = $this->generator->generateDispatcherTemplate( $student, $effective );
+		$result = $this->generator->generateDispatcherTemplate( $student );
 
-		// Dispatcher should only call leaf semantic template (self-chaining handles ancestors)
 		$this->assertStringContainsString( '{{Student/semantic', $result );
 		$this->assertStringNotContainsString( '{{Person/semantic', $result );
-		// And the display
 		$this->assertStringContainsString( '{{Student/display', $result );
-		// All effective params forwarded to leaf semantic
+		// All effective params forwarded
 		$this->assertStringContainsString( 'name', $result );
 		$this->assertStringContainsString( 'student_id', $result );
 		$this->assertStringContainsString( 'email', $result );
-	}
-
-	public function testDispatcherStampsOnlyLeafCategory(): void {
-		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-		] );
-		$student = new CategoryModel( 'Student', [
-			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
-		] );
-
-		$effective = $student->mergeWithParent( $person );
-
-		$result = $this->generator->generateDispatcherTemplate( $student, $effective );
-
-		$this->assertStringContainsString( '[[Category:Student]]', $result );
-		$this->assertStringNotContainsString( '[[Category:Person]]', $result );
+		// No category stamp in dispatcher
+		$this->assertStringNotContainsString( '[[Category:', $result );
 	}
 
 	public function testSemanticTemplateForEachAncestorHasOwnPropertiesOnly(): void {
@@ -538,28 +520,22 @@ class TemplateGeneratorTest extends TestCase {
 			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
 		] );
 
-		$studentEffectiveProps = [ 'Has name', 'Has student ID' ];
-
-		// Build chain effectives map
-		$personEffective = $person;
-		$studentEffective = $student->mergeWithParent( $person );
-		$chainEffectives = [
-			'Person' => $personEffective,
-			'Student' => $studentEffective,
-		];
+		new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
 
 		// Person/semantic: own props only, no parent calls, no category stamp
-		$personSemantic = $this->generator->generateSemanticTemplate( $person, $chainEffectives );
+		$personSemantic = $this->generator->generateSemanticTemplate( $person );
 		$this->assertStringContainsString( 'Has name', $personSemantic );
 		$this->assertStringNotContainsString( 'Has student ID', $personSemantic );
 		$this->assertStringNotContainsString( '[[Category:', $personSemantic );
 		$this->assertStringNotContainsString( '/semantic', $personSemantic );
 
 		// Student/semantic: embeds Person/semantic, then #set own props
-		$studentSemantic = $this->generator->generateSemanticTemplate( $student, $chainEffectives );
+		$studentSemantic = $this->generator->generateSemanticTemplate( $student );
 		$this->assertStringContainsString( '{{Person/semantic', $studentSemantic );
 		$this->assertStringContainsString( 'Has student ID', $studentSemantic );
 		$this->assertStringNotContainsString( '[[Category:', $studentSemantic );
+		// Student's own #set should not repeat Person's properties
+		$this->assertStringNotContainsString( 'Has name = ', $studentSemantic );
 	}
 
 	public function testSemanticTemplateForwardsOnlyParentEffectiveParams(): void {
@@ -571,42 +547,15 @@ class TemplateGeneratorTest extends TestCase {
 			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
 		] );
 
-		$chainEffectives = [
-			'Person' => $person,
-			'Student' => $student->mergeWithParent( $person ),
-		];
+		new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
 
-		$result = $this->generator->generateSemanticTemplate( $student, $chainEffectives );
+		$result = $this->generator->generateSemanticTemplate( $student );
 
-		// The Person/semantic call should forward only Person's effective params
-		$personCall = $this->extractTemplateCall( $result, 'Person/semantic' );
-		$this->assertStringContainsString( 'name', $personCall );
+		// Everything before {{#set: is the parent template calls section
+		$parentSection = strstr( $result, '{{#set:', true );
+		$this->assertStringContainsString( '{{Person/semantic', $parentSection );
+		$this->assertStringContainsString( 'name', $parentSection );
 		// Student-only param should NOT be forwarded to Person
-		$this->assertStringNotContainsString( 'student_id', $personCall );
-	}
-
-	/**
-	 * Extract the template call block for a given template name from dispatcher output.
-	 */
-	private function extractTemplateCall( string $dispatcher, string $templateName ): string {
-		$start = strpos( $dispatcher, '{{' . $templateName );
-		if ( $start === false ) {
-			return '';
-		}
-		$depth = 0;
-		$len = strlen( $dispatcher );
-		for ( $i = $start; $i < $len - 1; $i++ ) {
-			if ( $dispatcher[$i] === '{' && $dispatcher[$i + 1] === '{' ) {
-				$depth++;
-				$i++;
-			} elseif ( $dispatcher[$i] === '}' && $dispatcher[$i + 1] === '}' ) {
-				$depth--;
-				$i++;
-				if ( $depth === 0 ) {
-					return substr( $dispatcher, $start, $i - $start + 1 );
-				}
-			}
-		}
-		return substr( $dispatcher, $start );
+		$this->assertStringNotContainsString( 'student_id', $parentSection );
 	}
 }
