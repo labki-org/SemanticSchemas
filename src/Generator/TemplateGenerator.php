@@ -206,8 +206,7 @@ class TemplateGenerator {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$effective = $category->effective();
-		$allProps = $effective->getAllProperties();
+		$allProps = $category->effective()->getAllProperties();
 		sort( $allProps );
 
 		$out = [];
@@ -226,7 +225,7 @@ class TemplateGenerator {
 
 		$out = array_merge(
 			$out,
-			$this->generateSubobjectDisplaySections( $effective )
+			$this->generateSubobjectDisplaySections( $category->effective() )
 		);
 
 		$out[] = '</includeonly>';
@@ -390,10 +389,9 @@ class TemplateGenerator {
 		}
 
 		/* Subobject templates — collect from the full chain */
-		$effective = $category->effective();
 		$subs = array_merge(
-			$effective->getRequiredSubobjects(),
-			$effective->getOptionalSubobjects()
+			$category->effective()->getRequiredSubobjects(),
+			$category->effective()->getOptionalSubobjects()
 		);
 		$subs = array_unique( $subs );
 
