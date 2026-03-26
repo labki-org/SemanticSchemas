@@ -68,6 +68,12 @@ class CategoryPageHooks {
 	 * - Always: add "Add category" to views section
 	 */
 	private function addCategoryEditActions( \MediaWiki\Title\Title $title, array &$links ): void {
+		// Check page categories first (cheap) before loading all managed categories
+		$pageCategories = $title->getParentCategories();
+		if ( empty( $pageCategories ) ) {
+			return;
+		}
+
 		$allCategories = $this->categoryStore->getAllCategories();
 		if ( empty( $allCategories ) ) {
 			return;
@@ -78,8 +84,6 @@ class CategoryPageHooks {
 			$managedNames[$cat->getName()] = true;
 		}
 
-		// Get this page's categories
-		$pageCategories = $title->getParentCategories();
 		$matchedCategories = [];
 		foreach ( $pageCategories as $catTitle => $pageName ) {
 			// $catTitle is like "Category:Person"
