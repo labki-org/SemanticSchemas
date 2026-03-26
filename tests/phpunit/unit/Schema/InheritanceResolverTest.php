@@ -309,11 +309,15 @@ class InheritanceResolverTest extends TestCase {
 		] );
 
 		$chain = $resolver->getInheritanceChain( 'GradStudent' );
-		$this->assertCount( 3, $chain );
-		$this->assertEquals( 'GradStudent', $chain[0]->getName() );
-		// Each has own properties only
-		$this->assertContains( 'Has advisor', $chain[0]->getAllProperties() );
-		$this->assertNotContains( 'Has name', $chain[0]->getAllProperties() );
+		$names = array_map( fn ( $m ) => $m->getName(), $chain );
+
+		// C3 linearization: child first, then parents in declared order
+		$this->assertEquals( [ 'GradStudent', 'Person', 'LabMember' ], $names );
+
+		// Each model in the chain carries only its own declared properties
+		$this->assertEquals( [ 'Has advisor' ], $chain[0]->getAllProperties() );
+		$this->assertEquals( [ 'Has name' ], $chain[1]->getAllProperties() );
+		$this->assertEquals( [ 'Has lab role' ], $chain[2]->getAllProperties() );
 	}
 
 	public function testGetInheritanceChainForUnknownReturnsStandalone(): void {
