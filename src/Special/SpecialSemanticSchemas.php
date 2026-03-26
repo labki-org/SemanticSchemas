@@ -1380,49 +1380,31 @@ class SpecialSemanticSchemas extends SpecialPage {
 			Html::input( 'ss-page-name', $prefilledPageName, 'text', $pageNameAttrs )
 		);
 
-		// Category checkboxes
-		$checkboxes = '';
+		// Category tree — build parent→children map and compute ancestors
+		$categoryMap = [];
 		foreach ( $categories as $cat ) {
-			$catName = $cat->getName();
-			$catLabel = $cat->getLabel();
-			$catDesc = $cat->getDescription();
-			$isExisting = isset( $existingCategories[$catName] );
-			$attrs = [
-				'id' => 'ss-cat-' . htmlspecialchars( $catName ),
-				'value' => $catName,
-			];
-			if ( $isExisting ) {
-				$attrs['disabled'] = true;
-			}
-
-			$labelHtml = Html::element( 'strong', [], $catLabel );
-			if ( $isExisting ) {
-				$labelHtml .= Html::rawElement( 'span',
-					[ 'class' => 'semanticschemas-badge is-ok', 'style' => 'margin-left: 8px;' ],
-					$this->msg( 'semanticschemas-create-on-page' )->text()
-				);
-			}
-			if ( $catDesc !== '' ) {
-				$labelHtml .= Html::element( 'span',
-					[ 'class' => 'ss-create-cat-desc' ],
-					$catDesc
-				);
-			}
-
-			$rowClass = 'ss-create-cat-item';
-			if ( $isExisting ) {
-				$rowClass .= ' is-existing';
-			}
-
-			$checkboxes .= Html::rawElement( 'label', [
-				'class' => $rowClass,
-				'for' => 'ss-cat-' . htmlspecialchars( $catName ),
-			],
-				Html::check( 'ss-categories[]', $isExisting, $attrs ) .
-				( $isExisting ? Html::hidden( 'ss-categories[]', $catName ) : '' ) .
-				Html::rawElement( 'span', [ 'class' => 'ss-create-cat-label' ], $labelHtml )
-			);
+			$categoryMap[$cat->getName()] = $cat;
 		}
+		$resolver = new InheritanceResolver( $categoryMap );
+
+		$childrenOf = [];
+		$roots = [];
+		foreach ( $categories as $cat ) {
+			$parents = $cat->getParents();
+			$managedParents = array_filter( $parents, static fn ( $p ) => isset( $categoryMap[$p] ) );
+			if ( empty( $managedParents ) ) {
+				$roots[] = $cat->getName();
+			}
+			foreach ( $managedParents as $parent ) {
+				$childrenOf[$parent][] = $cat->getName();
+			}
+		}
+
+		$checkboxes = $this->renderCategoryTree(
+			$roots, $childrenOf, $categoryMap, $resolver, $existingCategories, 0
+		);
+
+		$output->addModules( [ 'ext.semanticschemas.createpage' ] );
 
 		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group' ],
 			Html::element( 'label', [],
@@ -1463,6 +1445,114 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$cardSubtitle,
 			$form
 		) ) );
+	}
+
+	/**
+	 * Render categories as a nested tree. Categories with multiple parents
+	 * appear under each parent; JS syncs their checkbox state.
+	 */
+	private function renderCategoryTree(
+		array $names,
+		array $childrenOf,
+		array $categoryMap,
+		InheritanceResolver $resolver,
+		array $existingCategories,
+		int $depth
+	): string {
+		$html = '';
+		foreach ( $names as $name ) {
+			if ( !isset( $categoryMap[$name] ) ) {
+				continue;
+			}
+			$hasChildren = !empty( $childrenOf[$name] );
+			$itemHtml = $this->renderCategoryItem(
+				$categoryMap[$name], $resolver, $existingCategories, $depth, $hasChildren
+			);
+
+			$html .= $itemHtml;
+
+			if ( $hasChildren ) {
+				$childrenHtml = $this->renderCategoryTree(
+					$childrenOf[$name], $childrenOf, $categoryMap,
+					$resolver, $existingCategories, $depth + 1
+				);
+				$html .= Html::rawElement( 'div',
+					[ 'class' => 'ss-create-cat-children' ],
+					$childrenHtml
+				);
+			}
+		}
+		return $html;
+	}
+
+	private function renderCategoryItem(
+		CategoryModel $cat,
+		InheritanceResolver $resolver,
+		array $existingCategories,
+		int $depth,
+		bool $hasChildren = false
+	): string {
+		$catName = $cat->getName();
+		$catLabel = $cat->getLabel();
+		$catDesc = $cat->getDescription();
+		$isExisting = isset( $existingCategories[$catName] );
+
+		// Ancestors for JS (excluding self)
+		$ancestors = $resolver->getAncestors( $catName );
+		array_shift( $ancestors );
+		$ancestorStr = implode( '|', $ancestors );
+
+		// Unique ID per tree instance (category may appear multiple times)
+		static $instanceCounter = 0;
+		$instanceId = 'ss-cat-' . $instanceCounter++;
+
+		$attrs = [
+			'id' => $instanceId,
+			'value' => $catName,
+			'data-category' => $catName,
+			'data-ancestors' => $ancestorStr,
+		];
+		if ( $isExisting ) {
+			$attrs['disabled'] = true;
+		}
+
+		$labelHtml = Html::element( 'strong', [], $catLabel );
+		if ( $isExisting ) {
+			$labelHtml .= Html::rawElement( 'span',
+				[ 'class' => 'semanticschemas-badge is-ok', 'style' => 'margin-left: 8px;' ],
+				$this->msg( 'semanticschemas-create-on-page' )->text()
+			);
+		}
+		if ( $catDesc !== '' ) {
+			$labelHtml .= Html::element( 'span',
+				[ 'class' => 'ss-create-cat-desc' ],
+				$catDesc
+			);
+		}
+
+		$rowClass = 'ss-create-cat-item';
+		if ( $isExisting ) {
+			$rowClass .= ' is-existing';
+		}
+		if ( $hasChildren ) {
+			$rowClass .= ' has-children';
+		}
+
+		$toggleHtml = $hasChildren
+			? Html::rawElement( 'span', [ 'class' => 'ss-create-cat-toggle' ], '▸' )
+			: '';
+
+		return Html::rawElement( 'div', [
+			'class' => $rowClass,
+			'style' => $depth > 0 ? 'padding-left: ' . ( 12 + $depth * 24 ) . 'px;' : '',
+		],
+			$toggleHtml .
+			Html::rawElement( 'label', [ 'for' => $instanceId, 'class' => 'ss-create-cat-label-wrap' ],
+				Html::check( 'ss-categories[]', $isExisting, $attrs ) .
+				( $isExisting ? Html::hidden( 'ss-categories[]', $catName ) : '' ) .
+				Html::rawElement( 'span', [ 'class' => 'ss-create-cat-label' ], $labelHtml )
+			)
+		);
 	}
 
 	private function processCreatePage(): void {

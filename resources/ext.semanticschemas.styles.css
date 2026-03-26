@@ -812,6 +812,53 @@
 	background: var(--ss-slate-50);
 }
 
+.ss-create-cat-item.is-redundant {
+	background: var(--ss-slate-50);
+	opacity: 0.5;
+	cursor: default;
+}
+
+.ss-create-cat-item.is-redundant:hover {
+	background: var(--ss-slate-50);
+}
+
+.ss-create-cat-via {
+	font-size: 0.75rem;
+	color: var(--ss-slate-400);
+	font-style: italic;
+	margin-left: 8px;
+}
+
+.ss-create-cat-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.25em;
+	flex-shrink: 0;
+	cursor: pointer;
+	color: var(--ss-slate-400);
+	font-size: 0.75rem;
+	transition: transform var(--ss-transition-fast);
+	user-select: none;
+}
+
+.ss-create-cat-toggle.is-open {
+	transform: rotate(90deg);
+}
+
+.ss-create-cat-children.is-collapsed {
+	display: none;
+}
+
+.ss-create-cat-label-wrap {
+	display: flex;
+	align-items: center;
+	gap: var(--ss-space-3);
+	cursor: pointer;
+	flex: 1;
+	min-width: 0;
+}
+
 .ss-create-cat-item input[type="checkbox"] {
 	flex-shrink: 0;
 }
