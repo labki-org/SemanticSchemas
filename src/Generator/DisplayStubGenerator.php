@@ -98,16 +98,16 @@ class DisplayStubGenerator {
 		$format = $category->getDisplayFormat();
 
 		if ( $format === 'sidebox' ) {
-			$tableBody = $this->generateSideboxBody( $category );
+			$body = $this->generateSideboxBody( $category );
 		} elseif ( $format === 'sections' ) {
-			$tableBody = $this->generateSectionsBody( $category );
+			$body = $this->generateSectionsBody( $category );
 		} else {
-			$tableBody = $this->generateTableBody( $category );
+			$body = $this->generateTableBody( $category );
 		}
 
 		return self::AUTO_REGENERATE_MARKER . "\n"
 			. "<includeonly>\n"
-			. $tableBody
+			. $body
 			. '[[Category:' . $category->getName() . "]]" . "\n"
 			. "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 	}
