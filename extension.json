@@ -159,6 +159,14 @@
 		}
 	},
 	"SpecialPages": {
+		"CreateSemanticPage": {
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialCreateSemanticPage",
+			"services": [
+				"SemanticSchemas.WikiCategoryStore",
+				"SemanticSchemas.PageCreator",
+				"NamespaceInfo"
+			]
+		},
 		"SemanticSchemas": {
 			"class": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialSemanticSchemas",
 			"services": [
@@ -171,9 +179,7 @@
 				"SemanticSchemas.OntologyInspector",
 				"SemanticSchemas.StateManager",
 				"SemanticSchemas.PageHashComputer",
-				"ObjectCacheFactory",
-				"SemanticSchemas.PageCreator",
-				"NamespaceInfo"
+				"ObjectCacheFactory"
 			]
 		}
 	},

@@ -8,7 +8,6 @@ use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
-use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
@@ -16,7 +15,6 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Html\Html;
 use MediaWiki\SpecialPage\SpecialPage;
-use MediaWiki\Title\NamespaceInfo;
 use MediaWiki\Title\Title;
 use ObjectCacheFactory;
 
@@ -60,8 +58,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private StateManager $stateManager;
 	private PageHashComputer $hashComputer;
 	private ObjectCacheFactory $objectCacheFactory;
-	private PageCreator $pageCreator;
-	private NamespaceInfo $namespaceInfo;
 
 	private function getRateLimitPerHour(): int {
 		$config = $this->getConfig();
@@ -79,9 +75,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		OntologyInspector $inspector,
 		StateManager $stateManager,
 		PageHashComputer $hashComputer,
-		ObjectCacheFactory $objectCacheFactory,
-		PageCreator $pageCreator,
-		NamespaceInfo $namespaceInfo
+		ObjectCacheFactory $objectCacheFactory
 	) {
 		parent::__construct( 'SemanticSchemas', 'editinterface' );
 		$this->categoryStore = $categoryStore;
@@ -94,8 +88,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$this->stateManager = $stateManager;
 		$this->hashComputer = $hashComputer;
 		$this->objectCacheFactory = $objectCacheFactory;
-		$this->pageCreator = $pageCreator;
-		$this->namespaceInfo = $namespaceInfo;
 	}
 
 	/**
@@ -206,9 +198,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 				break;
 			case 'hierarchy':
 				$this->showHierarchy();
-				break;
-			case 'create':
-				$this->showCreatePage();
 				break;
 			case 'overview':
 			default:
@@ -383,10 +372,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 			'hierarchy' => [
 				'label' => $this->msg( 'semanticschemas-hierarchy' )->text(),
 				'subtext' => $this->msg( 'semanticschemas-tab-hierarchy-subtext' )->text(),
-			],
-			'create' => [
-				'label' => $this->msg( 'semanticschemas-create' )->text(),
-				'subtext' => $this->msg( 'semanticschemas-tab-create-subtext' )->text(),
 			],
 		];
 
@@ -1314,330 +1299,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		);
 
 		$output->addHTML( $this->wrapShell( $card ) );
-	}
-
-	/* =====================================================================
-	 * CREATE PAGE (Composition UX)
-	 * ===================================================================== */
-
-	private function showCreatePage(): void {
-		$output = $this->getOutput();
-		$request = $this->getRequest();
-		$output->setPageTitle( $this->msg( 'semanticschemas-create-title' )->text() );
-
-		// Handle POST
-		if ( $request->wasPosted() && $request->getVal( 'ss-action' ) === 'create-page' ) {
-			if ( !$this->getUser()->matchEditToken( $request->getVal( 'wpEditToken' ) ) ) {
-				$output->addHTML( Html::errorBox( 'Invalid session token. Please try again.' ) );
-			} else {
-				$this->processCreatePage();
-				return;
-			}
-		}
-
-		// Build form
-		$categories = $this->categoryStore->getAllCategories();
-		if ( empty( $categories ) ) {
-			$output->addHTML( $this->wrapShell( $this->renderCard(
-				$this->msg( 'semanticschemas-create-title' )->text(),
-				$this->msg( 'semanticschemas-tab-create-subtext' )->text(),
-				Html::element( 'p', [],
-					$this->msg( 'semanticschemas-create-no-categories' )->text()
-				)
-			) ) );
-			return;
-		}
-
-		// Pre-populate from query params (e.g. when arriving via "Add category" action)
-		$prefilledPageName = $request->getText( 'ss-page-name', '' );
-		$existingRaw = $request->getText( 'ss-existing', '' );
-		$existingCategories = $existingRaw !== ''
-			? array_flip( explode( '|', $existingRaw ) )
-			: [];
-
-		$isAddMode = $prefilledPageName !== '';
-		$formHtml = '';
-
-		// Page name input
-		$pageNameAttrs = [
-			'id' => 'ss-page-name',
-			'required' => true,
-			'placeholder' => $this->msg( 'semanticschemas-create-page-name-placeholder' )->text(),
-		];
-		if ( $isAddMode ) {
-			$pageNameAttrs['readonly'] = true;
-		}
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group ss-create-page-name' ],
-			Html::element( 'label', [ 'for' => 'ss-page-name' ],
-				$this->msg( 'semanticschemas-create-page-name' )->text()
-			) .
-			Html::input( 'ss-page-name', $prefilledPageName, 'text', $pageNameAttrs )
-		);
-
-		[ $roots, $childrenOf, $categoryMap, $resolver ] = $this->buildCategoryHierarchy( $categories );
-
-		$checkboxes = $this->renderCategoryTree(
-			$roots, $childrenOf, $categoryMap, $resolver, $existingCategories, 0
-		);
-
-		$output->addModules( [ 'ext.semanticschemas.createpage' ] );
-
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group' ],
-			Html::element( 'label', [],
-				$this->msg( 'semanticschemas-create-select-categories' )->text()
-			) .
-			Html::rawElement( 'div', [ 'class' => 'ss-create-cat-grid' ],
-				$checkboxes
-			)
-		);
-
-		// Submit
-		$formHtml .= Html::hidden( 'ss-action', 'create-page' );
-		$formHtml .= Html::hidden( 'wpEditToken', $this->getUser()->getEditToken() );
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'ss-create-actions' ],
-			Html::submitButton(
-				$isAddMode
-					? $this->msg( 'semanticschemas-create-add-submit' )->text()
-					: $this->msg( 'semanticschemas-create-submit' )->text(),
-				[ 'class' => 'mw-ui-button mw-ui-progressive' ]
-			)
-		);
-
-		$form = Html::rawElement( 'form', [
-			'method' => 'post',
-			'action' => $this->getPageTitle( 'create' )->getLocalURL(),
-			'class' => 'semanticschemas-create-form',
-		], $formHtml );
-
-		$cardTitle = $isAddMode
-			? $this->msg( 'semanticschemas-create-add-title' )->text()
-			: $this->msg( 'semanticschemas-create-title' )->text();
-		$cardSubtitle = $isAddMode
-			? $this->msg( 'semanticschemas-create-add-description' )->params( $prefilledPageName )->text()
-			: $this->msg( 'semanticschemas-create-description' )->text();
-
-		$output->addHTML( $this->wrapShell( $this->renderCard(
-			$cardTitle,
-			$cardSubtitle,
-			$form
-		) ) );
-	}
-
-	/**
-	 * Build the parent→children map and identify root categories for tree rendering.
-	 *
-	 * @param CategoryModel[] $categories
-	 * @return array [ string[] $roots, array $childrenOf, array $categoryMap, InheritanceResolver $resolver ]
-	 */
-	private function buildCategoryHierarchy( array $categories ): array {
-		$categoryMap = [];
-		foreach ( $categories as $cat ) {
-			$categoryMap[$cat->getName()] = $cat;
-		}
-		$resolver = new InheritanceResolver( $categoryMap );
-
-		// Roots = categories whose parents are all outside the managed set.
-		// childrenOf[parentName] = list of child category names.
-		$childrenOf = [];
-		$roots = [];
-		foreach ( $categories as $cat ) {
-			$parents = $cat->getParents();
-			$managedParents = array_filter( $parents, static fn ( $p ) => isset( $categoryMap[$p] ) );
-			if ( empty( $managedParents ) ) {
-				$roots[] = $cat->getName();
-			}
-			foreach ( $managedParents as $parent ) {
-				$childrenOf[$parent][] = $cat->getName();
-			}
-		}
-
-		return [ $roots, $childrenOf, $categoryMap, $resolver ];
-	}
-
-	/**
-	 * Render categories as a nested tree. Categories with multiple parents
-	 * appear under each parent; JS syncs their checkbox state.
-	 */
-	private function renderCategoryTree(
-		array $names,
-		array $childrenOf,
-		array $categoryMap,
-		InheritanceResolver $resolver,
-		array $existingCategories,
-		int $depth
-	): string {
-		$html = '';
-		foreach ( $names as $name ) {
-			if ( !isset( $categoryMap[$name] ) ) {
-				continue;
-			}
-			$hasChildren = !empty( $childrenOf[$name] );
-			$itemHtml = $this->renderCategoryItem(
-				$categoryMap[$name], $resolver, $existingCategories, $depth, $hasChildren
-			);
-
-			$html .= $itemHtml;
-
-			if ( $hasChildren ) {
-				$childrenHtml = $this->renderCategoryTree(
-					$childrenOf[$name], $childrenOf, $categoryMap,
-					$resolver, $existingCategories, $depth + 1
-				);
-				$html .= Html::rawElement( 'div',
-					[ 'class' => 'ss-create-cat-children' ],
-					$childrenHtml
-				);
-			}
-		}
-		return $html;
-	}
-
-	private function renderCategoryItem(
-		CategoryModel $cat,
-		InheritanceResolver $resolver,
-		array $existingCategories,
-		int $depth,
-		bool $hasChildren = false
-	): string {
-		$catName = $cat->getName();
-		$catLabel = $cat->getLabel();
-		$catDesc = $cat->getDescription();
-		$isExisting = isset( $existingCategories[$catName] );
-
-		// Ancestors for JS (excluding self)
-		$ancestors = $resolver->getAncestors( $catName );
-		array_shift( $ancestors );
-		$ancestorStr = implode( '|', $ancestors );
-
-		// Unique ID per tree instance (category may appear multiple times)
-		static $instanceCounter = 0;
-		$instanceId = 'ss-cat-' . $instanceCounter++;
-
-		$attrs = [
-			'id' => $instanceId,
-			'value' => $catName,
-			'data-category' => $catName,
-			'data-ancestors' => $ancestorStr,
-		];
-		if ( $isExisting ) {
-			$attrs['disabled'] = true;
-		}
-
-		$labelHtml = Html::element( 'strong', [], $catLabel );
-		if ( $isExisting ) {
-			$labelHtml .= Html::rawElement( 'span',
-				[ 'class' => 'semanticschemas-badge is-ok ss-create-cat-badge' ],
-				$this->msg( 'semanticschemas-create-on-page' )->text()
-			);
-		}
-		if ( $catDesc !== '' ) {
-			$labelHtml .= Html::element( 'span',
-				[ 'class' => 'ss-create-cat-desc' ],
-				$catDesc
-			);
-		}
-
-		$rowClass = 'ss-create-cat-item';
-		if ( $isExisting ) {
-			$rowClass .= ' is-existing';
-		}
-		if ( $hasChildren ) {
-			$rowClass .= ' has-children';
-		}
-
-		$toggleHtml = $hasChildren
-			? Html::rawElement( 'span', [ 'class' => 'ss-create-cat-toggle' ], '▸' )
-			: Html::rawElement( 'span', [ 'class' => 'ss-create-cat-toggle-spacer' ] );
-
-		return Html::rawElement( 'div', [
-			'class' => $rowClass,
-			'style' => $depth > 0 ? '--depth: ' . $depth : '',
-		],
-			$toggleHtml .
-			Html::rawElement( 'label', [ 'for' => $instanceId, 'class' => 'ss-create-cat-label-wrap' ],
-				Html::check( 'ss-categories[]', $isExisting, $attrs ) .
-				( $isExisting ? Html::hidden( 'ss-categories[]', $catName ) : '' ) .
-				Html::rawElement( 'span', [ 'class' => 'ss-create-cat-label' ], $labelHtml )
-			)
-		);
-	}
-
-	private function processCreatePage(): void {
-		$output = $this->getOutput();
-		$request = $this->getRequest();
-
-		$pageName = trim( $request->getText( 'ss-page-name' ) );
-		$selectedCategories = array_values( array_unique(
-			$request->getArray( 'ss-categories', [] )
-		) );
-
-		if ( $pageName === '' ) {
-			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-create-no-page-name' )->text()
-			) );
-			return;
-		}
-
-		if ( empty( $selectedCategories ) ) {
-			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-create-no-selection' )->text()
-			) );
-			return;
-		}
-
-		// Single category: redirect directly to FormEdit
-		if ( count( $selectedCategories ) === 1 ) {
-			$catName = $selectedCategories[0];
-			$formEditTitle = Title::makeTitleSafe( NS_SPECIAL, 'FormEdit/' . $catName . '/' . $pageName );
-			if ( $formEditTitle ) {
-				$output->redirect( $formEditTitle->getFullURL() );
-				return;
-			}
-		}
-
-		// Multiple categories: create page with empty dispatcher calls, then redirect
-		$pageContent = '';
-		foreach ( $selectedCategories as $catName ) {
-			$pageContent .= '{{' . $catName . "\n}}\n\n";
-		}
-		$pageContent = rtrim( $pageContent );
-
-		// Determine namespace from first category
-		$firstCat = $this->categoryStore->readCategory( $selectedCategories[0] );
-		$ns = NS_MAIN;
-		if ( $firstCat && $firstCat->getTargetNamespace() !== null ) {
-			$nsIndex = $this->namespaceInfo
-				->getCanonicalIndex( strtolower( $firstCat->getTargetNamespace() ) );
-			if ( $nsIndex !== null ) {
-				$ns = $nsIndex;
-			}
-		}
-
-		$pageTitle = Title::makeTitleSafe( $ns, $pageName );
-		if ( !$pageTitle ) {
-			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-create-invalid-title' )->text()
-			) );
-			return;
-		}
-
-		$success = $this->pageCreator->createOrUpdatePage(
-			$pageTitle,
-			$pageContent,
-			'SemanticSchemas: Created multi-category page'
-		);
-
-		if ( !$success ) {
-			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-create-failed' )->params( $pageName )->text()
-			) );
-			return;
-		}
-
-		// Redirect to the page itself — CompositeForm needs SMW to index
-		// the categories first (via the job queue), so redirect to the page
-		// view where the user can click "Edit with form" when ready.
-		$output->redirect( $pageTitle->getFullURL() );
 	}
 
 	/**

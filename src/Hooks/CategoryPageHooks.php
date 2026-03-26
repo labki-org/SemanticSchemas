@@ -112,7 +112,7 @@ class CategoryPageHooks {
 		// (Vector collapses overflow tabs from the right end)
 		$addCategoryTab = [
 			'text' => wfMessage( 'semanticschemas-action-add-category' )->text(),
-			'href' => SpecialPage::getTitleFor( 'SemanticSchemas', 'create' )->getLocalURL( [
+			'href' => SpecialPage::getTitleFor( 'CreateSemanticPage' )->getLocalURL( [
 				'ss-page-name' => $title->getText(),
 				'ss-existing' => implode( '|', $matchedCategories ),
 			] ),
