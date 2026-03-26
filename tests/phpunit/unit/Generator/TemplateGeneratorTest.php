@@ -541,6 +541,9 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '{{Person/semantic', $studentSemantic );
 		$this->assertStringContainsString( 'Has student ID', $studentSemantic );
 		$this->assertStringNotContainsString( '[[Category:', $studentSemantic );
+		// Person's property is forwarded to the parent semantic call, not set directly
+		$parentCall = strstr( $studentSemantic, '{{#set:', true );
+		$this->assertStringContainsString( 'name', $parentCall );
 		// Student's own #set should not repeat Person's properties
 		$this->assertStringNotContainsString( 'Has name = ', $studentSemantic );
 	}
