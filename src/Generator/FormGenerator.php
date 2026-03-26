@@ -47,7 +47,12 @@ class FormGenerator {
 	}
 
 	/**
-	 * Generate the full PageForms form for a category.
+	 * Generate the PageForms wrapper form for a category.
+	 *
+	 * This is a thin wrapper that transcludes the composite slot
+	 * (Form:Category/composite) which contains the actual field definitions.
+	 * The wrapper adds the standalone form chrome: forminput header,
+	 * namespace targeting, hierarchy preview, free text, and buttons.
 	 *
 	 * @param EffectiveCategoryModel $category The effective (merged) category
 	 * @return string
@@ -55,7 +60,6 @@ class FormGenerator {
 	public function generateForm( EffectiveCategoryModel $category ): string {
 		$this->validateCategory( $category );
 		$name = trim( $category->getName() );
-		$label = trim( $category->getLabel() );
 
 		$lines = [];
 
@@ -88,14 +92,10 @@ class FormGenerator {
 			$lines[] = '';
 		}
 
-		/* Template binding */
-		$lines[] = '{{{for template|' . $this->s( $name ) . '}}}';
-		$lines[] = '';
-
-		/* Property fields */
-		$lines = array_merge( $lines, $this->generatePropertyTable( $category ) );
-
-		$lines[] = '{{{end template}}}';
+		/* Field definitions via composite slot transclusion.
+		 * MW strips the <nowiki> tags during transclusion, so PageForms
+		 * sees the raw {{{...}}} directives. */
+		$lines[] = '{{Form:' . $this->s( $name ) . '/composite}}';
 		$lines[] = '';
 
 		/* Hierarchy Preview (if parent category property exists) */
@@ -116,9 +116,6 @@ class FormGenerator {
 				. $this->s( $parentParam ) . '"></div>';
 			$lines[] = '';
 		}
-
-		/* Subobject sections */
-		$lines = array_merge( $lines, $this->generateSubobjectSections( $category ) );
 
 		/* Free text section */
 		$lines[] = "'''Free text:'''";
