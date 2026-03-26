@@ -24,7 +24,7 @@ class InheritanceResolver {
 	/** @var array<string,string[]> */
 	private array $ancestorCache = [];
 
-	/** @var array<string,CategoryModel> */
+	/** @var array<string,EffectiveCategoryModel> */
 	private array $effectiveCache = [];
 
 	/**
@@ -39,10 +39,6 @@ class InheritanceResolver {
 			}
 		}
 		$this->categoryMap = $categoryMap;
-
-		foreach ( $this->categoryMap as $model ) {
-			$model->setResolver( $this );
-		}
 	}
 
 	/* -------------------------------------------------------------------------
@@ -79,32 +75,55 @@ class InheritanceResolver {
 	 *   child.mergeWithParent(parent)
 	 *   Then merge the result with the next parent in lineage.
 	 */
-	public function getEffectiveCategory( string $categoryName ): CategoryModel {
+	public function getEffectiveCategory( string $categoryName ): EffectiveCategoryModel {
 		if ( isset( $this->effectiveCache[$categoryName] ) ) {
 			return $this->effectiveCache[$categoryName];
 		}
 
 		if ( !isset( $this->categoryMap[$categoryName] ) ) {
-			return new CategoryModel( $categoryName );
+			return new EffectiveCategoryModel( $categoryName );
 		}
 
 		$linear = $this->getAncestors( $categoryName );
 
-		/** @var CategoryModel|null $effective */
-		$effective = null;
+		/** @var CategoryModel|null $merged */
+		$merged = null;
 
 		foreach ( $linear as $name ) {
 			$current = $this->categoryMap[$name] ?? new CategoryModel( $name );
 
-			if ( $effective === null ) {
-				$effective = $current;
+			if ( $merged === null ) {
+				$merged = $current;
 			} else {
-				$effective = $effective->mergeWithParent( $current );
+				$merged = $merged->mergeWithParent( $current );
 			}
 		}
 
-		$this->effectiveCache[$categoryName] = $effective;
-		return $effective;
+		// Single-category chain: mergeWithParent was never called, wrap as effective
+		if ( !( $merged instanceof EffectiveCategoryModel ) ) {
+			$merged = new EffectiveCategoryModel( $merged->getName(), $merged->toArray() );
+		}
+
+		$this->effectiveCache[$categoryName] = $merged;
+		return $merged;
+	}
+
+	/**
+	 * Return effective models for each direct parent of a category.
+	 *
+	 * @param string $categoryName
+	 * @return array<string,EffectiveCategoryModel> Parent name → effective model
+	 */
+	public function getParentEffectiveModels( string $categoryName ): array {
+		$category = $this->categoryMap[$categoryName] ?? null;
+		if ( $category === null ) {
+			return [];
+		}
+		$result = [];
+		foreach ( $category->getParents() as $parentName ) {
+			$result[$parentName] = $this->getEffectiveCategory( $parentName );
+		}
+		return $result;
 	}
 
 	/**

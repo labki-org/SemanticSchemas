@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -326,4 +327,100 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertEmpty( $chain[0]->getAllProperties() );
 	}
 
+	/* =========================================================================
+	 * EFFECTIVE CATEGORY MODEL TYPE
+	 * ========================================================================= */
+
+	public function testGetEffectiveCategoryReturnsEffectiveType(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$effective = $resolver->getEffectiveCategory( 'Person' );
+		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
+	}
+
+	public function testGetEffectiveCategoryForUnknownReturnsEffectiveType(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$effective = $resolver->getEffectiveCategory( 'Unknown' );
+		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
+	}
+
+	public function testGetEffectiveCategoryIsCached(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$this->assertSame(
+			$resolver->getEffectiveCategory( 'Person' ),
+			$resolver->getEffectiveCategory( 'Person' )
+		);
+	}
+
+	public function testGetEffectiveCategoryMergesInheritedProperties(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$student = new CategoryModel( 'Student', [
+			'parents' => [ 'Person' ],
+			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+		] );
+
+		$resolver = new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
+		$effective = $resolver->getEffectiveCategory( 'Student' );
+
+		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
+		$this->assertContains( 'Has name', $effective->getAllProperties() );
+		$this->assertContains( 'Has student ID', $effective->getAllProperties() );
+	}
+
+	/* =========================================================================
+	 * PARENT EFFECTIVE MODELS
+	 * ========================================================================= */
+
+	public function testGetParentEffectiveModelsReturnsEffectiveParents(): void {
+		$grandparent = new CategoryModel( 'Grandparent', [
+			'properties' => [ 'required' => [ 'Has gp prop' ], 'optional' => [] ],
+		] );
+		$parent = new CategoryModel( 'Parent', [
+			'parents' => [ 'Grandparent' ],
+			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+		] );
+
+		$resolver = new InheritanceResolver( [
+			'Grandparent' => $grandparent,
+			'Parent' => $parent,
+			'Child' => $child,
+		] );
+
+		$parentModels = $resolver->getParentEffectiveModels( 'Child' );
+		$this->assertArrayHasKey( 'Parent', $parentModels );
+		$this->assertCount( 1, $parentModels );
+		$this->assertInstanceOf( EffectiveCategoryModel::class, $parentModels['Parent'] );
+		$this->assertContains( 'Has gp prop', $parentModels['Parent']->getAllProperties() );
+		$this->assertContains( 'Has parent prop', $parentModels['Parent']->getAllProperties() );
+	}
+
+	public function testGetParentEffectiveModelsForUnknownReturnsEmpty(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$this->assertEmpty( $resolver->getParentEffectiveModels( 'Unknown' ) );
+	}
+
+	public function testGetParentEffectiveModelsForRootReturnsEmpty(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$this->assertEmpty( $resolver->getParentEffectiveModels( 'Person' ) );
+	}
 }

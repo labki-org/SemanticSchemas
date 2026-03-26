@@ -36,8 +36,8 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *        [ 'name' => string, 'properties' => string[] ],
  *     ]
  *
- * Schema data is immutable after construction. The resolver reference
- * (set by InheritanceResolver) enables lazy effective() computation.
+ * Schema data is immutable after construction. For the fully merged
+ * (inherited) view, see EffectiveCategoryModel returned by InheritanceResolver.
  */
 class CategoryModel {
 
@@ -58,11 +58,6 @@ class CategoryModel {
 
 	private array $displayConfig;
 	private array $formConfig;
-
-	/* -------------------- Inheritance -------------------- */
-
-	private ?InheritanceResolver $resolver = null;
-	private ?CategoryModel $effectiveCache = null;
 
 	/* -------------------- New Display System -------------------- */
 
@@ -271,50 +266,10 @@ class CategoryModel {
 	}
 
 	/* -------------------------------------------------------------------------
-	 * INHERITANCE RESOLUTION
-	 * ------------------------------------------------------------------------- */
-
-	public function setResolver( InheritanceResolver $resolver ): void {
-		$this->resolver = $resolver;
-		$this->effectiveCache = null;
-	}
-
-	/**
-	 * Return the effective (fully merged) form of this category.
-	 *
-	 * If a resolver has been set, this returns the merged model with all
-	 * inherited properties. Otherwise returns $this unchanged.
-	 */
-	public function effective(): CategoryModel {
-		if ( $this->effectiveCache === null ) {
-			$this->effectiveCache = $this->resolver
-				? $this->resolver->getEffectiveCategory( $this->name )
-				: $this;
-		}
-		return $this->effectiveCache;
-	}
-
-	/**
-	 * Return effective models for each direct parent.
-	 *
-	 * @return array<string,CategoryModel> Parent name → effective model
-	 */
-	public function getParentEffectiveModels(): array {
-		if ( !$this->resolver ) {
-			return [];
-		}
-		$result = [];
-		foreach ( $this->parents as $parentName ) {
-			$result[$parentName] = $this->resolver->getEffectiveCategory( $parentName );
-		}
-		return $result;
-	}
-
-	/* -------------------------------------------------------------------------
 	 * MERGING (CATEGORY + PARENT)
 	 * ------------------------------------------------------------------------- */
 
-	public function mergeWithParent( CategoryModel $parent ): CategoryModel {
+	public function mergeWithParent( CategoryModel $parent ): EffectiveCategoryModel {
 		/* -------------------- Properties -------------------- */
 
 		$mergedRequired = array_values( array_unique( array_merge(
@@ -359,9 +314,9 @@ class CategoryModel {
 			$this->formConfig
 		);
 
-		/* -------------------- New CategoryModel -------------------- */
+		/* -------------------- Merged Model -------------------- */
 
-		return new self(
+		return new EffectiveCategoryModel(
 			$this->name,
 			[
 				'parents' => $this->parents,

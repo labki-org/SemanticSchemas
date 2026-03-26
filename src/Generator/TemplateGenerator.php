@@ -4,6 +4,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -107,10 +109,14 @@ class TemplateGenerator {
 	 * Each semantic template calls its direct parents' semantic templates
 	 * (forwarding effective props) and stores its own properties via #set.
 	 *
-	 * @param CategoryModel $category The raw (unmerged) category
+	 * @param CategoryModel $category The raw (own-properties-only) category
+	 * @param array<string,EffectiveCategoryModel> $parentEffectives Parent name → effective model
 	 * @return string
 	 */
-	public function generateSemanticTemplate( CategoryModel $category ): string {
+	public function generateSemanticTemplate(
+		CategoryModel $category,
+		array $parentEffectives = []
+	): string {
 		$name = trim( $category->getName() );
 		if ( $name === '' ) {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
@@ -126,7 +132,7 @@ class TemplateGenerator {
 		$out[] = '</noinclude><includeonly>';
 
 		/* Embed parent semantic templates */
-		foreach ( $category->getParentEffectiveModels() as $parentName => $parentEffective ) {
+		foreach ( $parentEffectives as $parentName => $parentEffective ) {
 			$parentProps = $parentEffective->getAllProperties();
 			sort( $parentProps );
 			$out = array_merge(
@@ -197,16 +203,16 @@ class TemplateGenerator {
 	/**
 	 * Generate content for the dispatcher template.
 	 *
-	 * @param CategoryModel $category
+	 * @param EffectiveCategoryModel $effective The fully merged category
 	 * @return string
 	 */
-	public function generateDispatcherTemplate( CategoryModel $category ): string {
-		$name = trim( $category->getName() );
+	public function generateDispatcherTemplate( EffectiveCategoryModel $effective ): string {
+		$name = trim( $effective->getName() );
 		if ( $name === '' ) {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$allProps = $category->effective()->getAllProperties();
+		$allProps = $effective->getAllProperties();
 		sort( $allProps );
 
 		$out = [];
@@ -225,7 +231,7 @@ class TemplateGenerator {
 
 		$out = array_merge(
 			$out,
-			$this->generateSubobjectDisplaySections( $category->effective() )
+			$this->generateSubobjectDisplaySections( $effective )
 		);
 
 		$out[] = '</includeonly>';
@@ -294,7 +300,7 @@ class TemplateGenerator {
 	 * SUBOBJECT DISPLAY
 	 * ===================================================================== */
 
-	private function generateSubobjectDisplaySections( CategoryModel $category ): array {
+	private function generateSubobjectDisplaySections( EffectiveCategoryModel $category ): array {
 		$required = $category->getRequiredSubobjects();
 		$optional = $category->getOptionalSubobjects();
 
@@ -358,18 +364,22 @@ class TemplateGenerator {
 	/**
 	 * Generate all artifacts for a category (semantic, dispatcher, subobjects).
 	 *
-	 * @param CategoryModel $category
+	 * @param CategoryModel $category The raw (own-properties-only) category
+	 * @param InheritanceResolver $resolver
 	 * @return array{success: bool, errors: string[]}
 	 */
 	public function generateAllTemplates(
-		CategoryModel $category
+		CategoryModel $category,
+		InheritanceResolver $resolver
 	): array {
 		$errors = [];
 		$name = $category->getName();
+		$effective = $resolver->getEffectiveCategory( $name );
 
 		/* Semantic template — own declared properties only */
 		try {
-			$content = $this->generateSemanticTemplate( $category );
+			$parentEffectives = $resolver->getParentEffectiveModels( $name );
+			$content = $this->generateSemanticTemplate( $category, $parentEffectives );
 			$this->updateTemplate( $name . '/semantic', $content );
 		} catch ( \Exception $e ) {
 			$errors[] = "Error generating semantic template for $name: " . $e->getMessage();
@@ -377,7 +387,7 @@ class TemplateGenerator {
 
 		/* Dispatcher */
 		try {
-			$content = $this->generateDispatcherTemplate( $category );
+			$content = $this->generateDispatcherTemplate( $effective );
 			$this->updateTemplate( $name, $content );
 		} catch ( \Exception $e ) {
 			$errors[] = "Error generating dispatcher template for $name: " . $e->getMessage();
@@ -385,8 +395,8 @@ class TemplateGenerator {
 
 		/* Subobject templates — collect from the full chain */
 		$subs = array_merge(
-			$category->effective()->getRequiredSubobjects(),
-			$category->effective()->getOptionalSubobjects()
+			$effective->getRequiredSubobjects(),
+			$effective->getOptionalSubobjects()
 		);
 		$subs = array_unique( $subs );
 

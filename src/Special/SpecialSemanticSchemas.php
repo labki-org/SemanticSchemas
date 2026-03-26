@@ -255,10 +255,10 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$categoryMap = $this->buildCategoryMap();
 			$resolver = new InheritanceResolver( $categoryMap );
 
-			// Use the model from the map so it has the resolver wired
 			$category = $categoryMap[$categoryName] ?? $category;
+			$effective = $resolver->getEffectiveCategory( $categoryName );
 			$templateResult = $this->templateGenerator->generateAllTemplates(
-				$category
+				$category, $resolver
 			);
 
 			if ( !$templateResult['success'] ) {
@@ -270,7 +270,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			$formSuccess = $this->formGenerator->generateAndSaveForm( $category->effective() );
+			$formSuccess = $this->formGenerator->generateAndSaveForm( $effective );
 
 			if ( !$formSuccess ) {
 				$output->addHTML( Html::errorBox(
@@ -281,7 +281,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			$displayResult = $this->displayGenerator->generateIfAllowed( $category->effective() );
+			$displayResult = $this->displayGenerator->generateIfAllowed( $effective );
 
 			// Log the operation
 			$this->logOperation( 'generate', "Form generated for $categoryName", [
@@ -1142,8 +1142,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			foreach ( $categories as $category ) {
 				$name = $category->getName();
-				// Use the model from the map so it has the resolver wired
 				$category = $categoryMap[$name] ?? $category;
+				$effective = $resolver->getEffectiveCategory( $name );
 
 				$output->addHTML(
 					Html::element(
@@ -1155,12 +1155,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 				try {
 					$this->templateGenerator->generateAllTemplates(
-						$category
+						$category, $resolver
 					);
-					$this->formGenerator->generateAndSaveForm( $category->effective() );
+					$this->formGenerator->generateAndSaveForm( $effective );
 
 					if ( $generateDisplay ) {
-						$this->displayGenerator->generateOrUpdateDisplayStub( $category->effective() );
+						$this->displayGenerator->generateOrUpdateDisplayStub( $effective );
 					}
 
 					$successCount++;

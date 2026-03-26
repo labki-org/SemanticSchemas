@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -48,10 +49,10 @@ class FormGenerator {
 	/**
 	 * Generate the full PageForms form for a category.
 	 *
-	 * @param CategoryModel $category The effective (merged) category
+	 * @param EffectiveCategoryModel $category The effective (merged) category
 	 * @return string
 	 */
-	public function generateForm( CategoryModel $category ): string {
+	public function generateForm( EffectiveCategoryModel $category ): string {
 		$name = trim( $category->getName() );
 		$label = trim( $category->getLabel() );
 
@@ -342,7 +343,7 @@ class FormGenerator {
 		return $result;
 	}
 
-	public function generateAndSaveForm( CategoryModel $category ): bool {
+	public function generateAndSaveForm( EffectiveCategoryModel $category ): bool {
 		try {
 			$txt = $this->generateForm( $category );
 			return $this->updateForm( $category->getName(), $txt );

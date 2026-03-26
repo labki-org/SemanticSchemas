@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
+use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -459,66 +459,20 @@ class CategoryModelTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * EFFECTIVE / RESOLVER INTEGRATION
+	 * MERGE RETURNS EFFECTIVE TYPE
 	 * ========================================================================= */
 
-	public function testEffectiveReturnsSelfWithoutResolver(): void {
-		$category = new CategoryModel( 'Person' );
-		$this->assertSame( $category, $category->effective() );
-	}
-
-	public function testEffectiveReturnsMergedModelWithResolver(): void {
-		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-		] );
-		$student = new CategoryModel( 'Student', [
-			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
-		] );
-
-		new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
-
-		$effective = $student->effective();
-		$this->assertContains( 'Has name', $effective->getAllProperties() );
-		$this->assertContains( 'Has student ID', $effective->getAllProperties() );
-	}
-
-	public function testEffectiveIsCached(): void {
-		$person = new CategoryModel( 'Person' );
-		new InheritanceResolver( [ 'Person' => $person ] );
-
-		$this->assertSame( $person->effective(), $person->effective() );
-	}
-
-	public function testGetParentEffectiveModelsWithoutResolver(): void {
-		$child = new CategoryModel( 'Child', [ 'parents' => [ 'Parent' ] ] );
-		$this->assertEmpty( $child->getParentEffectiveModels() );
-	}
-
-	public function testGetParentEffectiveModelsReturnsEffectiveParents(): void {
-		$grandparent = new CategoryModel( 'Grandparent', [
-			'properties' => [ 'required' => [ 'Has gp prop' ], 'optional' => [] ],
-		] );
+	public function testMergeWithParentReturnsEffectiveCategoryModel(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'parents' => [ 'Grandparent' ],
 			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
 		] );
 		$child = new CategoryModel( 'Child', [
-			'parents' => [ 'Parent' ],
 			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
 		] );
 
-		new InheritanceResolver( [
-			'Grandparent' => $grandparent,
-			'Parent' => $parent,
-			'Child' => $child,
-		] );
-
-		$parentModels = $child->getParentEffectiveModels();
-		$this->assertArrayHasKey( 'Parent', $parentModels );
-		$this->assertCount( 1, $parentModels );
-		// Parent's effective should include Grandparent's props
-		$this->assertContains( 'Has gp prop', $parentModels['Parent']->getAllProperties() );
-		$this->assertContains( 'Has parent prop', $parentModels['Parent']->getAllProperties() );
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertInstanceOf( EffectiveCategoryModel::class, $merged );
+		$this->assertContains( 'Has parent prop', $merged->getAllProperties() );
+		$this->assertContains( 'Has child prop', $merged->getAllProperties() );
 	}
 }

@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
@@ -47,7 +48,7 @@ class DisplayStubGenerator {
 	 * @param CategoryModel $category
 	 * @return array Result array with keys: 'created' (bool), 'updated' (bool), 'message' (string)
 	 */
-	public function generateOrUpdateDisplayStub( CategoryModel $category ): array {
+	public function generateOrUpdateDisplayStub( EffectiveCategoryModel $category ): array {
 		$existed = $this->displayStubExists( $category->getName() );
 
 		$titleText = $this->generateDisplayContent( $category );
@@ -262,7 +263,7 @@ class DisplayStubGenerator {
 	 * @param CategoryModel $category
 	 * @return array{status: string, message: string}
 	 */
-	public function generateIfAllowed( CategoryModel $category ): array {
+	public function generateIfAllowed( EffectiveCategoryModel $category ): array {
 		$categoryName = $category->getName();
 		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
 
