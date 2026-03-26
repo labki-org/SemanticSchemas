@@ -66,8 +66,10 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		$categories = $this->categoryStore->getAllCategories();
 		if ( empty( $categories ) ) {
-			$output->addHTML( Html::element( 'p', [],
-				$this->msg( 'semanticschemas-create-no-categories' )->text()
+			$output->addHTML( Html::rawElement( 'div', [ 'class' => 'semanticschemas-shell' ],
+				Html::element( 'p', [],
+					$this->msg( 'semanticschemas-create-no-categories' )->text()
+				)
 			) );
 			return;
 		}
@@ -135,11 +137,15 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			)
 		);
 
-		$output->addHTML( Html::rawElement( 'form', [
+		$form = Html::rawElement( 'form', [
 			'method' => 'post',
 			'action' => $this->getPageTitle()->getLocalURL(),
 			'class' => 'semanticschemas-create-form',
-		], $formHtml ) );
+		], $formHtml );
+
+		$output->addHTML(
+			Html::rawElement( 'div', [ 'class' => 'semanticschemas-shell' ], $form )
+		);
 	}
 
 	private function processCreatePage(): void {
