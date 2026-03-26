@@ -15,9 +15,6 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  * a purely static wikitext definition (e.g., a table) where property values are
  * passed into specific render templates (e.g., {{Template:Property/Email}}).
  *
- * This "Generation-Time Resolution" replaces the older dynamic runtime system,
- * ensuring reliability, cacheability, and compatibility with the standard MediaWiki parser.
- *
  * Display templates include a special marker comment that indicates they are safe
  * to auto-regenerate. If a user removes this marker, the template is considered
  * "customized" and will be preserved during automatic updates.
@@ -45,7 +42,7 @@ class DisplayStubGenerator {
 	/**
 	 * Generate and save the display template stub.
 	 *
-	 * @param CategoryModel $category
+	 * @param EffectiveCategoryModel $category
 	 * @return array Result array with keys: 'created' (bool), 'updated' (bool), 'message' (string)
 	 */
 	public function generateOrUpdateDisplayStub( EffectiveCategoryModel $category ): array {
@@ -260,7 +257,7 @@ class DisplayStubGenerator {
 	 * - If it exists AND has the marker, regenerate it (user hasn't customized)
 	 * - If it exists but NO marker, preserve it (user customized)
 	 *
-	 * @param CategoryModel $category
+	 * @param EffectiveCategoryModel $category
 	 * @return array{status: string, message: string}
 	 */
 	public function generateIfAllowed( EffectiveCategoryModel $category ): array {
