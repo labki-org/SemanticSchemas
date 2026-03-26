@@ -211,15 +211,14 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertContains( 'Has email', $allProps );
 	}
 
-	public function testGetEffectiveCategoryForUnknownReturnsEmpty(): void {
-		$map = [
+	public function testGetEffectiveCategoryForUnknownThrows(): void {
+		$resolver = new InheritanceResolver( [
 			'Person' => new CategoryModel( 'Person' ),
-		];
-		$resolver = new InheritanceResolver( $map );
+		] );
 
-		$effective = $resolver->getEffectiveCategory( 'Unknown' );
-		$this->assertEquals( 'Unknown', $effective->getName() );
-		$this->assertEmpty( $effective->getAllProperties() );
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Unknown category: Unknown' );
+		$resolver->getEffectiveCategory( 'Unknown' );
 	}
 
 	/* =========================================================================
@@ -240,14 +239,14 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertEquals( $first, $second );
 	}
 
-	public function testUnknownCategoryReturnsStandalone(): void {
-		$map = [
+	public function testUnknownCategoryThrows(): void {
+		$resolver = new InheritanceResolver( [
 			'Person' => new CategoryModel( 'Person' ),
-		];
-		$resolver = new InheritanceResolver( $map );
+		] );
 
-		$ancestors = $resolver->getAncestors( 'Unknown' );
-		$this->assertEquals( [ 'Unknown' ], $ancestors );
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Unknown category: Unknown' );
+		$resolver->getAncestors( 'Unknown' );
 	}
 
 	/* =========================================================================
@@ -309,7 +308,7 @@ class InheritanceResolverTest extends TestCase {
 		] );
 
 		$chain = $resolver->getInheritanceChain( 'GradStudent' );
-		$names = array_map( fn ( $m ) => $m->getName(), $chain );
+		$names = array_map( static fn ( $m ) => $m->getName(), $chain );
 
 		// C3 linearization: child first, then parents in declared order
 		$this->assertEquals( [ 'GradStudent', 'Person', 'LabMember' ], $names );
@@ -320,15 +319,14 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertEquals( [ 'Has lab role' ], $chain[2]->getAllProperties() );
 	}
 
-	public function testGetInheritanceChainForUnknownReturnsStandalone(): void {
+	public function testGetInheritanceChainForUnknownThrows(): void {
 		$resolver = new InheritanceResolver( [
 			'Person' => new CategoryModel( 'Person' ),
 		] );
 
-		$chain = $resolver->getInheritanceChain( 'Unknown' );
-		$this->assertCount( 1, $chain );
-		$this->assertEquals( 'Unknown', $chain[0]->getName() );
-		$this->assertEmpty( $chain[0]->getAllProperties() );
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Unknown category: Unknown' );
+		$resolver->getInheritanceChain( 'Unknown' );
 	}
 
 	/* =========================================================================
@@ -344,13 +342,13 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
 	}
 
-	public function testGetEffectiveCategoryForUnknownReturnsEffectiveType(): void {
+	public function testGetEffectiveCategoryForUnknownThrowsRuntimeException(): void {
 		$resolver = new InheritanceResolver( [
 			'Person' => new CategoryModel( 'Person' ),
 		] );
 
-		$effective = $resolver->getEffectiveCategory( 'Unknown' );
-		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
+		$this->expectException( RuntimeException::class );
+		$resolver->getEffectiveCategory( 'Unknown' );
 	}
 
 	public function testGetEffectiveCategoryIsCached(): void {
@@ -412,12 +410,14 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertContains( 'Has parent prop', $parentModels['Parent']->getAllProperties() );
 	}
 
-	public function testGetParentEffectiveModelsForUnknownReturnsEmpty(): void {
+	public function testGetParentEffectiveModelsForUnknownThrows(): void {
 		$resolver = new InheritanceResolver( [
 			'Person' => new CategoryModel( 'Person' ),
 		] );
 
-		$this->assertEmpty( $resolver->getParentEffectiveModels( 'Unknown' ) );
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Unknown category: Unknown' );
+		$resolver->getParentEffectiveModels( 'Unknown' );
 	}
 
 	public function testGetParentEffectiveModelsForRootReturnsEmpty(): void {
