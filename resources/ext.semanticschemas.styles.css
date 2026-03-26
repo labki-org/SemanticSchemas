@@ -774,6 +774,35 @@
    Create Page
    ======================================================== */
 
+/* Page name field: prominent inline input */
+.ss-create-page-name {
+	flex-direction: row;
+	align-items: center;
+	gap: var(--ss-space-3);
+	padding: var(--ss-space-3) var(--ss-space-4);
+	background: var(--ss-accent-50);
+	border: 2px solid var(--ss-accent-200);
+	border-radius: var(--ss-radius-md);
+}
+
+.ss-create-page-name label {
+	font-size: 0.9375rem;
+	white-space: nowrap;
+}
+
+.ss-create-page-name input[type="text"] {
+	flex: 1;
+	font-size: 1.25rem;
+	font-weight: 500;
+	padding: var(--ss-space-2) var(--ss-space-3);
+	border-color: var(--ss-accent-300);
+}
+
+.ss-create-page-name input[type="text"]:focus {
+	border-color: var(--ss-accent-500);
+	box-shadow: 0 0 0 3px var(--ss-accent-100);
+}
+
 .ss-create-cat-grid {
 	display: flex;
 	flex-direction: column;
@@ -802,31 +831,33 @@
 	background: var(--ss-accent-50);
 }
 
-.ss-create-cat-item.is-existing {
-	background: var(--ss-slate-50);
-	opacity: 0.6;
-	cursor: default;
-}
-
-.ss-create-cat-item.is-existing:hover {
-	background: var(--ss-slate-50);
-}
-
+/* Shared muted state for items that can't/shouldn't be selected */
+.ss-create-cat-item.is-existing,
 .ss-create-cat-item.is-redundant {
 	background: var(--ss-slate-50);
-	opacity: 0.5;
+	opacity: 0.55;
 	cursor: default;
 }
 
+.ss-create-cat-item.is-existing:hover,
 .ss-create-cat-item.is-redundant:hover {
 	background: var(--ss-slate-50);
+}
+
+.ss-create-cat-badge {
+	margin-left: var(--ss-space-2);
 }
 
 .ss-create-cat-via {
 	font-size: 0.75rem;
 	color: var(--ss-slate-400);
 	font-style: italic;
-	margin-left: 8px;
+	margin-left: var(--ss-space-2);
+}
+
+/* Tree depth indentation via CSS custom property set by PHP */
+.ss-create-cat-item[style*="--depth"] {
+	padding-left: calc(var(--ss-space-3) + var(--depth, 0) * 24px);
 }
 
 .ss-create-cat-toggle {
@@ -840,6 +871,12 @@
 	font-size: 0.75rem;
 	transition: transform var(--ss-transition-fast);
 	user-select: none;
+}
+
+/* Invisible spacer matching toggle width so leaf items align with parents */
+.ss-create-cat-toggle-spacer {
+	width: 1.25em;
+	flex-shrink: 0;
 }
 
 .ss-create-cat-toggle.is-open {

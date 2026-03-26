@@ -1,11 +1,18 @@
 /**
  * Create Page — category tree interaction logic.
  *
- * Handles:
- * - Syncing checkboxes for categories that appear multiple times in the tree
- *   (due to multiple inheritance)
- * - Greying out ancestor categories when a descendant is selected, since the
- *   descendant's dispatcher already chains ancestor semantic templates
+ * Categories are rendered as a nested tree by PHP (SpecialSemanticSchemas).
+ * Each checkbox carries data attributes set by the server:
+ *   data-category  — the category name (same for all instances of that category)
+ *   data-ancestors — pipe-separated list of ancestor category names (from C3 linearization)
+ *
+ * This script adds three behaviors:
+ * 1. Multi-instance sync: categories with multiple parents appear in the tree
+ *    multiple times. Checking one instance checks all others.
+ * 2. Ancestor redundancy: when a child is selected, its ancestors are greyed out
+ *    because the child's dispatcher already chains ancestor semantic templates.
+ * 3. Collapsible tree nodes: parent categories have a toggle arrow to show/hide
+ *    their children.
  */
 ( function () {
 	'use strict';
@@ -15,51 +22,59 @@
 		return;
 	}
 
+	// Pre-build a map from category name → array of checkbox elements
+	// so that syncing multi-instance categories is O(1) lookup.
 	var checkboxes = grid.querySelectorAll( 'input[type="checkbox"][data-category]' );
+	var byCategoryName = {};
+	checkboxes.forEach( function ( cb ) {
+		var name = cb.dataset.category;
+		if ( !byCategoryName[ name ] ) {
+			byCategoryName[ name ] = [];
+		}
+		byCategoryName[ name ].push( cb );
+	} );
 
 	/**
-	 * Sync all checkbox instances of the same category.
+	 * Sync all checkbox instances of the same category to match the given state.
 	 */
 	function syncInstances( categoryName, checked ) {
-		checkboxes.forEach( function ( cb ) {
-			if ( cb.dataset.category === categoryName ) {
-				cb.checked = checked;
-			}
+		( byCategoryName[ categoryName ] || [] ).forEach( function ( cb ) {
+			cb.checked = checked;
 		} );
 	}
 
 	/**
-	 * Collect all ancestors for all currently checked categories.
+	 * Scan all checked checkboxes and update ancestor redundancy state in one pass.
+	 *
+	 * For each checked category, its ancestors (from data-ancestors) are marked
+	 * redundant — disabled and greyed out with a "via ChildName" indicator.
+	 * If multiple checked categories share an ancestor, the last one wins
+	 * for the "via" label (the visual effect is the same either way).
 	 */
-	function getRedundantAncestors() {
+	function updateAncestorState() {
+		// Pass 1: collect which ancestors are made redundant and by whom
 		var redundant = {};
 		checkboxes.forEach( function ( cb ) {
 			if ( !cb.checked ) {
 				return;
 			}
-			var ancestors = ( cb.dataset.ancestors || '' ).split( '|' ).filter( Boolean );
-			ancestors.forEach( function ( a ) {
-				redundant[ a ] = cb.dataset.category;
-			} );
+			( cb.dataset.ancestors || '' ).split( '|' ).filter( Boolean )
+				.forEach( function ( ancestor ) {
+					redundant[ ancestor ] = cb.dataset.category;
+				} );
 		} );
-		return redundant;
-	}
 
-	/**
-	 * Update the visual state of all items based on current selections.
-	 */
-	function updateAncestorState() {
-		var redundant = getRedundantAncestors();
-
+		// Pass 2: apply visual state to each checkbox
 		checkboxes.forEach( function ( cb ) {
 			var item = cb.closest( '.ss-create-cat-item' );
 			if ( !item ) {
 				return;
 			}
 			var catName = cb.dataset.category;
+			var isRedundant = redundant[ catName ] && !cb.checked;
 			var viaEl = item.querySelector( '.ss-create-cat-via' );
 
-			if ( redundant[ catName ] && !cb.checked ) {
+			if ( isRedundant ) {
 				item.classList.add( 'is-redundant' );
 				cb.disabled = true;
 				if ( !viaEl ) {
@@ -70,8 +85,8 @@
 				viaEl.textContent = 'via ' + redundant[ catName ];
 			} else {
 				item.classList.remove( 'is-redundant' );
-				// Don't re-enable checkboxes that are disabled because they're
-				// already on the page (is-existing)
+				// Don't re-enable checkboxes disabled because they're
+				// already on the page (is-existing items)
 				if ( !item.classList.contains( 'is-existing' ) ) {
 					cb.disabled = false;
 				}
@@ -82,35 +97,40 @@
 		} );
 	}
 
-	// Attach checkbox change handlers
-	checkboxes.forEach( function ( cb ) {
-		cb.addEventListener( 'change', function () {
-			syncInstances( cb.dataset.category, cb.checked );
-			updateAncestorState();
-		} );
+	// --- Event delegation on the grid container ---
+
+	grid.addEventListener( 'change', function ( e ) {
+		var cb = e.target;
+		if ( cb.type !== 'checkbox' || !cb.dataset.category ) {
+			return;
+		}
+		syncInstances( cb.dataset.category, cb.checked );
+		updateAncestorState();
 	} );
 
-	// Attach toggle handlers for collapsible tree nodes
+	grid.addEventListener( 'click', function ( e ) {
+		var toggle = e.target.closest( '.ss-create-cat-toggle' );
+		if ( !toggle ) {
+			return;
+		}
+		e.preventDefault();
+		e.stopPropagation();
+
+		// Children container is the next sibling after the toggle's parent item
+		var item = toggle.closest( '.ss-create-cat-item' );
+		var children = item && item.nextElementSibling;
+		if ( !children || !children.classList.contains( 'ss-create-cat-children' ) ) {
+			return;
+		}
+
+		var collapsed = !children.classList.contains( 'is-collapsed' );
+		children.classList.toggle( 'is-collapsed', collapsed );
+		toggle.classList.toggle( 'is-open', !collapsed );
+	} );
+
+	// Set initial toggle state (all open) and compute initial redundancy
 	grid.querySelectorAll( '.ss-create-cat-toggle' ).forEach( function ( toggle ) {
-		// Start open
 		toggle.classList.add( 'is-open' );
-
-		toggle.addEventListener( 'click', function ( e ) {
-			e.preventDefault();
-			e.stopPropagation();
-
-			var item = toggle.closest( '.ss-create-cat-item' );
-			var children = item.nextElementSibling;
-			if ( !children || !children.classList.contains( 'ss-create-cat-children' ) ) {
-				return;
-			}
-
-			var collapsed = !children.classList.contains( 'is-collapsed' );
-			children.classList.toggle( 'is-collapsed', collapsed );
-			toggle.classList.toggle( 'is-open', !collapsed );
-		} );
 	} );
-
-	// Initial state
 	updateAncestorState();
 }() );

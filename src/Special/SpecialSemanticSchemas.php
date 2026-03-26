@@ -1358,12 +1358,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$isAddMode = $prefilledPageName !== '';
 		$formHtml = '';
 
-		// Contextual description
-		$descMsg = $isAddMode
-			? $this->msg( 'semanticschemas-create-add-description' )->params( $prefilledPageName )->text()
-			: $this->msg( 'semanticschemas-create-description' )->text();
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-callout' ], $descMsg );
-
 		// Page name input
 		$pageNameAttrs = [
 			'id' => 'ss-page-name',
@@ -1373,32 +1367,14 @@ class SpecialSemanticSchemas extends SpecialPage {
 		if ( $isAddMode ) {
 			$pageNameAttrs['readonly'] = true;
 		}
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group' ],
+		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group ss-create-page-name' ],
 			Html::element( 'label', [ 'for' => 'ss-page-name' ],
 				$this->msg( 'semanticschemas-create-page-name' )->text()
 			) .
 			Html::input( 'ss-page-name', $prefilledPageName, 'text', $pageNameAttrs )
 		);
 
-		// Category tree — build parent→children map and compute ancestors
-		$categoryMap = [];
-		foreach ( $categories as $cat ) {
-			$categoryMap[$cat->getName()] = $cat;
-		}
-		$resolver = new InheritanceResolver( $categoryMap );
-
-		$childrenOf = [];
-		$roots = [];
-		foreach ( $categories as $cat ) {
-			$parents = $cat->getParents();
-			$managedParents = array_filter( $parents, static fn ( $p ) => isset( $categoryMap[$p] ) );
-			if ( empty( $managedParents ) ) {
-				$roots[] = $cat->getName();
-			}
-			foreach ( $managedParents as $parent ) {
-				$childrenOf[$parent][] = $cat->getName();
-			}
-		}
+		[ $roots, $childrenOf, $categoryMap, $resolver ] = $this->buildCategoryHierarchy( $categories );
 
 		$checkboxes = $this->renderCategoryTree(
 			$roots, $childrenOf, $categoryMap, $resolver, $existingCategories, 0
@@ -1437,14 +1413,45 @@ class SpecialSemanticSchemas extends SpecialPage {
 			? $this->msg( 'semanticschemas-create-add-title' )->text()
 			: $this->msg( 'semanticschemas-create-title' )->text();
 		$cardSubtitle = $isAddMode
-			? $this->msg( 'semanticschemas-create-add-subtitle' )->params( $prefilledPageName )->text()
-			: $this->msg( 'semanticschemas-tab-create-subtext' )->text();
+			? $this->msg( 'semanticschemas-create-add-description' )->params( $prefilledPageName )->text()
+			: $this->msg( 'semanticschemas-create-description' )->text();
 
 		$output->addHTML( $this->wrapShell( $this->renderCard(
 			$cardTitle,
 			$cardSubtitle,
 			$form
 		) ) );
+	}
+
+	/**
+	 * Build the parent→children map and identify root categories for tree rendering.
+	 *
+	 * @param CategoryModel[] $categories
+	 * @return array [ string[] $roots, array $childrenOf, array $categoryMap, InheritanceResolver $resolver ]
+	 */
+	private function buildCategoryHierarchy( array $categories ): array {
+		$categoryMap = [];
+		foreach ( $categories as $cat ) {
+			$categoryMap[$cat->getName()] = $cat;
+		}
+		$resolver = new InheritanceResolver( $categoryMap );
+
+		// Roots = categories whose parents are all outside the managed set.
+		// childrenOf[parentName] = list of child category names.
+		$childrenOf = [];
+		$roots = [];
+		foreach ( $categories as $cat ) {
+			$parents = $cat->getParents();
+			$managedParents = array_filter( $parents, static fn ( $p ) => isset( $categoryMap[$p] ) );
+			if ( empty( $managedParents ) ) {
+				$roots[] = $cat->getName();
+			}
+			foreach ( $managedParents as $parent ) {
+				$childrenOf[$parent][] = $cat->getName();
+			}
+		}
+
+		return [ $roots, $childrenOf, $categoryMap, $resolver ];
 	}
 
 	/**
@@ -1519,7 +1526,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$labelHtml = Html::element( 'strong', [], $catLabel );
 		if ( $isExisting ) {
 			$labelHtml .= Html::rawElement( 'span',
-				[ 'class' => 'semanticschemas-badge is-ok', 'style' => 'margin-left: 8px;' ],
+				[ 'class' => 'semanticschemas-badge is-ok ss-create-cat-badge' ],
 				$this->msg( 'semanticschemas-create-on-page' )->text()
 			);
 		}
@@ -1540,11 +1547,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$toggleHtml = $hasChildren
 			? Html::rawElement( 'span', [ 'class' => 'ss-create-cat-toggle' ], '▸' )
-			: '';
+			: Html::rawElement( 'span', [ 'class' => 'ss-create-cat-toggle-spacer' ] );
 
 		return Html::rawElement( 'div', [
 			'class' => $rowClass,
-			'style' => $depth > 0 ? 'padding-left: ' . ( 12 + $depth * 24 ) . 'px;' : '',
+			'style' => $depth > 0 ? '--depth: ' . $depth : '',
 		],
 			$toggleHtml .
 			Html::rawElement( 'label', [ 'for' => $instanceId, 'class' => 'ss-create-cat-label-wrap' ],
