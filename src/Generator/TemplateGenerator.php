@@ -223,12 +223,15 @@ class TemplateGenerator {
 		$out[] = '{{#default_form:' . $name . '}}';
 		$out[] = '';
 
+		/* Semantic storage */
 		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allProps ) );
 		$out[] = '';
 
+		/* Display template */
 		$out = array_merge( $out, $this->generateTemplateCall( $name . '/display', $allProps ) );
 		$out[] = '';
 
+		/* Subobject sections */
 		$out = array_merge(
 			$out,
 			$this->generateSubobjectDisplaySections( $effective )

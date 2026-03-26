@@ -87,6 +87,9 @@ class FormGenerator {
 
 		/* Page name info (for namespace targeting) */
 		if ( $category->getTargetNamespace() !== null ) {
+			// PageForms requires {{{info|page name=Namespace:<page name>}}} to create
+			// pages in a specific namespace. The <page name> placeholder is filled by
+			// PageForms with the user-entered page name.
 			$lines[] = '{{{info|page name=' . $this->s( $category->getTargetNamespace() ) . ':<page name>}}}';
 			$lines[] = '';
 		}
@@ -160,6 +163,11 @@ class FormGenerator {
 
 	/**
 	 * Generate a property section with label and table.
+	 *
+	 * @param string[] $props List of property names
+	 * @param string $label Section label
+	 * @param bool $isRequired Whether properties in this section are required
+	 * @return array Lines of wikitext
 	 */
 	private function generatePropertySection(
 		array $props,
@@ -187,6 +195,10 @@ class FormGenerator {
 
 	/**
 	 * Generate a table row for a property field with label and description.
+	 *
+	 * @param string $propertyName
+	 * @param bool $isRequired
+	 * @return array Lines of wikitext
 	 */
 	private function generateTableField(
 		string $propertyName,
@@ -292,6 +304,7 @@ class FormGenerator {
 			$out[] = '{{{for template|' . implode( '|', $for ) . '}}}';
 			$out[] = '';
 
+			// Generate table for subobject properties
 			$subProps = array_merge( $model->getRequiredProperties(), $model->getOptionalProperties() );
 			if ( !empty( $subProps ) ) {
 				$out[] = '{| class="formtable"';
