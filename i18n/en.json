@@ -5,6 +5,7 @@
 		]
 	},
 	"semanticschemas": "SemanticSchemas",
+	"specialpages-group-labki": "Labki",
 	"semanticschemas-desc": "Manages Categories and Properties as an ontology backbone with schema management and automatic artifact generation",
 	"special-semanticschemas": "SemanticSchemas",
 	"semanticschemas-overview": "Overview",

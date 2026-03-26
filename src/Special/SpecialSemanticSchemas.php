@@ -1646,6 +1646,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return string
 	 */
 	protected function getGroupName() {
-		return 'wiki';
+		return 'labki';
 	}
 }
