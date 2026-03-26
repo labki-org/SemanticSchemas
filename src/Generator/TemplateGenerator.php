@@ -197,7 +197,7 @@ class TemplateGenerator {
 	/**
 	 * Generate content for the dispatcher template.
 	 *
-	 * @param CategoryModel $category The raw (unmerged) leaf category
+	 * @param CategoryModel $category
 	 * @return string
 	 */
 	public function generateDispatcherTemplate( CategoryModel $category ): string {
@@ -359,7 +359,7 @@ class TemplateGenerator {
 	/**
 	 * Generate all artifacts for a category (semantic, dispatcher, subobjects).
 	 *
-	 * @param CategoryModel $category The raw (unmerged) leaf category
+	 * @param CategoryModel $category
 	 * @param CategoryModel[] $inheritanceChain C3-linearized chain [child, parent1, ..., root]
 	 * @return array{success: bool, errors: string[]}
 	 */
