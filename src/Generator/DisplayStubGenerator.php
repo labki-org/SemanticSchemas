@@ -107,7 +107,7 @@ class DisplayStubGenerator {
 
 		return self::AUTO_REGENERATE_MARKER . "\n"
 			. "<includeonly>\n"
-			. $tableBody
+			. $body
 			. '[[Category:' . $category->getName() . "]]" . "\n"
 			. "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 	}
