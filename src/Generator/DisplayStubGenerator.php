@@ -254,6 +254,11 @@ class DisplayStubGenerator {
 	/**
 	 * Generate display template only if allowed by the auto-regenerate marker.
 	 *
+	 * This method implements the conditional regeneration logic:
+	 * - If the display template doesn't exist, generate it (with marker)
+	 * - If it exists AND has the marker, regenerate it (user hasn't customized)
+	 * - If it exists but NO marker, preserve it (user customized)
+	 *
 	 * @param CategoryModel $category
 	 * @return array{status: string, message: string}
 	 */
