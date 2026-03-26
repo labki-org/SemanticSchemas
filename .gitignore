@@ -39,6 +39,9 @@ phpunit.xml
 /cache/
 /cache-*/
 
+# Claude Code
+CLAUDE.md
+
 # core
 /core/
 
