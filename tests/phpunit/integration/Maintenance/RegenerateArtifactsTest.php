@@ -5,6 +5,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Maintenance;
 use MediaWiki\Extension\SemanticSchemas\Maintenance\RegenerateArtifacts;
 use MediaWikiIntegrationTestCase;
 
+require_once __DIR__ . '/../../../../maintenance/regenerateArtifacts.php';
+
 /**
  * Smoke tests for the regenerateArtifacts.php maintenance script.
  *

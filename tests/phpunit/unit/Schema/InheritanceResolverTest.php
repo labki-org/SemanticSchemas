@@ -309,7 +309,7 @@ class InheritanceResolverTest extends TestCase {
 		] );
 
 		$chain = $resolver->getInheritanceChain( 'GradStudent' );
-		$names = array_map( fn ( $m ) => $m->getName(), $chain );
+		$names = array_map( static fn ( $m ) => $m->getName(), $chain );
 
 		// C3 linearization: child first, then parents in declared order
 		$this->assertEquals( [ 'GradStudent', 'Person', 'LabMember' ], $names );
