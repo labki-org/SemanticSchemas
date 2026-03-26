@@ -98,11 +98,11 @@ class DisplayStubGenerator {
 		$format = $category->getDisplayFormat();
 
 		if ( $format === 'sidebox' ) {
-			$tableBody = $this->generateSideboxBody( $category );
+			$body = $this->generateSideboxBody( $category );
 		} elseif ( $format === 'sections' ) {
-			$tableBody = $this->generateSectionsBody( $category );
+			$body = $this->generateSectionsBody( $category );
 		} else {
-			$tableBody = $this->generateTableBody( $category );
+			$body = $this->generateTableBody( $category );
 		}
 
 		return self::AUTO_REGENERATE_MARKER . "\n"
