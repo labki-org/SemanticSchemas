@@ -97,10 +97,9 @@ class RegenerateArtifacts extends Maintenance {
 		$name = $category->getName();
 		$this->output( "Processing: $name\n" );
 
-		$chain = $resolver->getInheritanceChain( $name );
-		$effective = $category->effective();
+		$effective = $resolver->getEffectiveCategory( $name );
 
-		$result = $templateGenerator->generateAllTemplates( $category, $chain );
+		$result = $templateGenerator->generateAllTemplates( $category, $resolver );
 		if ( $result['success'] ) {
 			$this->output( "  ✓ Generated semantic and dispatcher templates\n" );
 		} else {
