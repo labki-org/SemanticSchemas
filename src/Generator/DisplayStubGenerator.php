@@ -120,6 +120,7 @@ class DisplayStubGenerator {
 	}
 
 	private function generateSideboxBody( CategoryModel $category ): string {
+		// Infobox style: floated right, distinct styling
 		$tableStyle = 'float: right; clear: right; margin: 0 0 1em 1em; width: 300px; '
 			. 'background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
 		$content = '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
@@ -151,6 +152,7 @@ class DisplayStubGenerator {
 			}
 		}
 
+		// Catch-all for properties NOT in any section
 		$allProps = $category->getAllProperties();
 		$remaining = [];
 		foreach ( $allProps as $p ) {
@@ -271,6 +273,7 @@ class DisplayStubGenerator {
 			];
 		}
 
+		// Template doesn't exist - create it
 		if ( !$this->pageCreator->pageExists( $title ) ) {
 			$this->generateDisplayContent( $category );
 			return [
@@ -279,6 +282,7 @@ class DisplayStubGenerator {
 			];
 		}
 
+		// Template exists and has marker - safe to regenerate
 		if ( $this->hasAutoRegenerateMarker( $title ) ) {
 			$this->generateDisplayContent( $category );
 			return [
@@ -287,6 +291,7 @@ class DisplayStubGenerator {
 			];
 		}
 
+		// User has customized the template (marker removed) - preserve it
 		return [
 			'status' => 'preserved',
 			'message' => "Display template was not updated because it has been customized. " .
