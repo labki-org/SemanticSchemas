@@ -359,25 +359,20 @@ class TemplateGenerator {
 	 * Generate all artifacts for a category (semantic, dispatcher, subobjects).
 	 *
 	 * @param CategoryModel $category
-	 * @param CategoryModel[] $inheritanceChain C3-linearized chain [child, parent1, ..., root]
 	 * @return array{success: bool, errors: string[]}
 	 */
 	public function generateAllTemplates(
-		CategoryModel $category,
-		array $inheritanceChain
+		CategoryModel $category
 	): array {
 		$errors = [];
 		$name = $category->getName();
 
-		/* Semantic template for each category in the chain */
-		foreach ( $inheritanceChain as $chainCat ) {
-			$catName = $chainCat->getName();
-			try {
-				$content = $this->generateSemanticTemplate( $chainCat );
-				$this->updateTemplate( $catName . '/semantic', $content );
-			} catch ( \Exception $e ) {
-				$errors[] = "Error generating semantic template for $catName: " . $e->getMessage();
-			}
+		/* Semantic template — own declared properties only */
+		try {
+			$content = $this->generateSemanticTemplate( $category );
+			$this->updateTemplate( $name . '/semantic', $content );
+		} catch ( \Exception $e ) {
+			$errors[] = "Error generating semantic template for $name: " . $e->getMessage();
 		}
 
 		/* Dispatcher */

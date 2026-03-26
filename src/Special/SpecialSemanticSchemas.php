@@ -257,10 +257,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			// Use the model from the map so it has the resolver wired
 			$category = $categoryMap[$categoryName] ?? $category;
-			$chain = $resolver->getInheritanceChain( $categoryName );
-
 			$templateResult = $this->templateGenerator->generateAllTemplates(
-				$category, $chain
+				$category
 			);
 
 			if ( !$templateResult['success'] ) {
@@ -1156,10 +1154,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 				);
 
 				try {
-					$chain = $resolver->getInheritanceChain( $name );
-
 					$this->templateGenerator->generateAllTemplates(
-						$category, $chain
+						$category
 					);
 					$this->formGenerator->generateAndSaveForm( $category->effective() );
 
