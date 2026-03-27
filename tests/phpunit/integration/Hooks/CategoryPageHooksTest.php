@@ -57,7 +57,10 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		);
 		$updater->saveRevision( CommentStoreComment::newUnsavedComment( "Made an invalid category schema" ) );
 		$links = [];
-		( new CategoryPageHooks )->onSkinTemplateNavigation__Universal( $this->skinMock, $links );
+		$hooks = new CategoryPageHooks(
+			$this->getServiceContainer()->get( 'SemanticSchemas.WikiCategoryStore' )
+		);
+		$hooks->onSkinTemplateNavigation__Universal( $this->skinMock, $links );
 
 		$this->assertArrayHasKey( 'actions', $links );
 		$this->assertArrayHasKey( 'ss-generate-form', $links['actions'] );
