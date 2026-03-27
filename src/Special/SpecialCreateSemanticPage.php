@@ -204,7 +204,8 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			return;
 		}
 
-		// Build page content: preserve existing content and append new template calls
+		// Build page content: preserve existing content, replace parent→child
+		// template calls where applicable, and append genuinely new ones.
 		$existingContent = '';
 		if ( $pageTitle->exists() ) {
 			$wikiPage = $this->wikiPageFactory->newFromTitle( $pageTitle );
@@ -214,28 +215,62 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			}
 		}
 
+		// Build inheritance resolver for parent detection
+		$allCategories = $this->categoryStore->getAllCategories();
+		$categoryMap = [];
+		foreach ( $allCategories as $cat ) {
+			$categoryMap[$cat->getName()] = $cat;
+		}
+		$resolver = new InheritanceResolver( $categoryMap );
+
+		$pageContent = $existingContent;
 		$newCalls = '';
 		foreach ( $selectedCategories as $catName ) {
-			// Only add template calls not already present in the page
-			if ( preg_match( '/\{\{\s*' . preg_quote( $catName, '/' ) . '\s*[\n|}]/', $existingContent ) ) {
+			// Skip categories already on the page
+			if ( preg_match( '/\{\{\s*' . preg_quote( $catName, '/' ) . '\s*[\n|}]/', $pageContent ) ) {
 				continue;
 			}
-			$newCalls .= '{{' . $catName . "\n}}\n\n";
+
+			// If a parent category is on the page, replace its template call
+			// with this child (child inherits all parent properties).
+			$ancestors = $resolver->getAncestors( $catName );
+			array_shift( $ancestors ); // remove self
+			$replaced = false;
+			foreach ( $ancestors as $ancestor ) {
+				$pattern = '/\{\{\s*' . preg_quote( $ancestor, '/' ) . '\s*\n[^}]*\}\}/';
+				if ( preg_match( $pattern, $pageContent ) ) {
+					// Replace parent call, preserving its parameter values for the child
+					$pageContent = preg_replace(
+						'/(\{\{\s*)' . preg_quote( $ancestor, '/' ) . '(\s*\n[^}]*\}\})/',
+						'$1' . $catName . '$2',
+						$pageContent,
+						1
+					);
+					$replaced = true;
+					break;
+				}
+			}
+
+			if ( !$replaced ) {
+				$newCalls .= '{{' . $catName . "\n}}\n\n";
+			}
 		}
 		$newCalls = rtrim( $newCalls );
 
-		if ( $newCalls === '' ) {
-			// All selected categories already have template calls on the page
+		if ( $newCalls === '' && $pageContent === $existingContent ) {
+			// Nothing changed
 			$output->redirect( $pageTitle->getFullURL() );
 			return;
 		}
 
-		$pageContent = $existingContent !== ''
-			? rtrim( $existingContent ) . "\n\n" . $newCalls
-			: $newCalls;
+		if ( $newCalls !== '' ) {
+			$pageContent = $pageContent !== ''
+				? rtrim( $pageContent ) . "\n\n" . $newCalls
+				: $newCalls;
+		}
 
 		$editSummary = $existingContent !== ''
-			? 'SemanticSchemas: Added category templates'
+			? 'SemanticSchemas: Updated category templates'
 			: 'SemanticSchemas: Created multi-category page';
 
 		$success = $this->pageCreator->createOrUpdatePage(
