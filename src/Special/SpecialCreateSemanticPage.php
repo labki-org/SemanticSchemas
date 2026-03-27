@@ -7,6 +7,7 @@ use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Html\Html;
+use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\NamespaceInfo;
 use MediaWiki\Title\Title;
@@ -27,16 +28,19 @@ class SpecialCreateSemanticPage extends SpecialPage {
 	private WikiCategoryStore $categoryStore;
 	private PageCreator $pageCreator;
 	private NamespaceInfo $namespaceInfo;
+	private WikiPageFactory $wikiPageFactory;
 
 	public function __construct(
 		WikiCategoryStore $categoryStore,
 		PageCreator $pageCreator,
-		NamespaceInfo $namespaceInfo
+		NamespaceInfo $namespaceInfo,
+		WikiPageFactory $wikiPageFactory
 	) {
 		parent::__construct( 'CreateSemanticPage', 'createpage' );
 		$this->categoryStore = $categoryStore;
 		$this->pageCreator = $pageCreator;
 		$this->namespaceInfo = $namespaceInfo;
+		$this->wikiPageFactory = $wikiPageFactory;
 	}
 
 	public function execute( $subPage ) {
@@ -181,13 +185,6 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			}
 		}
 
-		// Multiple categories: create page with dispatcher template calls
-		$pageContent = '';
-		foreach ( $selectedCategories as $catName ) {
-			$pageContent .= '{{' . $catName . "\n}}\n\n";
-		}
-		$pageContent = rtrim( $pageContent );
-
 		// Determine namespace from first category
 		$firstCat = $this->categoryStore->readCategory( $selectedCategories[0] );
 		$ns = NS_MAIN;
@@ -207,10 +204,44 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			return;
 		}
 
+		// Build page content: preserve existing content and append new template calls
+		$existingContent = '';
+		if ( $pageTitle->exists() ) {
+			$wikiPage = $this->wikiPageFactory->newFromTitle( $pageTitle );
+			$content = $wikiPage->getContent();
+			if ( $content ) {
+				$existingContent = $content->serialize();
+			}
+		}
+
+		$newCalls = '';
+		foreach ( $selectedCategories as $catName ) {
+			// Only add template calls not already present in the page
+			if ( preg_match( '/\{\{\s*' . preg_quote( $catName, '/' ) . '\s*[\n|}]/', $existingContent ) ) {
+				continue;
+			}
+			$newCalls .= '{{' . $catName . "\n}}\n\n";
+		}
+		$newCalls = rtrim( $newCalls );
+
+		if ( $newCalls === '' ) {
+			// All selected categories already have template calls on the page
+			$output->redirect( $pageTitle->getFullURL() );
+			return;
+		}
+
+		$pageContent = $existingContent !== ''
+			? rtrim( $existingContent ) . "\n\n" . $newCalls
+			: $newCalls;
+
+		$editSummary = $existingContent !== ''
+			? 'SemanticSchemas: Added category templates'
+			: 'SemanticSchemas: Created multi-category page';
+
 		$success = $this->pageCreator->createOrUpdatePage(
 			$pageTitle,
 			$pageContent,
-			'SemanticSchemas: Created multi-category page'
+			$editSummary
 		);
 
 		if ( !$success ) {

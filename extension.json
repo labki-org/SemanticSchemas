@@ -164,7 +164,8 @@
 			"services": [
 				"SemanticSchemas.WikiCategoryStore",
 				"SemanticSchemas.PageCreator",
-				"NamespaceInfo"
+				"NamespaceInfo",
+				"WikiPageFactory"
 			]
 		},
 		"SemanticSchemas": {
