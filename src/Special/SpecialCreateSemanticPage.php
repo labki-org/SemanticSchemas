@@ -225,30 +225,51 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		$pageContent = $existingContent;
 		$newCalls = '';
+		$removedParents = [];
 		foreach ( $selectedCategories as $catName ) {
 			// Skip categories already on the page
 			if ( preg_match( '/\{\{\s*' . preg_quote( $catName, '/' ) . '\s*[\n|}]/', $pageContent ) ) {
 				continue;
 			}
 
-			// If a parent category is on the page, replace its template call
-			// with this child (child inherits all parent properties).
+			// Skip categories that were removed as parents of a child category
+			if ( isset( $removedParents[$catName] ) ) {
+				continue;
+			}
+
+			// Replace parent template calls with this child. First parent found
+			// becomes the child (preserving params); additional parents are removed
+			// with their unique params merged into the child.
 			$ancestors = $resolver->getAncestors( $catName );
-			array_shift( $ancestors ); // remove self
+			array_shift( $ancestors );
 			$replaced = false;
 			foreach ( $ancestors as $ancestor ) {
-				$pattern = '/\{\{\s*' . preg_quote( $ancestor, '/' ) . '\s*\n[^}]*\}\}/';
-				if ( preg_match( $pattern, $pageContent ) ) {
-					// Replace parent call, preserving its parameter values for the child
+				if ( !preg_match( self::templateCallPattern( $ancestor ), $pageContent, $m ) ) {
+					continue;
+				}
+				if ( !$replaced ) {
 					$pageContent = preg_replace(
-						'/(\{\{\s*)' . preg_quote( $ancestor, '/' ) . '(\s*\n[^}]*\}\})/',
+						self::templateCallPattern( $ancestor, true ),
 						'$1' . $catName . '$2',
 						$pageContent,
 						1
 					);
 					$replaced = true;
-					break;
+				} else {
+					$parentParams = $this->extractTemplateParams( $m[0] );
+					$pageContent = preg_replace(
+						self::templateCallPattern( $ancestor, false, true ),
+						'',
+						$pageContent,
+						1
+					);
+					if ( $parentParams ) {
+						$pageContent = $this->mergeParamsIntoTemplate(
+							$pageContent, $catName, $parentParams
+						);
+					}
 				}
+				$removedParents[$ancestor] = true;
 			}
 
 			if ( !$replaced ) {
@@ -293,6 +314,74 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			'FormEdit/CompositeForm/' . $pageTitle->getPrefixedText()
 		);
 		$output->redirect( $formEditTitle->getFullURL() );
+	}
+
+	/**
+	 * Build a regex matching a dispatcher template call like {{Name\n...\n}}.
+	 *
+	 * @param string $name Template name to match
+	 * @param bool $captureNameSeparately If true, captures name and body as $1/$2
+	 *   for substitution; otherwise captures the whole call.
+	 */
+	private static function templateCallPattern(
+		string $name, bool $captureNameSeparately = false, bool $trailingWhitespace = false
+	): string {
+		$qName = preg_quote( $name, '/' );
+		$trail = $trailingWhitespace ? '\s*' : '';
+		if ( $captureNameSeparately ) {
+			return '/(\{\{\s*)' . $qName . '(\s*\n[^}]*\}\})' . $trail . '/';
+		}
+		return '/\{\{\s*' . $qName . '\s*\n[^}]*\}\}' . $trail . '/';
+	}
+
+	/**
+	 * Extract |key=value pairs from a template call string.
+	 *
+	 * @param string $templateCall e.g. "{{Cat2\n|description=hello\n}}"
+	 * @return array<string,string>
+	 */
+	private function extractTemplateParams( string $templateCall ): array {
+		$params = [];
+		preg_match_all( '/\|([^=\n]+)=([^\n]*)/', $templateCall, $matches, PREG_SET_ORDER );
+		foreach ( $matches as $match ) {
+			$key = trim( $match[1] );
+			$value = trim( $match[2] );
+			if ( $key !== '' && $value !== '' ) {
+				$params[$key] = $value;
+			}
+		}
+		return $params;
+	}
+
+	/**
+	 * Merge params into an existing template call, skipping keys already present.
+	 *
+	 * @param string $pageContent Full page wikitext
+	 * @param string $templateName Template to merge into
+	 * @param array<string,string> $params Key-value pairs to add
+	 * @return string Updated page content
+	 */
+	private function mergeParamsIntoTemplate(
+		string $pageContent, string $templateName, array $params
+	): string {
+		$pattern = '/(\{\{\s*' . preg_quote( $templateName, '/' ) . '\s*\n)([^}]*)(\}\})/';
+		if ( !preg_match( $pattern, $pageContent, $m ) ) {
+			return $pageContent;
+		}
+
+		$existingBody = $m[2];
+		$newParams = '';
+		foreach ( $params as $key => $value ) {
+			if ( strpos( $existingBody, '|' . $key . '=' ) === false ) {
+				$newParams .= '|' . $key . '=' . $value . "\n";
+			}
+		}
+
+		if ( $newParams === '' ) {
+			return $pageContent;
+		}
+
+		return preg_replace( $pattern, '$1$2' . $newParams . '$3', $pageContent, 1 );
 	}
 
 	/**
