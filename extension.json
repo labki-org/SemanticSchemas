@@ -59,7 +59,11 @@
 			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks"
 		},
 		"ParserHooks": {
-			"class": "MediaWiki\\Extension\\SemanticSchemas\\Parser\\DisplayParserFunctions"
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Parser\\DisplayParserFunctions",
+			"services": [
+				"SemanticSchemas.WikiCategoryStore",
+				"WikiPageFactory"
+			]
 		}
 	},
 	"Hooks": {

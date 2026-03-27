@@ -2,7 +2,7 @@
 Composite form — dynamically assembles sub-forms for multi-category pages.
 This form is part of SemanticSchemas base configuration.
 </noinclude><includeonly>
-{{#arraymap:{{#show:{{FULLPAGENAME}}|?Category#-|link=none|format=plainlist}}|,|@@|{{Form:{{PAGENAME:@@}}/composite}}|
+{{#arraymap:{{#semanticschemas_categories:{{FULLPAGENAME}}}}|,|@@|{{Form:{{PAGENAME:@@}}/composite}}|
 }}
 
 '''Free text:'''
