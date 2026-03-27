@@ -286,13 +286,10 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			return;
 		}
 
-		// Redirect to the composite form — categories are resolved from page
-		// wikitext so the form works immediately without waiting for SMW indexing.
-		$formEditTitle = \MediaWiki\Title\Title::makeTitleSafe(
-			NS_SPECIAL,
-			'FormEdit/CompositeForm/' . $pageTitle->getPrefixedText()
-		);
-		$output->redirect( $formEditTitle->getFullURL() );
+		// Redirect to the page itself — CompositeForm needs SMW to index
+		// the categories first (via the job queue), so redirect to the page
+		// view where the user can click "Edit with form" when ready.
+		$output->redirect( $pageTitle->getFullURL() );
 	}
 
 	/**
