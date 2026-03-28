@@ -800,6 +800,24 @@
 	box-shadow: 0 0 0 3px var(--ss-accent-100);
 }
 
+.ss-create-categories {
+	padding: var(--ss-space-3) var(--ss-space-4);
+	border: 2px solid var(--ss-slate-200);
+	border-radius: var(--ss-radius-md);
+}
+
+.ss-cat-search {
+	margin-bottom: var(--ss-space-3);
+}
+
+.ss-search-hidden {
+	display: none !important;
+}
+
+.ss-search-match {
+	background: var(--ss-accent-50) !important;
+}
+
 .ss-create-cat-grid {
 	display: flex;
 	flex-direction: column;
@@ -807,6 +825,8 @@
 	border: 1px solid var(--ss-slate-200);
 	border-radius: var(--ss-radius-md);
 	overflow: hidden;
+	max-height: 400px;
+	overflow-y: auto;
 }
 
 .ss-create-cat-item {

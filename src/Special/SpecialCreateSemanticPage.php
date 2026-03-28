@@ -120,10 +120,17 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		$output->addModules( [ 'ext.semanticschemas.createpage' ] );
 
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group' ],
+		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group ss-create-categories' ],
 			Html::element( 'label', [],
 				$this->msg( 'semanticschemas-create-select-categories' )->text()
 			) .
+			Html::element( 'input', [
+				'type' => 'text',
+				'id' => 'ss-cat-search',
+				'class' => 'ss-cat-search',
+				'placeholder' => $this->msg( 'semanticschemas-create-search-placeholder' )->text(),
+				'autocomplete' => 'off',
+			] ) .
 			Html::rawElement( 'div', [ 'class' => 'ss-create-cat-grid' ],
 				$checkboxes
 			)

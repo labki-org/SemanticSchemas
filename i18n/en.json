@@ -154,5 +154,6 @@
 	"semanticschemas-create-add-submit": "Add Category",
 	"semanticschemas-create-failed": "Failed to create page \"$1\".",
 	"semanticschemas-create-on-page": "on page",
+	"semanticschemas-create-search-placeholder": "Search categories...",
 	"semanticschemas-action-add-category": "Add category"
 }

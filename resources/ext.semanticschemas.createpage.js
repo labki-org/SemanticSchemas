@@ -6,13 +6,15 @@
  *   data-category  — the category name (same for all instances of that category)
  *   data-ancestors — pipe-separated list of ancestor category names (from C3 linearization)
  *
- * This script adds three behaviors:
+ * This script adds four behaviors:
  * 1. Multi-instance sync: categories with multiple parents appear in the tree
  *    multiple times. Checking one instance checks all others.
  * 2. Ancestor redundancy: when a child is selected, its ancestors are greyed out
  *    because the child's dispatcher already chains ancestor semantic templates.
  * 3. Collapsible tree nodes: parent categories have a toggle arrow to show/hide
  *    their children.
+ * 4. Live search: typing in the search box filters the tree, auto-expanding
+ *    parents to show matches and hiding non-matching items.
  */
 ( function () {
 	'use strict';
@@ -127,6 +129,106 @@
 		children.classList.toggle( 'is-collapsed', collapsed );
 		toggle.classList.toggle( 'is-open', !collapsed );
 	} );
+
+	// --- Live search filtering ---
+
+	var searchInput = document.getElementById( 'ss-cat-search' );
+	var allItems = grid.querySelectorAll( '.ss-create-cat-item' );
+	var allChildContainers = grid.querySelectorAll( '.ss-create-cat-children' );
+	var allToggles = grid.querySelectorAll( '.ss-create-cat-toggle' );
+
+	function filterTree( query ) {
+		query = query.toLowerCase().trim();
+
+		if ( !query ) {
+			// Reset: show everything, clear highlights, restore collapse state
+			allItems.forEach( function ( item ) {
+				item.classList.remove( 'ss-search-hidden' );
+				item.classList.remove( 'ss-search-match' );
+			} );
+			allChildContainers.forEach( function ( container ) {
+				container.classList.remove( 'ss-search-hidden' );
+				container.classList.remove( 'is-collapsed' );
+			} );
+			allToggles.forEach( function ( toggle ) {
+				toggle.classList.add( 'is-open' );
+			} );
+			return;
+		}
+
+		// Determine which categories match the search
+		var matchingCategories = {};
+		checkboxes.forEach( function ( cb ) {
+			var catName = cb.dataset.category;
+			var item = cb.closest( '.ss-create-cat-item' );
+			if ( !item ) {
+				return;
+			}
+			// Match against category label and description, not dynamic annotations
+			var labelEl = item.querySelector( '.ss-create-cat-label' );
+			var label = ( labelEl || item ).textContent.toLowerCase();
+			if ( label.indexOf( query ) !== -1 ) {
+				matchingCategories[ catName ] = true;
+			}
+		} );
+
+		// For each matching category, also mark its ancestors as visible
+		// so the parent chain is shown for context
+		var visibleCategories = {};
+		Object.keys( matchingCategories ).forEach( function ( catName ) {
+			visibleCategories[ catName ] = true;
+			( byCategoryName[ catName ] || [] ).forEach( function ( cb ) {
+				( cb.dataset.ancestors || '' ).split( '|' ).filter( Boolean )
+					.forEach( function ( ancestor ) {
+						visibleCategories[ ancestor ] = true;
+					} );
+			} );
+		} );
+
+		// Apply visibility and highlight direct matches
+		allItems.forEach( function ( item ) {
+			var cb = item.querySelector( 'input[type="checkbox"][data-category]' );
+			if ( !cb ) {
+				return;
+			}
+			var catName = cb.dataset.category;
+			if ( visibleCategories[ catName ] ) {
+				item.classList.remove( 'ss-search-hidden' );
+				if ( matchingCategories[ catName ] ) {
+					item.classList.add( 'ss-search-match' );
+				} else {
+					item.classList.remove( 'ss-search-match' );
+				}
+			} else {
+				item.classList.add( 'ss-search-hidden' );
+				item.classList.remove( 'ss-search-match' );
+			}
+		} );
+
+		// Expand all child containers that have visible items, hide empty ones
+		allChildContainers.forEach( function ( container ) {
+			var hasVisible = container.querySelector(
+				'.ss-create-cat-item:not(.ss-search-hidden)'
+			);
+			if ( hasVisible ) {
+				container.classList.remove( 'ss-search-hidden' );
+				container.classList.remove( 'is-collapsed' );
+			} else {
+				container.classList.add( 'ss-search-hidden' );
+			}
+		} );
+
+		// Expand all toggles when searching
+		allToggles.forEach( function ( toggle ) {
+			toggle.classList.add( 'is-open' );
+		} );
+	}
+
+	if ( searchInput ) {
+		searchInput.addEventListener( 'input', function () {
+			filterTree( searchInput.value );
+		} );
+	}
 
 	// Set initial toggle state (all open) and compute initial redundancy
 	grid.querySelectorAll( '.ss-create-cat-toggle' ).forEach( function ( toggle ) {
