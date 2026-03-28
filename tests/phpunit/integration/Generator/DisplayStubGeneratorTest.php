@@ -112,7 +112,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testDefaultRenderTemplateUsedForUnknownProperties(): void {
 		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
 
-		$this->assertStringContainsString( 'Template:Property/Default', $content );
+		$this->assertStringContainsString( 'Property/Default', $content );
 	}
 
 	public function testCustomRenderTemplateUsedWhenPropertyHasOne(): void {
@@ -128,8 +128,8 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			]
 		);
 
-		$this->assertStringContainsString( 'Template:Property/Email', $content );
-		$this->assertStringNotContainsString( 'Template:Property/Default', $content );
+		$this->assertStringContainsString( 'Property/Email', $content );
+		$this->assertStringNotContainsString( 'Property/Default', $content );
 	}
 
 	public function testPageTypePropertyUsesPageRenderTemplate(): void {
@@ -144,7 +144,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			]
 		);
 
-		$this->assertStringContainsString( 'Template:Property/Page', $content );
+		$this->assertStringContainsString( 'Property/Page', $content );
 	}
 
 	public function testCustomRenderTemplateStillWrappedInIf(): void {
@@ -161,7 +161,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		);
 
 		$this->assertStringContainsString( '{{#if:{{{email|}}}|', $content );
-		$this->assertStringContainsString( 'Template:Property/Email', $content );
+		$this->assertStringContainsString( 'Property/Email', $content );
 	}
 
 	/* =========================================================================

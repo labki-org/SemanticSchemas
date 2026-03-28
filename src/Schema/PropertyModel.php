@@ -246,14 +246,17 @@ class PropertyModel {
 	public function getRenderTemplate(): string {
 		// Priority 1: Explicit custom template
 		if ( $this->hasTemplate !== null ) {
-			return $this->hasTemplate;
+			// Strip namespace prefix if present — wikitext {{Name}} already
+			// resolves in the Template namespace, and hardcoding the prefix
+			// breaks on non-English wikis.
+			return preg_replace( '/^Template:/', '', $this->hasTemplate );
 		}
 		// Priority 2: Datatype-specific template for Page type
 		if ( $this->isPageType() ) {
-			return 'Template:Property/Page';
+			return 'Property/Page';
 		}
 		// Fallback: Default template
-		return 'Template:Property/Default';
+		return 'Property/Default';
 	}
 
 	// Backward compatibility aliases

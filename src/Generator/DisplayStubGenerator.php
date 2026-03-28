@@ -12,7 +12,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *
  * This generator produces the 'Template:<Category>/display' page, which contains
  * a purely static wikitext definition (e.g., a table) where property values are
- * passed into specific render templates (e.g., {{Template:Property/Email}}).
+ * passed into specific render templates (e.g., {{Property/Email}}).
  *
  * This "Generation-Time Resolution" replaces the older dynamic runtime system,
  * ensuring reliability, cacheability, and compatibility with the standard MediaWiki parser.
@@ -214,7 +214,7 @@ class DisplayStubGenerator {
 				// Fallback for properties without wiki pages:
 				// Generate a readable label and use default render template
 				$label = NamingHelper::generatePropertyLabel( $propName );
-				$renderTemplate = 'Template:Property/Default';
+				$renderTemplate = 'Property/Default';
 				$valueExpr = '{{{' . $paramName . '|}}}';
 			}
 
