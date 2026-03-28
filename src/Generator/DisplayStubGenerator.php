@@ -221,9 +221,11 @@ class DisplayStubGenerator {
 			$valueCall = "{{" . $renderTemplate . " | value=" . $valueExpr . " }}";
 
 			// Hide the entire row when the value is empty.
-			// Uses HTML table markup inside #if to avoid pipe/argument conflicts.
+			// Uses {{!}} magic word inside #if to escape pipes in wikitext table syntax.
 			$out .= '{{#if:{{{' . $paramName . '|}}}|' . "\n";
-			$out .= '<tr><th>' . $label . '</th><td>' . $valueCall . "</td></tr>\n";
+			$out .= '{{!}}-' . "\n";
+			$out .= '! ' . $label . "\n";
+			$out .= '{{!}} ' . $valueCall . "\n";
 			$out .= "}}\n";
 		}
 		return $out;

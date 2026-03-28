@@ -77,11 +77,11 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringContainsString( '{{#if:{{{name|}}}|', $content );
 	}
 
-	public function testPropertyRowUsesHtmlTableMarkup(): void {
+	public function testPropertyRowUsesMagicWordPipeEscape(): void {
 		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
 
-		$this->assertStringContainsString( '<tr><th>', $content );
-		$this->assertStringContainsString( '</td></tr>', $content );
+		$this->assertStringContainsString( '{{!}}-', $content );
+		$this->assertStringContainsString( '{{!}} ', $content );
 	}
 
 	public function testMultiplePropertiesEachHaveIfCondition(): void {
