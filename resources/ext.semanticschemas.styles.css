@@ -776,9 +776,6 @@
 
 /* Page name field: prominent inline input */
 .ss-create-page-name {
-	flex-direction: row;
-	align-items: center;
-	gap: var(--ss-space-3);
 	padding: var(--ss-space-3) var(--ss-space-4);
 	background: var(--ss-accent-50);
 	border: 2px solid var(--ss-accent-200);
@@ -787,11 +784,11 @@
 
 .ss-create-page-name label {
 	font-size: 0.9375rem;
-	white-space: nowrap;
 }
 
 .ss-create-page-name input[type="text"] {
-	flex: 1;
+	width: 100%;
+	box-sizing: border-box;
 	font-size: 1.25rem;
 	font-weight: 500;
 	padding: var(--ss-space-2) var(--ss-space-3);
