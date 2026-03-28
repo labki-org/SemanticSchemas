@@ -257,9 +257,15 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		}
 		$newCalls = rtrim( $newCalls );
 
+		// Composite pages redirect to the composite form
+		$compositeUrl = Title::makeTitleSafe(
+			NS_SPECIAL,
+			'FormEdit/CompositeForm/' . $pageTitle->getPrefixedText()
+		) -> getFullURL();
+
 		if ( $newCalls === '' && $pageContent === $existingContent ) {
 			// Nothing changed
-			$output->redirect( $pageTitle->getFullURL() );
+			$output->redirect( $compositeUrl );
 			return;
 		}
 
@@ -286,10 +292,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			return;
 		}
 
-		// Redirect to the page itself — CompositeForm needs SMW to index
-		// the categories first (via the job queue), so redirect to the page
-		// view where the user can click "Edit with form" when ready.
-		$output->redirect( $pageTitle->getFullURL() );
+		$output->redirect( $compositeUrl );
 	}
 
 	/**
