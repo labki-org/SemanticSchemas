@@ -185,21 +185,33 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		// Single category: redirect directly to FormEdit
 		if ( count( $selectedCategories ) === 1 ) {
 			$catName = $selectedCategories[0];
-			$formEditTitle = Title::makeTitleSafe( NS_SPECIAL, 'FormEdit/' . $catName . '/' . $pageName );
+			$targetPage = $pageName;
+			$cat = $this->categoryStore->readCategory( $catName );
+			if ( $cat && $cat->getTargetNamespace() !== null ) {
+				$nsName = $cat->getTargetNamespace();
+				$nsIndex = $this->namespaceInfo->getCanonicalIndex( strtolower( $nsName ) );
+				if ( $nsIndex !== null ) {
+					$targetPage = $nsName . ':' . $pageName;
+				}
+			}
+			$formEditTitle = Title::makeTitleSafe( NS_SPECIAL, 'FormEdit/' . $catName . '/' . $targetPage );
 			if ( $formEditTitle ) {
 				$output->redirect( $formEditTitle->getFullURL() );
 				return;
 			}
 		}
 
-		// Determine namespace from first category
-		$firstCat = $this->categoryStore->readCategory( $selectedCategories[0] );
+		// Determine namespace: find the selected category with a target namespace (at most one)
 		$ns = NS_MAIN;
-		if ( $firstCat && $firstCat->getTargetNamespace() !== null ) {
-			$nsIndex = $this->namespaceInfo
-				->getCanonicalIndex( strtolower( $firstCat->getTargetNamespace() ) );
-			if ( $nsIndex !== null ) {
-				$ns = $nsIndex;
+		foreach ( $selectedCategories as $sc ) {
+			$scModel = $this->categoryStore->readCategory( $sc );
+			if ( $scModel && $scModel->getTargetNamespace() !== null ) {
+				$nsIndex = $this->namespaceInfo
+					->getCanonicalIndex( strtolower( $scModel->getTargetNamespace() ) );
+				if ( $nsIndex !== null ) {
+					$ns = $nsIndex;
+				}
+				break;
 			}
 		}
 
