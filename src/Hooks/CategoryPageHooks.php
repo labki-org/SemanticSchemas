@@ -108,29 +108,13 @@ class CategoryPageHooks {
 			}
 		}
 
-		// Insert "Add category" right after formedit so it stays visible
-		// (Vector collapses overflow tabs from the right end)
-		$addCategoryTab = [
+		$links['actions']['ss-add-category'] = [
 			'text' => wfMessage( 'semanticschemas-action-add-category' )->text(),
 			'href' => SpecialPage::getTitleFor( 'CreateSemanticPage' )->getLocalURL( [
 				'ss-page-name' => $title->getText(),
 				'ss-existing' => implode( '|', $matchedCategories ),
 			] ),
 		];
-
-		$newViews = [];
-		$inserted = false;
-		foreach ( $links['views'] as $key => $value ) {
-			$newViews[$key] = $value;
-			if ( $key === 'formedit' && !$inserted ) {
-				$newViews['ss-add-category'] = $addCategoryTab;
-				$inserted = true;
-			}
-		}
-		if ( !$inserted ) {
-			$newViews['ss-add-category'] = $addCategoryTab;
-		}
-		$links['views'] = $newViews;
 	}
 
 	/**
