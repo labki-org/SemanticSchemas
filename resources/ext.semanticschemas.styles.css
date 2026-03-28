@@ -850,14 +850,16 @@
 
 /* Shared muted state for items that can't/shouldn't be selected */
 .ss-create-cat-item.is-existing,
-.ss-create-cat-item.is-redundant {
+.ss-create-cat-item.is-redundant,
+.ss-create-cat-item.is-ns-conflict {
 	background: var(--ss-slate-50);
 	opacity: 0.55;
 	cursor: default;
 }
 
 .ss-create-cat-item.is-existing:hover,
-.ss-create-cat-item.is-redundant:hover {
+.ss-create-cat-item.is-redundant:hover,
+.ss-create-cat-item.is-ns-conflict:hover {
 	background: var(--ss-slate-50);
 }
 
@@ -865,7 +867,12 @@
 	margin-left: var(--ss-space-2);
 }
 
-.ss-create-cat-via {
+.ss-create-cat-ns-badge {
+	margin-left: var(--ss-space-2);
+}
+
+.ss-create-cat-via,
+.ss-create-cat-ns-conflict {
 	font-size: 0.75rem;
 	color: var(--ss-slate-400);
 	font-style: italic;

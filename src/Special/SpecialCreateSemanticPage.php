@@ -464,6 +464,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$catName = $cat->getName();
 		$catLabel = $cat->getLabel();
 		$catDesc = $cat->getDescription();
+		$targetNamespace = $cat->getTargetNamespace() ?? '';
 		$isExisting = isset( $existingCategories[$catName] );
 
 		// Ancestors for JS (excluding self)
@@ -481,11 +482,20 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			'data-category' => $catName,
 			'data-ancestors' => $ancestorStr,
 		];
+		if ( $targetNamespace !== '' ) {
+			$attrs['data-namespace'] = $targetNamespace;
+		}
 		if ( $isExisting ) {
 			$attrs['disabled'] = true;
 		}
 
 		$labelHtml = Html::element( 'strong', [], $catLabel );
+		if ( $targetNamespace !== '' ) {
+			$labelHtml .= Html::element( 'span',
+				[ 'class' => 'semanticschemas-badge is-muted ss-create-cat-ns-badge' ],
+				$targetNamespace . ':'
+			);
+		}
 		if ( $isExisting ) {
 			$labelHtml .= Html::rawElement( 'span',
 				[ 'class' => 'semanticschemas-badge is-ok ss-create-cat-badge' ],

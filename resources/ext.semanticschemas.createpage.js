@@ -99,6 +99,56 @@
 		} );
 	}
 
+	/**
+	 * Enforce at most one category with a target namespace selected.
+	 *
+	 * When a namespace category is checked, all other unchecked namespace
+	 * categories are disabled with a conflict indicator.
+	 */
+	function updateNamespaceConflicts() {
+		// Single pass: find the selected namespace category, then collect
+		// all namespace checkboxes to apply conflict state.
+		var selectedNsCat = null;
+		var nsCheckboxes = [];
+		checkboxes.forEach( function ( cb ) {
+			if ( !cb.dataset.namespace ) {
+				return;
+			}
+			nsCheckboxes.push( cb );
+			if ( cb.checked ) {
+				selectedNsCat = cb.dataset.category;
+			}
+		} );
+
+		nsCheckboxes.forEach( function ( cb ) {
+			var item = cb.closest( '.ss-create-cat-item' );
+			if ( !item ) {
+				return;
+			}
+			var conflictEl = item.querySelector( '.ss-create-cat-ns-conflict' );
+
+			if ( selectedNsCat && cb.dataset.category !== selectedNsCat && !cb.checked ) {
+				item.classList.add( 'is-ns-conflict' );
+				cb.disabled = true;
+				if ( !conflictEl ) {
+					conflictEl = document.createElement( 'span' );
+					conflictEl.className = 'ss-create-cat-ns-conflict';
+					item.querySelector( '.ss-create-cat-label' ).appendChild( conflictEl );
+				}
+				conflictEl.textContent = 'conflicts with ' + selectedNsCat;
+			} else {
+				item.classList.remove( 'is-ns-conflict' );
+				if ( !item.classList.contains( 'is-existing' ) &&
+					!item.classList.contains( 'is-redundant' ) ) {
+					cb.disabled = false;
+				}
+				if ( conflictEl ) {
+					conflictEl.remove();
+				}
+			}
+		} );
+	}
+
 	// --- Event delegation on the grid container ---
 
 	grid.addEventListener( 'change', function ( e ) {
@@ -108,6 +158,7 @@
 		}
 		syncInstances( cb.dataset.category, cb.checked );
 		updateAncestorState();
+		updateNamespaceConflicts();
 	} );
 
 	grid.addEventListener( 'click', function ( e ) {
@@ -235,4 +286,5 @@
 		toggle.classList.add( 'is-open' );
 	} );
 	updateAncestorState();
+	updateNamespaceConflicts();
 }() );
