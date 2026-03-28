@@ -218,14 +218,13 @@ class DisplayStubGenerator {
 				$valueExpr = '{{{' . $paramName . '|}}}';
 			}
 
-			// Construct the template call:
-			// {{ Template:Property/Email | value={{{email|}}} }}
 			$valueCall = "{{" . $renderTemplate . " | value=" . $valueExpr . " }}";
 
-			$out .= "|-\n";
-			// Standard row format works for both table and simplified infobox
-			$out .= "! " . $label . "\n";
-			$out .= "| " . $valueCall . "\n";
+			// Hide the entire row when the value is empty.
+			// Uses HTML table markup inside #if to avoid pipe/argument conflicts.
+			$out .= '{{#if:{{{' . $paramName . '|}}}|' . "\n";
+			$out .= '<tr><th>' . $label . '</th><td>' . $valueCall . "</td></tr>\n";
+			$out .= "}}\n";
 		}
 		return $out;
 	}
