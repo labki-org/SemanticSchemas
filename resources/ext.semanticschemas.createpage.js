@@ -275,11 +275,9 @@
 		} );
 	}
 
-	if ( searchInput ) {
-		searchInput.addEventListener( 'input', () => {
-			filterTree( searchInput.value );
-		} );
-	}
+	searchInput.addEventListener( 'input', () => {
+		filterTree( searchInput.value );
+	} );
 
 	// Set initial toggle state (all open) and compute initial redundancy
 	grid.querySelectorAll( '.ss-create-cat-toggle' ).forEach( ( toggle ) => {

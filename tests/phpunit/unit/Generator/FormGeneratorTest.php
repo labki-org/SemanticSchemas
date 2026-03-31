@@ -44,7 +44,7 @@ class FormGeneratorTest extends TestCase {
 	 * COMPOSITE SLOT — nowiki wrapping
 	 * ========================================================================= */
 
-	public function testCompositeSlotWrapsTripleBraceFieldsInNowiki(): void {
+	public function testCompositeFormWrapsTripleBraceFieldsInNowiki(): void {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
@@ -53,7 +53,7 @@ class FormGeneratorTest extends TestCase {
 			],
 		] );
 
-		$result = $this->generator->generateCompositeSlot( $category );
+		$result = $this->generator->generateCompositeForm( $category );
 
 		// {{{for template|...}}} and {{{end template}}} should be wrapped
 		$this->assertStringContainsString( '<nowiki>{{{for template|Person}}}</nowiki>', $result );
@@ -75,7 +75,7 @@ class FormGeneratorTest extends TestCase {
 	 * COMPOSITE SLOT — heading conversion
 	 * ========================================================================= */
 
-	public function testCompositeSlotConvertsSubobjectHeadingsToHtml(): void {
+	public function testCompositeFormConvertsSubobjectHeadingsToHtml(): void {
 		$subobject = new SubobjectModel( 'Address', [
 			'label' => 'Address',
 			'properties' => [
@@ -99,14 +99,14 @@ class FormGeneratorTest extends TestCase {
 			],
 		] );
 
-		$result = $this->generator->generateCompositeSlot( $category );
+		$result = $this->generator->generateCompositeForm( $category );
 
 		// Subobject heading should be converted from === to <h3>
 		$this->assertStringContainsString( '<h3>Address</h3>', $result );
 		$this->assertStringNotContainsString( '=== Address ===', $result );
 	}
 
-	public function testCompositeSlotCategoryHeadingIsHtmlH2(): void {
+	public function testCompositeFormCategoryHeadingIsHtmlH2(): void {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
@@ -115,7 +115,7 @@ class FormGeneratorTest extends TestCase {
 			],
 		] );
 
-		$result = $this->generator->generateCompositeSlot( $category );
+		$result = $this->generator->generateCompositeForm( $category );
 
 		$this->assertStringContainsString( '<h2>Person</h2>', $result );
 	}

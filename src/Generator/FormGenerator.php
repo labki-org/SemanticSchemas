@@ -49,7 +49,7 @@ class FormGenerator {
 	/**
 	 * Generate the PageForms wrapper form for a category.
 	 *
-	 * This is a thin wrapper that transcludes the composite slot
+	 * This is a thin wrapper that transcludes the composite form
 	 * (Form:Category/composite) which contains the actual field definitions.
 	 * The wrapper adds the standalone form chrome: forminput header,
 	 * namespace targeting, hierarchy preview, free text, and buttons.
@@ -91,7 +91,7 @@ class FormGenerator {
 			$lines[] = '';
 		}
 
-		/* Field definitions via composite slot transclusion.
+		/* Field definitions via composite form transclusion.
 		 * MW strips the <nowiki> tags during transclusion, so PageForms
 		 * sees the raw {{{...}}} directives. */
 		$lines[] = '{{Form:' . $this->s( $name ) . '/composite}}';
@@ -365,7 +365,7 @@ class FormGenerator {
 	 * Produces a form fragment with nowiki-wrapped field directives,
 	 * designed to be transcluded by Form:CompositeForm via {{Form:Category/composite}}.
 	 */
-	public function generateCompositeSlot( EffectiveCategoryModel $category ): string {
+	public function generateCompositeForm( EffectiveCategoryModel $category ): string {
 		$name = trim( $category->getName() );
 		$label = trim( $category->getLabel() );
 
@@ -397,13 +397,13 @@ class FormGenerator {
 		return implode( "\n", $lines );
 	}
 
-	public function generateAndSaveCompositeSlot( EffectiveCategoryModel $category ): bool {
+	public function generateAndSaveCompositeForm( EffectiveCategoryModel $category ): bool {
 		try {
-			$txt = $this->generateCompositeSlot( $category );
+			$txt = $this->generateCompositeForm( $category );
 			return $this->updateForm( $category->getName() . '/composite', $txt );
 		} catch ( \Exception $e ) {
 			wfLogWarning(
-				"SemanticSchemas: Failed to gen/save composite slot for {$category->getName()}: "
+				"SemanticSchemas: Failed to gen/save composite form for {$category->getName()}: "
 				. $e->getMessage()
 			);
 			return false;
@@ -411,11 +411,11 @@ class FormGenerator {
 	}
 
 	/**
-	 * Generate and save both the regular form and composite slot.
+	 * Generate and save both the regular form and composite form.
 	 */
 	public function generateAndSaveAllForms( EffectiveCategoryModel $category ): bool {
 		$formSuccess = $this->generateAndSaveForm( $category );
-		$compositeSuccess = $this->generateAndSaveCompositeSlot( $category );
+		$compositeSuccess = $this->generateAndSaveCompositeForm( $category );
 		return $formSuccess && $compositeSuccess;
 	}
 
