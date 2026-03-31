@@ -5,6 +5,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Hooks;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Page\Article;
 use MediaWiki\SpecialPage\SpecialPage;
+use MediaWiki\Title\Title;
+use MediaWiki\User\User;
 use Skin;
 
 /**
@@ -47,7 +49,7 @@ class CategoryPageHooks {
 			// generate it first then redirect to FormEdit.
 			if ( $user->isAllowed( 'createpage' ) ) {
 				$formNs = defined( 'PF_NS_FORM' ) ? constant( 'PF_NS_FORM' ) : NS_MAIN;
-				$formPage = \MediaWiki\Title\Title::makeTitleSafe( $formNs, $categoryName );
+				$formPage = Title::makeTitleSafe( $formNs, $categoryName );
 				$formExists = $formPage && $formPage->exists();
 
 				if ( $formExists ) {
@@ -95,7 +97,7 @@ class CategoryPageHooks {
 	 * - 2+ categories: rewrite formedit href to CompositeForm
 	 * - Always: add "Add category" to views section
 	 */
-	private function addCategoryEditActions( \MediaWiki\Title\Title $title, \MediaWiki\User\User $user, array &$links ): void {
+	private function addCategoryEditActions( Title $title, User $user, array &$links ): void {
 		// Check page categories first (cheap) before loading all managed categories
 		$pageCategories = $title->getParentCategories();
 		if ( empty( $pageCategories ) ) {
@@ -127,7 +129,7 @@ class CategoryPageHooks {
 
 		// Multi-category: rewrite formedit to use CompositeForm
 		if ( count( $matchedCategories ) > 1 && isset( $links['views']['formedit'] ) ) {
-			$compositeTitle = \MediaWiki\Title\Title::makeTitleSafe(
+			$compositeTitle = Title::makeTitleSafe(
 				NS_SPECIAL,
 				'FormEdit/CompositeForm/' . $title->getPrefixedText()
 			);
