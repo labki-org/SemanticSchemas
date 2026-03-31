@@ -115,5 +115,7 @@
 	"semanticschemas-generate-form-no-schema": "Error message when the category has no schema data. Parameters:\n* $1 - category name",
 	"semanticschemas-install-config-banner-title": "Heading for the install banner shown when base configuration is not installed",
 	"semanticschemas-install-config-banner-step1": "First instruction in the base configuration install banner, followed by a maintenance command",
-	"semanticschemas-install-config-banner-step2": "Second instruction in the base configuration install banner, followed by a runJobs command"
+	"semanticschemas-install-config-banner-step2": "Second instruction in the base configuration install banner, followed by a runJobs command",
+	"semanticschemas-create-redirect": "Informs the user that they will be redirected after a delay to the created page form",
+	"semanticschemas-create-refresh": "Informs the user that if the page is not ready, that they should refresh it."
 }

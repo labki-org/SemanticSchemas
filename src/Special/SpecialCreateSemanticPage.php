@@ -43,6 +43,10 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$this->wikiPageFactory = $wikiPageFactory;
 	}
 
+	public function doesWrites(): bool {
+		return true;
+	}
+
 	public function execute( $subPage ) {
 		$this->checkPermissions();
 		$output = $this->getOutput();
@@ -261,10 +265,10 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$compositeUrl = Title::makeTitleSafe(
 			NS_SPECIAL,
 			'FormEdit/CompositeForm/' . $pageTitle->getPrefixedText()
-		) -> getFullURL();
+		)->getFullURL() . '?action=purge';
 
 		if ( $newCalls === '' && $pageContent === $existingContent ) {
-			// Nothing changed
+			// Nothing changed - directly redirect
 			$output->redirect( $compositeUrl );
 			return;
 		}
@@ -292,7 +296,31 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			return;
 		}
 
-		$output->redirect( $compositeUrl );
+		$this->delayedRedirect( $compositeUrl, 1 );
+	}
+
+	/**
+	 * Show a modal telling the user they will be redirected,
+	 * and then use HTTP Refresh headers to do the redirect after a delay.
+	 * This triggers an extra page load which runs deferred jobs mw & smw need to display the composite form
+	 *
+	 * @param string $redirectUrl
+	 * @return void
+	 */
+	private function delayedRedirect( string $redirectUrl, float $delaySeconds ): void {
+		$res = $this->getRequest()->response();
+		$res->header( "Refresh: $delaySeconds; url=$redirectUrl", );
+
+		$modal = Html::openElement( 'div', [ 'class' => 'delayed-redirect-notice' ] );
+		$modal .= Html::element( 'p', [],
+			$this->msg( 'semanticschemas-create-redirect' )->params( $delaySeconds )->text()
+		);
+		$modal .= Html::element( 'a', [ 'href' => $redirectUrl ], $redirectUrl );
+		$modal .= Html::element( 'p', [], $this->msg( 'semanticschemas-create-refresh' )->text() );
+		$modal .= Html::closeElement( 'div' );
+
+		$output = $this->getOutput();
+		$output->addHTML( $modal );
 	}
 
 	/**
