@@ -63,6 +63,6 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		$hooks->onSkinTemplateNavigation__Universal( $this->skinMock, $links );
 
 		$this->assertArrayHasKey( 'actions', $links );
-		$this->assertArrayHasKey( 'ss-generate-form', $links['actions'] );
+		$this->assertArrayHasKey( 's2-generate-form', $links['actions'] );
 	}
 }

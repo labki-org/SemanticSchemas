@@ -19,7 +19,7 @@
 ( () => {
 	'use strict';
 
-	const grid = document.querySelector( '.ss-create-cat-grid' );
+	const grid = document.querySelector( '.s2-create-cat-grid' );
 	if ( !grid ) {
 		return;
 	}
@@ -68,21 +68,21 @@
 
 		// Pass 2: apply visual state to each checkbox
 		checkboxes.forEach( ( cb ) => {
-			const item = cb.closest( '.ss-create-cat-item' );
+			const item = cb.closest( '.s2-create-cat-item' );
 			if ( !item ) {
 				return;
 			}
 			const catName = cb.dataset.category;
 			const isRedundant = redundant[ catName ] && !cb.checked;
-			let viaEl = item.querySelector( '.ss-create-cat-via' );
+			let viaEl = item.querySelector( '.s2-create-cat-via' );
 
 			if ( isRedundant ) {
 				item.classList.add( 'is-redundant' );
 				cb.disabled = true;
 				if ( !viaEl ) {
 					viaEl = document.createElement( 'span' );
-					viaEl.className = 'ss-create-cat-via';
-					item.querySelector( '.ss-create-cat-label' ).appendChild( viaEl );
+					viaEl.className = 's2-create-cat-via';
+					item.querySelector( '.s2-create-cat-label' ).appendChild( viaEl );
 				}
 				viaEl.textContent = 'via ' + redundant[ catName ];
 			} else {
@@ -121,19 +121,19 @@
 		} );
 
 		nsCheckboxes.forEach( ( cb ) => {
-			const item = cb.closest( '.ss-create-cat-item' );
+			const item = cb.closest( '.s2-create-cat-item' );
 			if ( !item ) {
 				return;
 			}
-			let conflictEl = item.querySelector( '.ss-create-cat-ns-conflict' );
+			let conflictEl = item.querySelector( '.s2-create-cat-ns-conflict' );
 
 			if ( selectedNsCat && cb.dataset.category !== selectedNsCat && !cb.checked ) {
 				item.classList.add( 'is-ns-conflict' );
 				cb.disabled = true;
 				if ( !conflictEl ) {
 					conflictEl = document.createElement( 'span' );
-					conflictEl.className = 'ss-create-cat-ns-conflict';
-					item.querySelector( '.ss-create-cat-label' ).appendChild( conflictEl );
+					conflictEl.className = 's2-create-cat-ns-conflict';
+					item.querySelector( '.s2-create-cat-label' ).appendChild( conflictEl );
 				}
 				conflictEl.textContent = 'conflicts with ' + selectedNsCat;
 			} else {
@@ -162,7 +162,7 @@
 	} );
 
 	grid.addEventListener( 'click', ( e ) => {
-		const toggle = e.target.closest( '.ss-create-cat-toggle' );
+		const toggle = e.target.closest( '.s2-create-cat-toggle' );
 		if ( !toggle ) {
 			return;
 		}
@@ -170,9 +170,9 @@
 		e.stopPropagation();
 
 		// Children container is the next sibling after the toggle's parent item
-		const item = toggle.closest( '.ss-create-cat-item' );
+		const item = toggle.closest( '.s2-create-cat-item' );
 		const children = item && item.nextElementSibling;
-		if ( !children || !children.classList.contains( 'ss-create-cat-children' ) ) {
+		if ( !children || !children.classList.contains( 's2-create-cat-children' ) ) {
 			return;
 		}
 
@@ -183,10 +183,10 @@
 
 	// --- Live search filtering ---
 
-	const searchInput = document.getElementById( 'ss-cat-search' );
-	const allItems = grid.querySelectorAll( '.ss-create-cat-item' );
-	const allChildContainers = grid.querySelectorAll( '.ss-create-cat-children' );
-	const allToggles = grid.querySelectorAll( '.ss-create-cat-toggle' );
+	const searchInput = document.getElementById( 's2-cat-search' );
+	const allItems = grid.querySelectorAll( '.s2-create-cat-item' );
+	const allChildContainers = grid.querySelectorAll( '.s2-create-cat-children' );
+	const allToggles = grid.querySelectorAll( '.s2-create-cat-toggle' );
 
 	function filterTree( query ) {
 		query = query.toLowerCase().trim();
@@ -194,11 +194,11 @@
 		if ( !query ) {
 			// Reset: show everything, clear highlights, restore collapse state
 			allItems.forEach( ( item ) => {
-				item.classList.remove( 'ss-search-hidden' );
-				item.classList.remove( 'ss-search-match' );
+				item.classList.remove( 's2-search-hidden' );
+				item.classList.remove( 's2-search-match' );
 			} );
 			allChildContainers.forEach( ( container ) => {
-				container.classList.remove( 'ss-search-hidden' );
+				container.classList.remove( 's2-search-hidden' );
 				container.classList.remove( 'is-collapsed' );
 			} );
 			allToggles.forEach( ( toggle ) => {
@@ -211,12 +211,12 @@
 		const matchingCategories = {};
 		checkboxes.forEach( ( cb ) => {
 			const catName = cb.dataset.category;
-			const item = cb.closest( '.ss-create-cat-item' );
+			const item = cb.closest( '.s2-create-cat-item' );
 			if ( !item ) {
 				return;
 			}
 			// Match against category label and description, not dynamic annotations
-			const labelEl = item.querySelector( '.ss-create-cat-label' );
+			const labelEl = item.querySelector( '.s2-create-cat-label' );
 			const label = ( labelEl || item ).textContent.toLowerCase();
 			if ( label.indexOf( query ) !== -1 ) {
 				matchingCategories[ catName ] = true;
@@ -244,28 +244,28 @@
 			}
 			const catName = cb.dataset.category;
 			if ( visibleCategories[ catName ] ) {
-				item.classList.remove( 'ss-search-hidden' );
+				item.classList.remove( 's2-search-hidden' );
 				if ( matchingCategories[ catName ] ) {
-					item.classList.add( 'ss-search-match' );
+					item.classList.add( 's2-search-match' );
 				} else {
-					item.classList.remove( 'ss-search-match' );
+					item.classList.remove( 's2-search-match' );
 				}
 			} else {
-				item.classList.add( 'ss-search-hidden' );
-				item.classList.remove( 'ss-search-match' );
+				item.classList.add( 's2-search-hidden' );
+				item.classList.remove( 's2-search-match' );
 			}
 		} );
 
 		// Expand all child containers that have visible items, hide empty ones
 		allChildContainers.forEach( ( container ) => {
 			const hasVisible = container.querySelector(
-				'.ss-create-cat-item:not(.ss-search-hidden)'
+				'.s2-create-cat-item:not(.s2-search-hidden)'
 			);
 			if ( hasVisible ) {
-				container.classList.remove( 'ss-search-hidden' );
+				container.classList.remove( 's2-search-hidden' );
 				container.classList.remove( 'is-collapsed' );
 			} else {
-				container.classList.add( 'ss-search-hidden' );
+				container.classList.add( 's2-search-hidden' );
 			}
 		} );
 
@@ -280,7 +280,7 @@
 	} );
 
 	// Set initial toggle state (all open) and compute initial redundancy
-	grid.querySelectorAll( '.ss-create-cat-toggle' ).forEach( ( toggle ) => {
+	grid.querySelectorAll( '.s2-create-cat-toggle' ).forEach( ( toggle ) => {
 		toggle.classList.add( 'is-open' );
 	} );
 	updateAncestorState();

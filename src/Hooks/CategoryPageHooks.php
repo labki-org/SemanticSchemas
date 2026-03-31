@@ -53,13 +53,13 @@ class CategoryPageHooks {
 				$formExists = $formPage && $formPage->exists();
 
 				if ( $formExists ) {
-					$links['actions']['ss-new-page'] = [
+					$links['actions']['s2-new-page'] = [
 						'text' => wfMessage( 'semanticschemas-action-new-page' )->text(),
 						'href' => $formPage->getLocalURL(),
 					];
 				} elseif ( $user->isAllowed( 'editinterface' ) ) {
 					// Form missing — admin can generate it first, then redirect
-					$links['actions']['ss-new-page'] = [
+					$links['actions']['s2-new-page'] = [
 						'text' => wfMessage( 'semanticschemas-action-new-page' )->text(),
 						'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [
 							'action' => 'generate-form',
@@ -72,7 +72,7 @@ class CategoryPageHooks {
 
 			// "Generate artifacts" — admin only
 			if ( $user->isAllowed( 'editinterface' ) ) {
-				$links['actions']['ss-generate-form'] = [
+				$links['actions']['s2-generate-form'] = [
 					'text' => wfMessage( 'semanticschemas-action-generate-form' )->text(),
 					'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [
 						'action' => 'generate-form',
@@ -139,11 +139,11 @@ class CategoryPageHooks {
 		}
 
 		if ( $user->isAllowed( 'createpage' ) ) {
-			$links['actions']['ss-add-category'] = [
+			$links['actions']['s2-add-category'] = [
 				'text' => wfMessage( 'semanticschemas-action-add-category' )->text(),
 				'href' => SpecialPage::getTitleFor( 'CreateSemanticPage' )->getLocalURL( [
-					'ss-page-name' => $title->getText(),
-					'ss-existing' => implode( '|', $matchedCategories ),
+					's2-page-name' => $title->getText(),
+					's2-existing' => implode( '|', $matchedCategories ),
 				] ),
 			];
 		}

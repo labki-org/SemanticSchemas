@@ -17,7 +17,7 @@
  * - Renders using jQuery DOM manipulation
  * 
  * Requirements:
- * - Container div: <div id="ss-form-hierarchy-preview" data-parent-field="FIELD_NAME">
+ * - Container div: <div id="s2-form-hierarchy-preview" data-parent-field="FIELD_NAME">
  * - PageForms tokens/combobox field for parent categories
  * - API endpoint: action=semanticschemas-hierarchy
  */
@@ -114,7 +114,7 @@
 
 		if (!rootTitle || !hierarchyData.nodes || !hierarchyData.nodes[rootTitle]) {
 			$container.empty().append(
-				$('<p>').addClass('ss-hierarchy-empty').text(
+				$('<p>').addClass('s2-hierarchy-empty').text(
 					'No parents specified. Add parent categories to see the hierarchy preview.'
 				)
 			);
@@ -135,30 +135,30 @@
 			}
 
 			var displayName = title.replace(/^Category:/, '');
-			var $li = $('<li>').addClass('ss-preview-node');
+			var $li = $('<li>').addClass('s2-preview-node');
 
 			// Mark the virtual (new) category
 			if (title === rootTitle) {
-				$li.addClass('ss-preview-node-virtual');
+				$li.addClass('s2-preview-node-virtual');
 				$li.append(
 					$('<span>')
-						.addClass('ss-preview-node-label')
+						.addClass('s2-preview-node-label')
 						.text(displayName + ' ')
 						.append(
-							$('<span>').addClass('ss-preview-badge').text('(new)')
+							$('<span>').addClass('s2-preview-badge').text('(new)')
 						)
 				);
 			} else {
 				$li.append(
 					$('<span>')
-						.addClass('ss-preview-node-label')
+						.addClass('s2-preview-node-label')
 						.text(displayName)
 				);
 			}
 
 			// If this node has parents, create nested list
 			if (Array.isArray(node.parents) && node.parents.length > 0) {
-				var $ul = $('<ul>').addClass('ss-preview-tree-nested');
+				var $ul = $('<ul>').addClass('s2-preview-tree-nested');
 
 				node.parents.forEach(function (parentTitle) {
 					var $childNode = buildNode(parentTitle, depth + 1);
@@ -174,7 +174,7 @@
 		}
 
 		// Build and render the tree
-		var $rootList = $('<ul>').addClass('ss-preview-tree');
+		var $rootList = $('<ul>').addClass('s2-preview-tree');
 		var $rootNode = buildNode(rootTitle, 0);
 
 		if ($rootNode) {
@@ -196,7 +196,7 @@
 
 		if (props.length === 0) {
 			$container.empty().append(
-				$('<p>').addClass('ss-hierarchy-empty').text(
+				$('<p>').addClass('s2-hierarchy-empty').text(
 					'No properties will be inherited.'
 				)
 			);
@@ -225,18 +225,18 @@
 		required.sort(sortByTitle);
 		optional.sort(sortByTitle);
 
-		var $propContainer = $('<div>').addClass('ss-prop-by-type');
+		var $propContainer = $('<div>').addClass('s2-prop-by-type');
 
 		// Render required properties
 		if (required.length > 0) {
-			var $requiredSection = $('<div>').addClass('ss-prop-type-section ss-prop-type-required-section');
+			var $requiredSection = $('<div>').addClass('s2-prop-type-section s2-prop-type-required-section');
 			$requiredSection.append(
-				$('<h4>').addClass('ss-prop-type-heading').text('Required Properties (' + required.length + ')')
+				$('<h4>').addClass('s2-prop-type-heading').text('Required Properties (' + required.length + ')')
 			);
 
-			var $requiredList = $('<ul>').addClass('ss-prop-list ss-prop-list-by-type');
+			var $requiredList = $('<ul>').addClass('s2-prop-list s2-prop-list-by-type');
 			required.forEach(function (p) {
-				var $li = $('<li>').addClass('ss-prop-required');
+				var $li = $('<li>').addClass('s2-prop-required');
 
 				var propertyTitle = p.propertyTitle || '';
 				if (propertyTitle) {
@@ -256,7 +256,7 @@
 						var sourceHref = mw.util.getUrl(sourceTitle);
 						$li.append(
 							' ',
-							$('<span>').addClass('ss-prop-source-label').append(
+							$('<span>').addClass('s2-prop-source-label').append(
 								'(',
 								$('<a>')
 									.attr('href', sourceHref)
@@ -278,14 +278,14 @@
 
 		// Render optional properties
 		if (optional.length > 0) {
-			var $optionalSection = $('<div>').addClass('ss-prop-type-section ss-prop-type-optional-section');
+			var $optionalSection = $('<div>').addClass('s2-prop-type-section s2-prop-type-optional-section');
 			$optionalSection.append(
-				$('<h4>').addClass('ss-prop-type-heading').text('Optional Properties (' + optional.length + ')')
+				$('<h4>').addClass('s2-prop-type-heading').text('Optional Properties (' + optional.length + ')')
 			);
 
-			var $optionalList = $('<ul>').addClass('ss-prop-list ss-prop-list-by-type');
+			var $optionalList = $('<ul>').addClass('s2-prop-list s2-prop-list-by-type');
 			optional.forEach(function (p) {
-				var $li = $('<li>').addClass('ss-prop-optional');
+				var $li = $('<li>').addClass('s2-prop-optional');
 
 				var propertyTitle = p.propertyTitle || '';
 				if (propertyTitle) {
@@ -305,7 +305,7 @@
 						var sourceHref = mw.util.getUrl(sourceTitle);
 						$li.append(
 							' ',
-							$('<span>').addClass('ss-prop-source-label').append(
+							$('<span>').addClass('s2-prop-source-label').append(
 								'(',
 								$('<a>')
 									.attr('href', sourceHref)
@@ -327,19 +327,19 @@
 
 		// Render subobject summary
 		var subobjects = hierarchyData.inheritedSubobjects || [];
-		var $subobjectSection = $('<div>').addClass('ss-prop-type-section');
+		var $subobjectSection = $('<div>').addClass('s2-prop-type-section');
 		$subobjectSection.append(
-			$('<h4>').addClass('ss-prop-type-heading').text('Subobjects (' + subobjects.length + ')')
+			$('<h4>').addClass('s2-prop-type-heading').text('Subobjects (' + subobjects.length + ')')
 		);
 
 		if (subobjects.length === 0) {
 			$subobjectSection.append(
-				$('<p>').addClass('ss-hierarchy-empty').text('No subobjects defined.')
+				$('<p>').addClass('s2-hierarchy-empty').text('No subobjects defined.')
 			);
 		} else {
-			var $subobjectList = $('<ul>').addClass('ss-prop-list ss-prop-list-by-type');
+			var $subobjectList = $('<ul>').addClass('s2-prop-list s2-prop-list-by-type');
 			subobjects.forEach(function (entry) {
-				var $li = $('<li>').addClass(entry.required ? 'ss-prop-required' : 'ss-prop-optional');
+				var $li = $('<li>').addClass(entry.required ? 's2-prop-required' : 's2-prop-optional');
 				var subobjectTitle = entry.subobjectTitle || '';
 				if (subobjectTitle) {
 					var href = mw.util.getUrl(subobjectTitle);
@@ -356,7 +356,7 @@
 				$li.append(
 					' ',
 					$('<span>')
-						.addClass('ss-prop-badge')
+						.addClass('s2-prop-badge')
 						.text(entry.required ? 'required' : 'optional')
 				);
 				$subobjectList.append($li);
@@ -379,7 +379,7 @@
 	function updatePreview(categoryName, parentCategories) {
 		debug('updatePreview called:', categoryName, parentCategories);
 
-		var $previewContainer = $('#ss-form-hierarchy-preview');
+		var $previewContainer = $('#s2-form-hierarchy-preview');
 
 		if ($previewContainer.length === 0) {
 			debug('Preview container not found');
@@ -390,14 +390,14 @@
 		if (parentCategories.length === 0) {
 			debug('No parents selected, showing empty state');
 			$previewContainer.html(
-				'<p class="ss-hierarchy-empty">Add parent categories to see what this category will inherit.</p>'
+				'<p class="s2-hierarchy-empty">Add parent categories to see what this category will inherit.</p>'
 			);
 			return;
 		}
 
 		// Show loading state
 		debug('Making API call for hierarchy data');
-		$previewContainer.html('<p class="ss-hierarchy-loading">Loading preview...</p>');
+		$previewContainer.html('<p class="s2-hierarchy-loading">Loading preview...</p>');
 
 		// Make API call
 		var api = new mw.Api();
@@ -414,24 +414,24 @@
 			var data = response['semanticschemas-hierarchy'];
 			if (!data) {
 				console.error('[SemanticSchemas] No data in API response');
-				$previewContainer.html('<p class="ss-hierarchy-error">Error loading preview.</p>');
+				$previewContainer.html('<p class="s2-hierarchy-error">Error loading preview.</p>');
 				return;
 			}
 
 			// Build preview HTML
-			var $preview = $('<div>').addClass('ss-preview-wrapper');
+			var $preview = $('<div>').addClass('s2-preview-wrapper');
 
 			// Tree section
-			var $treeSection = $('<div>').addClass('ss-preview-section');
+			var $treeSection = $('<div>').addClass('s2-preview-section');
 			$treeSection.append($('<h4>').text('Inheritance Hierarchy'));
-			var $treeContainer = $('<div>').addClass('ss-preview-tree-container');
+			var $treeContainer = $('<div>').addClass('s2-preview-tree-container');
 			renderPreviewTree($treeContainer, data);
 			$treeSection.append($treeContainer);
 
 			// Properties section
-			var $propsSection = $('<div>').addClass('ss-preview-section');
+			var $propsSection = $('<div>').addClass('s2-preview-section');
 			$propsSection.append($('<h4>').text('Inherited Properties'));
-			var $propsContainer = $('<div>').addClass('ss-preview-props-container');
+			var $propsContainer = $('<div>').addClass('s2-preview-props-container');
 			renderPreviewProperties($propsContainer, data);
 			$propsSection.append($propsContainer);
 
@@ -442,7 +442,7 @@
 
 		}).fail(function (error) {
 			console.error('[SemanticSchemas] API call failed:', error);
-			$previewContainer.html('<p class="ss-hierarchy-error">Error loading preview. Please check parent category names.</p>');
+			$previewContainer.html('<p class="s2-hierarchy-error">Error loading preview. Please check parent category names.</p>');
 		});
 	}
 
@@ -461,7 +461,7 @@
 		debug('Initializing form preview, URL:', window.location.href);
 
 		// Check if we're on a form page with the preview container
-		var $previewContainer = $('#ss-form-hierarchy-preview');
+		var $previewContainer = $('#s2-form-hierarchy-preview');
 		if ($previewContainer.length === 0) {
 			debug('Preview container not found, skipping initialization');
 			return;
@@ -528,7 +528,7 @@
 			if (parentFieldId) {
 				errorMsg += ' Looking for field: ' + parentFieldId;
 			}
-			$previewContainer.html('<p class="ss-hierarchy-empty">' + errorMsg + '</p>');
+			$previewContainer.html('<p class="s2-hierarchy-empty">' + errorMsg + '</p>');
 			console.error('[SemanticSchemas] Parent field not found, preview disabled');
 			return;
 		}
@@ -618,7 +618,7 @@
 			updateFreeText();
 		} else {
 			// Show empty state
-			$previewContainer.html('<p class="ss-hierarchy-empty">Add parent categories to see what this category will inherit.</p>');
+			$previewContainer.html('<p class="s2-hierarchy-empty">Add parent categories to see what this category will inherit.</p>');
 		}
 	}
 

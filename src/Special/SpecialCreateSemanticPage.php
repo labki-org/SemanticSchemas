@@ -59,7 +59,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$output->addModuleStyles( 'ext.semanticschemas.styles' );
 
 		// Handle POST
-		if ( $request->wasPosted() && $request->getVal( 'ss-action' ) === 'create-page' ) {
+		if ( $request->wasPosted() && $request->getVal( 's2-action' ) === 'create-page' ) {
 			if ( !$this->getUser()->matchEditToken( $request->getVal( 'wpEditToken' ) ) ) {
 				$output->addHTML( Html::errorBox( 'Invalid session token. Please try again.' ) );
 			} else {
@@ -86,8 +86,8 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		}
 
 		// Pre-populate from query params (e.g. when arriving via "Add category" action)
-		$prefilledPageName = $request->getText( 'ss-page-name', '' );
-		$existingRaw = $request->getText( 'ss-existing', '' );
+		$prefilledPageName = $request->getText( 's2-page-name', '' );
+		$existingRaw = $request->getText( 's2-existing', '' );
 		$existingCategories = $existingRaw !== ''
 			? array_flip( explode( '|', $existingRaw ) )
 			: [];
@@ -104,18 +104,18 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		// Page name input
 		$pageNameAttrs = [
-			'id' => 'ss-page-name',
+			'id' => 's2-page-name',
 			'required' => true,
 			'placeholder' => $this->msg( 'semanticschemas-create-page-name-placeholder' )->text(),
 		];
 		if ( $isAddMode ) {
 			$pageNameAttrs['readonly'] = true;
 		}
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group ss-create-page-name' ],
-			Html::element( 'label', [ 'for' => 'ss-page-name' ],
+		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group s2-create-page-name' ],
+			Html::element( 'label', [ 'for' => 's2-page-name' ],
 				$this->msg( 'semanticschemas-create-page-name' )->text()
 			) .
-			Html::input( 'ss-page-name', $prefilledPageName, 'text', $pageNameAttrs )
+			Html::input( 's2-page-name', $prefilledPageName, 'text', $pageNameAttrs )
 		);
 
 		// Separate meta-categories (Category, Property, Subobject) which create
@@ -141,18 +141,18 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		$output->addModules( [ 'ext.semanticschemas.createpage' ] );
 
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group ss-create-categories' ],
+		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group s2-create-categories' ],
 			Html::element( 'label', [],
 				$this->msg( 'semanticschemas-create-select-categories' )->text()
 			) .
 			Html::element( 'input', [
 				'type' => 'text',
-				'id' => 'ss-cat-search',
-				'class' => 'ss-cat-search',
+				'id' => 's2-cat-search',
+				'class' => 's2-cat-search',
 				'placeholder' => $this->msg( 'semanticschemas-create-search-placeholder' )->text(),
 				'autocomplete' => 'off',
 			] ) .
-			Html::rawElement( 'div', [ 'class' => 'ss-create-cat-grid' ],
+			Html::rawElement( 'div', [ 'class' => 's2-create-cat-grid' ],
 				$checkboxes
 			)
 		);
@@ -171,20 +171,20 @@ class SpecialCreateSemanticPage extends SpecialPage {
 				}
 			}
 			$formHtml .= Html::rawElement( 'div',
-				[ 'class' => 'semanticschemas-form-group ss-create-meta-categories' ],
+				[ 'class' => 'semanticschemas-form-group s2-create-meta-categories' ],
 				Html::element( 'label', [],
 					$this->msg( 'semanticschemas-create-meta-categories' )->text()
 				) .
-				Html::rawElement( 'div', [ 'class' => 'ss-create-meta-buttons' ],
+				Html::rawElement( 'div', [ 'class' => 's2-create-meta-buttons' ],
 					$buttonHtml
 				)
 			);
 		}
 
 		// Submit
-		$formHtml .= Html::hidden( 'ss-action', 'create-page' );
+		$formHtml .= Html::hidden( 's2-action', 'create-page' );
 		$formHtml .= Html::hidden( 'wpEditToken', $this->getUser()->getEditToken() );
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'ss-create-actions' ],
+		$formHtml .= Html::rawElement( 'div', [ 'class' => 's2-create-actions' ],
 			Html::submitButton(
 				$isAddMode
 					? $this->msg( 'semanticschemas-create-add-submit' )->text()
@@ -208,9 +208,9 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$output = $this->getOutput();
 		$request = $this->getRequest();
 
-		$pageName = trim( $request->getText( 'ss-page-name' ) );
+		$pageName = trim( $request->getText( 's2-page-name' ) );
 		$selectedCategories = array_values( array_unique(
-			$request->getArray( 'ss-categories', [] )
+			$request->getArray( 's2-categories', [] )
 		) );
 
 		if ( $pageName === '' ) {
@@ -528,7 +528,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 					$resolver, $existingCategories, $depth + 1
 				);
 				$html .= Html::rawElement( 'div',
-					[ 'class' => 'ss-create-cat-children' ],
+					[ 'class' => 's2-create-cat-children' ],
 					$childrenHtml
 				);
 			}
@@ -556,7 +556,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		// Unique ID per tree instance (category may appear multiple times)
 		static $instanceCounter = 0;
-		$instanceId = 'ss-cat-' . $instanceCounter++;
+		$instanceId = 's2-cat-' . $instanceCounter++;
 
 		$attrs = [
 			'id' => $instanceId,
@@ -574,24 +574,24 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$labelHtml = Html::element( 'strong', [], $catLabel );
 		if ( $targetNamespace !== '' ) {
 			$labelHtml .= Html::element( 'span',
-				[ 'class' => 'semanticschemas-badge is-muted ss-create-cat-ns-badge' ],
+				[ 'class' => 'semanticschemas-badge is-muted s2-create-cat-ns-badge' ],
 				$targetNamespace . ':'
 			);
 		}
 		if ( $isExisting ) {
 			$labelHtml .= Html::rawElement( 'span',
-				[ 'class' => 'semanticschemas-badge is-ok ss-create-cat-badge' ],
+				[ 'class' => 'semanticschemas-badge is-ok s2-create-cat-badge' ],
 				$this->msg( 'semanticschemas-create-on-page' )->text()
 			);
 		}
 		if ( $catDesc !== '' ) {
 			$labelHtml .= Html::element( 'span',
-				[ 'class' => 'ss-create-cat-desc' ],
+				[ 'class' => 's2-create-cat-desc' ],
 				$catDesc
 			);
 		}
 
-		$rowClass = 'ss-create-cat-item';
+		$rowClass = 's2-create-cat-item';
 		if ( $isExisting ) {
 			$rowClass .= ' is-existing';
 		}
@@ -600,18 +600,18 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		}
 
 		$toggleHtml = $hasChildren
-			? Html::rawElement( 'span', [ 'class' => 'ss-create-cat-toggle' ], '▸' )
-			: Html::rawElement( 'span', [ 'class' => 'ss-create-cat-toggle-spacer' ] );
+			? Html::rawElement( 'span', [ 'class' => 's2-create-cat-toggle' ], '▸' )
+			: Html::rawElement( 'span', [ 'class' => 's2-create-cat-toggle-spacer' ] );
 
 		return Html::rawElement( 'div', [
 			'class' => $rowClass,
 			'style' => $depth > 0 ? '--depth: ' . $depth : '',
 		],
 			$toggleHtml .
-			Html::rawElement( 'label', [ 'for' => $instanceId, 'class' => 'ss-create-cat-label-wrap' ],
-				Html::check( 'ss-categories[]', $isExisting, $attrs ) .
-				( $isExisting ? Html::hidden( 'ss-categories[]', $catName ) : '' ) .
-				Html::rawElement( 'span', [ 'class' => 'ss-create-cat-label' ], $labelHtml )
+			Html::rawElement( 'label', [ 'for' => $instanceId, 'class' => 's2-create-cat-label-wrap' ],
+				Html::check( 's2-categories[]', $isExisting, $attrs ) .
+				( $isExisting ? Html::hidden( 's2-categories[]', $catName ) : '' ) .
+				Html::rawElement( 'span', [ 'class' => 's2-create-cat-label' ], $labelHtml )
 			)
 		);
 	}
