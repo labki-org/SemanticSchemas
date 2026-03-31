@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
-use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -50,7 +50,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		array $propertyMap = []
 	): string {
 		$gen = $this->makeGenerator( $propertyMap );
-		$category = new CategoryModel( $categoryName, [
+		$category = new EffectiveCategoryModel( $categoryName, [
 			'properties' => [
 				'required' => $requiredProps,
 				'optional' => $optionalProps,
