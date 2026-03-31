@@ -22,6 +22,7 @@
 	"semanticschemas-create-description": "Description text on the create page explaining single and multi-category creation",
 	"semanticschemas-create-failed": "Error message when page creation fails. Parameters:\n* $1 - page title",
 	"semanticschemas-create-invalid-title": "Error message when an invalid page title is entered",
+	"semanticschemas-create-meta-categories": "Label above quick-create buttons for meta-categories (Category, Property, Subobject)",
 	"semanticschemas-create-no-categories": "Empty-state message when no categories are available for page creation",
 	"semanticschemas-create-no-page-name": "Error message when no page name is provided",
 	"semanticschemas-create-no-selection": "Error message when no categories are selected",

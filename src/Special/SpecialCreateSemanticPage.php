@@ -118,8 +118,22 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			Html::input( 'ss-page-name', $prefilledPageName, 'text', $pageNameAttrs )
 		);
 
-		// Category tree
-		[ $roots, $childrenOf, $categoryMap, $resolver ] = $this->buildCategoryHierarchy( $categories );
+		// Separate meta-categories (Category, Property, Subobject) which create
+		// pages in their own namespaces and should not be mixed with regular
+		// page categories. They get dedicated buttons linking to their forms.
+		$metaCategoryNames = [ 'Category', 'Property', 'Subobject' ];
+		$metaCategories = [];
+		$pageCategories = [];
+		foreach ( $categories as $cat ) {
+			if ( in_array( $cat->getName(), $metaCategoryNames, true ) ) {
+				$metaCategories[] = $cat;
+			} else {
+				$pageCategories[] = $cat;
+			}
+		}
+
+		// Category tree (regular page categories only)
+		[ $roots, $childrenOf, $categoryMap, $resolver ] = $this->buildCategoryHierarchy( $pageCategories );
 
 		$checkboxes = $this->renderCategoryTree(
 			$roots, $childrenOf, $categoryMap, $resolver, $existingCategories, 0
@@ -142,6 +156,30 @@ class SpecialCreateSemanticPage extends SpecialPage {
 				$checkboxes
 			)
 		);
+
+		// Meta-category quick-create buttons
+		if ( !$isAddMode && !empty( $metaCategories ) ) {
+			$buttonHtml = '';
+			$formNs = defined( 'PF_NS_FORM' ) ? constant( 'PF_NS_FORM' ) : NS_MAIN;
+			foreach ( $metaCategories as $meta ) {
+				$formTitle = Title::makeTitleSafe( $formNs, $meta->getName() );
+				if ( $formTitle ) {
+					$buttonHtml .= Html::element( 'a', [
+						'class' => 'cdx-button',
+						'href' => $formTitle->getLocalURL(),
+					], $meta->getLabel() );
+				}
+			}
+			$formHtml .= Html::rawElement( 'div',
+				[ 'class' => 'semanticschemas-form-group ss-create-meta-categories' ],
+				Html::element( 'label', [],
+					$this->msg( 'semanticschemas-create-meta-categories' )->text()
+				) .
+				Html::rawElement( 'div', [ 'class' => 'ss-create-meta-buttons' ],
+					$buttonHtml
+				)
+			);
+		}
 
 		// Submit
 		$formHtml .= Html::hidden( 'ss-action', 'create-page' );

@@ -945,6 +945,37 @@
 	text-overflow: ellipsis;
 }
 
+.ss-create-meta-categories {
+	margin-top: var(--ss-space-4);
+	padding: var(--ss-space-3) var(--ss-space-4);
+	border: 2px solid var(--ss-slate-200);
+	border-radius: var(--ss-radius-md);
+}
+
+.ss-create-meta-buttons {
+	display: flex;
+	gap: var(--ss-space-3);
+	margin-top: var(--ss-space-2);
+}
+
+.ss-create-meta-buttons .cdx-button {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--ss-space-2) var(--ss-space-4);
+	border: 2px solid var(--ss-accent-200);
+	border-radius: var(--ss-radius-md);
+	background: var(--ss-accent-50);
+	color: var(--ss-accent-700);
+	text-decoration: none;
+	font-weight: 500;
+	transition: background var(--ss-transition-fast), border-color var(--ss-transition-fast);
+}
+
+.ss-create-meta-buttons .cdx-button:hover {
+	background: var(--ss-accent-100);
+	border-color: var(--ss-accent-500);
+}
+
 .ss-create-actions {
 	margin-top: var(--ss-space-5);
 	padding-top: var(--ss-space-4);

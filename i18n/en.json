@@ -22,6 +22,7 @@
 	"semanticschemas-create-description": "Create a new page and assign it to one or more categories. Select a single category for a focused page, or multiple categories for a composed page.",
 	"semanticschemas-create-failed": "Failed to create page \"$1\".",
 	"semanticschemas-create-invalid-title": "Invalid page title.",
+	"semanticschemas-create-meta-categories": "Or create a new:",
 	"semanticschemas-create-no-categories": "No categories found. Import a schema first.",
 	"semanticschemas-create-no-page-name": "Please enter a page name.",
 	"semanticschemas-create-no-selection": "Please select at least one category.",
