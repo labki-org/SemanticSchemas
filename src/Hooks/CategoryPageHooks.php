@@ -86,7 +86,7 @@ class CategoryPageHooks {
 			return;
 		}
 
-		$this->addCategoryEditActions( $title, $links );
+		$this->addCategoryEditActions( $title, $user, $links );
 	}
 
 	/**
@@ -95,7 +95,7 @@ class CategoryPageHooks {
 	 * - 2+ categories: rewrite formedit href to CompositeForm
 	 * - Always: add "Add category" to views section
 	 */
-	private function addCategoryEditActions( \MediaWiki\Title\Title $title, array &$links ): void {
+	private function addCategoryEditActions( \MediaWiki\Title\Title $title, \MediaWiki\User\User $user, array &$links ): void {
 		// Check page categories first (cheap) before loading all managed categories
 		$pageCategories = $title->getParentCategories();
 		if ( empty( $pageCategories ) ) {
@@ -136,13 +136,15 @@ class CategoryPageHooks {
 			}
 		}
 
-		$links['actions']['ss-add-category'] = [
-			'text' => wfMessage( 'semanticschemas-action-add-category' )->text(),
-			'href' => SpecialPage::getTitleFor( 'CreateSemanticPage' )->getLocalURL( [
-				'ss-page-name' => $title->getText(),
-				'ss-existing' => implode( '|', $matchedCategories ),
-			] ),
-		];
+		if ( $user->isAllowed( 'createpage' ) ) {
+			$links['actions']['ss-add-category'] = [
+				'text' => wfMessage( 'semanticschemas-action-add-category' )->text(),
+				'href' => SpecialPage::getTitleFor( 'CreateSemanticPage' )->getLocalURL( [
+					'ss-page-name' => $title->getText(),
+					'ss-existing' => implode( '|', $matchedCategories ),
+				] ),
+			];
+		}
 	}
 
 	/**
