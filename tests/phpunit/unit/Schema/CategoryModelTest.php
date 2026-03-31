@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -455,5 +456,23 @@ class CategoryModelTest extends TestCase {
 		$child->mergeWithParent( $parent );
 
 		$this->assertEquals( $originalParentProps, $parent->getRequiredProperties() );
+	}
+
+	/* =========================================================================
+	 * MERGE RETURNS EFFECTIVE TYPE
+	 * ========================================================================= */
+
+	public function testMergeWithParentReturnsEffectiveCategoryModel(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertInstanceOf( EffectiveCategoryModel::class, $merged );
+		$this->assertContains( 'Has parent prop', $merged->getAllProperties() );
+		$this->assertContains( 'Has child prop', $merged->getAllProperties() );
 	}
 }

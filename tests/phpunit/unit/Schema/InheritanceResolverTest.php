@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -210,15 +211,14 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertContains( 'Has email', $allProps );
 	}
 
-	public function testGetEffectiveCategoryForUnknownReturnsEmpty(): void {
-		$map = [
+	public function testGetEffectiveCategoryForUnknownThrows(): void {
+		$resolver = new InheritanceResolver( [
 			'Person' => new CategoryModel( 'Person' ),
-		];
-		$resolver = new InheritanceResolver( $map );
+		] );
 
-		$effective = $resolver->getEffectiveCategory( 'Unknown' );
-		$this->assertEquals( 'Unknown', $effective->getName() );
-		$this->assertEmpty( $effective->getAllProperties() );
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Unknown category: Unknown' );
+		$resolver->getEffectiveCategory( 'Unknown' );
 	}
 
 	/* =========================================================================
@@ -239,13 +239,192 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertEquals( $first, $second );
 	}
 
-	public function testUnknownCategoryReturnsStandalone(): void {
-		$map = [
+	public function testUnknownCategoryThrows(): void {
+		$resolver = new InheritanceResolver( [
 			'Person' => new CategoryModel( 'Person' ),
-		];
-		$resolver = new InheritanceResolver( $map );
+		] );
 
-		$ancestors = $resolver->getAncestors( 'Unknown' );
-		$this->assertEquals( [ 'Unknown' ], $ancestors );
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Unknown category: Unknown' );
+		$resolver->getAncestors( 'Unknown' );
+	}
+
+	/* =========================================================================
+	 * INHERITANCE CHAIN (RAW MODELS)
+	 * ========================================================================= */
+
+	public function testGetInheritanceChainRootReturnsSelf(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$resolver = new InheritanceResolver( [ 'Person' => $person ] );
+
+		$chain = $resolver->getInheritanceChain( 'Person' );
+		$this->assertCount( 1, $chain );
+		$this->assertEquals( 'Person', $chain[0]->getName() );
+		$this->assertContains( 'Has name', $chain[0]->getAllProperties() );
+	}
+
+	public function testGetInheritanceChainSingleParent(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$student = new CategoryModel( 'Student', [
+			'parents' => [ 'Person' ],
+			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'Student' => $student,
+		] );
+
+		$chain = $resolver->getInheritanceChain( 'Student' );
+		$this->assertCount( 2, $chain );
+		$this->assertEquals( 'Student', $chain[0]->getName() );
+		$this->assertEquals( 'Person', $chain[1]->getName() );
+
+		// Each model should have only its own properties
+		$this->assertContains( 'Has student ID', $chain[0]->getAllProperties() );
+		$this->assertNotContains( 'Has name', $chain[0]->getAllProperties() );
+		$this->assertContains( 'Has name', $chain[1]->getAllProperties() );
+		$this->assertNotContains( 'Has student ID', $chain[1]->getAllProperties() );
+	}
+
+	public function testGetInheritanceChainMultiParent(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$labMember = new CategoryModel( 'LabMember', [
+			'properties' => [ 'required' => [ 'Has lab role' ], 'optional' => [] ],
+		] );
+		$gradStudent = new CategoryModel( 'GradStudent', [
+			'parents' => [ 'Person', 'LabMember' ],
+			'properties' => [ 'required' => [ 'Has advisor' ], 'optional' => [] ],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'LabMember' => $labMember,
+			'GradStudent' => $gradStudent,
+		] );
+
+		$chain = $resolver->getInheritanceChain( 'GradStudent' );
+		$names = array_map( static fn ( $m ) => $m->getName(), $chain );
+
+		// C3 linearization: child first, then parents in declared order
+		$this->assertEquals( [ 'GradStudent', 'Person', 'LabMember' ], $names );
+
+		// Each model in the chain carries only its own declared properties
+		$this->assertEquals( [ 'Has advisor' ], $chain[0]->getAllProperties() );
+		$this->assertEquals( [ 'Has name' ], $chain[1]->getAllProperties() );
+		$this->assertEquals( [ 'Has lab role' ], $chain[2]->getAllProperties() );
+	}
+
+	public function testGetInheritanceChainForUnknownThrows(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Unknown category: Unknown' );
+		$resolver->getInheritanceChain( 'Unknown' );
+	}
+
+	/* =========================================================================
+	 * EFFECTIVE CATEGORY MODEL TYPE
+	 * ========================================================================= */
+
+	public function testGetEffectiveCategoryReturnsEffectiveType(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$effective = $resolver->getEffectiveCategory( 'Person' );
+		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
+	}
+
+	public function testGetEffectiveCategoryForUnknownThrowsRuntimeException(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$this->expectException( RuntimeException::class );
+		$resolver->getEffectiveCategory( 'Unknown' );
+	}
+
+	public function testGetEffectiveCategoryIsCached(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$this->assertSame(
+			$resolver->getEffectiveCategory( 'Person' ),
+			$resolver->getEffectiveCategory( 'Person' )
+		);
+	}
+
+	public function testGetEffectiveCategoryMergesInheritedProperties(): void {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$student = new CategoryModel( 'Student', [
+			'parents' => [ 'Person' ],
+			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+		] );
+
+		$resolver = new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
+		$effective = $resolver->getEffectiveCategory( 'Student' );
+
+		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
+		$this->assertContains( 'Has name', $effective->getAllProperties() );
+		$this->assertContains( 'Has student ID', $effective->getAllProperties() );
+	}
+
+	/* =========================================================================
+	 * PARENT EFFECTIVE MODELS
+	 * ========================================================================= */
+
+	public function testGetParentEffectiveModelsReturnsEffectiveParents(): void {
+		$grandparent = new CategoryModel( 'Grandparent', [
+			'properties' => [ 'required' => [ 'Has gp prop' ], 'optional' => [] ],
+		] );
+		$parent = new CategoryModel( 'Parent', [
+			'parents' => [ 'Grandparent' ],
+			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+		] );
+
+		$resolver = new InheritanceResolver( [
+			'Grandparent' => $grandparent,
+			'Parent' => $parent,
+			'Child' => $child,
+		] );
+
+		$parentModels = $resolver->getParentEffectiveModels( 'Child' );
+		$this->assertArrayHasKey( 'Parent', $parentModels );
+		$this->assertCount( 1, $parentModels );
+		$this->assertInstanceOf( EffectiveCategoryModel::class, $parentModels['Parent'] );
+		$this->assertContains( 'Has gp prop', $parentModels['Parent']->getAllProperties() );
+		$this->assertContains( 'Has parent prop', $parentModels['Parent']->getAllProperties() );
+	}
+
+	public function testGetParentEffectiveModelsForUnknownThrows(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Unknown category: Unknown' );
+		$resolver->getParentEffectiveModels( 'Unknown' );
+	}
+
+	public function testGetParentEffectiveModelsForRootReturnsEmpty(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person' ),
+		] );
+
+		$this->assertEmpty( $resolver->getParentEffectiveModels( 'Person' ) );
 	}
 }

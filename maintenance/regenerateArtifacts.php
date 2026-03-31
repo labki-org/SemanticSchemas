@@ -52,9 +52,8 @@ class RegenerateArtifacts extends Maintenance {
 		$resolver = new InheritanceResolver( $categoryMap );
 
 		if ( $categoryName !== null ) {
-			// Regenerate for specific category
 			$this->output( "Regenerating artifacts for category: $categoryName\n" );
-			$category = $categoryStore->readCategory( $categoryName );
+			$category = $categoryMap[$categoryName] ?? null;
 
 			if ( $category === null ) {
 				$this->fatalError( "Category not found: $categoryName" );
@@ -99,10 +98,8 @@ class RegenerateArtifacts extends Maintenance {
 		$this->output( "Processing: $name\n" );
 
 		$effective = $resolver->getEffectiveCategory( $name );
-		$ancestors = $resolver->getAncestors( $name );
 
-		// Generate semantic template
-		$result = $templateGenerator->generateAllTemplates( $effective );
+		$result = $templateGenerator->generateAllTemplates( $category, $resolver );
 		if ( $result['success'] ) {
 			$this->output( "  ✓ Generated semantic and dispatcher templates\n" );
 		} else {
@@ -112,14 +109,12 @@ class RegenerateArtifacts extends Maintenance {
 			}
 		}
 
-		// Generate form
 		if ( $formGenerator->generateAndSaveForm( $effective ) ) {
 			$this->output( "  ✓ Generated form\n" );
 		} else {
 			$this->output( "  ✗ Form generation failed\n" );
 		}
 
-		// Generate or update display template if requested
 		if ( $generateDisplay ) {
 			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective );
 			if ( !empty( $displayResult['error'] ) ) {

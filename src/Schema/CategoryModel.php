@@ -36,7 +36,8 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *        [ 'name' => string, 'properties' => string[] ],
  *     ]
  *
- * Fully immutable. No parsing or backward-compatibility.
+ * Schema data is immutable after construction. For the fully merged
+ * (inherited) view, see EffectiveCategoryModel returned by InheritanceResolver.
  */
 class CategoryModel {
 
@@ -268,7 +269,7 @@ class CategoryModel {
 	 * MERGING (CATEGORY + PARENT)
 	 * ------------------------------------------------------------------------- */
 
-	public function mergeWithParent( CategoryModel $parent ): CategoryModel {
+	public function mergeWithParent( CategoryModel $parent ): EffectiveCategoryModel {
 		/* -------------------- Properties -------------------- */
 
 		$mergedRequired = array_values( array_unique( array_merge(
@@ -313,9 +314,9 @@ class CategoryModel {
 			$this->formConfig
 		);
 
-		/* -------------------- New CategoryModel -------------------- */
+		/* -------------------- Merged Model -------------------- */
 
-		return new self(
+		return new EffectiveCategoryModel(
 			$this->name,
 			[
 				'parents' => $this->parents,

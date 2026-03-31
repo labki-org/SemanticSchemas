@@ -252,15 +252,14 @@ class SpecialSemanticSchemas extends SpecialPage {
 		}
 
 		try {
-			// Build category map for inheritance resolution
 			$categoryMap = $this->buildCategoryMap();
 			$resolver = new InheritanceResolver( $categoryMap );
 
-			// Resolve inheritance to get effective category with all inherited properties
+			$category = $categoryMap[$categoryName] ?? $category;
 			$effective = $resolver->getEffectiveCategory( $categoryName );
-
-			// Generate templates (always regenerate auto-generated ones)
-			$templateResult = $this->templateGenerator->generateAllTemplates( $effective );
+			$templateResult = $this->templateGenerator->generateAllTemplates(
+				$category, $resolver
+			);
 
 			if ( !$templateResult['success'] ) {
 				$output->addHTML( Html::errorBox(
@@ -271,7 +270,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			// Generate form
 			$formSuccess = $this->formGenerator->generateAndSaveForm( $effective );
 
 			if ( !$formSuccess ) {
@@ -283,7 +281,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			// Generate display template conditionally (respect user customizations)
 			$displayResult = $this->displayGenerator->generateIfAllowed( $effective );
 
 			// Log the operation
@@ -1145,6 +1142,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			foreach ( $categories as $category ) {
 				$name = $category->getName();
+				if ( !isset( $categoryMap[$name] ) ) {
+					throw new \RuntimeException( "Category '$name' not found in category map" );
+				}
+				$category = $categoryMap[$name];
+				$effective = $resolver->getEffectiveCategory( $name );
 
 				$output->addHTML(
 					Html::element(
@@ -1155,9 +1157,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 				);
 
 				try {
-					$effective = $resolver->getEffectiveCategory( $name );
-
-					$this->templateGenerator->generateAllTemplates( $effective );
+					$this->templateGenerator->generateAllTemplates(
+						$category, $resolver
+					);
 					$this->formGenerator->generateAndSaveForm( $effective );
 
 					if ( $generateDisplay ) {

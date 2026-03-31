@@ -24,6 +24,9 @@ class InheritanceResolver {
 	/** @var array<string,string[]> */
 	private array $ancestorCache = [];
 
+	/** @var array<string,EffectiveCategoryModel> */
+	private array $effectiveCache = [];
+
 	/**
 	 * @param array<string,CategoryModel> $categoryMap
 	 */
@@ -53,9 +56,8 @@ class InheritanceResolver {
 			return $this->ancestorCache[$categoryName];
 		}
 
-		// Unknown → standalone
 		if ( !isset( $this->categoryMap[$categoryName] ) ) {
-			return [ $categoryName ];
+			throw new RuntimeException( "Unknown category: $categoryName" );
 		}
 
 		$linear = $this->c3Linearization( $categoryName, [] );
@@ -72,30 +74,66 @@ class InheritanceResolver {
 	 *   child.mergeWithParent(parent)
 	 *   Then merge the result with the next parent in lineage.
 	 */
-	public function getEffectiveCategory( string $categoryName ): CategoryModel {
-		if ( !isset( $this->categoryMap[$categoryName] ) ) {
-			return new CategoryModel( $categoryName );
+	public function getEffectiveCategory( string $categoryName ): EffectiveCategoryModel {
+		if ( isset( $this->effectiveCache[$categoryName] ) ) {
+			return $this->effectiveCache[$categoryName];
 		}
 
 		$linear = $this->getAncestors( $categoryName );
-		// linear[0] = child, then direct parent, then their parents, etc.
 
-		/** @var CategoryModel|null $effective */
-		$effective = null;
+		/** @var CategoryModel|null $merged */
+		$merged = null;
 
 		foreach ( $linear as $name ) {
-			$current = $this->categoryMap[$name] ?? new CategoryModel( $name );
+			$current = $this->categoryMap[$name];
 
-			if ( $effective === null ) {
-				$effective = $current;
+			if ( $merged === null ) {
+				$merged = $current;
 			} else {
-				// Correct direction:
-				// child.mergeWithParent(parent)
-				$effective = $effective->mergeWithParent( $current );
+				$merged = $merged->mergeWithParent( $current );
 			}
 		}
 
-		return $effective;
+		// Single-category chain: mergeWithParent was never called, wrap as effective
+		if ( !( $merged instanceof EffectiveCategoryModel ) ) {
+			$merged = new EffectiveCategoryModel( $merged->getName(), $merged->toArray() );
+		}
+
+		$this->effectiveCache[$categoryName] = $merged;
+		return $merged;
+	}
+
+	/**
+	 * Return effective models for each direct parent of a category.
+	 *
+	 * @param string $categoryName
+	 * @return array<string,EffectiveCategoryModel> Parent name → effective model
+	 */
+	public function getParentEffectiveModels( string $categoryName ): array {
+		$category = $this->categoryMap[$categoryName]
+			?? throw new RuntimeException( "Unknown category: $categoryName" );
+		$result = [];
+		foreach ( $category->getParents() as $parentName ) {
+			$result[$parentName] = $this->getEffectiveCategory( $parentName );
+		}
+		return $result;
+	}
+
+	/**
+	 * Return the C3-linearized list of raw (unmerged) CategoryModel objects.
+	 *
+	 * Order: [child, parent1, parent2, ..., root]
+	 * Each model contains only its own declared properties.
+	 *
+	 * @param string $categoryName
+	 * @return CategoryModel[]
+	 */
+	public function getInheritanceChain( string $categoryName ): array {
+		$ancestors = $this->getAncestors( $categoryName );
+		return array_map(
+			fn ( $name ) => $this->categoryMap[$name],
+			$ancestors
+		);
 	}
 
 	/**
