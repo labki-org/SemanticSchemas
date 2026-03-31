@@ -8,6 +8,7 @@
 	"semanticschemas": "SemanticSchemas",
 	"semanticschemas-action-add-category": "Add category",
 	"semanticschemas-action-generate-form": "Generate form",
+	"semanticschemas-action-new-page": "New page",
 	"semanticschemas-api-param-category": "Category name to retrieve hierarchy for (with or without 'Category:' prefix)",
 	"semanticschemas-api-param-parents": "Optional: Parent categories for virtual hierarchy preview (for form preview mode). Pipe-separated list.",
 	"semanticschemas-badge-available": "Available",

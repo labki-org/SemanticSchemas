@@ -8,6 +8,7 @@
 	"semanticschemas": "{{name}}",
 	"semanticschemas-action-add-category": "Label for the 'Add category' action in the page tools menu",
 	"semanticschemas-action-generate-form": "Text shown in the action dropdown menu on Category pages to generate a form",
+	"semanticschemas-action-new-page": "Text shown in the action dropdown menu on Category pages to create a new page in that category",
 	"semanticschemas-api-param-category": "API parameter description for the category name",
 	"semanticschemas-api-param-parents": "API parameter description for optional parent categories in virtual hierarchy preview",
 	"semanticschemas-badge-available": "Badge text when an item exists/is healthy",

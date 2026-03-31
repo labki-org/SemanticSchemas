@@ -10,7 +10,7 @@ use Skin;
 /**
  * CategoryPageHooks
  *
- * Hook handler for adding "Generate Form" action to Category pages,
+ * Hook handler for adding "New page" and "Generate Form" actions to Category pages,
  * composite form editing on multi-category content pages, and
  * rendering hierarchy footers.
  */
@@ -25,7 +25,7 @@ class CategoryPageHooks {
 	/**
 	 * Hook: SkinTemplateNavigation::Universal
 	 *
-	 * Adds a "Generate form" action link to the dropdown menu on Category pages.
+	 * Adds "New page" and "Generate form" action links to the dropdown menu on Category pages.
 	 * For content pages with managed categories, rewrites "Edit with form"
 	 * to use CompositeForm for multi-category pages.
 	 */
@@ -38,10 +38,38 @@ class CategoryPageHooks {
 			return;
 		}
 
-		// Category pages: add "Generate Form" action
+		// Category pages: add "New page" and "Generate Form" actions
 		if ( $title->inNamespace( NS_CATEGORY ) ) {
+			$categoryName = $title->getText();
+
+			// "New page" — available to anyone who can create pages, but only
+			// if the Form: page exists. If it doesn't and the user is an admin,
+			// generate it first then redirect to FormEdit.
+			if ( $user->isAllowed( 'createpage' ) ) {
+				$formNs = defined( 'PF_NS_FORM' ) ? constant( 'PF_NS_FORM' ) : NS_MAIN;
+				$formPage = \MediaWiki\Title\Title::makeTitleSafe( $formNs, $categoryName );
+				$formExists = $formPage && $formPage->exists();
+
+				if ( $formExists ) {
+					$links['actions']['ss-new-page'] = [
+						'text' => wfMessage( 'semanticschemas-action-new-page' )->text(),
+						'href' => $formPage->getLocalURL(),
+					];
+				} elseif ( $user->isAllowed( 'editinterface' ) ) {
+					// Form missing — admin can generate it first, then redirect
+					$links['actions']['ss-new-page'] = [
+						'text' => wfMessage( 'semanticschemas-action-new-page' )->text(),
+						'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [
+							'action' => 'generate-form',
+							'category' => $categoryName,
+							'then' => 'new-page',
+						] ),
+					];
+				}
+			}
+
+			// "Generate artifacts" — admin only
 			if ( $user->isAllowed( 'editinterface' ) ) {
-				$categoryName = $title->getText();
 				$links['actions']['ss-generate-form'] = [
 					'text' => wfMessage( 'semanticschemas-action-generate-form' )->text(),
 					'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [

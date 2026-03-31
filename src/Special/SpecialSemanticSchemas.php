@@ -289,20 +289,23 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'displayStatus' => $displayResult['status'],
 			] );
 
-			// Redirect to the form page
-			$formTitle = Title::makeTitleSafe( $this->getFormNamespace(), $categoryName );
-			if ( $formTitle ) {
-				$output->redirect( $formTitle->getFullURL() );
-			} else {
-				// Fallback: show success message if redirect fails
-				$output->addHTML( Html::successBox(
-					$this->msg( 'semanticschemas-form-generated' )->params( $categoryName )->text()
-				) );
-
-				// Show warning if display template was preserved
-				if ( $displayResult['status'] === 'preserved' ) {
-					$output->addHTML( Html::warningBox( $displayResult['message'] ) );
+			// If triggered from "New page" action, redirect to Form: page
+			$then = $request->getVal( 'then' );
+			if ( $then === 'new-page' ) {
+				$formTitle = Title::makeTitleSafe( $this->getFormNamespace(), $categoryName );
+				if ( $formTitle ) {
+					$output->redirect( $formTitle->getFullURL() );
+					return;
 				}
+			}
+
+			$output->addHTML( Html::successBox(
+				$this->msg( 'semanticschemas-form-generated' )->params( $categoryName )->text()
+			) );
+
+			// Show warning if display template was preserved
+			if ( $displayResult['status'] === 'preserved' ) {
+				$output->addHTML( Html::warningBox( $displayResult['message'] ) );
 			}
 
 		} catch ( \Exception $e ) {
