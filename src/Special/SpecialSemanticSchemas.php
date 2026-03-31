@@ -1142,7 +1142,10 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			foreach ( $categories as $category ) {
 				$name = $category->getName();
-				$category = $categoryMap[$name] ?? $category;
+				if ( !isset( $categoryMap[$name] ) ) {
+					throw new \RuntimeException( "Category '$name' not found in category map" );
+				}
+				$category = $categoryMap[$name];
 				$effective = $resolver->getEffectiveCategory( $name );
 
 				$output->addHTML(

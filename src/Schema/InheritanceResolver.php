@@ -56,9 +56,8 @@ class InheritanceResolver {
 			return $this->ancestorCache[$categoryName];
 		}
 
-		// Unknown → standalone
 		if ( !isset( $this->categoryMap[$categoryName] ) ) {
-			return [ $categoryName ];
+			throw new RuntimeException( "Unknown category: $categoryName" );
 		}
 
 		$linear = $this->c3Linearization( $categoryName, [] );
@@ -80,17 +79,13 @@ class InheritanceResolver {
 			return $this->effectiveCache[$categoryName];
 		}
 
-		if ( !isset( $this->categoryMap[$categoryName] ) ) {
-			return new EffectiveCategoryModel( $categoryName );
-		}
-
 		$linear = $this->getAncestors( $categoryName );
 
 		/** @var CategoryModel|null $merged */
 		$merged = null;
 
 		foreach ( $linear as $name ) {
-			$current = $this->categoryMap[$name] ?? new CategoryModel( $name );
+			$current = $this->categoryMap[$name];
 
 			if ( $merged === null ) {
 				$merged = $current;
@@ -115,10 +110,8 @@ class InheritanceResolver {
 	 * @return array<string,EffectiveCategoryModel> Parent name → effective model
 	 */
 	public function getParentEffectiveModels( string $categoryName ): array {
-		$category = $this->categoryMap[$categoryName] ?? null;
-		if ( $category === null ) {
-			return [];
-		}
+		$category = $this->categoryMap[$categoryName]
+			?? throw new RuntimeException( "Unknown category: $categoryName" );
 		$result = [];
 		foreach ( $category->getParents() as $parentName ) {
 			$result[$parentName] = $this->getEffectiveCategory( $parentName );
@@ -138,7 +131,7 @@ class InheritanceResolver {
 	public function getInheritanceChain( string $categoryName ): array {
 		$ancestors = $this->getAncestors( $categoryName );
 		return array_map(
-			fn ( $name ) => $this->categoryMap[$name] ?? new CategoryModel( $name ),
+			fn ( $name ) => $this->categoryMap[$name],
 			$ancestors
 		);
 	}

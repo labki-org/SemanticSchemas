@@ -26,7 +26,7 @@ class SpecialSemanticSchemasTest extends MediaWikiIntegrationTestCase {
 		$this->assertInstanceOf( SpecialPage::class, $page );
 	}
 
-	public function testSpecialPageExecutesWithoutFatalError(): void {
+	public function testSpecialPageExecutesWithoutError(): void {
 		$page = $this->getServiceContainer()
 			->getSpecialPageFactory()
 			->getPage( 'SemanticSchemas' );
@@ -36,11 +36,11 @@ class SpecialSemanticSchemasTest extends MediaWikiIntegrationTestCase {
 		$context->setTitle( $page->getPageTitle() );
 		$page->setContext( $context );
 
+		// If execute() throws, PHPUnit catches it as a test failure.
 		$page->execute( '' );
 
 		$html = $context->getOutput()->getHTML();
 		$this->assertIsString( $html );
-		$this->assertStringNotContainsString( 'Fatal error', $html );
 	}
 
 	public function testSpecialPagesListIncludesSemanticSchemas(): void {
