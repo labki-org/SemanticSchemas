@@ -5,7 +5,7 @@
  */
 
 /* Preview container */
-#ss-form-hierarchy-preview {
+#s2-form-hierarchy-preview {
 	margin: 1.5em 0;
 	padding: 1.5em;
 	border: 2px solid #a2a9b1;
@@ -13,21 +13,21 @@
 	background-color: #f8f9fa;
 }
 
-.ss-preview-wrapper {
+.s2-preview-wrapper {
 	display: flex;
 	flex-direction: column;
 	gap: 1.5em;
 }
 
 /* Preview sections */
-.ss-preview-section {
+.s2-preview-section {
 	background: #fff;
 	padding: 1em;
 	border-radius: 3px;
 	border: 1px solid #eaecf0;
 }
 
-.ss-preview-section h4 {
+.s2-preview-section h4 {
 	margin: 0 0 0.75em 0;
 	padding-bottom: 0.5em;
 	border-bottom: 1px solid #eaecf0;
@@ -37,19 +37,19 @@
 }
 
 /* Preview tree styles */
-.ss-preview-tree {
+.s2-preview-tree {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 	font-size: 0.95em;
 }
 
-.ss-preview-node {
+.s2-preview-node {
 	margin: 0.4em 0;
 	position: relative;
 }
 
-.ss-preview-node-label {
+.s2-preview-node-label {
 	display: inline-block;
 	padding: 0.3em 0.6em;
 	border-radius: 3px;
@@ -59,13 +59,13 @@
 }
 
 /* Virtual (new) category styling */
-.ss-preview-node-virtual>.ss-preview-node-label {
+.s2-preview-node-virtual>.s2-preview-node-label {
 	background: #fff3cd;
 	border-color: #ffc107;
 	font-weight: 600;
 }
 
-.ss-preview-badge {
+.s2-preview-badge {
 	font-size: 0.85em;
 	font-weight: normal;
 	color: #856404;
@@ -73,7 +73,7 @@
 }
 
 /* Nested tree */
-.ss-preview-tree-nested {
+.s2-preview-tree-nested {
 	list-style: none;
 	margin-top: 0.5em;
 	margin-left: 1.5em;
@@ -85,30 +85,30 @@
    Properties by Type Display (matches main hierarchy)
    ======================================== */
 
-.ss-prop-by-type {
+.s2-prop-by-type {
 	display: flex;
 	flex-direction: column;
 	gap: 1.5em;
 }
 
-.ss-prop-type-section {
+.s2-prop-type-section {
 	border: 1px solid #a2a9b1;
 	border-radius: 4px;
 	padding: 1em;
 	background: #f8f9fa;
 }
 
-.ss-prop-type-required-section {
+.s2-prop-type-required-section {
 	border-left: 4px solid #d33;
 	background: #fef6f6;
 }
 
-.ss-prop-type-optional-section {
+.s2-prop-type-optional-section {
 	border-left: 4px solid #3a3;
 	background: #f0fdf4;
 }
 
-.ss-prop-type-heading {
+.s2-prop-type-heading {
 	margin: 0 0 0.75em 0;
 	padding: 0;
 	font-size: 1em;
@@ -116,28 +116,28 @@
 	color: #202122;
 }
 
-.ss-prop-type-required-section .ss-prop-type-heading {
+.s2-prop-type-required-section .s2-prop-type-heading {
 	color: #d33;
 }
 
-.ss-prop-type-optional-section .ss-prop-type-heading {
+.s2-prop-type-optional-section .s2-prop-type-heading {
 	color: #14866d;
 }
 
 /* Property lists */
-.ss-prop-list {
+.s2-prop-list {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-.ss-prop-list-by-type {
+.s2-prop-list-by-type {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 	gap: 0.5em;
 }
 
-.ss-prop-list li {
+.s2-prop-list li {
 	padding: 0.4em 0.6em;
 	border-radius: 3px;
 	background: #fff;
@@ -145,47 +145,47 @@
 	font-size: 0.95em;
 }
 
-.ss-prop-required {
+.s2-prop-required {
 	border-left: 3px solid #d33;
 }
 
-.ss-prop-optional {
+.s2-prop-optional {
 	border-left: 3px solid #3a3;
 }
 
-.ss-prop-list a {
+.s2-prop-list a {
 	font-weight: 500;
 	color: #0645ad;
 	text-decoration: none;
 }
 
-.ss-prop-list a:hover {
+.s2-prop-list a:hover {
 	text-decoration: underline;
 }
 
-.ss-prop-source-label {
+.s2-prop-source-label {
 	font-size: 0.9em;
 	color: #72777d;
 }
 
-.ss-prop-source-label a {
+.s2-prop-source-label a {
 	color: #72777d;
 	font-weight: normal;
 }
 
-.ss-prop-source-label a:hover {
+.s2-prop-source-label a:hover {
 	color: #0645ad;
 }
 
 /* Loading and empty states */
-.ss-hierarchy-loading {
+.s2-hierarchy-loading {
 	color: #72777d;
 	font-style: italic;
 	text-align: center;
 	padding: 2em 1em;
 }
 
-.ss-hierarchy-error {
+.s2-hierarchy-error {
 	color: #d33;
 	font-weight: 500;
 	text-align: center;
@@ -195,7 +195,7 @@
 	border-radius: 3px;
 }
 
-.ss-hierarchy-empty {
+.s2-hierarchy-empty {
 	color: #72777d;
 	font-style: italic;
 	text-align: center;
@@ -204,19 +204,19 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-	#ss-form-hierarchy-preview {
+	#s2-form-hierarchy-preview {
 		padding: 1em;
 	}
 
-	.ss-preview-wrapper {
+	.s2-preview-wrapper {
 		gap: 1em;
 	}
 
-	.ss-preview-section {
+	.s2-preview-section {
 		padding: 0.75em;
 	}
 
-	.ss-preview-tree-nested {
+	.s2-preview-tree-nested {
 		margin-left: 1em;
 	}
 }

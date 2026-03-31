@@ -9,12 +9,12 @@
    Loading & Empty States
    ======================================================== */
 
-.ss-hierarchy-loading {
+.s2-hierarchy-loading {
 	opacity: 0.5;
 	pointer-events: none;
 }
 
-.ss-hierarchy-empty {
+.s2-hierarchy-empty {
 	padding: 2rem;
 	text-align: center;
 	color: var(--ss-slate-500, #64748b);
@@ -28,15 +28,15 @@
    Section Layout
    ======================================================== */
 
-.ss-hierarchy-section {
+.s2-hierarchy-section {
 	margin-top: 1.75rem;
 }
 
-.ss-hierarchy-section:first-child {
+.s2-hierarchy-section:first-child {
 	margin-top: 0;
 }
 
-.ss-hierarchy-section > h3 {
+.s2-hierarchy-section > h3 {
 	margin: 0 0 0.75rem;
 	padding-bottom: 0.5rem;
 	font-size: 0.9375rem;
@@ -50,24 +50,24 @@
    Tree View
    ======================================================== */
 
-.ss-hierarchy-tree,
-.ss-hierarchy-tree-nested {
+.s2-hierarchy-tree,
+.s2-hierarchy-tree-nested {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-.ss-hierarchy-tree {
+.s2-hierarchy-tree {
 	font-size: 0.9375rem;
 }
 
-.ss-hierarchy-tree li {
+.s2-hierarchy-tree li {
 	margin: 0.5rem 0;
 	position: relative;
 }
 
 /* Node content container */
-.ss-hierarchy-node-content {
+.s2-hierarchy-node-content {
 	display: inline-flex;
 	align-items: center;
 	padding: 0.375rem 0.625rem;
@@ -75,12 +75,12 @@
 	transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.ss-hierarchy-node-content:hover {
+.s2-hierarchy-node-content:hover {
 	background-color: var(--ss-slate-50, #f8fafc);
 }
 
 /* Toggle button */
-.ss-hierarchy-toggle {
+.s2-hierarchy-toggle {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -97,18 +97,18 @@
 	transition: all 0.15s ease;
 }
 
-.ss-hierarchy-toggle:hover {
+.s2-hierarchy-toggle:hover {
 	background: var(--ss-accent-100, #d5f5f6);
 	color: var(--ss-accent-600, #0d7377);
 }
 
-.ss-hierarchy-toggle:focus {
+.s2-hierarchy-toggle:focus {
 	outline: none;
 	box-shadow: 0 0 0 3px var(--ss-accent-100, #d5f5f6);
 }
 
 /* Nested tree lines */
-.ss-hierarchy-tree-nested {
+.s2-hierarchy-tree-nested {
 	margin-top: 0.5rem;
 	margin-left: 1.25rem;
 	padding-left: 1.25rem;
@@ -116,7 +116,7 @@
 	position: relative;
 }
 
-.ss-hierarchy-tree-nested > li::before {
+.s2-hierarchy-tree-nested > li::before {
 	content: "";
 	position: absolute;
 	left: -1.25rem;
@@ -126,12 +126,12 @@
 }
 
 /* Parent emphasis */
-.ss-hierarchy-has-children > .ss-hierarchy-node-content > a {
+.s2-hierarchy-has-children > .s2-hierarchy-node-content > a {
 	font-weight: 600;
 }
 
 /* Root node styling */
-.ss-hierarchy-tree > li:first-child > .ss-hierarchy-node-content {
+.s2-hierarchy-tree > li:first-child > .s2-hierarchy-node-content {
 	background: linear-gradient(135deg, var(--ss-accent-50, #ecfeff) 0%, #fff 100%);
 	padding: 0.625rem 0.875rem;
 	border-left: 3px solid var(--ss-accent-500, #0f9099);
@@ -139,30 +139,30 @@
 	box-shadow: 0 2px 8px rgba(15, 144, 153, 0.08);
 }
 
-.ss-hierarchy-tree > li:first-child > .ss-hierarchy-node-content > a {
+.s2-hierarchy-tree > li:first-child > .s2-hierarchy-node-content > a {
 	font-size: 1rem;
 	font-weight: 700;
 	color: var(--ss-accent-600, #0d7377);
 }
 
-.ss-hierarchy-collapsed > .ss-hierarchy-tree-nested {
+.s2-hierarchy-collapsed > .s2-hierarchy-tree-nested {
 	display: none;
 }
 
 /* Links */
-.ss-hierarchy-tree a {
+.s2-hierarchy-tree a {
 	font-weight: 500;
 	color: var(--ss-accent-600, #0d7377);
 	text-decoration: none;
 	transition: color 0.15s ease;
 }
 
-.ss-hierarchy-tree a:hover {
+.s2-hierarchy-tree a:hover {
 	color: var(--ss-accent-500, #0f9099);
 	text-decoration: underline;
 }
 
-.ss-hierarchy-tree a:visited {
+.s2-hierarchy-tree a:visited {
 	color: var(--ss-slate-600, #475569);
 }
 
@@ -170,7 +170,7 @@
    Property Table
    ======================================================== */
 
-.ss-prop-table {
+.s2-prop-table {
 	width: 100%;
 	border-collapse: collapse;
 	border-radius: var(--ss-radius-md, 10px);
@@ -178,13 +178,13 @@
 	border: 1px solid var(--ss-slate-200, #e2e8f0);
 }
 
-.ss-prop-table th,
-.ss-prop-table td {
+.s2-prop-table th,
+.s2-prop-table td {
 	padding: 0.625rem 0.875rem;
 	vertical-align: top;
 }
 
-.ss-prop-table th {
+.s2-prop-table th {
 	background: var(--ss-slate-50, #f8fafc);
 	font-size: 0.6875rem;
 	font-weight: 600;
@@ -195,34 +195,34 @@
 	border-bottom: 2px solid var(--ss-slate-200, #e2e8f0);
 }
 
-.ss-prop-table td {
+.s2-prop-table td {
 	border-bottom: 1px solid var(--ss-slate-100, #f1f5f9);
 	font-size: 0.875rem;
 	color: var(--ss-slate-700, #2d3648);
 }
 
-.ss-prop-table tbody tr:last-child td {
+.s2-prop-table tbody tr:last-child td {
 	border-bottom: none;
 }
 
-.ss-prop-table tbody tr:hover {
+.s2-prop-table tbody tr:hover {
 	background: var(--ss-slate-50, #f8fafc);
 }
 
-.ss-prop-source-cell {
+.s2-prop-source-cell {
 	width: 28%;
 	font-weight: 500;
 }
 
 /* Property lists */
-.ss-prop-list,
-.ss-prop-list-by-type {
+.s2-prop-list,
+.s2-prop-list-by-type {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-.ss-prop-list li {
+.s2-prop-list li {
 	margin: 0.25rem 0;
 	padding: 0.5rem 0.625rem;
 	border-radius: var(--ss-radius-sm, 6px);
@@ -230,18 +230,18 @@
 }
 
 /* Required / optional styling */
-.ss-prop-required {
+.s2-prop-required {
 	background: var(--ss-error-50, #fef2f2);
 	border-left: 3px solid var(--ss-error-600, #dc2626);
 }
 
-.ss-prop-optional {
-	background: var(--ss-success-50, #f0fdf4);
-	border-left: 3px solid var(--ss-success-600, #16a34a);
+.s2-prop-optional {
+	background: var(--ss-succes2-50, #f0fdf4);
+	border-left: 3px solid var(--ss-succes2-600, #16a34a);
 }
 
 /* Badge */
-.ss-prop-badge {
+.s2-prop-badge {
 	display: inline-block;
 	font-size: 0.625rem;
 	font-weight: 600;
@@ -252,13 +252,13 @@
 	border-radius: 999px;
 }
 
-.ss-prop-required .ss-prop-badge {
+.s2-prop-required .s2-prop-badge {
 	background: var(--ss-error-600, #dc2626);
 	color: #fff;
 }
 
-.ss-prop-optional .ss-prop-badge {
-	background: var(--ss-success-600, #16a34a);
+.s2-prop-optional .s2-prop-badge {
+	background: var(--ss-succes2-600, #16a34a);
 	color: #fff;
 }
 
@@ -266,7 +266,7 @@
    Subobject Table
    ======================================================== */
 
-.ss-subobject-summary {
+.s2-subobject-summary {
 	width: 100%;
 	border-collapse: collapse;
 	margin-top: 0.75rem;
@@ -275,12 +275,12 @@
 	border: 1px solid var(--ss-slate-200, #e2e8f0);
 }
 
-.ss-subobject-summary th,
-.ss-subobject-summary td {
+.s2-subobject-summary th,
+.s2-subobject-summary td {
 	padding: 0.625rem 0.875rem;
 }
 
-.ss-subobject-summary th {
+.s2-subobject-summary th {
 	background: var(--ss-slate-50, #f8fafc);
 	font-size: 0.6875rem;
 	font-weight: 600;
@@ -291,7 +291,7 @@
 	border-bottom: 2px solid var(--ss-slate-200, #e2e8f0);
 }
 
-.ss-subobject-summary td {
+.s2-subobject-summary td {
 	border-bottom: 1px solid var(--ss-slate-100, #f1f5f9);
 	font-size: 0.875rem;
 }
@@ -300,9 +300,9 @@
    Special Page Form
    ======================================================== */
 
-.ss-hierarchy-special-form,
-#ss-category-hierarchy,
-#ss-form-hierarchy-preview {
+.s2-hierarchy-special-form,
+#s2-category-hierarchy,
+#s2-form-hierarchy-preview {
 	margin: 1rem 0;
 	padding: 1.25rem;
 	border: 1px solid var(--ss-slate-200, #e2e8f0);
@@ -310,7 +310,7 @@
 	background: var(--ss-slate-50, #f8fafc);
 }
 
-.ss-hierarchy-special-form label {
+.s2-hierarchy-special-form label {
 	display: block;
 	margin-bottom: 0.5rem;
 	font-size: 0.8125rem;
@@ -318,7 +318,7 @@
 	color: var(--ss-slate-700, #2d3648);
 }
 
-.ss-hierarchy-special-form input[type="text"] {
+.s2-hierarchy-special-form input[type="text"] {
 	width: 100%;
 	max-width: 400px;
 	padding: 0.5rem 0.75rem;
@@ -329,17 +329,17 @@
 	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.ss-hierarchy-special-form input[type="text"]:focus {
+.s2-hierarchy-special-form input[type="text"]:focus {
 	outline: none;
 	border-color: var(--ss-accent-500, #0f9099);
 	box-shadow: 0 0 0 3px var(--ss-accent-100, #d5f5f6);
 }
 
-.ss-hierarchy-special-form button {
+.s2-hierarchy-special-form button {
 	margin-top: 0.75rem;
 }
 
-#ss-category-hierarchy.mw-collapsed {
+#s2-category-hierarchy.mw-collapsed {
 	padding: 0.625rem 1rem;
 }
 
@@ -347,14 +347,14 @@
    Property Tabs
    ======================================================== */
 
-.ss-prop-tabs {
+.s2-prop-tabs {
 	display: flex;
 	gap: 0.25rem;
 	margin-bottom: 1rem;
 	border-bottom: 2px solid var(--ss-slate-200, #e2e8f0);
 }
 
-.ss-prop-tab {
+.s2-prop-tab {
 	padding: 0.625rem 1rem;
 	background: var(--ss-slate-50, #f8fafc);
 	border: 1px solid var(--ss-slate-200, #e2e8f0);
@@ -369,12 +369,12 @@
 	top: 1px;
 }
 
-.ss-prop-tab:hover {
+.s2-prop-tab:hover {
 	background: #fff;
 	color: var(--ss-slate-800, #1e242f);
 }
 
-.ss-prop-tab-active {
+.s2-prop-tab-active {
 	background: #fff;
 	color: var(--ss-accent-600, #0d7377);
 	font-weight: 600;
@@ -382,44 +382,44 @@
 	margin-bottom: -2px;
 }
 
-.ss-prop-tab:focus {
+.s2-prop-tab:focus {
 	outline: none;
 	box-shadow: 0 0 0 3px var(--ss-accent-100, #d5f5f6);
 }
 
 /* Tab contents */
-.ss-prop-tab-content {
+.s2-prop-tab-content {
 	display: none;
 }
 
-.ss-prop-tab-content-active {
+.s2-prop-tab-content-active {
 	display: block;
 }
 
-.ss-prop-by-type {
+.s2-prop-by-type {
 	display: flex;
 	flex-direction: column;
 	gap: 1.25rem;
 }
 
-.ss-prop-type-section {
+.s2-prop-type-section {
 	border: 1px solid var(--ss-slate-200, #e2e8f0);
 	border-radius: var(--ss-radius-md, 10px);
 	padding: 1rem;
 	background: #fff;
 }
 
-.ss-prop-type-required-section {
+.s2-prop-type-required-section {
 	border-left: 4px solid var(--ss-error-600, #dc2626);
 	background: var(--ss-error-50, #fef2f2);
 }
 
-.ss-prop-type-optional-section {
-	border-left: 4px solid var(--ss-success-600, #16a34a);
-	background: var(--ss-success-50, #f0fdf4);
+.s2-prop-type-optional-section {
+	border-left: 4px solid var(--ss-succes2-600, #16a34a);
+	background: var(--ss-succes2-50, #f0fdf4);
 }
 
-.ss-prop-type-heading {
+.s2-prop-type-heading {
 	margin: 0 0 0.75rem;
 	font-size: 0.875rem;
 	font-weight: 600;
@@ -428,24 +428,24 @@
 	border-bottom: 1px solid var(--ss-slate-200, #e2e8f0);
 }
 
-.ss-prop-type-required-section .ss-prop-type-heading {
+.s2-prop-type-required-section .s2-prop-type-heading {
 	color: var(--ss-error-600, #dc2626);
 	border-color: var(--ss-error-100, #fee2e2);
 }
 
-.ss-prop-type-optional-section .ss-prop-type-heading {
-	color: var(--ss-success-600, #16a34a);
-	border-color: var(--ss-success-100, #dcfce7);
+.s2-prop-type-optional-section .s2-prop-type-heading {
+	color: var(--ss-succes2-600, #16a34a);
+	border-color: var(--ss-succes2-100, #dcfce7);
 }
 
 /* Grid layout for properties by type */
-.ss-prop-list-by-type {
+.s2-prop-list-by-type {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 	gap: 0.5rem;
 }
 
-.ss-prop-list-by-type li {
+.s2-prop-list-by-type li {
 	padding: 0.5rem 0.75rem;
 	border-radius: var(--ss-radius-sm, 6px);
 	background: #fff;
@@ -454,31 +454,31 @@
 	transition: box-shadow 0.15s ease;
 }
 
-.ss-prop-list-by-type li:hover {
+.s2-prop-list-by-type li:hover {
 	box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
 }
 
-.ss-prop-list-by-type .ss-prop-required {
+.s2-prop-list-by-type .s2-prop-required {
 	border-left: 3px solid var(--ss-error-600, #dc2626);
 }
 
-.ss-prop-list-by-type .ss-prop-optional {
-	border-left: 3px solid var(--ss-success-600, #16a34a);
+.s2-prop-list-by-type .s2-prop-optional {
+	border-left: 3px solid var(--ss-succes2-600, #16a34a);
 }
 
-.ss-prop-source-label {
+.s2-prop-source-label {
 	color: var(--ss-slate-500, #64748b);
 	font-size: 0.75rem;
 	white-space: nowrap;
 }
 
-.ss-prop-source-label a {
+.s2-prop-source-label a {
 	color: var(--ss-slate-500, #64748b);
 	text-decoration: none;
 	transition: color 0.15s ease;
 }
 
-.ss-prop-source-label a:hover {
+.s2-prop-source-label a:hover {
 	color: var(--ss-accent-600, #0d7377);
 	text-decoration: underline;
 }
@@ -488,23 +488,23 @@
    ======================================================== */
 
 @media (max-width: 768px) {
-	.ss-prop-list-by-type {
+	.s2-prop-list-by-type {
 		grid-template-columns: 1fr;
 	}
 
-	.ss-prop-tabs {
+	.s2-prop-tabs {
 		flex-direction: column;
 		border-bottom: none;
 		gap: 0.25rem;
 	}
 
-	.ss-prop-tab {
+	.s2-prop-tab {
 		border-radius: var(--ss-radius-sm, 6px);
 		border: 1px solid var(--ss-slate-200, #e2e8f0);
 		top: 0;
 	}
 
-	.ss-prop-tab-active {
+	.s2-prop-tab-active {
 		border: 2px solid var(--ss-accent-500, #0f9099);
 		margin-bottom: 0;
 	}

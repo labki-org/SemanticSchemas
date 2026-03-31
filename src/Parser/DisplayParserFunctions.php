@@ -81,8 +81,8 @@ class DisplayParserFunctions {
 		return $this->htmlReturn( Html::rawElement(
 			'div',
 			[
-				'id' => 'ss-category-hierarchy-' . md5( $category ),
-				'class' => 'ss-hierarchy-block mw-collapsible',
+				'id' => 's2-category-hierarchy-' . md5( $category ),
+				'class' => 's2-hierarchy-block mw-collapsible',
 				'data-category' => $category
 			],
 			Html::element( 'p', [], wfMessage( 'semanticschemas-hierarchy-loading' )->text() )

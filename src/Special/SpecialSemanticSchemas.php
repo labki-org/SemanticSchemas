@@ -1240,7 +1240,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function renderHierarchyForm( string $categoryValue ): string {
 		$form = Html::openElement( 'form', [
 			'method' => 'get',
-			'class' => 'ss-hierarchy-special-form',
+			'class' => 's2-hierarchy-special-form',
 		] );
 
 		$form .= Html::element( 'input', [
@@ -1250,12 +1250,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 		] );
 
 		$form .= Html::element( 'label', [
-			'for' => 'ss-hierarchy-category-input',
+			'for' => 's2-hierarchy-category-input',
 		], $this->msg( 'semanticschemas-hierarchy-category-label' )->text() );
 
 		$form .= Html::element( 'input', [
 			'type' => 'text',
-			'id' => 'ss-hierarchy-category-input',
+			'id' => 's2-hierarchy-category-input',
 			'name' => 'category',
 			'value' => $categoryValue,
 			'placeholder' => 'e.g., PhDStudent',
@@ -1287,8 +1287,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$form = $this->renderHierarchyForm( $categoryValue );
 
 		$containerAttrs = [
-			'id' => 'ss-hierarchy-container',
-			'class' => 'ss-hierarchy-block',
+			'id' => 's2-hierarchy-container',
+			'class' => 's2-hierarchy-block',
 		];
 		if ( $categoryValue !== '' ) {
 			$containerAttrs['data-category'] = $categoryValue;
