@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
@@ -13,9 +14,6 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  * This generator produces the 'Template:<Category>/display' page, which contains
  * a purely static wikitext definition (e.g., a table) where property values are
  * passed into specific render templates (e.g., {{Template:Property/Email}}).
- *
- * This "Generation-Time Resolution" replaces the older dynamic runtime system,
- * ensuring reliability, cacheability, and compatibility with the standard MediaWiki parser.
  *
  * Display templates include a special marker comment that indicates they are safe
  * to auto-regenerate. If a user removes this marker, the template is considered
@@ -44,10 +42,10 @@ class DisplayStubGenerator {
 	/**
 	 * Generate and save the display template stub.
 	 *
-	 * @param CategoryModel $category
+	 * @param EffectiveCategoryModel $category
 	 * @return array Result array with keys: 'created' (bool), 'updated' (bool), 'message' (string)
 	 */
-	public function generateOrUpdateDisplayStub( CategoryModel $category ): array {
+	public function generateOrUpdateDisplayStub( EffectiveCategoryModel $category ): array {
 		$existed = $this->displayStubExists( $category->getName() );
 
 		$titleText = $this->generateDisplayContent( $category );
@@ -69,20 +67,17 @@ class DisplayStubGenerator {
 	}
 
 	/**
-	 * Internal generation logic.
-	 *
 	 * @param CategoryModel $category
 	 * @return string The prefixed title string of the generated page, or empty string on failure.
 	 */
 	private function generateDisplayContent( CategoryModel $category ): string {
 		$categoryName = $category->getName();
-		// Use NS_TEMPLATE constant
 		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
 		if ( !$title ) {
 			return '';
 		}
 
-		$content = $this->buildWikitext( $category );
+		$content = $this->generateWikitext( $category );
 
 		$this->pageCreator->createOrUpdatePage(
 			$title,
@@ -94,78 +89,62 @@ class DisplayStubGenerator {
 	}
 
 	/**
-	 * Construct the wikitext content for the display template.
-	 *
 	 * @param CategoryModel $category
 	 * @return string
 	 */
-	private function buildWikitext( CategoryModel $category ): string {
+	private function generateWikitext( CategoryModel $category ): string {
 		$format = $category->getDisplayFormat();
 
 		if ( $format === 'sidebox' ) {
-			wfDebugLog( 'SemanticSchemas', 'Generating sidebox display for ' . $category->getName() );
-			return $this->generateSideboxWikitext( $category );
+			$body = $this->generateSideboxBody( $category );
+		} elseif ( $format === 'sections' ) {
+			$body = $this->generateSectionsBody( $category );
+		} else {
+			$body = $this->generateTableBody( $category );
 		}
 
-		if ( $format === 'sections' ) {
-			return $this->generateSectionsWikitext( $category );
-		}
-
-		// Default to table
-		return $this->generateTableWikitext( $category );
+		return self::AUTO_REGENERATE_MARKER . "\n"
+			. "<includeonly>\n"
+			. $body
+			. '[[Category:' . $category->getName() . "]]" . "\n"
+			. "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 	}
 
-	private function generateTableWikitext( CategoryModel $category ): string {
-		$content = self::AUTO_REGENERATE_MARKER . "\n";
-		$content .= "<includeonly>\n";
-		$content .= "{| class=\"wikitable source-semanticschemas\"\n";
+	private function generateTableBody( CategoryModel $category ): string {
+		$content = "{| class=\"wikitable source-semanticschemas\"\n";
 		$content .= "! Property !! Value\n";
-
 		$content .= $this->generatePropertyRows( $category );
-
 		$content .= "|}\n";
-		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
 		return $content;
 	}
 
-	private function generateSideboxWikitext( CategoryModel $category ): string {
+	private function generateSideboxBody( CategoryModel $category ): string {
 		// Infobox style: floated right, distinct styling
-		$content = self::AUTO_REGENERATE_MARKER . "\n";
-		$content .= "<includeonly>\n";
 		$tableStyle = 'float: right; clear: right; margin: 0 0 1em 1em; width: 300px; '
 			. 'background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
-		$content .= '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
+		$content = '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
 		$captionStyle = 'font-size: 120%; font-weight: bold; background-color: #eaecf0;';
 		$content .= '|+ style="' . $captionStyle . '" | ' . $category->getLabel() . "\n";
-
 		$content .= $this->generatePropertyRows( $category );
-
 		$content .= "|}\n";
-		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
 		return $content;
 	}
 
-	private function generateSectionsWikitext( CategoryModel $category ): string {
-		$content = self::AUTO_REGENERATE_MARKER . "\n";
-		$content .= "<includeonly>\n";
-		$content .= "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
+	private function generateSectionsBody( CategoryModel $category ): string {
+		$content = "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
 
 		$sections = $category->getDisplaySections();
-
-		// Convert sections to map to track used properties
 		$usedProperties = [];
 
 		foreach ( $sections as $section ) {
 			$name = $section['name'];
 			$props = $section['properties'];
 
-			// Section Header
 			$content .= "|-\n";
-			$content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | " . $name . "\n";
-
-			// Section Properties
+			$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
+				. $name . "\n";
 			$content .= $this->generatePropertyRows( $category, $props );
 
 			foreach ( $props as $p ) {
@@ -184,12 +163,12 @@ class DisplayStubGenerator {
 
 		if ( !empty( $remaining ) ) {
 			$content .= "|-\n";
-			$content .= "! colspan=\"2\" style=\"background-color: #eaecf0; text-align: center;\" | Other Properties\n";
+			$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;"'
+				. " | Other Properties\n";
 			$content .= $this->generatePropertyRows( $category, $remaining );
 		}
 
 		$content .= "|}\n";
-		$content .= "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 
 		return $content;
 	}
@@ -280,12 +259,10 @@ class DisplayStubGenerator {
 	 * - If it exists AND has the marker, regenerate it (user hasn't customized)
 	 * - If it exists but NO marker, preserve it (user customized)
 	 *
-	 * @param CategoryModel $category
-	 * @return array Result array with keys:
-	 *   - 'status' (string): 'created', 'updated', or 'preserved'
-	 *   - 'message' (string): Human-readable status message
+	 * @param EffectiveCategoryModel $category
+	 * @return array{status: string, message: string}
 	 */
-	public function generateIfAllowed( CategoryModel $category ): array {
+	public function generateIfAllowed( EffectiveCategoryModel $category ): array {
 		$categoryName = $category->getName();
 		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
 
@@ -296,9 +273,8 @@ class DisplayStubGenerator {
 			];
 		}
 
-		// Check if the page exists
+		// Template doesn't exist - create it
 		if ( !$this->pageCreator->pageExists( $title ) ) {
-			// Template doesn't exist - create it
 			$this->generateDisplayContent( $category );
 			return [
 				'status' => 'created',
@@ -306,9 +282,8 @@ class DisplayStubGenerator {
 			];
 		}
 
-		// Template exists - check for the auto-regenerate marker
+		// Template exists and has marker - safe to regenerate
 		if ( $this->hasAutoRegenerateMarker( $title ) ) {
-			// Safe to regenerate
 			$this->generateDisplayContent( $category );
 			return [
 				'status' => 'updated',
