@@ -151,7 +151,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 				$isAddMode
 					? $this->msg( 'semanticschemas-create-add-submit' )->text()
 					: $this->msg( 'semanticschemas-create-submit' )->text(),
-				[ 'class' => 'mw-ui-button mw-ui-progressive' ]
+				[ 'class' => 'cdx-button cdx-button--action-progressive' ]
 			)
 		);
 
