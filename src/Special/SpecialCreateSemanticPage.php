@@ -25,6 +25,9 @@ use MediaWiki\Title\Title;
  */
 class SpecialCreateSemanticPage extends SpecialPage {
 
+	// duration to delay before redirecting after creating page
+	public const DELAY_SECONDS = 1;
+
 	private WikiCategoryStore $categoryStore;
 	private PageCreator $pageCreator;
 	private NamespaceInfo $namespaceInfo;
@@ -41,6 +44,10 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$this->pageCreator = $pageCreator;
 		$this->namespaceInfo = $namespaceInfo;
 		$this->wikiPageFactory = $wikiPageFactory;
+	}
+
+	public function doesWrites(): bool {
+		return true;
 	}
 
 	public function execute( $subPage ) {
@@ -297,9 +304,15 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		}
 		$newCalls = rtrim( $newCalls );
 
+		// Composite pages redirect to the composite form
+		$compositeUrl = Title::makeTitleSafe(
+				NS_SPECIAL,
+				'FormEdit/CompositeForm/' . $pageTitle->getPrefixedText()
+			)->getFullURL() . '?action=purge';
+
 		if ( $newCalls === '' && $pageContent === $existingContent ) {
-			// Nothing changed
-			$output->redirect( $pageTitle->getFullURL() );
+			// Nothing changed - directly redirect
+			$output->redirect( $compositeUrl );
 			return;
 		}
 
@@ -326,13 +339,32 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			return;
 		}
 
-		// Redirect to the composite form — categories are resolved from page
-		// wikitext so the form works immediately without waiting for SMW indexing.
-		$formEditTitle = \MediaWiki\Title\Title::makeTitleSafe(
-			NS_SPECIAL,
-			'FormEdit/CompositeForm/' . $pageTitle->getPrefixedText()
+		$this->delayedRedirect( $compositeUrl, self::DELAY_SECONDS );
+	}
+
+	/**
+	 * Show a notice telling the user they will be redirected,
+	 * and then use HTTP Refresh headers to do the redirect after a delay.
+	 * This triggers an extra page load which runs deferred jobs mw & smw need to display the composite form
+	 *
+	 * @param string $redirectUrl
+	 * @param float $delaySeconds
+	 * @return void
+	 */
+	private function delayedRedirect( string $redirectUrl, float $delaySeconds ): void {
+		$res = $this->getRequest()->response();
+		$res->header( "Refresh: $delaySeconds; url=$redirectUrl", );
+
+		$modal = Html::openElement( 'div', [ 'class' => 'delayed-redirect-notice' ] );
+		$modal .= Html::element( 'p', [],
+			$this->msg( 'semanticschemas-create-redirect' )->params( $delaySeconds )->text()
 		);
-		$output->redirect( $formEditTitle->getFullURL() );
+		$modal .= Html::element( 'a', [ 'href' => $redirectUrl ], $redirectUrl );
+		$modal .= Html::element( 'p', [], $this->msg( 'semanticschemas-create-refresh' )->text() );
+		$modal .= Html::closeElement( 'div' );
+
+		$output = $this->getOutput();
+		$output->addHTML( $modal );
 	}
 
 	/**

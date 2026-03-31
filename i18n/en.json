@@ -142,6 +142,8 @@
 	"semanticschemas-create-no-categories": "No categories found. Import a schema first.",
 	"semanticschemas-create-page-name": "Page name:",
 	"semanticschemas-create-page-name-placeholder": "Enter the page name",
+	"semanticschemas-create-redirect": "Page created, you will be redirected in \"$1\" seconds to:",
+	"semanticschemas-create-refresh": "If the form shows no fields, and is empty except for template calls in the free text area, refresh the page again.",
 	"semanticschemas-create-select-categories": "Select categories:",
 	"semanticschemas-create-submit": "Create Page",
 	"semanticschemas-create-no-page-name": "Please enter a page name.",
