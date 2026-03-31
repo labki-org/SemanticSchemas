@@ -33,5 +33,4 @@ $magicWords['en'] = [
 	'SemanticSchemasRenderSection' => [ 0, 'SemanticSchemasRenderSection' ],
 	'semanticschemas_hierarchy' => [ 0, 'semanticschemas_hierarchy' ],
 	'semanticschemas_load_form_preview' => [ 0, 'semanticschemas_load_form_preview' ],
-	'semanticschemas_categories' => [ 0, 'semanticschemas_categories' ],
 ];
