@@ -58,7 +58,6 @@ class FormGenerator {
 	 * @return string
 	 */
 	public function generateForm( EffectiveCategoryModel $category ): string {
-		$this->validateCategory( $category );
 		$name = trim( $category->getName() );
 
 		$lines = [];
@@ -367,7 +366,6 @@ class FormGenerator {
 	 * designed to be transcluded by Form:CompositeForm via {{Form:Category/composite}}.
 	 */
 	public function generateCompositeSlot( EffectiveCategoryModel $category ): string {
-		$this->validateCategory( $category );
 		$name = trim( $category->getName() );
 		$label = trim( $category->getLabel() );
 
@@ -437,15 +435,6 @@ class FormGenerator {
 
 			return preg_replace( '/(\{\{\{[^}]*\}\}\})/', '<nowiki>$1</nowiki>', $line );
 		}, $lines );
-	}
-
-	private function validateCategory( CategoryModel $category ): void {
-		if ( trim( $category->getName() ) === '' ) {
-			throw new \InvalidArgumentException( "Category name cannot be empty" );
-		}
-		if ( trim( $category->getLabel() ) === '' ) {
-			throw new \InvalidArgumentException( "Category label cannot be empty" );
-		}
 	}
 
 	/**

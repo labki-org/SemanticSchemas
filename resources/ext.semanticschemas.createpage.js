@@ -16,20 +16,20 @@
  * 4. Live search: typing in the search box filters the tree, auto-expanding
  *    parents to show matches and hiding non-matching items.
  */
-( function () {
+( () => {
 	'use strict';
 
-	var grid = document.querySelector( '.ss-create-cat-grid' );
+	const grid = document.querySelector( '.ss-create-cat-grid' );
 	if ( !grid ) {
 		return;
 	}
 
 	// Pre-build a map from category name → array of checkbox elements
 	// so that syncing multi-instance categories is O(1) lookup.
-	var checkboxes = grid.querySelectorAll( 'input[type="checkbox"][data-category]' );
-	var byCategoryName = {};
-	checkboxes.forEach( function ( cb ) {
-		var name = cb.dataset.category;
+	const checkboxes = grid.querySelectorAll( 'input[type="checkbox"][data-category]' );
+	const byCategoryName = {};
+	checkboxes.forEach( ( cb ) => {
+		const name = cb.dataset.category;
 		if ( !byCategoryName[ name ] ) {
 			byCategoryName[ name ] = [];
 		}
@@ -40,7 +40,7 @@
 	 * Sync all checkbox instances of the same category to match the given state.
 	 */
 	function syncInstances( categoryName, checked ) {
-		( byCategoryName[ categoryName ] || [] ).forEach( function ( cb ) {
+		( byCategoryName[ categoryName ] || [] ).forEach( ( cb ) => {
 			cb.checked = checked;
 		} );
 	}
@@ -55,26 +55,26 @@
 	 */
 	function updateAncestorState() {
 		// Pass 1: collect which ancestors are made redundant and by whom
-		var redundant = {};
-		checkboxes.forEach( function ( cb ) {
+		const redundant = {};
+		checkboxes.forEach( ( cb ) => {
 			if ( !cb.checked ) {
 				return;
 			}
 			( cb.dataset.ancestors || '' ).split( '|' ).filter( Boolean )
-				.forEach( function ( ancestor ) {
+				.forEach( ( ancestor ) => {
 					redundant[ ancestor ] = cb.dataset.category;
 				} );
 		} );
 
 		// Pass 2: apply visual state to each checkbox
-		checkboxes.forEach( function ( cb ) {
-			var item = cb.closest( '.ss-create-cat-item' );
+		checkboxes.forEach( ( cb ) => {
+			const item = cb.closest( '.ss-create-cat-item' );
 			if ( !item ) {
 				return;
 			}
-			var catName = cb.dataset.category;
-			var isRedundant = redundant[ catName ] && !cb.checked;
-			var viaEl = item.querySelector( '.ss-create-cat-via' );
+			const catName = cb.dataset.category;
+			const isRedundant = redundant[ catName ] && !cb.checked;
+			let viaEl = item.querySelector( '.ss-create-cat-via' );
 
 			if ( isRedundant ) {
 				item.classList.add( 'is-redundant' );
@@ -108,9 +108,9 @@
 	function updateNamespaceConflicts() {
 		// Single pass: find the selected namespace category, then collect
 		// all namespace checkboxes to apply conflict state.
-		var selectedNsCat = null;
-		var nsCheckboxes = [];
-		checkboxes.forEach( function ( cb ) {
+		let selectedNsCat = null;
+		const nsCheckboxes = [];
+		checkboxes.forEach( ( cb ) => {
 			if ( !cb.dataset.namespace ) {
 				return;
 			}
@@ -120,12 +120,12 @@
 			}
 		} );
 
-		nsCheckboxes.forEach( function ( cb ) {
-			var item = cb.closest( '.ss-create-cat-item' );
+		nsCheckboxes.forEach( ( cb ) => {
+			const item = cb.closest( '.ss-create-cat-item' );
 			if ( !item ) {
 				return;
 			}
-			var conflictEl = item.querySelector( '.ss-create-cat-ns-conflict' );
+			let conflictEl = item.querySelector( '.ss-create-cat-ns-conflict' );
 
 			if ( selectedNsCat && cb.dataset.category !== selectedNsCat && !cb.checked ) {
 				item.classList.add( 'is-ns-conflict' );
@@ -151,8 +151,8 @@
 
 	// --- Event delegation on the grid container ---
 
-	grid.addEventListener( 'change', function ( e ) {
-		var cb = e.target;
+	grid.addEventListener( 'change', ( e ) => {
+		const cb = e.target;
 		if ( cb.type !== 'checkbox' || !cb.dataset.category ) {
 			return;
 		}
@@ -161,8 +161,8 @@
 		updateNamespaceConflicts();
 	} );
 
-	grid.addEventListener( 'click', function ( e ) {
-		var toggle = e.target.closest( '.ss-create-cat-toggle' );
+	grid.addEventListener( 'click', ( e ) => {
+		const toggle = e.target.closest( '.ss-create-cat-toggle' );
 		if ( !toggle ) {
 			return;
 		}
@@ -170,54 +170,54 @@
 		e.stopPropagation();
 
 		// Children container is the next sibling after the toggle's parent item
-		var item = toggle.closest( '.ss-create-cat-item' );
-		var children = item && item.nextElementSibling;
+		const item = toggle.closest( '.ss-create-cat-item' );
+		const children = item && item.nextElementSibling;
 		if ( !children || !children.classList.contains( 'ss-create-cat-children' ) ) {
 			return;
 		}
 
-		var collapsed = !children.classList.contains( 'is-collapsed' );
+		const collapsed = !children.classList.contains( 'is-collapsed' );
 		children.classList.toggle( 'is-collapsed', collapsed );
 		toggle.classList.toggle( 'is-open', !collapsed );
 	} );
 
 	// --- Live search filtering ---
 
-	var searchInput = document.getElementById( 'ss-cat-search' );
-	var allItems = grid.querySelectorAll( '.ss-create-cat-item' );
-	var allChildContainers = grid.querySelectorAll( '.ss-create-cat-children' );
-	var allToggles = grid.querySelectorAll( '.ss-create-cat-toggle' );
+	const searchInput = document.getElementById( 'ss-cat-search' );
+	const allItems = grid.querySelectorAll( '.ss-create-cat-item' );
+	const allChildContainers = grid.querySelectorAll( '.ss-create-cat-children' );
+	const allToggles = grid.querySelectorAll( '.ss-create-cat-toggle' );
 
 	function filterTree( query ) {
 		query = query.toLowerCase().trim();
 
 		if ( !query ) {
 			// Reset: show everything, clear highlights, restore collapse state
-			allItems.forEach( function ( item ) {
+			allItems.forEach( ( item ) => {
 				item.classList.remove( 'ss-search-hidden' );
 				item.classList.remove( 'ss-search-match' );
 			} );
-			allChildContainers.forEach( function ( container ) {
+			allChildContainers.forEach( ( container ) => {
 				container.classList.remove( 'ss-search-hidden' );
 				container.classList.remove( 'is-collapsed' );
 			} );
-			allToggles.forEach( function ( toggle ) {
+			allToggles.forEach( ( toggle ) => {
 				toggle.classList.add( 'is-open' );
 			} );
 			return;
 		}
 
 		// Determine which categories match the search
-		var matchingCategories = {};
-		checkboxes.forEach( function ( cb ) {
-			var catName = cb.dataset.category;
-			var item = cb.closest( '.ss-create-cat-item' );
+		const matchingCategories = {};
+		checkboxes.forEach( ( cb ) => {
+			const catName = cb.dataset.category;
+			const item = cb.closest( '.ss-create-cat-item' );
 			if ( !item ) {
 				return;
 			}
 			// Match against category label and description, not dynamic annotations
-			var labelEl = item.querySelector( '.ss-create-cat-label' );
-			var label = ( labelEl || item ).textContent.toLowerCase();
+			const labelEl = item.querySelector( '.ss-create-cat-label' );
+			const label = ( labelEl || item ).textContent.toLowerCase();
 			if ( label.indexOf( query ) !== -1 ) {
 				matchingCategories[ catName ] = true;
 			}
@@ -225,24 +225,24 @@
 
 		// For each matching category, also mark its ancestors as visible
 		// so the parent chain is shown for context
-		var visibleCategories = {};
-		Object.keys( matchingCategories ).forEach( function ( catName ) {
+		const visibleCategories = {};
+		Object.keys( matchingCategories ).forEach( ( catName ) => {
 			visibleCategories[ catName ] = true;
-			( byCategoryName[ catName ] || [] ).forEach( function ( cb ) {
+			( byCategoryName[ catName ] || [] ).forEach( ( cb ) => {
 				( cb.dataset.ancestors || '' ).split( '|' ).filter( Boolean )
-					.forEach( function ( ancestor ) {
+					.forEach( ( ancestor ) => {
 						visibleCategories[ ancestor ] = true;
 					} );
 			} );
 		} );
 
 		// Apply visibility and highlight direct matches
-		allItems.forEach( function ( item ) {
-			var cb = item.querySelector( 'input[type="checkbox"][data-category]' );
+		allItems.forEach( ( item ) => {
+			const cb = item.querySelector( 'input[type="checkbox"][data-category]' );
 			if ( !cb ) {
 				return;
 			}
-			var catName = cb.dataset.category;
+			const catName = cb.dataset.category;
 			if ( visibleCategories[ catName ] ) {
 				item.classList.remove( 'ss-search-hidden' );
 				if ( matchingCategories[ catName ] ) {
@@ -257,8 +257,8 @@
 		} );
 
 		// Expand all child containers that have visible items, hide empty ones
-		allChildContainers.forEach( function ( container ) {
-			var hasVisible = container.querySelector(
+		allChildContainers.forEach( ( container ) => {
+			const hasVisible = container.querySelector(
 				'.ss-create-cat-item:not(.ss-search-hidden)'
 			);
 			if ( hasVisible ) {
@@ -270,21 +270,21 @@
 		} );
 
 		// Expand all toggles when searching
-		allToggles.forEach( function ( toggle ) {
+		allToggles.forEach( ( toggle ) => {
 			toggle.classList.add( 'is-open' );
 		} );
 	}
 
 	if ( searchInput ) {
-		searchInput.addEventListener( 'input', function () {
+		searchInput.addEventListener( 'input', () => {
 			filterTree( searchInput.value );
 		} );
 	}
 
 	// Set initial toggle state (all open) and compute initial redundancy
-	grid.querySelectorAll( '.ss-create-cat-toggle' ).forEach( function ( toggle ) {
+	grid.querySelectorAll( '.ss-create-cat-toggle' ).forEach( ( toggle ) => {
 		toggle.classList.add( 'is-open' );
 	} );
 	updateAncestorState();
 	updateNamespaceConflicts();
-}() );
+} )();

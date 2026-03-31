@@ -116,9 +116,9 @@ class RegenerateArtifacts extends Maintenance {
 		}
 
 		if ( $formGenerator->generateAndSaveCompositeSlot( $effective ) ) {
-			$this->output( "  ✓ Generated composite form slot\n" );
+			$this->output( "  ✓ Generated composite form\n" );
 		} else {
-			$this->output( "  ✗ Composite form slot generation failed\n" );
+			$this->output( "  ✗ Composite form generation failed\n" );
 		}
 
 		if ( $generateDisplay ) {
