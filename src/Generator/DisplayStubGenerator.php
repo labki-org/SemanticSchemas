@@ -13,7 +13,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *
  * This generator produces the 'Template:<Category>/display' page, which contains
  * a purely static wikitext definition (e.g., a table) where property values are
- * passed into specific render templates (e.g., {{Template:Property/Email}}).
+ * passed into specific render templates (e.g., {{Property/Email}}).
  *
  * Display templates include a special marker comment that indicates they are safe
  * to auto-regenerate. If a user removes this marker, the template is considered
@@ -193,18 +193,19 @@ class DisplayStubGenerator {
 				// Fallback for properties without wiki pages:
 				// Generate a readable label and use default render template
 				$label = NamingHelper::generatePropertyLabel( $propName );
-				$renderTemplate = 'Template:Property/Default';
+				$renderTemplate = 'Property/Default';
 				$valueExpr = '{{{' . $paramName . '|}}}';
 			}
 
-			// Construct the template call:
-			// {{ Template:Property/Email | value={{{email|}}} }}
 			$valueCall = "{{" . $renderTemplate . " | value=" . $valueExpr . " }}";
 
-			$out .= "|-\n";
-			// Standard row format works for both table and simplified infobox
-			$out .= "! " . $label . "\n";
-			$out .= "| " . $valueCall . "\n";
+			// Hide the entire row when the value is empty.
+			// Uses {{!}} magic word inside #if to escape pipes in wikitext table syntax.
+			$out .= '{{#if:{{{' . $paramName . '|}}}|' . "\n";
+			$out .= '{{!}}-' . "\n";
+			$out .= '! ' . $label . "\n";
+			$out .= '{{!}} ' . $valueCall . "\n";
+			$out .= "}}\n";
 		}
 		return $out;
 	}
