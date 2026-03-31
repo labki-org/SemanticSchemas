@@ -43,7 +43,7 @@
 		$c.empty().append($('<p>').addClass('error').text(m));
 
 	const renderEmpty = ($c, m) =>
-		$c.empty().append($('<p>').addClass('ss-hierarchy-empty').text(m));
+		$c.empty().append($('<p>').addClass('s2-hierarchy-empty').text(m));
 
 	/* =======================================================================
 	 * HIERARCHY TREE
@@ -67,23 +67,23 @@
 
 			const parents = Array.isArray(node.parents) ? node.parents : [];
 			const $li = $('<li>');
-			const $content = $('<span>').addClass('ss-hierarchy-node-content');
+			const $content = $('<span>').addClass('s2-hierarchy-node-content');
 
 			if (parents.length) {
 				$content.append(
 					$('<span>')
-						.addClass('ss-hierarchy-toggle')
+						.addClass('s2-hierarchy-toggle')
 						.attr({ role: 'button', tabindex: 0, 'aria-expanded': 'true' })
 						.text('▼')
 				);
-				$li.addClass('ss-hierarchy-has-children');
+				$li.addClass('s2-hierarchy-has-children');
 			}
 
 			$content.append(' ', buildLink(title, 'Category'));
 			$li.append($content);
 
 			if (parents.length) {
-				const $ul = $('<ul>').addClass('ss-hierarchy-tree-nested');
+				const $ul = $('<ul>').addClass('s2-hierarchy-tree-nested');
 				for (const p of parents) {
 					const child = buildNode(p);
 					if (child) {
@@ -96,7 +96,7 @@
 			return $li;
 		};
 
-		const $rootTree = $('<ul>').addClass('ss-hierarchy-tree');
+		const $rootTree = $('<ul>').addClass('s2-hierarchy-tree');
 		const $rootNode = buildNode(root);
 		if ($rootNode) {
 			$rootTree.append($rootNode);
@@ -107,25 +107,25 @@
 		/* Toggle handlers */
 		$container.off('click.ssToggle keydown.ssToggle');
 
-		$container.on('click.ssToggle', '.ss-hierarchy-toggle', function (e) {
+		$container.on('click.ssToggle', '.s2-hierarchy-toggle', function (e) {
 			e.preventDefault();
 			const $toggle = $(this);
 			const $li = $toggle.closest('li');
-			const $nested = $li.children('.ss-hierarchy-tree-nested');
+			const $nested = $li.children('.s2-hierarchy-tree-nested');
 
 			const expanded = $nested.is(':visible');
 			if (expanded) {
 				$nested.slideUp(200);
 				$toggle.text('▶').attr('aria-expanded', 'false');
-				$li.addClass('ss-hierarchy-collapsed');
+				$li.addClass('s2-hierarchy-collapsed');
 			} else {
 				$nested.slideDown(200);
 				$toggle.text('▼').attr('aria-expanded', 'true');
-				$li.removeClass('ss-hierarchy-collapsed');
+				$li.removeClass('s2-hierarchy-collapsed');
 			}
 		});
 
-		$container.on('keydown.ssToggle', '.ss-hierarchy-toggle', function (e) {
+		$container.on('keydown.ssToggle', '.s2-hierarchy-toggle', function (e) {
 			if (e.key === 'Enter' || e.key === ' ') {
 				e.preventDefault();
 				$(this).trigger('click');
@@ -139,7 +139,7 @@
 
 	function renderPropertiesByCategory(props) {
 		if (!props.length) {
-			return $('<p>').addClass('ss-hierarchy-empty').text(
+			return $('<p>').addClass('s2-hierarchy-empty').text(
 				msg('semanticschemas-hierarchy-no-properties')
 			);
 		}
@@ -151,7 +151,7 @@
 		}
 
 		const $table = $('<table>')
-			.addClass('wikitable ss-prop-table')
+			.addClass('wikitable s2-prop-table')
 			.append(
 				$('<thead>').append(
 					$('<tr>')
@@ -167,7 +167,7 @@
 			const $row = $('<tr>');
 
 			/* Source cell */
-			const $srcCell = $('<td>').addClass('ss-prop-source-cell');
+			const $srcCell = $('<td>').addClass('s2-prop-source-cell');
 			if (source) {
 				$srcCell.append(buildLink(source, 'Category'));
 			} else {
@@ -175,18 +175,18 @@
 			}
 
 			/* Properties cell */
-			const $propList = $('<ul>').addClass('ss-prop-list');
+			const $propList = $('<ul>').addClass('s2-prop-list');
 
 			for (const p of list) {
 				const $li = $('<li>')
-					.addClass(isRequired(p.required) ? 'ss-prop-required' : 'ss-prop-optional');
+					.addClass(isRequired(p.required) ? 's2-prop-required' : 's2-prop-optional');
 
 				if (p.propertyTitle) {
 					$li.append(
 						buildLink(p.propertyTitle, 'Property'),
 						' ',
 						$('<span>')
-							.addClass('ss-prop-badge')
+							.addClass('s2-prop-badge')
 							.text(
 								isRequired(p.required)
 									? msg('semanticschemas-hierarchy-required')
@@ -201,7 +201,7 @@
 			}
 
 			$row.append($srcCell)
-				.append($('<td>').addClass('ss-prop-list-cell').append($propList));
+				.append($('<td>').addClass('s2-prop-list-cell').append($propList));
 			$tbody.append($row);
 		}
 
@@ -226,7 +226,7 @@
 		optional.sort(sortFn);
 
 		const buildList = (arr, css) => {
-			const $ul = $('<ul>').addClass('ss-prop-list ss-prop-list-by-type');
+			const $ul = $('<ul>').addClass('s2-prop-list s2-prop-list-by-type');
 			for (const p of arr) {
 				const $li = $('<li>').addClass(css);
 
@@ -236,7 +236,7 @@
 					if (p.sourceCategory) {
 						$li.append(
 							' ',
-							$('<span>').addClass('ss-prop-source-label').append(
+							$('<span>').addClass('s2-prop-source-label').append(
 								'(',
 								buildLink(p.sourceCategory, 'Category'),
 								')'
@@ -252,21 +252,21 @@
 			return $ul;
 		};
 
-		const $root = $('<div>').addClass('ss-prop-by-type');
+		const $root = $('<div>').addClass('s2-prop-by-type');
 
 		if (required.length) {
 			$root.append(
-				$('<div>').addClass('ss-prop-type-section ss-prop-type-required-section')
+				$('<div>').addClass('s2-prop-type-section s2-prop-type-required-section')
 					.append($('<h4>').text(`Required Properties (${required.length})`))
-					.append(buildList(required, 'ss-prop-required'))
+					.append(buildList(required, 's2-prop-required'))
 			);
 		}
 
 		if (optional.length) {
 			$root.append(
-				$('<div>').addClass('ss-prop-type-section ss-prop-type-optional-section')
+				$('<div>').addClass('s2-prop-type-section s2-prop-type-optional-section')
 					.append($('<h4>').text(`Optional Properties (${optional.length})`))
-					.append(buildList(optional, 'ss-prop-optional'))
+					.append(buildList(optional, 's2-prop-optional'))
 			);
 		}
 
@@ -284,7 +284,7 @@
 		}
 
 		const $table = $('<table>')
-			.addClass('wikitable ss-subobject-summary')
+			.addClass('wikitable s2-subobject-summary')
 			.append(
 				$('<thead>').append(
 					$('<tr>')
@@ -316,7 +316,7 @@
 					)
 					.append(
 						$('<td>')
-							.addClass(required ? 'ss-prop-required' : 'ss-prop-optional')
+							.addClass(required ? 's2-prop-required' : 's2-prop-optional')
 							.text(
 								required
 									? msg('semanticschemas-hierarchy-required')
@@ -339,24 +339,24 @@
 			return renderEmpty($container, msg('semanticschemas-hierarchy-no-properties'));
 		}
 
-		const $tabs = $('<div>').addClass('ss-prop-tabs');
+		const $tabs = $('<div>').addClass('s2-prop-tabs');
 		const $byCat = $('<button>')
-			.addClass('ss-prop-tab ss-prop-tab-active')
+			.addClass('s2-prop-tab s2-prop-tab-active')
 			.attr('data-tab', 'category')
 			.text('By Category');
 		const $byType = $('<button>')
-			.addClass('ss-prop-tab')
+			.addClass('s2-prop-tab')
 			.attr('data-tab', 'type')
 			.text('By Type');
 		$tabs.append($byCat, $byType);
 
-		const $contents = $('<div>').addClass('ss-prop-tab-contents');
+		const $contents = $('<div>').addClass('s2-prop-tab-contents');
 		const $catContent = $('<div>')
-			.addClass('ss-prop-tab-content ss-prop-tab-content-active')
+			.addClass('s2-prop-tab-content s2-prop-tab-content-active')
 			.attr('data-content', 'category')
 			.append(renderPropertiesByCategory(props));
 		const $typeContent = $('<div>')
-			.addClass('ss-prop-tab-content')
+			.addClass('s2-prop-tab-content')
 			.attr('data-content', 'type')
 			.append(renderPropertiesByType(props));
 
@@ -365,14 +365,14 @@
 		$container.empty().append($tabs, $contents);
 
 		/* Tab toggle */
-		$tabs.on('click', '.ss-prop-tab', function () {
+		$tabs.on('click', '.s2-prop-tab', function () {
 			const tab = $(this).data('tab');
-			$tabs.find('.ss-prop-tab').removeClass('ss-prop-tab-active');
-			$(this).addClass('ss-prop-tab-active');
-			$contents.find('.ss-prop-tab-content')
-				.removeClass('ss-prop-tab-content-active');
+			$tabs.find('.s2-prop-tab').removeClass('s2-prop-tab-active');
+			$(this).addClass('s2-prop-tab-active');
+			$contents.find('.s2-prop-tab-content')
+				.removeClass('s2-prop-tab-content-active');
 			$contents.find(`[data-content="${tab}"]`)
-				.addClass('ss-prop-tab-content-active');
+				.addClass('s2-prop-tab-content-active');
 		});
 	}
 
@@ -382,7 +382,7 @@
 
 	function fetchAndRender($root, title) {
 		$root
-			.addClass('ss-hierarchy-loading')
+			.addClass('s2-hierarchy-loading')
 			.empty()
 			.append($('<p>').text(msg('semanticschemas-hierarchy-loading')));
 
@@ -393,7 +393,7 @@
 				format: 'json'
 			})
 			.done(data => {
-				$root.removeClass('ss-hierarchy-loading');
+				$root.removeClass('s2-hierarchy-loading');
 
 				const payload = data['semanticschemas-hierarchy'];
 				if (!payload) {
@@ -403,22 +403,22 @@
 					);
 				}
 
-				const $tree = $('<div>').addClass('ss-hierarchy-tree-container');
-				const $props = $('<div>').addClass('ss-hierarchy-props-container');
-				const $subs = $('<div>').addClass('ss-hierarchy-subobjects-container');
+				const $tree = $('<div>').addClass('s2-hierarchy-tree-container');
+				const $props = $('<div>').addClass('s2-hierarchy-props-container');
+				const $subs = $('<div>').addClass('s2-hierarchy-subobjects-container');
 
 				$root.empty().append(
-					$('<div>').addClass('ss-hierarchy-section')
+					$('<div>').addClass('s2-hierarchy-section')
 						.append(
 							$('<h3>').text(msg('semanticschemas-hierarchy-tree-title')),
 							$tree
 						),
-					$('<div>').addClass('ss-hierarchy-section')
+					$('<div>').addClass('s2-hierarchy-section')
 						.append(
 							$('<h3>').text(msg('semanticschemas-hierarchy-props-title')),
 							$props
 						),
-					$('<div>').addClass('ss-hierarchy-section')
+					$('<div>').addClass('s2-hierarchy-section')
 						.append(
 							$('<h3>').text(msg('semanticschemas-hierarchy-subobjects-title')),
 							$subs
@@ -430,7 +430,7 @@
 				renderSubobjectTable($subs, payload);
 			})
 			.fail((code, result) => {
-				$root.removeClass('ss-hierarchy-loading');
+				$root.removeClass('s2-hierarchy-loading');
 				renderError(
 					$root,
 					msg('semanticschemas-hierarchy-error') + ': ' +
@@ -465,7 +465,7 @@
 	 * ======================================================================= */
 
 	$(() => {
-		$('.ss-hierarchy-block[data-category]').each(function () {
+		$('.s2-hierarchy-block[data-category]').each(function () {
 			const $node = $(this);
 			const title = $node.data('category');
 			if (title) {

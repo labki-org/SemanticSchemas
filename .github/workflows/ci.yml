@@ -47,6 +47,17 @@ jobs:
       - name: Run PHPCS
         run: composer exec phpcs -- -sp --cache
 
+      - name: Check for legacy ss- prefix in CSS classes
+        run: |
+          # Fail if any ss- prefixed CSS classes/IDs are found in source files.
+          # CSS custom properties (--ss-*) and event namespaces (.ssToggle) are allowed.
+          if grep -rn --include='*.php' --include='*.js' --include='*.css' \
+            -E "(['\"\.\#]ss-|class=.*ss-)" resources/ src/ tests/ \
+            | grep -v '\-\-ss-' | grep -v 'ssToggle'; then
+            echo "::error::Found legacy 'ss-' prefix in CSS classes. Use 's2-' instead."
+            exit 1
+          fi
+
   test:
     name: PHPUnit Tests
     runs-on: ubuntu-latest

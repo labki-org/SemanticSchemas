@@ -36,9 +36,9 @@
 	--ss-accent-50: #ecfeff;
 
 	/* Status colors */
-	--ss-success-600: #16a34a;
-	--ss-success-100: #dcfce7;
-	--ss-success-50: #f0fdf4;
+	--ss-succes2-600: #16a34a;
+	--ss-succes2-100: #dcfce7;
+	--ss-succes2-50: #f0fdf4;
 
 	--ss-warning-600: #ca8a04;
 	--ss-warning-100: #fef9c3;
@@ -225,9 +225,9 @@
 }
 
 .semanticschemas-status-chip.is-clean {
-	background: var(--ss-success-50);
-	color: var(--ss-success-600);
-	border-color: var(--ss-success-100);
+	background: var(--ss-succes2-50);
+	color: var(--ss-succes2-600);
+	border-color: var(--ss-succes2-100);
 }
 
 .semanticschemas-status-chip.is-clean::before {
@@ -235,7 +235,7 @@
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background: var(--ss-success-600);
+	background: var(--ss-succes2-600);
 	animation: pulse-success 2s infinite;
 }
 
@@ -479,9 +479,9 @@
 }
 
 .semanticschemas-badge.is-ok {
-	background: var(--ss-success-50);
-	color: var(--ss-success-600);
-	border-color: var(--ss-success-100);
+	background: var(--ss-succes2-50);
+	color: var(--ss-succes2-600);
+	border-color: var(--ss-succes2-100);
 }
 
 .semanticschemas-badge.is-alert {
@@ -599,24 +599,24 @@
 	color: var(--ss-accent-600);
 }
 
-.semanticschemas-progress-log {
+.semanticschemas-progres2-log {
 	max-height: 240px;
 	overflow-y: auto;
 	padding-right: var(--ss-space-2);
 }
 
-.semanticschemas-progress-item {
+.semanticschemas-progres2-item {
 	padding: var(--ss-space-2) 0;
 	font-size: 0.875rem;
 	color: var(--ss-slate-700);
 	border-bottom: 1px solid var(--ss-accent-100);
 }
 
-.semanticschemas-progress-item:last-child {
+.semanticschemas-progres2-item:last-child {
 	border-bottom: none;
 }
 
-.semanticschemas-progress-item.semanticschemas-error {
+.semanticschemas-progres2-item.semanticschemas-error {
 	color: var(--ss-error-600);
 	background: var(--ss-error-50);
 	padding: var(--ss-space-2) var(--ss-space-3);
