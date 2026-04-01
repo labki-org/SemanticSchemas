@@ -31,39 +31,30 @@ class NamingHelper {
 	 * parameter names match between templates, forms, and displays.
 	 *
 	 * Transformation Rules:
-	 * 1. Remove "Has " prefix (case-sensitive)
-	 * 2. Replace ":" with "_" (for namespace-prefixed properties)
-	 * 3. Convert to lowercase
-	 * 4. Replace spaces with underscores
-	 * 5. Trim whitespace
+	 * 1. Replace ":" with "_" (for namespace-prefixed properties)
+	 * 2. Convert to lowercase
+	 * 3. Replace spaces with underscores
+	 * 4. Trim whitespace
+	 *
+	 * The full property name is preserved (no prefix stripping) to avoid
+	 * collisions between properties like "Has name" and "Name".
 	 *
 	 * Examples:
-	 *   "Has full name"  → "full_name"
+	 *   "Has full name"  → "has_full_name"
 	 *   "Foaf:name"      → "foaf_name"
-	 *   "Has Person"     → "person"
+	 *   "Has Person"     → "has_person"
 	 *   "Research Area"  → "research_area"
+	 *   "Name"           → "name"
 	 *
 	 * Edge Cases:
 	 *   ""               → ""
-	 *   "Has "           → ""
-	 *   "  Has  name  "  → "name"
+	 *   "  Has  name  "  → "has__name"
 	 *
 	 * @param string $propertyName SMW property name
 	 * @return string Normalized parameter name for use in templates
 	 */
 	public static function propertyToParameter( string $propertyName ): string {
 		$param = $propertyName;
-
-		// Remove "Has " or "Is " prefix (case-sensitive, with space/underscore)
-		if ( str_starts_with( $param, 'Has ' ) ) {
-			$param = substr( $param, 4 );
-		} elseif ( str_starts_with( $param, 'Has_' ) ) {
-			$param = substr( $param, 4 );
-		} elseif ( str_starts_with( $param, 'Is ' ) ) {
-			$param = substr( $param, 3 );
-		} elseif ( str_starts_with( $param, 'Is_' ) ) {
-			$param = substr( $param, 3 );
-		}
 
 		// Replace namespace separator with underscore
 		$param = str_replace( ':', '_', $param );
