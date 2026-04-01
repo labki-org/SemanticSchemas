@@ -333,6 +333,17 @@
 			}
 		},
 		{
+			"page": "Subobject",
+			"namespace": "NS_PROJECT",
+			"description": "Sets the default form for all pages in the Subobject: namespace",
+			"contents": {
+				"importFrom": "project/Subobject.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Category",
 			"namespace": "NS_PROJECT",
 			"description": "Sets the default form for all pages in the Category: namespace",
