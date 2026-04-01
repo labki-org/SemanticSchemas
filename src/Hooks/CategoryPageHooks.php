@@ -42,7 +42,7 @@ class CategoryPageHooks {
 		$categoryName = $title->getText();
 
 		// Add "Generate Form" action to the dropdown menu
-		$links['actions']['ss-generate-form'] = [
+		$links['actions']['s2-generate-form'] = [
 			'text' => wfMessage( 'semanticschemas-action-generate-form' )->text(),
 			'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [
 				'action' => 'generate-form',

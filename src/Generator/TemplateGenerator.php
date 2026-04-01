@@ -329,7 +329,7 @@ class TemplateGenerator {
 
 			$out[] = '=== ' . $label . ' ===';
 			$out[] = '';
-			$out[] = '{| class="wikitable ss-subobject-table"';
+			$out[] = '{| class="wikitable s2-subobject-table"';
 			$out[] = '|-';
 
 			/* header row */

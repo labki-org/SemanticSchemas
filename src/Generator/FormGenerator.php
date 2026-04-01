@@ -114,11 +114,11 @@ class FormGenerator {
 
 			$lines[] = '<!-- Auto-populated category membership field -->';
 			$lines[] = '{{{standard input|free text|hidden|rows=1'
-				. '|placeholder=Parent categories will be added automatically|id=ss-parent-categories}}}';
+				. '|placeholder=Parent categories will be added automatically|id=s2-parent-categories}}}';
 			$lines[] = '';
 
 			$lines[] = "'''Hierarchy Preview:'''";
-			$lines[] = '<div id="ss-form-hierarchy-preview" data-parent-field="'
+			$lines[] = '<div id="s2-form-hierarchy-preview" data-parent-field="'
 				. $this->s( $parentParam ) . '"></div>';
 			$lines[] = '';
 		}
