@@ -1,0 +1,5 @@
+{{#default_form:Property}}
+
+This is the project page for the Property namespace. It sets the default form for all pages in the Property: namespace.
+
+[[Category:SemanticSchemas-managed]]

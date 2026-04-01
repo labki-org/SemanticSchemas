@@ -320,6 +320,28 @@
 			"options": {
 				"replaceable": true
 			}
+		},
+		{
+			"page": "Property",
+			"namespace": "NS_PROJECT",
+			"description": "Sets the default form for all pages in the Property: namespace",
+			"contents": {
+				"importFrom": "project/Property.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category",
+			"namespace": "NS_PROJECT",
+			"description": "Sets the default form for all pages in the Category: namespace",
+			"contents": {
+				"importFrom": "project/Category.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
 		}
 	],
 	"meta": {
