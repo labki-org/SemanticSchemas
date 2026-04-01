@@ -1,0 +1,18 @@
+{
+	"root": true,
+	"extends": [
+		"wikimedia/client/es6"
+	],
+	"env": {
+		"browser": true
+	},
+	"globals": {
+		"mw": "readonly",
+		"$": "readonly",
+		"jQuery": "readonly",
+		"OO": "readonly"
+	},
+	"rules": {
+		"no-jquery/no-global-selector": "off"
+	}
+}

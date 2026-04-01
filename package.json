@@ -1,0 +1,10 @@
+{
+	"private": true,
+	"scripts": {
+		"lint:js": "eslint --cache .",
+		"fix:js": "eslint --cache --fix ."
+	},
+	"devDependencies": {
+		"eslint-config-wikimedia": "0.28.2"
+	}
+}

@@ -29,6 +29,9 @@ phpunit.xml
 # PHPCS
 .phpcs-cache
 
+# ESLint
+.eslintcache
+
 # Node modules (if you add frontend tooling)
 /node_modules/
 
