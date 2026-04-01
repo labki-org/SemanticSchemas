@@ -6,7 +6,6 @@
 [[Has optional property::Property:Display label]]
 [[Has optional property::Property:Allows multiple values]]
 [[Has optional property::Property:Allows value]]
-[[Has optional property::Property:Has domain and range]]
 [[Has optional property::Property:Subproperty of]]
 [[Has optional property::Property:Allows value from category]]
 [[Has optional property::Property:Allows value from namespace]]

@@ -129,17 +129,6 @@ class PropertyInputMapper {
 		}
 
 		/* -------------------------------------------
-		 * PAGE TYPE with range restriction
-		 * ------------------------------------------- */
-		if ( $property->isPageType() ) {
-			$rangeCategory = $property->getRangeCategory();
-			if ( $rangeCategory !== null && $rangeCategory !== '' ) {
-				$params['values from category'] = (string)$rangeCategory;
-				$params['autocomplete'] = 'on';
-			}
-		}
-
-		/* -------------------------------------------
 		 * BASIC TEXT FIELDS
 		 * ------------------------------------------- */
 		if ( in_array( $datatype, [ 'Text', 'Email', 'URL', 'Telephone number' ], true ) ) {

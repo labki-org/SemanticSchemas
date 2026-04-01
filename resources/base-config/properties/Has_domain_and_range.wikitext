@@ -1,7 +1,0 @@
-<!-- SemanticSchemas Start -->
-[[Has type::Page]]
-[[Has description::For Page-type properties, only allow pages from this category.]]
-[[Display label::Restrict to category]]
-[[Allows value from namespace::Category]]
-<!-- SemanticSchemas End -->
-[[Category:SemanticSchemas-managed-property]]
