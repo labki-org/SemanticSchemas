@@ -242,30 +242,10 @@ class CategoryModelTest extends TestCase {
 
 	public function testGetDisplayConfig(): void {
 		$displayConfig = [
-			'header' => [ 'Has name' ],
-			'sections' => [
-				[ 'name' => 'Basic', 'properties' => [ 'Has name' ] ],
-			],
+			'format' => 'sidebox',
 		];
 		$model = new CategoryModel( 'TestCategory', [ 'display' => $displayConfig ] );
 		$this->assertEquals( $displayConfig, $model->getDisplayConfig() );
-	}
-
-	public function testGetDisplayHeaderProperties(): void {
-		$model = new CategoryModel( 'TestCategory', [
-			'display' => [ 'header' => [ 'Has name', 'Has email' ] ],
-		] );
-		$this->assertEquals( [ 'Has name', 'Has email' ], $model->getDisplayHeaderProperties() );
-	}
-
-	public function testGetDisplaySections(): void {
-		$sections = [
-			[ 'name' => 'Basic', 'properties' => [ 'Has name' ] ],
-		];
-		$model = new CategoryModel( 'TestCategory', [
-			'display' => [ 'sections' => $sections ],
-		] );
-		$this->assertEquals( $sections, $model->getDisplaySections() );
 	}
 
 	/* =========================================================================

@@ -97,8 +97,6 @@ class DisplayStubGenerator {
 
 		if ( $format === 'sidebox' ) {
 			$body = $this->generateSideboxBody( $category );
-		} elseif ( $format === 'sections' ) {
-			$body = $this->generateSectionsBody( $category );
 		} else {
 			$body = $this->generateTableBody( $category );
 		}
@@ -127,47 +125,6 @@ class DisplayStubGenerator {
 		$captionStyle = 'font-size: 120%; font-weight: bold; background-color: #eaecf0;';
 		$content .= '|+ style="' . $captionStyle . '" | ' . $category->getLabel() . "\n";
 		$content .= $this->generatePropertyRows( $category );
-		$content .= "|}\n";
-
-		return $content;
-	}
-
-	private function generateSectionsBody( CategoryModel $category ): string {
-		$content = "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
-
-		$sections = $category->getDisplaySections();
-		$usedProperties = [];
-
-		foreach ( $sections as $section ) {
-			$name = $section['name'];
-			$props = $section['properties'];
-
-			$content .= "|-\n";
-			$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
-				. $name . "\n";
-			$content .= $this->generatePropertyRows( $category, $props );
-
-			foreach ( $props as $p ) {
-				$usedProperties[$p] = true;
-			}
-		}
-
-		// Catch-all for properties NOT in any section
-		$allProps = $category->getAllProperties();
-		$remaining = [];
-		foreach ( $allProps as $p ) {
-			if ( !isset( $usedProperties[$p] ) ) {
-				$remaining[] = $p;
-			}
-		}
-
-		if ( !empty( $remaining ) ) {
-			$content .= "|-\n";
-			$content .= '! colspan="2" style="background-color: #eaecf0; text-align: center;"'
-				. " | Other Properties\n";
-			$content .= $this->generatePropertyRows( $category, $remaining );
-		}
-
 		$content .= "|}\n";
 
 		return $content;

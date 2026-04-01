@@ -112,36 +112,6 @@
 			}
 		},
 		{
-			"page": "Has display header property",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_display_header_property.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Has display section name",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_display_section_name.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Has display section property",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_display_section_property.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
 			"page": "Has domain and range",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
@@ -276,16 +246,6 @@
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
 				"importFrom": "properties/Subproperty_of.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Display section",
-			"namespace": "NS_SUBOBJECT",
-			"contents": {
-				"importFrom": "subobjects/Display_section.wikitext"
 			},
 			"options": {
 				"replaceable": true

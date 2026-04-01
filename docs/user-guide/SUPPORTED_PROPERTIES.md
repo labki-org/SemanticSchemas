@@ -93,40 +93,12 @@ Category pages support the following semantic properties to define their schema:
 - **Type:** Text
 - **Purpose:** Controls how properties are rendered in the display template
 - **Allowed Values:**
-  - `Sections` (default) - Properties grouped in sections with headers
-  - `Table` - All properties in a single HTML table
-  - `Side infobox` - Properties in a right-aligned infobox table
-  - `Plain text` - Simple list format
+  - `Table` (default) - All properties in a single HTML table
+  - `Sidebox` - Properties in a right-aligned infobox table
 - **Example:**
   ```wiki
   [[Has display format::Table]]
   ```
-
-#### `Property:Has display header property`
-- **Type:** Page (Property namespace)
-- **Purpose:** Properties to display prominently at the top of the page
-- **Multiple:** Yes
-- **Example:**
-  ```wiki
-  [[Has display header property::Property:Has full name]]
-  [[Has display header property::Property:Has title]]
-  ```
-
-#### Display Sections (Subobjects)
-
-Display sections are defined using subobjects with the following structure:
-
-```wiki
-{{#subobject:display_section_0
-|Has display section name=Contact Information
-|Has display section property=Property:Has email
-|Has display section property=Property:Has phone
-}}
-```
-
-**Subobject Properties:**
-- `Property:Has display section name` (Text) - Name of the display section
-- `Property:Has display section property` (Property) - Properties to include in this section
 
 ### Complete Category Example
 
@@ -143,19 +115,6 @@ Category:Person
 [[Has optional property::Property:Has website]]
 [[Has optional subobject::Subobject:Publication]]
 [[Has display format::Table]]
-[[Has display header property::Property:Has full name]]
-
-{{#subobject:display_section_0
-|Has display section name=Contact Information
-|Has display section property=Property:Has email
-|Has display section property=Property:Has phone
-}}
-
-{{#subobject:display_section_1
-|Has display section name=Professional Information
-|Has display section property=Property:Has title
-|Has display section property=Property:Has department
-}}
 <!-- SemanticSchemas End -->
 ```
 
@@ -381,10 +340,7 @@ Subobject:Publication
 | `Has optional property` | Property | Yes | No | Optional properties |
 | `Has required subobject` | Subobject | Yes | No | Required subobjects |
 | `Has optional subobject` | Subobject | Yes | No | Optional subobjects |
-| `Has display format` | Text | No | No | Display format (Table, Side infobox, Plain text, Sections) |
-| `Has display header property` | Property | Yes | No | Header properties |
-| `Has display section name` | Text | No | No | Display section name (in subobject) |
-| `Has display section property` | Property | Yes | No | Properties in section (in subobject) |
+| `Has display format` | Text | No | No | Display format (Table, Sidebox) |
 
 ### Properties
 

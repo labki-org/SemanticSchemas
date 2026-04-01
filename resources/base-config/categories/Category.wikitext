@@ -9,8 +9,6 @@
 [[Has optional property::Property:Has optional property]]
 [[Has optional property::Property:Has required subobject]]
 [[Has optional property::Property:Has optional subobject]]
-[[Has optional property::Property:Has display header property]]
 [[Has optional property::Property:Has display format]]
-[[Has optional subobject::Subobject:Display section]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]
