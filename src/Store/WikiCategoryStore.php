@@ -117,6 +117,9 @@ class WikiCategoryStore {
 
 		foreach ( $res as $row ) {
 			$name = str_replace( '_', ' ', $row->page_title );
+			if ( $name === Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY ) {
+				continue;
+			}
 			$cat = $this->readCategory( $name );
 			if ( $cat ) {
 				$out[$name] = $cat;
