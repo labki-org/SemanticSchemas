@@ -2,13 +2,15 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Store;
 
+use MediaWiki\Config\Config;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
+use MediaWiki\MainConfigNames;
 use MediaWiki\Title\Title;
 use Wikimedia\Rdbms\IConnectionProvider;
 use Wikimedia\Rdbms\RawSQLExpression;
 use Wikimedia\Rdbms\Subquery;
-use MediaWiki\Extension\SemanticSchemas\Const;
 
 /**
  * WikiCategoryStore
@@ -27,15 +29,18 @@ class WikiCategoryStore {
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
 	private IConnectionProvider $connectionProvider;
+	private Config $mainConfig;
 
 	public function __construct(
 		PageCreator $pageCreator,
 		WikiPropertyStore $propertyStore,
-		IConnectionProvider $connectionProvider
+		IConnectionProvider $connectionProvider,
+		Config $mainConfig
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->propertyStore = $propertyStore;
 		$this->connectionProvider = $connectionProvider;
+		$this->mainConfig = $mainConfig;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -83,8 +88,8 @@ class WikiCategoryStore {
 			self::MARKER_END
 		);
 
-		if ( !str_contains( $newContent, '[[Category:' . Const\SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' ) ) {
-			$newContent .= "\n[[Category:" . Const\SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]';
+		if ( !str_contains( $newContent, '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' ) ) {
+			$newContent .= "\n[[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]';
 		}
 
 		return $this->pageCreator->createOrUpdatePage(
@@ -119,6 +124,89 @@ class WikiCategoryStore {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Get the names of the parent categories for the given page that are managed by semantic schemas
+	 * (i.e., the categories are in the SemanticSchemas-managed category)
+	 *
+	 * Use a SQL query directly rather than our store models
+	 * because we use this in the navigation hooks, which are an extremely perf-sensitive area -
+	 * they run on every page load.
+	 *
+	 * This is a bit complicated by compatibility between mediawiki versions,
+	 * as the categorylinks table schema changed in 1.44 to use an additional linktargets table
+	 *
+	 * A Raw expression is used here because mediawiki's db adapter doesn't support the IN operator,
+	 * but it doesn't pose an SQLi risk because there is no user input in the query
+	 * (the category names are not in the query, but data in the subquery)
+	 *
+	 * @param Title $title
+	 * @return string[]
+	 */
+	public function getManagedParents( Title $title ): array {
+		$dbr = $this->connectionProvider->getReplicaDatabase();
+
+		$data = [];
+
+		$titleKey = $title->getArticleID();
+
+		if ( $titleKey === 0 ) {
+			return $data;
+		}
+		$migrationStage = $this->mainConfig->get(
+			MainConfigNames::CategoryLinksSchemaMigrationStage
+		);
+
+		$subQuery = $dbr->newSelectQueryBuilder()
+			->select( 'page_title' )
+			->from( 'categorylinks' )
+			->caller( __METHOD__ );
+		if ( $migrationStage & SCHEMA_COMPAT_READ_OLD ) {
+			$subQuery->join( 'page', null, 'page_id=cl_from' )
+				->where( [
+					'cl_to' => Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY,
+					'page_namespace' => NS_CATEGORY,
+					]
+				);
+			$query = $dbr->newSelectQueryBuilder()
+				->field( 'cl_to', 'category_title' )
+				->from( 'categorylinks' )
+				->where( [
+					'cl_from' => $title->getArticleID(),
+					new RawSQLExpression( 'cl_to IN' . new Subquery( $subQuery->getSQL() ) )
+				] );
+		} else {
+			$subQuery->join( 'linktarget', null, 'cl_target_id=lt_id' )
+				->join( 'page', null, 'page_id=cl_from' )
+				->where( [
+					'lt_title' => Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY,
+					'page_namespace' => NS_CATEGORY
+				] );
+			$query = $dbr->newSelectQueryBuilder()
+				->field( 'lt_title', 'category_title' )
+				->from( 'categorylinks' )
+				->join( 'linktarget', null, 'cl_target_id=lt_id' )
+				->where( [
+					'cl_from' => $title->getArticleID(),
+					'lt_namespace' => NS_CATEGORY,
+					new RawSQLExpression( 'lt_title IN' . new Subquery( $subQuery->getSQL() ) )
+				] )
+				->caller( __METHOD__ );
+		}
+
+		wfDebugLog( 'semanticschemas', 'MANAGED CATEGORIES QUERY' );
+		wfDebugLog( 'semanticschemas', $query->getSQL() );
+
+		$res = $query->fetchResultSet();
+		if ( $res->numRows() > 0 ) {
+			foreach ( $res as $row ) {
+				$data[] = $row->category_title;
+			}
+		}
+		wfDebugLog( 'semanticschemas', "MANAGED CATEGORIES RESULT" );
+		wfDebugLog( 'semanticschemas', implode( ',', $data ) );
+		return $data;
 	}
 
 	/* -------------------------------------------------------------------------

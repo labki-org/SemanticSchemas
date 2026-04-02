@@ -88,52 +88,28 @@ class CategoryPageHooks {
 	 * - Always: add "Add category" to views section
 	 */
 	private function addCategoryEditActions( Title $title, User $user, array &$links ): void {
-		// Check page categories first (cheap) before loading all managed categories
-		$pageCategories = $title->getParentCategories();
-		if ( empty( $pageCategories ) ) {
-			return;
-		}
-
-		$allCategories = $this->categoryStore->getAllCategories();
-		if ( empty( $allCategories ) ) {
-			return;
-		}
-
-		$managedNames = [];
-		foreach ( $allCategories as $cat ) {
-			$managedNames[$cat->getName()] = true;
-		}
-
-		$matchedCategories = [];
-		foreach ( $pageCategories as $catTitle => $pageName ) {
-			// $catTitle is like "Category:Person"
-			$catName = preg_replace( '/^[^:]+:/', '', $catTitle );
-			if ( isset( $managedNames[$catName] ) ) {
-				$matchedCategories[] = $catName;
-			}
-		}
-
-		if ( empty( $matchedCategories ) ) {
-			return;
-		}
-
-		// Multi-category: rewrite formedit to use CompositeForm
-		if ( count( $matchedCategories ) > 1 && isset( $links['views']['formedit'] ) ) {
-			$compositeTitle = Title::makeTitleSafe(
-				NS_SPECIAL,
-				'FormEdit/CompositeForm/' . $title->getPrefixedText()
-			);
-			if ( $compositeTitle ) {
+		// only load categories if we have the proper permissions to use them
+		$managedCategories = null;
+		if ( isset( $links['views']['formedit'] ) ) {
+			$managedCategories = $this->categoryStore->getManagedParents( $title );
+			if ( count( $managedCategories ) > 1 ) {
+				$compositeTitle = Title::makeTitleSafe(
+					NS_SPECIAL,
+					'FormEdit/CompositeForm/' . $title->getPrefixedText()
+				);
 				$links['views']['formedit']['href'] = $compositeTitle->getLocalURL();
 			}
 		}
 
 		if ( $user->isAllowed( 'createpage' ) ) {
+			if ( $managedCategories === null ) {
+				$managedCategories = $this->categoryStore->getManagedParents( $title );
+			}
 			$links['actions']['s2-add-category'] = [
 				'text' => wfMessage( 'semanticschemas-action-add-category' )->text(),
 				'href' => SpecialPage::getTitleFor( 'CreateSemanticPage' )->getLocalURL( [
 					's2-page-name' => $title->getText(),
-					's2-existing' => implode( '|', $matchedCategories ),
+					's2-existing' => implode( '|', $managedCategories ),
 				] ),
 			];
 		}

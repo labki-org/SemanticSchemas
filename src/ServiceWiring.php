@@ -121,7 +121,8 @@ return [
 		return new WikiCategoryStore(
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->getConnectionProvider()
+			$services->getConnectionProvider(),
+			$services->getMainConfig()
 		);
 	},
 
