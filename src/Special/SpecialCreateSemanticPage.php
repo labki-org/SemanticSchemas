@@ -160,9 +160,8 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		// Meta-category quick-create buttons
 		if ( !$isAddMode && !empty( $metaCategories ) ) {
 			$buttonHtml = '';
-			$formNs = defined( 'PF_NS_FORM' ) ? constant( 'PF_NS_FORM' ) : NS_MAIN;
 			foreach ( $metaCategories as $meta ) {
-				$formTitle = Title::makeTitleSafe( $formNs, $meta->getName() );
+				$formTitle = Title::makeTitleSafe( PF_NS_FORM, $meta->getName() );
 				if ( $formTitle ) {
 					$buttonHtml .= Html::element( 'a', [
 						'class' => 'cdx-button',
