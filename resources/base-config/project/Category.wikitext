@@ -1,0 +1,5 @@
+{{#default_form:Category}}
+
+This is the project page for the Category namespace. It sets the default form for all pages in the Category: namespace.
+
+[[Category:SemanticSchemas-managed]]
