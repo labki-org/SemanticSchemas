@@ -92,8 +92,8 @@ class TemplateGeneratorTest extends TestCase {
 		// Should contain property to parameter mappings
 		$this->assertStringContainsString( 'Has name', $result );
 		$this->assertStringContainsString( 'Has email', $result );
-		$this->assertStringContainsString( '{{{name|}}}', $result );
-		$this->assertStringContainsString( '{{{email|}}}', $result );
+		$this->assertStringContainsString( '{{{has_name|}}}', $result );
+		$this->assertStringContainsString( '{{{has_email|}}}', $result );
 	}
 
 	public function testSemanticTemplateDoesNotContainCategoryStamp(): void {
@@ -190,7 +190,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$result = $this->generateDispatcher( $category );
 		// Should pass parameter to sub-templates
-		$this->assertStringContainsString( '| name = {{{name|}}}', $result );
+		$this->assertStringContainsString( '| has_name = {{{has_name|}}}', $result );
 	}
 
 	public function testGenerateDispatcherTemplateWithEmptyNameThrowsException(): void {
@@ -216,8 +216,8 @@ class TemplateGeneratorTest extends TestCase {
 
 		$result = $this->generator->generateSemanticTemplate( $category );
 
-		// "Has full name" should convert to "full_name" parameter
-		$this->assertStringContainsString( '{{{full_name|}}}', $result );
+		// "Has full name" preserves prefix → "has_full_name" parameter
+		$this->assertStringContainsString( '{{{has_full_name|}}}', $result );
 	}
 
 	public function testMultiplePropertiesConvertedCorrectly(): void {
@@ -230,9 +230,9 @@ class TemplateGeneratorTest extends TestCase {
 
 		$result = $this->generator->generateSemanticTemplate( $category );
 
-		$this->assertStringContainsString( '{{{first_name|}}}', $result );
-		$this->assertStringContainsString( '{{{last_name|}}}', $result );
-		$this->assertStringContainsString( '{{{email_address|}}}', $result );
+		$this->assertStringContainsString( '{{{has_first_name|}}}', $result );
+		$this->assertStringContainsString( '{{{has_last_name|}}}', $result );
+		$this->assertStringContainsString( '{{{has_email_address|}}}', $result );
 	}
 
 	/* =========================================================================
@@ -336,7 +336,7 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 
 		$result = $gen->generateSemanticTemplate( $category );
-		$this->assertStringContainsString( 'Has tags = {{{tags|}}} |+sep=,', $result );
+		$this->assertStringContainsString( 'Has tags = {{{has_tags|}}} |+sep=,', $result );
 	}
 
 	public function testSingleValueTextPropertyDoesNotUseSep(): void {
@@ -355,7 +355,7 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 
 		$result = $gen->generateSemanticTemplate( $category );
-		$this->assertStringContainsString( 'Has title = {{{title|}}}', $result );
+		$this->assertStringContainsString( 'Has title = {{{has_title|}}}', $result );
 		$this->assertStringNotContainsString( '+sep=', $result );
 	}
 
@@ -375,7 +375,7 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 
 		$result = $gen->generateSemanticTemplate( $category );
-		$this->assertStringContainsString( 'Has related = {{{related|}}} |+sep=,', $result );
+		$this->assertStringContainsString( 'Has related = {{{has_related|}}} |+sep=,', $result );
 	}
 
 	public function testMultiValuePagePropertyWithNamespaceUsesArraymap(): void {
@@ -415,7 +415,7 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 
 		$result = $gen->generateSemanticTemplate( $category );
-		$this->assertStringContainsString( 'Has homepage = {{{homepage|}}}', $result );
+		$this->assertStringContainsString( 'Has homepage = {{{has_homepage|}}}', $result );
 		$this->assertStringNotContainsString( '+sep=', $result );
 	}
 
@@ -478,7 +478,7 @@ class TemplateGeneratorTest extends TestCase {
 		}
 
 		$this->assertNotNull( $subobjectContent, 'Subobject semantic template should be generated' );
-		$this->assertStringContainsString( 'Has tags = {{{tags|}}} |+sep=,', $subobjectContent );
+		$this->assertStringContainsString( 'Has tags = {{{has_tags|}}} |+sep=,', $subobjectContent );
 	}
 
 	/* =========================================================================
