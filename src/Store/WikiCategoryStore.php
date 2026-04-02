@@ -152,16 +152,23 @@ class WikiCategoryStore {
 		if ( $titleKey === 0 ) {
 			return $data;
 		}
-		$migrationStage = $this->mainConfig->get(
-			MainConfigNames::CategoryLinksSchemaMigrationStage
-		);
+
+		// Detect which version of the query to use
+		$mwMinor = (int)explode( '.', MW_VERSION )[1];
+		$oldQuery = true;
+		if ( $mwMinor >= 44 ) {
+			$migrationStage = $this->mainConfig->get(
+				MainConfigNames::CategoryLinksSchemaMigrationStage
+			);
+			$oldQuery = $migrationStage & SCHEMA_COMPAT_READ_OLD;
+		}
 
 		$subQuery = $dbr->newSelectQueryBuilder()
 			->select( 'page_title' )
 			->from( 'categorylinks' )
 			->caller( __METHOD__ );
 
-		if ( $migrationStage & SCHEMA_COMPAT_READ_OLD ) {
+		if ( $oldQuery ) {
 			// Pre-1.44 version
 			$subQuery->join( 'page', null, 'page_id=cl_from' )
 				->where( [
