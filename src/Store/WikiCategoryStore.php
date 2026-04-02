@@ -146,9 +146,7 @@ class WikiCategoryStore {
 	 */
 	public function getManagedParents( Title $title ): array {
 		$dbr = $this->connectionProvider->getReplicaDatabase();
-
 		$data = [];
-
 		$titleKey = $title->getArticleID();
 
 		if ( $titleKey === 0 ) {
@@ -162,7 +160,9 @@ class WikiCategoryStore {
 			->select( 'page_title' )
 			->from( 'categorylinks' )
 			->caller( __METHOD__ );
+
 		if ( $migrationStage & SCHEMA_COMPAT_READ_OLD ) {
+			// Pre-1.44 version
 			$subQuery->join( 'page', null, 'page_id=cl_from' )
 				->where( [
 					'cl_to' => Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY,
@@ -173,10 +173,11 @@ class WikiCategoryStore {
 				->field( 'cl_to', 'category_title' )
 				->from( 'categorylinks' )
 				->where( [
-					'cl_from' => $title->getArticleID(),
+					'cl_from' => $titleKey,
 					new RawSQLExpression( 'cl_to IN' . new Subquery( $subQuery->getSQL() ) )
 				] );
 		} else {
+			// Post-1.44 version
 			$subQuery->join( 'linktarget', null, 'cl_target_id=lt_id' )
 				->join( 'page', null, 'page_id=cl_from' )
 				->where( [
@@ -188,15 +189,12 @@ class WikiCategoryStore {
 				->from( 'categorylinks' )
 				->join( 'linktarget', null, 'cl_target_id=lt_id' )
 				->where( [
-					'cl_from' => $title->getArticleID(),
+					'cl_from' => $titleKey,
 					'lt_namespace' => NS_CATEGORY,
 					new RawSQLExpression( 'lt_title IN' . new Subquery( $subQuery->getSQL() ) )
 				] )
 				->caller( __METHOD__ );
 		}
-
-		wfDebugLog( 'semanticschemas', 'MANAGED CATEGORIES QUERY' );
-		wfDebugLog( 'semanticschemas', $query->getSQL() );
 
 		$res = $query->fetchResultSet();
 		if ( $res->numRows() > 0 ) {
@@ -204,8 +202,6 @@ class WikiCategoryStore {
 				$data[] = $row->category_title;
 			}
 		}
-		wfDebugLog( 'semanticschemas', "MANAGED CATEGORIES RESULT" );
-		wfDebugLog( 'semanticschemas', implode( ',', $data ) );
 		return $data;
 	}
 
