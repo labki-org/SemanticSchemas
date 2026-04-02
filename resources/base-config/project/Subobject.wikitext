@@ -1,0 +1,5 @@
+{{#default_form:Subobject}}
+
+This is the project page for the Subobject namespace. It sets the default form for all pages in the Subobject: namespace.
+
+[[Category:SemanticSchemas-managed]]
