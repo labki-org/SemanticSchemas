@@ -8,6 +8,7 @@ use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Html\Html;
 use MediaWiki\Page\WikiPageFactory;
+use MediaWiki\Parser\ParserOutputLinkTypes;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\NamespaceInfo;
 use MediaWiki\Title\Title;
@@ -286,12 +287,23 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		}
 		$resolver = new InheritanceResolver( $categoryMap );
 
+		// Build set of templates already used on the page via parser output
+		$existingTemplates = [];
+		if ( $pageTitle->exists() ) {
+			$parserOutput = $wikiPage->getParserOutput();
+			if ( $parserOutput ) {
+				foreach ( $parserOutput->getLinkList( ParserOutputLinkTypes::TEMPLATE ) as $link ) {
+					$existingTemplates[str_replace( '_', ' ', $link['link']->getText() )] = true;
+				}
+			}
+		}
+
 		$pageContent = $existingContent;
 		$newCalls = '';
 		$removedParents = [];
 		foreach ( $selectedCategories as $catName ) {
 			// Skip categories already on the page
-			if ( preg_match( '/\{\{\s*' . preg_quote( $catName, '/' ) . '\s*[\n|}]/', $pageContent ) ) {
+			if ( isset( $existingTemplates[$catName] ) ) {
 				continue;
 			}
 
