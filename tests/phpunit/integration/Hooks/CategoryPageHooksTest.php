@@ -58,7 +58,8 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		$this->categoryStore = new WikiCategoryStore(
 			$this->pageCreator,
 			$propertyStore,
-			$services->getConnectionProvider()
+			$services->getConnectionProvider(),
+			$services->getMainConfig()
 		);
 	}
 
