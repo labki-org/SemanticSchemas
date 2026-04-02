@@ -449,14 +449,6 @@ class SchemaValidator {
 			);
 		}
 
-		if ( isset( $categoryData['display'] ) ) {
-			$this->mergeResults(
-				$errors,
-				$warnings,
-				$this->validateDisplayConfig( $categoryName, $categoryData['display'], $allProperties )
-			);
-		}
-
 		if ( isset( $categoryData['forms'] ) ) {
 			$this->mergeResults(
 				$errors,
@@ -553,18 +545,6 @@ class SchemaValidator {
 		);
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];
-	}
-
-	/* ======================================================================
-	 * DISPLAY VALIDATION
-	 * ====================================================================== */
-
-	private function validateDisplayConfig(
-		string $categoryName,
-		array $config,
-		array $allProperties
-	): array {
-		return [ 'errors' => [], 'warnings' => [] ];
 	}
 
 	/* ======================================================================
