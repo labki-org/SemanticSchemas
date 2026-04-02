@@ -48,8 +48,7 @@ class CategoryPageHooks {
 			// if the Form: page exists. If it doesn't and the user is an admin,
 			// generate it first then redirect to FormEdit.
 			if ( $user->isAllowed( 'createpage' ) ) {
-				$formNs = defined( 'PF_NS_FORM' ) ? constant( 'PF_NS_FORM' ) : NS_MAIN;
-				$formPage = Title::makeTitleSafe( $formNs, $categoryName );
+				$formPage = Title::makeTitleSafe( PF_NS_FORM, $categoryName );
 				$formExists = $formPage && $formPage->exists();
 
 				if ( $formExists ) {
