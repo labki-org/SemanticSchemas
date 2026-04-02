@@ -36,9 +36,6 @@ class NamingHelper {
 	 * 3. Replace spaces with underscores
 	 * 4. Trim whitespace
 	 *
-	 * The full property name is preserved (no prefix stripping) to avoid
-	 * collisions between properties like "Has name" and "Name".
-	 *
 	 * Examples:
 	 *   "Has full name"  → "has_full_name"
 	 *   "Foaf:name"      → "foaf_name"
