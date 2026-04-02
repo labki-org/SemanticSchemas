@@ -7,6 +7,7 @@ use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
+use MediaWiki\Extension\SemanticSchemas\Const;
 
 /**
  * Generates static display templates for Categories.
@@ -107,6 +108,7 @@ class DisplayStubGenerator {
 			. "<includeonly>\n"
 			. $body
 			. '[[Category:' . $category->getName() . "]]" . "\n"
+			. '[[Category:' . Const\SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' . "\n"
 			. "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 	}
 

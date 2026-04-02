@@ -6,6 +6,9 @@ use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\Title\Title;
 use Wikimedia\Rdbms\IConnectionProvider;
+use Wikimedia\Rdbms\RawSQLExpression;
+use Wikimedia\Rdbms\Subquery;
+use MediaWiki\Extension\SemanticSchemas\Const;
 
 /**
  * WikiCategoryStore
@@ -80,8 +83,8 @@ class WikiCategoryStore {
 			self::MARKER_END
 		);
 
-		if ( !str_contains( $newContent, '[[Category:SemanticSchemas-managed]]' ) ) {
-			$newContent .= "\n[[Category:SemanticSchemas-managed]]";
+		if ( !str_contains( $newContent, '[[Category:' . Const\SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' ) ) {
+			$newContent .= "\n[[Category:" . Const\SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]';
 		}
 
 		return $this->pageCreator->createOrUpdatePage(

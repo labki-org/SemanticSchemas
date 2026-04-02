@@ -312,6 +312,16 @@
 			}
 		},
 		{
+			"page": "SemanticSchemas-managed",
+			"namespace": "NS_CATEGORY",
+			"contents": {
+				"importFrom": "categories/SemanticSchemas-managed.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Subobject",
 			"namespace": "NS_CATEGORY",
 			"contents": {
