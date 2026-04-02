@@ -56,16 +56,6 @@ class CategoryPageHooks {
 						'text' => wfMessage( 'semanticschemas-action-new-page' )->text(),
 						'href' => $formPage->getLocalURL(),
 					];
-				} elseif ( $user->isAllowed( 'editinterface' ) ) {
-					// Form missing — admin can generate it first, then redirect
-					$links['actions']['s2-new-page'] = [
-						'text' => wfMessage( 'semanticschemas-action-new-page' )->text(),
-						'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [
-							'action' => 'generate-form',
-							'category' => $categoryName,
-							'then' => 'new-page',
-						] ),
-					];
 				}
 			}
 
@@ -76,6 +66,7 @@ class CategoryPageHooks {
 					'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [
 						'action' => 'generate-form',
 						'category' => $categoryName,
+						'then' => 'new-page',
 					] ),
 				];
 			}
