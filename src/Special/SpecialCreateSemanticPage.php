@@ -164,12 +164,10 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			$buttonHtml = '';
 			foreach ( $metaCategories as $meta ) {
 				$formTitle = Title::makeTitleSafe( PF_NS_FORM, $meta->getName() );
-				if ( $formTitle ) {
-					$buttonHtml .= Html::element( 'a', [
-						'class' => 'cdx-button',
-						'href' => $formTitle->getLocalURL(),
-					], $meta->getLabel() );
-				}
+				$buttonHtml .= Html::element( 'a', [
+					'class' => 'cdx-button',
+					'href' => $formTitle->getLocalURL(),
+				], $meta->getLabel() );
 			}
 			$formHtml .= Html::rawElement( 'div',
 				[ 'class' => 'semanticschemas-form-group s2-create-meta-categories' ],
