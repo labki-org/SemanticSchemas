@@ -121,6 +121,140 @@ class FormGeneratorTest extends TestCase {
 	}
 
 	/* =========================================================================
+	 * COMPOSITE SLOT — structure
+	 * ========================================================================= */
+
+	public function testCompositeFormContainsForTemplateAndEndTemplate(): void {
+		$category = new EffectiveCategoryModel( 'Animal', [
+			'label' => 'Animal',
+			'properties' => [
+				'required' => [ 'Has species' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $this->generator->generateCompositeForm( $category );
+
+		$this->assertStringContainsString( '{{{for template|Animal}}}', $result );
+		$this->assertStringContainsString( '{{{end template}}}', $result );
+	}
+
+	public function testCompositeFormIncludesFieldForEachProperty(): void {
+		$category = new EffectiveCategoryModel( 'Thing', [
+			'label' => 'Thing',
+			'properties' => [
+				'required' => [ 'Has color' ],
+				'optional' => [ 'Has weight' ],
+			],
+		] );
+
+		$result = $this->generator->generateCompositeForm( $category );
+
+		$this->assertStringContainsString( 'field|has_color', $result );
+		$this->assertStringContainsString( 'field|has_weight', $result );
+	}
+
+	public function testCompositeFormWrappedInNoincludeAndIncludeonly(): void {
+		$category = new EffectiveCategoryModel( 'Item', [
+			'label' => 'Item',
+			'properties' => [
+				'required' => [],
+				'optional' => [],
+			],
+		] );
+
+		$result = $this->generator->generateCompositeForm( $category );
+
+		$this->assertStringContainsString( '<noinclude>', $result );
+		$this->assertStringContainsString( '</noinclude><includeonly>', $result );
+		$this->assertStringContainsString( '</includeonly>', $result );
+	}
+
+	/* =========================================================================
+	 * REGULAR FORM — transcludes composite slot
+	 * ========================================================================= */
+
+	public function testRegularFormTranscludesCompositeSlot(): void {
+		$category = new EffectiveCategoryModel( 'Person', [
+			'label' => 'Person',
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $this->generator->generateForm( $category );
+
+		$this->assertStringContainsString( '{{Form:Person/composite}}', $result );
+	}
+
+	public function testRegularFormIncludesStandardInputs(): void {
+		$category = new EffectiveCategoryModel( 'Person', [
+			'label' => 'Person',
+			'properties' => [
+				'required' => [],
+				'optional' => [],
+			],
+		] );
+
+		$result = $this->generator->generateForm( $category );
+
+		$this->assertStringContainsString( '{{{standard input|free text', $result );
+		$this->assertStringContainsString( '{{{standard input|save}}}', $result );
+		$this->assertStringContainsString( '{{{standard input|cancel}}}', $result );
+	}
+
+	public function testRegularFormDoesNotContainDirectFieldDefinitions(): void {
+		$category = new EffectiveCategoryModel( 'Person', [
+			'label' => 'Person',
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $this->generator->generateForm( $category );
+
+		// Field definitions live in the composite slot, not the main form
+		$this->assertStringNotContainsString( '{{{field|', $result );
+		$this->assertStringNotContainsString( '{{{for template|', $result );
+	}
+
+	/* =========================================================================
+	 * COMPOSITE SLOT — subobject sections
+	 * ========================================================================= */
+
+	public function testCompositeFormIncludesSubobjectFields(): void {
+		$subobject = new SubobjectModel( 'Phone', [
+			'label' => 'Phone',
+			'properties' => [
+				'required' => [ 'Has phone number' ],
+				'optional' => [ 'Has phone type' ],
+			],
+		] );
+
+		$this->subobjectStore->method( 'readSubobject' )
+			->willReturn( $subobject );
+
+		$category = new EffectiveCategoryModel( 'Contact', [
+			'label' => 'Contact',
+			'properties' => [
+				'required' => [],
+				'optional' => [],
+			],
+			'subobjects' => [
+				'required' => [ 'Phone' ],
+				'optional' => [],
+			],
+		] );
+
+		$result = $this->generator->generateCompositeForm( $category );
+
+		$this->assertStringContainsString( 'field|has_phone_number', $result );
+		$this->assertStringContainsString( 'field|has_phone_type', $result );
+	}
+
+	/* =========================================================================
 	 * Helpers
 	 * ========================================================================= */
 
