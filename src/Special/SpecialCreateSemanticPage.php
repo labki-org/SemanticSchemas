@@ -28,6 +28,12 @@ class SpecialCreateSemanticPage extends SpecialPage {
 	// duration to delay before redirecting after creating page
 	public const DELAY_SECONDS = 1;
 
+	/**
+	 * Meta-categories that create pages in their own namespaces and should
+	 * not be mixed with regular page categories.
+	 */
+	private const META_CATEGORY_NAMES = [ 'Category', 'Property', 'Subobject' ];
+
 	private WikiCategoryStore $categoryStore;
 	private PageCreator $pageCreator;
 	private NamespaceInfo $namespaceInfo;
@@ -118,14 +124,10 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			Html::input( 's2-page-name', $prefilledPageName, 'text', $pageNameAttrs )
 		);
 
-		// Separate meta-categories (Category, Property, Subobject) which create
-		// pages in their own namespaces and should not be mixed with regular
-		// page categories. They get dedicated buttons linking to their forms.
-		$metaCategoryNames = [ 'Category', 'Property', 'Subobject' ];
 		$metaCategories = [];
 		$pageCategories = [];
 		foreach ( $categories as $cat ) {
-			if ( in_array( $cat->getName(), $metaCategoryNames, true ) ) {
+			if ( in_array( $cat->getName(), self::META_CATEGORY_NAMES, true ) ) {
 				$metaCategories[] = $cat;
 			} else {
 				$pageCategories[] = $cat;
