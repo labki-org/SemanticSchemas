@@ -217,14 +217,6 @@ Property pages support the following semantic properties to define their schema:
   [[Allows multiple values::true]]
   ```
 
-#### `Property:Has domain and range`
-- **Type:** Page (Category namespace)
-- **Purpose:** For Page-type properties, restricts values to pages in this category
-- **Example:**
-  ```wiki
-  [[Has domain and range::Category:Person]]
-  ```
-
 #### `Property:Subproperty of`
 - **Type:** Page (Property namespace)
 - **Purpose:** Defines this property as a subproperty of another property
@@ -395,9 +387,8 @@ Subobject:Publication
 | `Has description` | Text | No | No | Property description |
 | `Allows value` | Text | Yes | No | Allowed enumeration values |
 | `Allows multiple values` | Boolean | No | No | Allow multiple values |
-| `Has domain and range` | Category | No | No | Category restriction for Page type |
 | `Subproperty of` | Property | No | No | Parent property |
-| `Allows value from category` | Text | No | No | Autocomplete category filter |
+| `Allows value from category` | Text | No | No | Category restriction for Page type |
 | `Allows value from namespace` | Text | No | No | Autocomplete namespace filter |
 | `Has display template` | Text | No | No | Custom display template |
 | `Has display type` | Text | No | No | Built-in display type |

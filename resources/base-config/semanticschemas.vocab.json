@@ -142,16 +142,6 @@
 			}
 		},
 		{
-			"page": "Has domain and range",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_domain_and_range.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
 			"page": "Has empty value behavior",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
