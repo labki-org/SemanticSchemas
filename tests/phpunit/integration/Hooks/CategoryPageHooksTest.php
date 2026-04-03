@@ -169,7 +169,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 			"[[Category:" . $cat1 . "]]\n[[Category:" . $cat2 . "]]"
 		);
 
-		$this->executeJobs();
+		$this->runJobs();
 
 		$skinMock = $this->createSkinMock( static::getTestSysop()->getUser(), $pageTitle );
 		$links = [
@@ -200,7 +200,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 			"[[Category:" . $cat1 . "]]"
 		);
 
-		$this->executeJobs();
+		$this->runJobs();
 
 		$skinMock = $this->createSkinMock( static::getTestSysop()->getUser(), $pageTitle );
 		$links = [
@@ -232,7 +232,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 			"[[Category:" . $managed . "]]\n[[Category:UnmanagedCat]]"
 		);
 
-		$this->executeJobs();
+		$this->runJobs();
 
 		$skinMock = $this->createSkinMock( static::getTestSysop()->getUser(), $pageTitle );
 		$links = [
@@ -261,7 +261,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 			"[[Category:" . $cat1 . "]]"
 		);
 
-		$this->executeJobs();
+		$this->runJobs();
 
 		$skinMock = $this->createSkinMock( static::getTestSysop()->getUser(), $pageTitle );
 		$links = [];
@@ -316,12 +316,4 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		);
 	}
 
-	private function executeJobs(): void {
-		$runner = $this->getServiceContainer()->getJobRunner();
-		$runner->run( [
-			'type' => false,
-			'maxJobs' => 100,
-			'maxTime' => 30,
-		] );
-	}
 }
