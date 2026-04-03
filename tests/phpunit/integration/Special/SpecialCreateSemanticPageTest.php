@@ -130,10 +130,10 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 		$pageName = 'ExistPage' . uniqid();
 		$title = Title::makeTitleSafe( NS_MAIN, $pageName );
 
-		// Create page with first category template
+		// Create page with first category template including field values
 		$this->pageCreator->createOrUpdatePage(
 			$title,
-			"{{" . $cat1 . "\n}}",
+			"{{" . $cat1 . "\n|has_name=Alice\n|has_age=30\n}}",
 			'Initial page'
 		);
 
@@ -146,6 +146,10 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 		$content = $this->getPageContent( $title );
 		$this->assertStringContainsString( '{{' . $cat1, $content );
 		$this->assertStringContainsString( '{{' . $cat2, $content );
+		$this->assertStringContainsString( 'has_name=Alice', $content,
+			'Existing field values should be preserved' );
+		$this->assertStringContainsString( 'has_age=30', $content,
+			'Existing field values should be preserved' );
 	}
 
 	public function testAddCategoryDoesNotDuplicateExistingTemplate(): void {
