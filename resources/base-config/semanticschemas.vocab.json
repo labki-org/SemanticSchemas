@@ -312,10 +312,30 @@
 			}
 		},
 		{
+			"page": "SemanticSchemas-managed",
+			"namespace": "NS_CATEGORY",
+			"contents": {
+				"importFrom": "categories/SemanticSchemas-managed.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Subobject",
 			"namespace": "NS_CATEGORY",
 			"contents": {
 				"importFrom": "categories/Subobject.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "CompositeForm",
+			"namespace": "PF_NS_FORM",
+			"contents": {
+				"importFrom": "forms/CompositeForm.wikitext"
 			},
 			"options": {
 				"replaceable": true
