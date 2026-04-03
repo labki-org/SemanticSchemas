@@ -6,6 +6,7 @@ use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
@@ -107,25 +108,35 @@ class DisplayStubGenerator {
 			. "<includeonly>\n"
 			. $body
 			. '[[Category:' . $category->getName() . "]]" . "\n"
+			. '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' . "\n"
 			. "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
 	}
 
 	private function generateTableBody( CategoryModel $category ): string {
 		$content = "{| class=\"wikitable source-semanticschemas\"\n";
-		$content .= "! Property !! Value\n";
+		$content .= $this->buildCategoryHeadingRow( $category->getName(), $category->getLabel() );
 		$content .= $this->generatePropertyRows( $category );
 		$content .= "|}\n";
 
 		return $content;
 	}
 
+	/**
+	 * Build a category heading row with an inline edit link for display tables.
+	 */
+	private function buildCategoryHeadingRow( string $catName, string $catLabel ): string {
+		$editLink = '<span style="float: right; font-weight: normal; font-size: 0.8em;">'
+			. '[[Special:FormEdit/' . $catName . '/{{FULLPAGENAME}}|edit]]</span>';
+		return "|-\n"
+			. '! colspan="2" style="background-color: #eaecf0; text-align: center;" | '
+			. $catLabel . ' ' . $editLink . "\n";
+	}
+
 	private function generateSideboxBody( CategoryModel $category ): string {
-		// Infobox style: floated right, distinct styling
 		$tableStyle = 'float: right; clear: right; margin: 0 0 1em 1em; width: 300px; '
 			. 'background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
 		$content = '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
-		$captionStyle = 'font-size: 120%; font-weight: bold; background-color: #eaecf0;';
-		$content .= '|+ style="' . $captionStyle . '" | ' . $category->getLabel() . "\n";
+		$content .= $this->buildCategoryHeadingRow( $category->getName(), $category->getLabel() );
 		$content .= $this->generatePropertyRows( $category );
 		$content .= "|}\n";
 
@@ -134,6 +145,7 @@ class DisplayStubGenerator {
 
 	private function generateSectionsBody( CategoryModel $category ): string {
 		$content = "{| class=\"wikitable source-semanticschemas-sections\" style=\"width: 100%;\"\n";
+		$content .= $this->buildCategoryHeadingRow( $category->getName(), $category->getLabel() );
 
 		$sections = $category->getDisplaySections();
 		$usedProperties = [];

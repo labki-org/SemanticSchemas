@@ -6,6 +6,8 @@ use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Util\Constants;
+use MediaWiki\Title\Title;
 use MediaWikiIntegrationTestCase;
 
 /**
@@ -32,7 +34,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->categoryStore = new WikiCategoryStore(
 			$this->pageCreator,
 			$propertyStore,
-			$services->getConnectionProvider()
+			$services->getConnectionProvider(),
+			$services->getMainConfig()
 		);
 	}
 
@@ -334,6 +337,37 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringContainsString( '[[Has optional property::Property:Has email]]', $content );
 		$this->assertStringContainsString( '[[Has required subobject::Subobject:Author]]', $content );
 		$this->assertStringContainsString( '[[Has optional subobject::Subobject:Funding]]', $content );
+	}
+
+	/* =========================================================================
+	  * Managed Parents
+	  * ========================================================================= */
+
+	public static function parentsProvider(): array {
+		$managed = '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]';
+		$unmanaged = '[[Category:RandomOtherCategory]]';
+		return [
+			"multiple managed categories" => [ $managed, $managed, [ "A", "B" ] ],
+			"one managed category" => [ $managed, $unmanaged, [ "A" ] ],
+			"no managed categories" => [ $unmanaged, $unmanaged, [] ]
+		];
+	}
+
+	/**
+	 * @dataProvider parentsProvider
+	 */
+	public function testManagedParents( string $acontent, string $bcontent, array $expected ) {
+		$atitle = Title::makeTitleSafe( NS_CATEGORY, "A" );
+		$btitle = Title::makeTitleSafe( NS_CATEGORY, "B" );
+		$testcat = Title::makeTitleSafe( NS_MAIN, "Test Category" );
+		$this->pageCreator->createOrUpdatePage( $atitle, $acontent, "a" );
+		$this->pageCreator->createOrUpdatePage( $btitle, $bcontent, "b" );
+		$this->pageCreator->createOrUpdatePage( $testcat, '[[Category:A]] [[Category:B]]', "c" );
+
+		$this->runJobs();
+
+		$managed = $this->categoryStore->getManagedParents( $testcat );
+		$this->assertArrayEquals( $expected, $managed );
 	}
 
 	/**
