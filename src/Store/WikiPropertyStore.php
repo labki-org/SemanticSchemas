@@ -54,7 +54,6 @@ class WikiPropertyStore {
 			'label' => NamingHelper::generatePropertyLabel( $canonical ),
 			'description' => '',
 			'allowedValues' => [],
-			'rangeCategory' => null,
 			'subpropertyOf' => null,
 			'allowedCategory' => null,
 			'allowedNamespace' => null,
@@ -153,9 +152,6 @@ class WikiPropertyStore {
 		$out['allowedValues'] =
 			$this->smwFetchMany( $sdata, 'Allows value', 'text' );
 
-		$out['rangeCategory'] =
-			$this->smwFetchOne( $sdata, 'Has domain and range', 'category' );
-
 		$out['subpropertyOf'] =
 			$this->smwFetchOne( $sdata, 'Subproperty of', 'property' );
 
@@ -211,10 +207,6 @@ class WikiPropertyStore {
 
 		foreach ( $p->getAllowedValues() as $v ) {
 			$lines[] = '[[Allows value::' . str_replace( '|', ' ', $v ) . ']]';
-		}
-
-		if ( $p->getRangeCategory() !== null ) {
-			$lines[] = '[[Has domain and range::Category:' . $p->getRangeCategory() . ']]';
 		}
 
 		if ( $p->getSubpropertyOf() !== null ) {

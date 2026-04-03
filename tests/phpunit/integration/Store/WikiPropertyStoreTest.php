@@ -236,18 +236,18 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringContainsString( '[[Display label::Custom Label]]', $content );
 	}
 
-	public function testWritePropertyWithRangeCategory(): void {
-		$name = 'Has ranged prop ' . uniqid();
+	public function testWritePropertyWithAllowedCategory(): void {
+		$name = 'Has catfiltered prop ' . uniqid();
 		$property = new PropertyModel( $name, [
 			'datatype' => 'Page',
-			'rangeCategory' => 'Person',
+			'allowedCategory' => 'Person',
 		] );
 
 		$this->propertyStore->writeProperty( $property );
 
 		$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Has domain and range::Category:Person]]', $content );
+		$this->assertStringContainsString( '[[Allows value from category::Person]]', $content );
 	}
 
 	public function testWritePropertyWithDateDatatype(): void {

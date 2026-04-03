@@ -19,7 +19,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Schema;
  * Validates:
  *   - required top-level fields (schemaVersion, categories, properties)
  *   - category definitions (parents, properties, display, forms)
- *   - property definitions (datatype, allowed values, rangeCategory)
+ *   - property definitions (datatype, allowed values)
  *   - missing references (properties used by categories but not defined)
  *   - multi-parent inheritance consistency
  *   - circular category dependencies (via InheritanceResolver)
@@ -620,18 +620,6 @@ class SchemaValidator {
 				'allowedValues must be an array',
 				'Use an array of allowed values like ["Value1", "Value2"]'
 			);
-		}
-
-		if ( isset( $propertyData['rangeCategory'] ) ) {
-			$range = $propertyData['rangeCategory'];
-			if ( !isset( $allCategories[$range] ) ) {
-				$errors[] = $this->formatError(
-					'property',
-					$propertyName,
-					"rangeCategory '$range' is not defined in schema",
-					"Add '$range' to the categories section or remove rangeCategory"
-				);
-			}
 		}
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];

@@ -148,26 +148,6 @@ class SchemaValidatorTest extends TestCase {
 		$this->assertStringContainsString( 'array', $errors[0] );
 	}
 
-	public function testInvalidRangeCategoryReturnsError(): void {
-		$schema = $this->getValidSchema();
-		$schema['properties']['Has name']['rangeCategory'] = 'NonExistentCategory';
-
-		$errors = $this->validator->validateSchema( $schema );
-		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'rangeCategory', $errors[0] );
-	}
-
-	public function testValidRangeCategoryPassesValidation(): void {
-		$schema = $this->getValidSchema();
-		$schema['properties']['Has supervisor'] = [
-			'datatype' => 'Page',
-			'rangeCategory' => 'TestCategory',
-		];
-
-		$errors = $this->validator->validateSchema( $schema );
-		$this->assertEmpty( $errors );
-	}
-
 	/* =========================================================================
 	 * CIRCULAR DEPENDENCY DETECTION
 	 * ========================================================================= */

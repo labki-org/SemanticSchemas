@@ -294,7 +294,7 @@ See a complete working example:
     "Has advisor": {
       "datatype": "Page",
       "label": "Advisor",
-      "rangeCategory": "Person"
+      "allowedCategory": "Person"
     }
   }
 }

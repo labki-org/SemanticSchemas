@@ -13,7 +13,6 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   - label               (string)
  *   - description         (string)
  *   - allowedValues       (string[])
- *   - rangeCategory       (string|null)
  *   - subpropertyOf       (string|null)
  *   - hasTemplate         (string|null) - Template page name or PropertyType reference
  *   - allowedCategory     (string|null)
@@ -32,7 +31,6 @@ class PropertyModel {
 	/** @var string[] */
 	private array $allowedValues;
 
-	private ?string $rangeCategory;
 	private ?string $subpropertyOf;
 
 	private ?string $hasTemplate;
@@ -89,12 +87,6 @@ class PropertyModel {
 				)
 			)
 		);
-
-		/* -------------------- Page-type category restriction -------------------- */
-		$range = $data['rangeCategory'] ?? null;
-		$this->rangeCategory = ( $range !== null && trim( $range ) !== '' )
-			? trim( $range )
-			: null;
 
 		/* -------------------- Subproperty -------------------- */
 		$subOf = $data['subpropertyOf'] ?? null;
@@ -219,10 +211,6 @@ class PropertyModel {
 		return $this->allowedValues !== [];
 	}
 
-	public function getRangeCategory(): ?string {
-		return $this->rangeCategory;
-	}
-
 	public function isPageType(): bool {
 		return $this->datatype === 'Page';
 	}
@@ -287,7 +275,6 @@ class PropertyModel {
 			'label' => $this->label,
 			'description' => $this->description,
 			'allowedValues' => $this->allowedValues,
-			'rangeCategory' => $this->rangeCategory,
 			'subpropertyOf' => $this->subpropertyOf,
 			'hasTemplate' => $this->hasTemplate,
 			'allowedCategory' => $this->allowedCategory,
