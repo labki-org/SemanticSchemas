@@ -163,8 +163,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		$pageName = 'MultiCatPage' . uniqid();
 		$pageTitle = Title::makeTitleSafe( NS_MAIN, $pageName );
 		$this->savePage( $pageTitle,
-			"{{" . $cat1 . "\n}}\n{{" . $cat2 . "\n}}\n"
-			. "[[Category:" . $cat1 . "]]\n[[Category:" . $cat2 . "]]"
+			"[[Category:" . $cat1 . "]]\n[[Category:" . $cat2 . "]]"
 		);
 
 		$this->executeJobs();
@@ -195,7 +194,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		$pageTitle = Title::makeTitleSafe( NS_MAIN, $pageName );
 		$originalHref = '/wiki/Special:FormEdit/' . $cat1 . '/' . $pageName;
 		$this->savePage( $pageTitle,
-			"{{" . $cat1 . "\n}}\n[[Category:" . $cat1 . "]]"
+			"[[Category:" . $cat1 . "]]"
 		);
 
 		$this->executeJobs();
@@ -227,7 +226,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 
 		// Page has one managed and one unmanaged category
 		$this->savePage( $pageTitle,
-			"{{" . $managed . "\n}}\n[[Category:" . $managed . "]]\n[[Category:UnmanagedCat]]"
+			"[[Category:" . $managed . "]]\n[[Category:UnmanagedCat]]"
 		);
 
 		$this->executeJobs();
@@ -256,7 +255,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		$pageName = 'AddCatPage' . uniqid();
 		$pageTitle = Title::makeTitleSafe( NS_MAIN, $pageName );
 		$this->savePage( $pageTitle,
-			"{{" . $cat1 . "\n}}\n[[Category:" . $cat1 . "]]"
+			"[[Category:" . $cat1 . "]]"
 		);
 
 		$this->executeJobs();

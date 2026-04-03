@@ -292,7 +292,7 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 		// Re-fetch to get latest revision
 		$page = $this->getServiceContainer()->getWikiPageFactory()->newFromTitle( $title );
 		$content = $page->getContent();
-		return $content ? $content->serialize() : '';
+		return $content->serialize();
 	}
 
 	private function executeJobs(): void {
