@@ -270,7 +270,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			$formSuccess = $this->formGenerator->generateAndSaveForm( $effective );
+			$formSuccess = $this->formGenerator->generateAndSaveAllForms( $effective );
 
 			if ( !$formSuccess ) {
 				$output->addHTML( Html::errorBox(
@@ -289,20 +289,23 @@ class SpecialSemanticSchemas extends SpecialPage {
 				'displayStatus' => $displayResult['status'],
 			] );
 
-			// Redirect to the form page
-			$formTitle = Title::makeTitleSafe( $this->getFormNamespace(), $categoryName );
-			if ( $formTitle ) {
-				$output->redirect( $formTitle->getFullURL() );
-			} else {
-				// Fallback: show success message if redirect fails
-				$output->addHTML( Html::successBox(
-					$this->msg( 'semanticschemas-form-generated' )->params( $categoryName )->text()
-				) );
-
-				// Show warning if display template was preserved
-				if ( $displayResult['status'] === 'preserved' ) {
-					$output->addHTML( Html::warningBox( $displayResult['message'] ) );
+			// If triggered from "New page" action, redirect to Form: page
+			$then = $request->getVal( 'then' );
+			if ( $then === 'new-page' ) {
+				$formTitle = Title::makeTitleSafe( $this->getFormNamespace(), $categoryName );
+				if ( $formTitle ) {
+					$output->redirect( $formTitle->getFullURL() );
+					return;
 				}
+			}
+
+			$output->addHTML( Html::successBox(
+				$this->msg( 'semanticschemas-form-generated' )->params( $categoryName )->text()
+			) );
+
+			// Show warning if display template was preserved
+			if ( $displayResult['status'] === 'preserved' ) {
+				$output->addHTML( Html::warningBox( $displayResult['message'] ) );
 			}
 
 		} catch ( \Exception $e ) {
@@ -1160,7 +1163,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 					$this->templateGenerator->generateAllTemplates(
 						$category, $resolver
 					);
-					$this->formGenerator->generateAndSaveForm( $effective );
+					$this->formGenerator->generateAndSaveAllForms( $effective );
 
 					if ( $generateDisplay ) {
 						$this->displayGenerator->generateOrUpdateDisplayStub( $effective );
@@ -1310,6 +1313,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return string
 	 */
 	protected function getGroupName() {
-		return 'wiki';
+		return 'labki';
 	}
 }

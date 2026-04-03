@@ -147,6 +147,16 @@ class PropertyInputMapper {
 		}
 
 		/* -------------------------------------------
+		 * BOOLEAN — default to "no" for all checkboxes.
+		 * Also works around PF_FormPrinter line 1456
+		 * passing null to strtolower() in the starter
+		 * div of multi-instance (subobject) templates.
+		 * ------------------------------------------- */
+		if ( $datatype === 'Boolean' ) {
+			$params['default'] = 'no';
+		}
+
+		/* -------------------------------------------
 		 * TEXTAREA
 		 * ------------------------------------------- */
 		if ( $datatype === 'Code' ) {

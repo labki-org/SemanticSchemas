@@ -1,0 +1,21 @@
+<noinclude>
+Composite form — dynamically assembles sub-forms for multi-category pages.
+This form is part of SemanticSchemas base configuration.
+</noinclude><includeonly>
+{{#arraymap:{{#show:{{FULLPAGENAME}}|?Category#-|link=none|format=plainlist}}
+  |,
+  |@@
+  |{{#ifexist:Form:{{PAGENAME:@@}}/composite
+    |{{Form:{{PAGENAME:@@}}/composite}}
+   }}
+  |
+}}
+
+'''Free text:'''
+
+{{{standard input|free text|rows=10}}}
+
+{{{standard input|summary}}}
+
+{{{standard input|save}}} {{{standard input|preview}}} {{{standard input|changes}}} {{{standard input|cancel}}}
+</includeonly>

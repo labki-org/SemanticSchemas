@@ -50,7 +50,10 @@
 	],
 	"HookHandlers": {
 		"CategoryPageHooks": {
-			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\CategoryPageHooks"
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\CategoryPageHooks",
+			"services": [
+				"SemanticSchemas.WikiCategoryStore"
+			]
 		},
 		"SetupHooks": {
 			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks"
@@ -117,6 +120,17 @@
 				"mobile"
 			]
 		},
+		"ext.semanticschemas.createpage": {
+			"scripts": [
+				"resources/ext.semanticschemas.createpage.js"
+			],
+			"localBasePath": "",
+			"remoteExtPath": "SemanticSchemas",
+			"targets": [
+				"desktop",
+				"mobile"
+			]
+		},
 		"ext.semanticschemas.hierarchy.formpreview": {
 			"scripts": [
 				"resources/ext.semanticschemas.hierarchy.formpreview.js"
@@ -145,6 +159,15 @@
 		}
 	},
 	"SpecialPages": {
+		"CreateSemanticPage": {
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialCreateSemanticPage",
+			"services": [
+				"SemanticSchemas.WikiCategoryStore",
+				"SemanticSchemas.PageCreator",
+				"NamespaceInfo",
+				"WikiPageFactory"
+			]
+		},
 		"SemanticSchemas": {
 			"class": "MediaWiki\\Extension\\SemanticSchemas\\Special\\SpecialSemanticSchemas",
 			"services": [
