@@ -189,45 +189,6 @@ class SchemaValidatorTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * DISPLAY CONFIG VALIDATION
-	 * ========================================================================= */
-
-	public function testInvalidDisplayHeaderTypeReturnsError(): void {
-		$schema = $this->getValidSchema();
-		$schema['categories']['TestCategory']['display'] = [
-			'header' => 'NotAnArray',
-		];
-
-		$errors = $this->validator->validateSchema( $schema );
-		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'header', $errors[0] );
-	}
-
-	public function testUndefinedPropertyInDisplayHeaderReturnsError(): void {
-		$schema = $this->getValidSchema();
-		$schema['categories']['TestCategory']['display'] = [
-			'header' => [ 'Undefined Property' ],
-		];
-
-		$errors = $this->validator->validateSchema( $schema );
-		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'Undefined Property', $errors[0] );
-	}
-
-	public function testDisplaySectionMissingNameReturnsError(): void {
-		$schema = $this->getValidSchema();
-		$schema['categories']['TestCategory']['display'] = [
-			'sections' => [
-				[ 'properties' => [ 'Has name' ] ],
-			],
-		];
-
-		$errors = $this->validator->validateSchema( $schema );
-		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'name', $errors[0] );
-	}
-
-	/* =========================================================================
 	 * FORM CONFIG VALIDATION
 	 * ========================================================================= */
 

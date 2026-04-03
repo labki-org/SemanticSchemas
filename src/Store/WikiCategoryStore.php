@@ -246,18 +246,10 @@ class WikiCategoryStore {
 	}
 
 	private function loadDisplayConfig( $semanticData ): array {
-		$header = $this->smwFetchMany( $semanticData, 'Has display header property', 'property' );
-		$sections = $this->fetchDisplaySections( $semanticData );
 		$format = $this->smwFetchOne( $semanticData, 'Has display format' );
 		$templateProp = $this->smwFetchOne( $semanticData, 'Has display template', 'property' );
 
 		$out = [];
-		if ( $header !== [] ) {
-			$out['header'] = $header;
-		}
-		if ( $sections !== [] ) {
-			$out['sections'] = $sections;
-		}
 		if ( $format !== null ) {
 			$out['format'] = strtolower( $format );
 		}
@@ -266,30 +258,6 @@ class WikiCategoryStore {
 		}
 
 		return $out;
-	}
-
-	private function fetchDisplaySections( $semanticData ): array {
-		$sections = [];
-
-		foreach ( $semanticData->getSubSemanticData() as $subSD ) {
-
-			$name = $subSD->getSubject()->getSubobjectName();
-			if ( !str_starts_with( $name, 'display_section_' ) ) {
-				continue;
-			}
-
-			$secName = $this->smwFetchOne( $subSD, 'Has display section name' );
-			$props = $this->smwFetchMany( $subSD, 'Has display section property', 'property' );
-
-			if ( $secName !== null && $props !== [] ) {
-				$sections[] = [
-					'name' => $secName,
-					'properties' => $props,
-				];
-			}
-		}
-
-		return $sections;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -312,12 +280,7 @@ class WikiCategoryStore {
 			$lines[] = "[[Has parent category::Category:$p]]";
 		}
 
-		// Header properties
-		foreach ( $cat->getDisplayHeaderProperties() as $h ) {
-			$lines[] = "[[Has display header property::Property:$h]]";
-		}
-
-		// Display format (Legacy)
+		// Display format
 		if ( $cat->getDisplayFormat() !== null ) {
 			$lines[] = '[[Has display format::' . $cat->getDisplayFormat() . ']]';
 		}
@@ -343,16 +306,6 @@ class WikiCategoryStore {
 
 		foreach ( $cat->getOptionalSubobjects() as $sg ) {
 			$lines[] = "[[Has optional subobject::Subobject:$sg]]";
-		}
-
-		// Display sections
-		foreach ( $cat->getDisplaySections() as $i => $sec ) {
-			$lines[] = "{{#subobject:display_section_$i";
-			$lines[] = "|Has display section name=" . $sec['name'];
-			foreach ( $sec['properties'] as $p ) {
-				$lines[] = "|Has display section property=Property:$p";
-			}
-			$lines[] = "}}";
 		}
 
 		return implode( "\n", $lines );

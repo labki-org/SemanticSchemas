@@ -255,12 +255,6 @@ create_category "Lab" "[[Has description::A research lab or group.]]
 [[Has optional property::Property:Has research area]]
 [[Has optional property::Property:Has code repository]]
 [[Has optional property::Property:Has website]]
-
-{{#subobject:display_section_0
-|Has display section name=Research
-|Has display section property=Property:Has research area
-}}
-
 [[Category:Organization]]"
 
 # Publication category (standalone category)
@@ -276,12 +270,7 @@ create_category "Publication" "[[Has description::A research publication.]]
 
 === Required Subobjects ===
 [[Has required subobject::Subobject:PublicationAuthor]]
-
-{{#subobject:display_section_0
-|Has display section name=Publication Details
-|Has display section property=Property:Has publication date
-|Has display section property=Property:Has keywords
-}}"
+"
 
 echo "  - Subobject definitions..."
 
@@ -323,20 +312,6 @@ create_category "Faculty" "[[Has description::Faculty member.]]
 [[Has optional property::Property:Has h index]]
 [[Has optional property::Property:Has room number]]
 
-{{#subobject:display_section_0
-|Has display section name=Academic Information
-|Has display section property=Property:Has department
-|Has display section property=Property:Has institution
-|Has display section property=Property:Has room number
-}}
-
-{{#subobject:display_section_1
-|Has display section name=Research
-|Has display section property=Property:Has research interests
-|Has display section property=Property:Has publication count
-|Has display section property=Property:Has h index
-}}
-
 [[Category:Person]]"
 
 # Student category (base for all students, inherits from Person)
@@ -351,14 +326,6 @@ create_category "Student" "[[Has description::A student.]]
 === Optional Properties ===
 [[Has optional property::Property:Has cohort year]]
 [[Has optional property::Property:Has degree]]
-
-{{#subobject:display_section_0
-|Has display section name=Academic Information
-|Has display section property=Property:Has advisor
-|Has display section property=Property:Has academic level
-|Has display section property=Property:Has cohort year
-}}
-
 [[Category:Person]]"
 
 # Undergraduate category (inherits from Student, single inheritance chain)
@@ -368,12 +335,6 @@ create_category "Undergraduate" "[[Has description::An undergraduate student.]]
 
 === Optional Properties ===
 [[Has optional property::Property:Has employment status]]
-
-{{#subobject:display_section_0
-|Has display section name=Student Information
-|Has display section property=Property:Has employment status
-}}
-
 [[Category:Student]]"
 
 echo "  - Multiple inheritance hierarchies..."
@@ -393,19 +354,6 @@ create_category "GraduateStudent" "[[Has description::A graduate student in the 
 [[Has optional property::Property:Has thesis title]]
 [[Has optional property::Property:Has research interests]]
 
-{{#subobject:display_section_0
-|Has display section name=Academic Information
-|Has display section property=Property:Has advisor
-|Has display section property=Property:Has academic level
-|Has display section property=Property:Has cohort year
-|Has display section property=Property:Has thesis title
-}}
-
-{{#subobject:display_section_1
-|Has display section name=Research
-|Has display section property=Property:Has research interests
-}}
-
 [[Category:Person]]
 [[Category:LabMember]]"
 
@@ -423,13 +371,6 @@ create_category "Postdoc" "[[Has description::A postdoctoral researcher in the l
 [[Has optional property::Property:Has research interests]]
 [[Has optional property::Property:Has publication count]]
 [[Has optional property::Property:Has end date]]
-
-{{#subobject:display_section_0
-|Has display section name=Research
-|Has display section property=Property:Has research interests
-|Has display section property=Property:Has publication count
-}}
-
 [[Category:Person]]
 [[Category:LabMember]]"
 
@@ -444,12 +385,6 @@ create_category "PI" "[[Has description::A principal investigator (lab head).]]
 
 === Optional Properties ===
 [[Has optional property::Property:Has orcid]]
-
-{{#subobject:display_section_0
-|Has display section name=Lab Information
-|Has display section property=Property:Has lab
-}}
-
 [[Category:Faculty]]
 [[Category:LabMember]]"
 
@@ -463,13 +398,6 @@ create_category "PhDStudent" "[[Has description::A PhD student in the lab.]]
 === Optional Properties ===
 [[Has optional property::Property:Has thesis title]]
 [[Has optional property::Property:Has degree]]
-
-{{#subobject:display_section_0
-|Has display section name=PhD Information
-|Has display section property=Property:Has thesis title
-|Has display section property=Property:Has degree
-}}
-
 [[Category:GraduateStudent]]"
 
 # MastersStudent category (deep inheritance: Person -> Student -> GraduateStudent)
@@ -479,12 +407,6 @@ create_category "MastersStudent" "[[Has description::A masters student.]]
 
 === Optional Properties ===
 [[Has optional property::Property:Has thesis title]]
-
-{{#subobject:display_section_0
-|Has display section name=Masters Information
-|Has display section property=Property:Has thesis title
-}}
-
 [[Category:GraduateStudent]]"
 
 echo "  - Namespace targeting categories..."
@@ -500,13 +422,7 @@ create_category "UserProfile" "[[Has description::A user profile page (created i
 === Optional Properties ===
 [[Has optional property::Property:Has biography]]
 [[Has optional property::Property:Has website]]
-
-{{#subobject:display_section_0
-|Has display section name=User Information
-|Has display section property=Property:Has full name
-|Has display section property=Property:Has email
-|Has display section property=Property:Has website
-}}"
+"
 
 echo "  - Edge case categories..."
 

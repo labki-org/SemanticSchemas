@@ -26,10 +26,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *     optional: string[]
  *
  *   display:
- *     header: string[]
- *     sections: [
- *        [ 'name' => string, 'properties' => string[] ],
- *     ]
+ *     format: string|null
  *
  *   forms:
  *     sections: [
@@ -249,16 +246,8 @@ class CategoryModel {
 		return $this->displayConfig;
 	}
 
-	public function getDisplayHeaderProperties(): array {
-		return $this->displayConfig['header'] ?? [];
-	}
-
 	public function getDisplayFormat(): ?string {
 		return $this->displayConfig['format'] ?? null;
-	}
-
-	public function getDisplaySections(): array {
-		return $this->displayConfig['sections'] ?? [];
 	}
 
 	public function getFormConfig(): array {
@@ -352,34 +341,12 @@ class CategoryModel {
 
 		$merged = $parent;
 
-		if ( isset( $child['header'] ) ) {
-			$merged['header'] = NamingHelper::normalizeList( $child['header'] );
-		}
-
 		if ( isset( $child['format'] ) ) {
 			$merged['format'] = trim( (string)$child['format'] );
 		}
 
-		if ( isset( $child['sections'] ) ) {
-			$mergedSections = $parent['sections'] ?? [];
-
-			foreach ( $child['sections'] as $c ) {
-				$found = false;
-
-				foreach ( $mergedSections as &$m ) {
-					if ( ( $m['name'] ?? null ) === ( $c['name'] ?? null ) ) {
-						$m = $c;
-						$found = true;
-						break;
-					}
-				}
-
-				if ( !$found ) {
-					$mergedSections[] = $c;
-				}
-			}
-
-			$merged['sections'] = $mergedSections;
+		if ( isset( $child['templateProperty'] ) ) {
+			$merged['templateProperty'] = $child['templateProperty'];
 		}
 
 		return $merged;

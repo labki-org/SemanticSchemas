@@ -53,11 +53,6 @@ A person in our organization.
 
 === Optional Properties ===
 [[Has optional property::Property:Has biography]]
-
-{{#subobject:display_section_0
-|Has display section name=Details
-|Has display section property=Property:Has email
-}}
 <!-- SemanticSchemas Schema End -->
 ```
 

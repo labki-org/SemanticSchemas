@@ -449,14 +449,6 @@ class SchemaValidator {
 			);
 		}
 
-		if ( isset( $categoryData['display'] ) ) {
-			$this->mergeResults(
-				$errors,
-				$warnings,
-				$this->validateDisplayConfig( $categoryName, $categoryData['display'], $allProperties )
-			);
-		}
-
 		if ( isset( $categoryData['forms'] ) ) {
 			$this->mergeResults(
 				$errors,
@@ -551,61 +543,6 @@ class SchemaValidator {
 				'properties'
 			)
 		);
-
-		return [ 'errors' => $errors, 'warnings' => $warnings ];
-	}
-
-	/* ======================================================================
-	 * DISPLAY VALIDATION
-	 * ====================================================================== */
-
-	private function validateDisplayConfig(
-		string $categoryName,
-		array $config,
-		array $allProperties
-	): array {
-		$errors = [];
-		$warnings = [];
-
-		if ( isset( $config['header'] ) ) {
-			if ( !is_array( $config['header'] ) ) {
-				$errors[] = $this->formatError(
-					'category',
-					$categoryName,
-					'display.header must be an array',
-					'Use an array of property names like ["Property1", "Property2"]'
-				);
-			} else {
-				$errors = array_merge(
-					$errors,
-					$this->validateReferences(
-						'category',
-						$categoryName,
-						$config['header'],
-						$allProperties,
-						'property',
-						'display header'
-					)
-				);
-			}
-		}
-
-		if ( isset( $config['sections'] ) ) {
-			if ( !is_array( $config['sections'] ) ) {
-				$errors[] = $this->formatError(
-					'category',
-					$categoryName,
-					'display.sections must be an array',
-					'Use an array of section objects'
-				);
-			} else {
-				$this->mergeResults(
-					$errors,
-					$warnings,
-					$this->validateSections( $categoryName, $config['sections'], $allProperties, 'display' )
-				);
-			}
-		}
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}

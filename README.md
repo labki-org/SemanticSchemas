@@ -148,9 +148,6 @@ SemanticSchemas uses these SMW properties to store schema metadata on wiki pages
 - **Has required subobject** (Type: Page) - Required repeatable subobject definitions
 - **Has optional subobject** (Type: Page) - Optional repeatable subobject definitions
 - **Has subobject type** (Type: Page) - Tags each stored subobject instance with the Subobject schema it follows
-- **Has display header property** (Type: Page) - Properties shown in the page header
-- **Has display section name** (Type: Text) - Name of a display section
-- **Has display section property** (Type: Page) - Properties in a display section
 - **Has form section name** (Type: Text) - Name of a form section
 - **Has form section property** (Type: Page) - Properties in a form section
 

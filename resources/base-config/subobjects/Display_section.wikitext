@@ -1,6 +1,0 @@
-<!-- SemanticSchemas Start -->
-[[Has description::Defines a section for property grouping in display templates.]]
-[[Has required property::Property:Has display section name]]
-[[Has optional property::Property:Has display section property]]
-<!-- SemanticSchemas End -->
-[[Category:SemanticSchemas-managed-subobject]]

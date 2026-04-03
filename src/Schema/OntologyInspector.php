@@ -120,7 +120,7 @@ class OntologyInspector {
 				$stats['categoriesWithProperties']++;
 			}
 
-			if ( $cat->getDisplaySections() ) {
+			if ( $cat->getDisplayFormat() !== null ) {
 				$stats['categoriesWithDisplay']++;
 			}
 

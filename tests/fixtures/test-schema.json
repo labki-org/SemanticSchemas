@@ -16,35 +16,7 @@
                     "Has required property",
                     "Has optional property",
                     "Has required subgroup",
-                    "Has optional subgroup",
-                    "Has display section"
-                ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Basic Information",
-                        "properties": [
-                            "Has description",
-                            "Has label"
-                        ]
-                    },
-                    {
-                        "name": "Category Structure",
-                        "properties": [
-                            "Has parent category",
-                            "Has required property",
-                            "Has optional property",
-                            "Has required subgroup",
-                            "Has optional subgroup"
-                        ]
-                    },
-                    {
-                        "name": "Display Sections",
-                        "properties": [
-                            "Has display section"
-                        ]
-                    }
+                    "Has optional subgroup"
                 ]
             },
             "targetNamespace": "Category"
@@ -88,26 +60,6 @@
                     "Has h index",
                     "Has room number"
                 ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Academic Information",
-                        "properties": [
-                            "Has room number",
-                            "Has institution",
-                            "Has department"
-                        ]
-                    },
-                    {
-                        "name": "Research",
-                        "properties": [
-                            "Has research interests",
-                            "Has publication count",
-                            "Has h index"
-                        ]
-                    }
-                ]
             }
         },
         "GraduateStudent": {
@@ -127,25 +79,6 @@
                     "Has cohort year",
                     "Has thesis title"
                 ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Academic Information",
-                        "properties": [
-                            "Has cohort year",
-                            "Has advisor",
-                            "Has academic level",
-                            "Has thesis title"
-                        ]
-                    },
-                    {
-                        "name": "Research",
-                        "properties": [
-                            "Has research interests"
-                        ]
-                    }
-                ]
             }
         },
         "Lab": {
@@ -162,16 +95,6 @@
                     "Has website",
                     "Has code repository",
                     "Has research area"
-                ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Research",
-                        "properties": [
-                            "Has research area"
-                        ]
-                    }
                 ]
             }
         },
@@ -201,16 +124,6 @@
                 "required": [],
                 "optional": [
                     "Has thesis title"
-                ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Masters Information",
-                        "properties": [
-                            "Has thesis title"
-                        ]
-                    }
                 ]
             }
         },
@@ -242,16 +155,6 @@
                 "optional": [
                     "Has orcid"
                 ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Lab Information",
-                        "properties": [
-                            "Has lab"
-                        ]
-                    }
-                ]
             }
         },
         "Person": {
@@ -269,24 +172,6 @@
                     "Has website",
                     "Has birth date"
                 ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Contact Information",
-                        "properties": [
-                            "Has email",
-                            "Has phone",
-                            "Has website"
-                        ]
-                    },
-                    {
-                        "name": "Biography",
-                        "properties": [
-                            "Has biography"
-                        ]
-                    }
-                ]
             }
         },
         "PhDStudent": {
@@ -300,17 +185,6 @@
                 "optional": [
                     "Has degree",
                     "Has thesis title"
-                ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "PhD Information",
-                        "properties": [
-                            "Has degree",
-                            "Has thesis title"
-                        ]
-                    }
                 ]
             }
         },
@@ -330,17 +204,6 @@
                     "Has research interests",
                     "Has end date",
                     "Has publication count"
-                ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Research",
-                        "properties": [
-                            "Has research interests",
-                            "Has publication count"
-                        ]
-                    }
                 ]
             }
         },
@@ -378,17 +241,6 @@
                     "PublicationAuthor"
                 ],
                 "optional": []
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Publication Details",
-                        "properties": [
-                            "Has publication date",
-                            "Has keywords"
-                        ]
-                    }
-                ]
             }
         },
         "SimpleCategory": {
@@ -417,18 +269,6 @@
                     "Has cohort year",
                     "Has degree"
                 ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Academic Information",
-                        "properties": [
-                            "Has cohort year",
-                            "Has advisor",
-                            "Has academic level"
-                        ]
-                    }
-                ]
             }
         },
         "Undergraduate": {
@@ -441,16 +281,6 @@
                 "required": [],
                 "optional": [
                     "Has employment status"
-                ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "Student Information",
-                        "properties": [
-                            "Has employment status"
-                        ]
-                    }
                 ]
             }
         },
@@ -466,18 +296,6 @@
                 "optional": [
                     "Has biography",
                     "Has website"
-                ]
-            },
-            "display": {
-                "sections": [
-                    {
-                        "name": "User Information",
-                        "properties": [
-                            "Has full name",
-                            "Has email",
-                            "Has website"
-                        ]
-                    }
                 ]
             },
             "targetNamespace": "User"
@@ -702,17 +520,6 @@
             },
             "allowedNamespace": "Property",
             "allowsMultipleValues": false
-        },
-        "Has display section": {
-            "datatype": "Text",
-            "label": "Has display section",
-            "description": "Display section configuration for organizing how properties are shown on a page.",
-            "display": {
-                "type": null,
-                "template": null,
-                "fromProperty": null
-            },
-            "allowsMultipleValues": true
         },
         "Has display template": {
             "datatype": "Text",

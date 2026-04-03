@@ -26,15 +26,13 @@ Each category generates three templates:
 
 ### Display Module (`Display/`)
 
-Handles rendering of property values and display sections.
+Handles rendering of property values.
 
 - **DisplayRenderer**: Renders property values with formatting, templates, and built-in types
-- **DisplaySpecBuilder**: Builds effective display specifications by merging inherited sections
 
 Key Features:
 - Property value rendering with display templates
 - Built-in display types (email, URL, image, boolean)
-- Section-based layouts with inheritance
 - Template variable substitution
 
 ### Generator Module (`Generator/`)

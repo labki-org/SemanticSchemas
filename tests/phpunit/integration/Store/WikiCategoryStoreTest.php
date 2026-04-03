@@ -124,45 +124,6 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringContainsString( '[[Has optional property::Property:Has address]]', $content );
 	}
 
-	public function testWriteCategoryWithDisplayHeaderProperties(): void {
-		$name = 'HeaderCat ' . uniqid();
-		$category = new CategoryModel( $name, [
-			'display' => [
-				'header' => [ 'Has name', 'Has title' ],
-			],
-		] );
-
-		$result = $this->categoryStore->writeCategory( $category );
-
-		$this->assertTrue( $result );
-		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
-		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Has display header property::Property:Has name]]', $content );
-		$this->assertStringContainsString( '[[Has display header property::Property:Has title]]', $content );
-	}
-
-	public function testWriteCategoryWithDisplaySections(): void {
-		$name = 'SectionsCat ' . uniqid();
-		$category = new CategoryModel( $name, [
-			'display' => [
-				'sections' => [
-					[ 'name' => 'Basic Info', 'properties' => [ 'Has name' ] ],
-					[ 'name' => 'Contact', 'properties' => [ 'Has email', 'Has phone' ] ],
-				],
-			],
-		] );
-
-		$result = $this->categoryStore->writeCategory( $category );
-
-		$this->assertTrue( $result );
-		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
-		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '{{#subobject:display_section_0', $content );
-		$this->assertStringContainsString( '|Has display section name=Basic Info', $content );
-		$this->assertStringContainsString( '{{#subobject:display_section_1', $content );
-		$this->assertStringContainsString( '|Has display section name=Contact', $content );
-	}
-
 	public function testWriteCategoryWithTargetNamespace(): void {
 		$name = 'NamespaceCat ' . uniqid();
 		$category = new CategoryModel( $name, [
