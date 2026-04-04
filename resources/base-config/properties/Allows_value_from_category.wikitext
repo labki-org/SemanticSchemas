@@ -2,6 +2,6 @@
 [[Has type::Page]]
 [[Has description::Restrict allowed values to pages belonging to this category.]]
 [[Display label::Allowed category]]
-[[Allows value from category::Category:Category]]
+[[Allows value from namespace::Category]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]
