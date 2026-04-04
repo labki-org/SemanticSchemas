@@ -395,8 +395,10 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 
 		$result = $gen->generateSemanticTemplate( $category );
-		$this->assertStringContainsString( '#arraymap', $result );
-		$this->assertStringContainsString( '|+sep=,', $result );
+		$this->assertStringContainsString(
+			'Has author = {{#arraymap:{{{has_author|}}}|,|@@item@@|User:@@item@@|,}} |+sep=,',
+			$result
+		);
 	}
 
 	public function testSingleValuePagePropertyWithoutNamespaceDoesNotUseSep(): void {
