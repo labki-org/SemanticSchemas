@@ -396,7 +396,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$result = $gen->generateSemanticTemplate( $category );
 		$this->assertStringContainsString( '#arraymap', $result );
-		$this->assertStringNotContainsString( '+sep=', $result );
+		$this->assertStringContainsString( '|+sep=,', $result );
 	}
 
 	public function testSingleValuePagePropertyWithoutNamespaceDoesNotUseSep(): void {
