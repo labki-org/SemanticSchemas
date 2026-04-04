@@ -156,7 +156,7 @@ class WikiPropertyStore {
 			$this->smwFetchOne( $sdata, 'Subproperty of', 'property' );
 
 		$out['allowedCategory'] =
-			$this->smwFetchOne( $sdata, 'Allows value from category', 'text' );
+			$this->smwFetchOne( $sdata, 'Allows value from category', 'category' );
 
 		$out['allowedNamespace'] =
 			$this->smwFetchOne( $sdata, 'Allows value from namespace', 'text' );
@@ -214,7 +214,7 @@ class WikiPropertyStore {
 		}
 
 		if ( $p->getAllowedCategory() !== null ) {
-			$lines[] = '[[Allows value from category::' . $p->getAllowedCategory() . ']]';
+			$lines[] = '[[Allows value from category::Category:' . $p->getAllowedCategory() . ']]';
 		}
 
 		if ( $p->getAllowedNamespace() !== null ) {
