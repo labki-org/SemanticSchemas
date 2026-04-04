@@ -3,7 +3,7 @@
 [[Has target namespace::Subobject]]
 [[Has required property::Property:Has description]]
 [[Has optional property::Property:Display label]]
-[[Has optional property::Property:Has required property]]
-[[Has optional property::Property:Has optional property]]
+[[Has optional subobject::Subobject:Required property]]
+[[Has optional subobject::Subobject:Optional property]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

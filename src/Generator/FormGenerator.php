@@ -141,8 +141,6 @@ class FormGenerator {
 	private function generatePropertyTable( CategoryModel $category ): array {
 		$required = $category->getRequiredProperties();
 		$optional = $category->getOptionalProperties();
-		sort( $required );
-		sort( $optional );
 
 		$out = [];
 		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields', true ) );

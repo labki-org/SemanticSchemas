@@ -85,6 +85,45 @@ trait SMWDataExtractor {
 	}
 
 	/**
+	 * Read ordered references from SMW subobjects attached to a page.
+	 *
+	 * Iterates sub-semantic-data, filters by subobject type, extracts the
+	 * reference property value, and sorts by subobject identifier to preserve
+	 * insertion order (identifiers are named like "req-prop-1", "req-prop-2").
+	 *
+	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
+	 * @param string $subobjectType Subobject type to match (e.g. "Required property")
+	 * @param string $referenceProperty Property holding the reference (e.g. "Has property reference")
+	 * @param string $referenceType Value type for extraction (e.g. "property", "subobject")
+	 * @return string[] Ordered list of referenced names
+	 */
+	protected function smwFetchOrderedReferences(
+		$semanticData,
+		string $subobjectType,
+		string $referenceProperty,
+		string $referenceType
+	): array {
+		$entries = [];
+
+		foreach ( $semanticData->getSubSemanticData() as $subData ) {
+			$type = $this->smwFetchOne( $subData, 'Has subobject type', 'subobject' );
+			if ( $type !== $subobjectType ) {
+				continue;
+			}
+
+			$ref = $this->smwFetchOne( $subData, $referenceProperty, $referenceType );
+			if ( $ref !== null ) {
+				$subName = $subData->getSubject()->getSubobjectName();
+				$entries[$subName] = $ref;
+			}
+		}
+
+		ksort( $entries );
+
+		return array_values( $entries );
+	}
+
+	/**
 	 * Extract a value from a SMW DataItem based on type.
 	 *
 	 * The $type parameter acts as a namespace assertion: when the DataItem is a

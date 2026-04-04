@@ -87,19 +87,15 @@ class WikiSubobjectStore {
 			$out['description'] = $desc;
 		}
 
-		// Required properties
-		$out['properties']['required'] = $this->smwFetchMany(
-			$sdata,
-			'Has required property',
-			'property'
-		);
+		// Required properties (subobject-based with fallback to legacy)
+		$out['properties']['required'] = $this->smwFetchOrderedReferences(
+			$sdata, 'Required property', 'Has property reference', 'property'
+		) ?: $this->smwFetchMany( $sdata, 'Has required property', 'property' );
 
-		// Optional properties
-		$out['properties']['optional'] = $this->smwFetchMany(
-			$sdata,
-			'Has optional property',
-			'property'
-		);
+		// Optional properties (subobject-based with fallback to legacy)
+		$out['properties']['optional'] = $this->smwFetchOrderedReferences(
+			$sdata, 'Optional property', 'Has property reference', 'property'
+		) ?: $this->smwFetchMany( $sdata, 'Has optional property', 'property' );
 
 		return $out;
 	}
@@ -144,12 +140,20 @@ class WikiSubobjectStore {
 			$lines[] = '[[Has description::' . $s->getDescription() . ']]';
 		}
 
-		foreach ( $s->getRequiredProperties() as $p ) {
-			$lines[] = '[[Has required property::Property:' . $p . ']]';
+		foreach ( $s->getRequiredProperties() as $i => $p ) {
+			$id = 'req-prop-' . ( $i + 1 );
+			$lines[] = '{{#subobject:' . $id;
+			$lines[] = ' | Has subobject type = Subobject:Required property';
+			$lines[] = ' | Has property reference = Property:' . $p;
+			$lines[] = '}}';
 		}
 
-		foreach ( $s->getOptionalProperties() as $p ) {
-			$lines[] = '[[Has optional property::Property:' . $p . ']]';
+		foreach ( $s->getOptionalProperties() as $i => $p ) {
+			$id = 'opt-prop-' . ( $i + 1 );
+			$lines[] = '{{#subobject:' . $id;
+			$lines[] = ' | Has subobject type = Subobject:Optional property';
+			$lines[] = ' | Has property reference = Property:' . $p;
+			$lines[] = '}}';
 		}
 
 		return implode( "\n", $lines );

@@ -1,0 +1,7 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::References a single subobject type in an ordered subobject list.]]
+[[Display label::Subobject reference]]
+[[Allows value from namespace::Subobject]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

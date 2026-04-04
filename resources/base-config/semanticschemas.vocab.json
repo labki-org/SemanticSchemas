@@ -232,6 +232,26 @@
 			}
 		},
 		{
+			"page": "Has property reference",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_property_reference.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Has subobject reference",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_subobject_reference.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Subproperty of",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
@@ -276,6 +296,46 @@
 			"namespace": "NS_CATEGORY",
 			"contents": {
 				"importFrom": "categories/Subobject.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Required property",
+			"namespace": "NS_SUBOBJECT",
+			"contents": {
+				"importFrom": "subobjects/Required_property.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Optional property",
+			"namespace": "NS_SUBOBJECT",
+			"contents": {
+				"importFrom": "subobjects/Optional_property.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Required subobject",
+			"namespace": "NS_SUBOBJECT",
+			"contents": {
+				"importFrom": "subobjects/Required_subobject.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Optional subobject",
+			"namespace": "NS_SUBOBJECT",
+			"contents": {
+				"importFrom": "subobjects/Optional_subobject.wikitext"
 			},
 			"options": {
 				"replaceable": true

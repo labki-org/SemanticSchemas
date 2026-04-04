@@ -232,13 +232,21 @@ class WikiCategoryStore {
 			'parents' => $this->smwFetchMany( $sdata, 'Has parent category', 'category' ),
 
 			'properties' => [
-				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
-				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),
+				'required' => $this->smwFetchOrderedReferences(
+					$sdata, 'Required property', 'Has property reference', 'property'
+				) ?: $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
+				'optional' => $this->smwFetchOrderedReferences(
+					$sdata, 'Optional property', 'Has property reference', 'property'
+				) ?: $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),
 			],
 
 			'subobjects' => [
-				'required' => $this->smwFetchMany( $sdata, 'Has required subobject', 'subobject' ),
-				'optional' => $this->smwFetchMany( $sdata, 'Has optional subobject', 'subobject' ),
+				'required' => $this->smwFetchOrderedReferences(
+					$sdata, 'Required subobject', 'Has subobject reference', 'subobject'
+				) ?: $this->smwFetchMany( $sdata, 'Has required subobject', 'subobject' ),
+				'optional' => $this->smwFetchOrderedReferences(
+					$sdata, 'Optional subobject', 'Has subobject reference', 'subobject'
+				) ?: $this->smwFetchMany( $sdata, 'Has optional subobject', 'subobject' ),
 			],
 
 			'display' => $this->loadDisplayConfig( $sdata ),
@@ -290,22 +298,40 @@ class WikiCategoryStore {
 			$lines[] = '[[Has display template::' . $cat->getDisplayTemplateProperty()->getName() . ']]';
 		}
 
-		// Required/optional properties
-		foreach ( $cat->getRequiredProperties() as $prop ) {
-			$lines[] = "[[Has required property::Property:$prop]]";
+		// Required properties (as ordered subobjects)
+		foreach ( $cat->getRequiredProperties() as $i => $prop ) {
+			$id = 'req-prop-' . ( $i + 1 );
+			$lines[] = '{{#subobject:' . $id;
+			$lines[] = ' | Has subobject type = Subobject:Required property';
+			$lines[] = ' | Has property reference = Property:' . $prop;
+			$lines[] = '}}';
 		}
 
-		foreach ( $cat->getOptionalProperties() as $prop ) {
-			$lines[] = "[[Has optional property::Property:$prop]]";
+		// Optional properties (as ordered subobjects)
+		foreach ( $cat->getOptionalProperties() as $i => $prop ) {
+			$id = 'opt-prop-' . ( $i + 1 );
+			$lines[] = '{{#subobject:' . $id;
+			$lines[] = ' | Has subobject type = Subobject:Optional property';
+			$lines[] = ' | Has property reference = Property:' . $prop;
+			$lines[] = '}}';
 		}
 
-		// Subobjects
-		foreach ( $cat->getRequiredSubobjects() as $sg ) {
-			$lines[] = "[[Has required subobject::Subobject:$sg]]";
+		// Required subobjects (as ordered subobjects)
+		foreach ( $cat->getRequiredSubobjects() as $i => $sg ) {
+			$id = 'req-sub-' . ( $i + 1 );
+			$lines[] = '{{#subobject:' . $id;
+			$lines[] = ' | Has subobject type = Subobject:Required subobject';
+			$lines[] = ' | Has subobject reference = Subobject:' . $sg;
+			$lines[] = '}}';
 		}
 
-		foreach ( $cat->getOptionalSubobjects() as $sg ) {
-			$lines[] = "[[Has optional subobject::Subobject:$sg]]";
+		// Optional subobjects (as ordered subobjects)
+		foreach ( $cat->getOptionalSubobjects() as $i => $sg ) {
+			$id = 'opt-sub-' . ( $i + 1 );
+			$lines[] = '{{#subobject:' . $id;
+			$lines[] = ' | Has subobject type = Subobject:Optional subobject';
+			$lines[] = ' | Has subobject reference = Subobject:' . $sg;
+			$lines[] = '}}';
 		}
 
 		return implode( "\n", $lines );

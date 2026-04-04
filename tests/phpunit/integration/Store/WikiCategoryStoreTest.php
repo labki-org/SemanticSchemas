@@ -102,8 +102,10 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Has required property::Property:Has name]]', $content );
-		$this->assertStringContainsString( '[[Has required property::Property:Has email]]', $content );
+		$this->assertStringContainsString( '{{#subobject:req-prop-1', $content );
+		$this->assertStringContainsString( 'Has property reference = Property:Has name', $content );
+		$this->assertStringContainsString( '{{#subobject:req-prop-2', $content );
+		$this->assertStringContainsString( 'Has property reference = Property:Has email', $content );
 	}
 
 	public function testWriteCategoryWithOptionalProperties(): void {
@@ -120,8 +122,10 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Has optional property::Property:Has phone]]', $content );
-		$this->assertStringContainsString( '[[Has optional property::Property:Has address]]', $content );
+		$this->assertStringContainsString( '{{#subobject:opt-prop-1', $content );
+		$this->assertStringContainsString( 'Has property reference = Property:Has phone', $content );
+		$this->assertStringContainsString( '{{#subobject:opt-prop-2', $content );
+		$this->assertStringContainsString( 'Has property reference = Property:Has address', $content );
 	}
 
 	public function testWriteCategoryWithTargetNamespace(): void {
@@ -240,8 +244,10 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Has required subobject::Subobject:Author]]', $content );
-		$this->assertStringContainsString( '[[Has required subobject::Subobject:Publication]]', $content );
+		$this->assertStringContainsString( '{{#subobject:req-sub-1', $content );
+		$this->assertStringContainsString( 'Has subobject reference = Subobject:Author', $content );
+		$this->assertStringContainsString( '{{#subobject:req-sub-2', $content );
+		$this->assertStringContainsString( 'Has subobject reference = Subobject:Publication', $content );
 	}
 
 	public function testWriteCategoryWithOptionalSubobjects(): void {
@@ -258,8 +264,10 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Has optional subobject::Subobject:Funding]]', $content );
-		$this->assertStringContainsString( '[[Has optional subobject::Subobject:Award]]', $content );
+		$this->assertStringContainsString( '{{#subobject:opt-sub-1', $content );
+		$this->assertStringContainsString( 'Has subobject reference = Subobject:Funding', $content );
+		$this->assertStringContainsString( '{{#subobject:opt-sub-2', $content );
+		$this->assertStringContainsString( 'Has subobject reference = Subobject:Award', $content );
 	}
 
 	/* =========================================================================
@@ -294,10 +302,10 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Has required property::Property:Has name]]', $content );
-		$this->assertStringContainsString( '[[Has optional property::Property:Has email]]', $content );
-		$this->assertStringContainsString( '[[Has required subobject::Subobject:Author]]', $content );
-		$this->assertStringContainsString( '[[Has optional subobject::Subobject:Funding]]', $content );
+		$this->assertStringContainsString( 'Has property reference = Property:Has name', $content );
+		$this->assertStringContainsString( 'Has property reference = Property:Has email', $content );
+		$this->assertStringContainsString( 'Has subobject reference = Subobject:Author', $content );
+		$this->assertStringContainsString( 'Has subobject reference = Subobject:Funding', $content );
 	}
 
 	/* =========================================================================
