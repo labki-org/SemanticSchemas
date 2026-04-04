@@ -49,7 +49,7 @@ class TemplateGenerator {
 	 *
 	 * @param string $propertyName The SMW property name
 	 * @param string $param The template parameter name
-	 * @return string|null The wikitext for the property line, or null if handled elsewhere
+	 * @return string The wikitext for the property line
 	 */
 	private function generatePropertyLine( string $propertyName, string $param ): string {
 		$propModel = $this->propertyStore->readProperty( $propertyName );
