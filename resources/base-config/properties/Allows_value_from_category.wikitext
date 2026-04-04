@@ -1,7 +1,7 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Page]]
-[[Has description::Category to use for autocomplete suggestions.]]
-[[Display label::Autocomplete from category]]
+[[Has description::Restrict allowed values to pages belonging to this category.]]
+[[Display label::Allowed category]]
 [[Allows value from category::Category]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]
