@@ -41,6 +41,8 @@ class PropertyModel {
 
 	private ?string $inputType;
 
+	private ?string $inversePropertyLabel;
+
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
 	 * ---------------------------------------------------------------------- */
@@ -125,6 +127,11 @@ class PropertyModel {
 		$it = $data['inputType'] ?? null;
 		$this->inputType = ( $it !== null && trim( (string)$it ) !== '' )
 			? trim( (string)$it ) : null;
+
+		/* -------------------- Inverse property label -------------------- */
+		$invLabel = $data['inversePropertyLabel'] ?? null;
+		$this->inversePropertyLabel = ( $invLabel !== null && trim( (string)$invLabel ) !== '' )
+			? trim( (string)$invLabel ) : null;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -265,6 +272,10 @@ class PropertyModel {
 		return $this->inputType;
 	}
 
+	public function getInversePropertyLabel(): ?string {
+		return $this->inversePropertyLabel;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */
@@ -281,6 +292,7 @@ class PropertyModel {
 			'allowedNamespace' => $this->allowedNamespace,
 			'allowsMultipleValues' => $this->allowsMultipleValues,
 			'inputType' => $this->inputType,
+			'inversePropertyLabel' => $this->inversePropertyLabel,
 		];
 
 		// Remove nulls + empty arrays, but preserve boolean false

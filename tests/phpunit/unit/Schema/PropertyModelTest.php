@@ -102,4 +102,36 @@ class PropertyModelTest extends TestCase {
 		$this->assertArrayHasKey( 'label', $arr );
 		$this->assertArrayHasKey( 'description', $arr );
 	}
+
+	/* =========================================================================
+	 * INVERSE PROPERTY LABEL
+	 * ========================================================================= */
+
+	public function testInversePropertyLabelDefaultsToNull(): void {
+		$p = new PropertyModel( 'Has test', [ 'datatype' => 'Page' ] );
+		$this->assertNull( $p->getInversePropertyLabel() );
+	}
+
+	public function testInversePropertyLabelSet(): void {
+		$p = new PropertyModel( 'Has project', [
+			'datatype' => 'Page',
+			'inversePropertyLabel' => 'Components',
+		] );
+		$this->assertSame( 'Components', $p->getInversePropertyLabel() );
+	}
+
+	public function testToArrayIncludesInversePropertyLabelWhenSet(): void {
+		$p = new PropertyModel( 'Has project', [
+			'datatype' => 'Page',
+			'inversePropertyLabel' => 'Components',
+		] );
+		$arr = $p->toArray();
+		$this->assertSame( 'Components', $arr['inversePropertyLabel'] );
+	}
+
+	public function testToArrayOmitsInversePropertyLabelWhenNull(): void {
+		$p = new PropertyModel( 'Has project', [ 'datatype' => 'Page' ] );
+		$arr = $p->toArray();
+		$this->assertArrayNotHasKey( 'inversePropertyLabel', $arr );
+	}
 }

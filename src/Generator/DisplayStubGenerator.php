@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
@@ -31,13 +32,16 @@ class DisplayStubGenerator {
 
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
+	private WikiCategoryStore $categoryStore;
 
 	public function __construct(
 		PageCreator $pageCreator,
-		WikiPropertyStore $propertyStore
+		WikiPropertyStore $propertyStore,
+		WikiCategoryStore $categoryStore
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->propertyStore = $propertyStore;
+		$this->categoryStore = $categoryStore;
 	}
 
 	/**
@@ -114,6 +118,7 @@ class DisplayStubGenerator {
 		$content = "{| class=\"wikitable source-semanticschemas\"\n";
 		$content .= $this->buildCategoryHeadingRow( $category->getName(), $category->getLabel() );
 		$content .= $this->generatePropertyRows( $category );
+		$content .= $this->generateReverseRelationshipRows( $category );
 		$content .= "|}\n";
 
 		return $content;
@@ -136,6 +141,7 @@ class DisplayStubGenerator {
 		$content = '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
 		$content .= $this->buildCategoryHeadingRow( $category->getName(), $category->getLabel() );
 		$content .= $this->generatePropertyRows( $category );
+		$content .= $this->generateReverseRelationshipRows( $category );
 		$content .= "|}\n";
 
 		return $content;
@@ -280,5 +286,63 @@ class DisplayStubGenerator {
 			return false;
 		}
 		return str_contains( $content, self::AUTO_REGENERATE_MARKER );
+	}
+
+	/**
+	 * Discover reverse relationships and generate infobox rows.
+	 *
+	 * Scans all categories for Page-type properties that have allowedCategory
+	 * matching the current category and an Inverse property label set. For each
+	 * match, generates a table row with an {{#ask:}} query.
+	 */
+	private function generateReverseRelationshipRows( CategoryModel $category ): string {
+		$categoryName = $category->getName();
+		$allCategories = $this->categoryStore->getAllCategories();
+		$rows = [];
+
+		foreach ( $allCategories as $sourceCatName => $sourceCat ) {
+			foreach ( $sourceCat->getAllProperties() as $propName ) {
+				$prop = $this->propertyStore->readProperty( $propName );
+				if ( $prop === null ) {
+					continue;
+				}
+				if ( !$prop->isPageType() ) {
+					continue;
+				}
+				if ( $prop->getAllowedCategory() !== $categoryName ) {
+					continue;
+				}
+				if ( $prop->getInversePropertyLabel() === null ) {
+					continue;
+				}
+
+				$rows[] = [
+					'label' => $prop->getInversePropertyLabel(),
+					'property' => $propName,
+					'sourceCategory' => $sourceCatName,
+				];
+			}
+		}
+
+		if ( $rows === [] ) {
+			return '';
+		}
+
+		$out = '';
+		foreach ( $rows as $row ) {
+			$askQuery = '{{#ask: [[' . $row['property'] . '::{{FULLPAGENAME}}]]'
+				. ' [[Category:' . $row['sourceCategory'] . ']]'
+				. ' | format=list }}';
+
+			$out .= '{{#if: ' . $askQuery . ' |' . "\n";
+			$out .= '{{!}}-' . "\n";
+			$out .= '! ' . $row['label']
+				. ' <span style="font-weight: normal; font-size: 0.8em; color: gray;">(auto)</span>'
+				. "\n";
+			$out .= '{{!}} ' . $askQuery . "\n";
+			$out .= '}}' . "\n";
+		}
+
+		return $out;
 	}
 }

@@ -309,6 +309,36 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringNotContainsString( 'Has input type', $content );
 	}
 
+	public function testWritePropertyWithInversePropertyLabel(): void {
+		$name = 'Has mentor ' . uniqid();
+		$property = new PropertyModel( $name, [
+			'datatype' => 'Page',
+			'description' => 'The mentor of this person',
+			'inversePropertyLabel' => 'Mentees',
+		] );
+
+		$result = $this->propertyStore->writeProperty( $property );
+
+		$this->assertTrue( $result );
+		$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
+		$content = $this->pageCreator->getPageContent( $title );
+		$this->assertStringContainsString( '[[Inverse property label::Mentees]]', $content );
+	}
+
+	public function testWritePropertyWithoutInversePropertyLabelOmitsAnnotation(): void {
+		$name = 'Has noinverse prop ' . uniqid();
+		$property = new PropertyModel( $name, [
+			'datatype' => 'Page',
+		] );
+
+		$result = $this->propertyStore->writeProperty( $property );
+
+		$this->assertTrue( $result );
+		$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
+		$content = $this->pageCreator->getPageContent( $title );
+		$this->assertStringNotContainsString( 'Inverse property label', $content );
+	}
+
 	/**
 	 * Helper to run any pending MediaWiki jobs.
 	 */

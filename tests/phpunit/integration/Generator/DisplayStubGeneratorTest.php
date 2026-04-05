@@ -3,9 +3,11 @@
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
+use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWikiIntegrationTestCase;
 
@@ -32,12 +34,19 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * @param array<string, PropertyModel> $propertyMap
 	 * @return DisplayStubGenerator
 	 */
-	private function makeGenerator( array $propertyMap = [] ): DisplayStubGenerator {
+	private function makeGenerator(
+		array $propertyMap = [],
+		array $categoryMap = []
+	): DisplayStubGenerator {
 		$propStore = $this->createMock( WikiPropertyStore::class );
 		$propStore->method( 'readProperty' )
 			->willReturnCallback( static fn ( string $name ) => $propertyMap[$name] ?? null );
 
-		return new DisplayStubGenerator( $this->pageCreator, $propStore );
+		$catStore = $this->createMock( WikiCategoryStore::class );
+		$catStore->method( 'getAllCategories' )
+			->willReturn( $categoryMap );
+
+		return new DisplayStubGenerator( $this->pageCreator, $propStore, $catStore );
 	}
 
 	/**
@@ -197,5 +206,68 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
 
 		$this->assertStringContainsString( 'value={{{has_name|}}}', $content );
+	}
+
+	/* =========================================================================
+	 * REVERSE RELATIONSHIPS
+	 * ========================================================================= */
+
+	public function testReverseRelationshipRowGenerated(): void {
+		$hasProject = new PropertyModel( 'Has project', [
+			'datatype' => 'Page',
+			'allowedCategory' => 'Project',
+			'inversePropertyLabel' => 'Components',
+		] );
+
+		$componentCat = new CategoryModel( 'Component', [
+			'properties' => [ 'required' => [ 'Has project' ], 'optional' => [] ],
+		] );
+
+		$gen = $this->makeGenerator(
+			[ 'Has project' => $hasProject ],
+			[ 'Component' => $componentCat ]
+		);
+
+		$catName = 'Project';
+		$category = new EffectiveCategoryModel( $catName, [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+
+		$gen->generateOrUpdateDisplayStub( $category );
+
+		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$content = $this->pageCreator->getPageContent( $title );
+
+		$this->assertStringContainsString( '! Components', $content );
+		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
+		$this->assertStringContainsString( '[[Category:Component]]', $content );
+	}
+
+	public function testNoReverseRelationshipWithoutInverseLabel(): void {
+		$hasProject = new PropertyModel( 'Has project', [
+			'datatype' => 'Page',
+			'allowedCategory' => 'Project',
+		] );
+
+		$componentCat = new CategoryModel( 'Component', [
+			'properties' => [ 'required' => [ 'Has project' ], 'optional' => [] ],
+		] );
+
+		$gen = $this->makeGenerator(
+			[ 'Has project' => $hasProject ],
+			[ 'Component' => $componentCat ]
+		);
+
+		$catName = 'Project_' . uniqid();
+		$category = new EffectiveCategoryModel( $catName, [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+
+		$gen->generateOrUpdateDisplayStub( $category );
+
+		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$content = $this->pageCreator->getPageContent( $title );
+
+		$this->assertStringNotContainsString( '{{#ask:', $content );
 	}
 }

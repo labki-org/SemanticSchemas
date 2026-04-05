@@ -175,6 +175,9 @@ class WikiPropertyStore {
 		/* -------------------- Input type override -------------------- */
 		$out['inputType'] = $this->smwFetchOne( $sdata, 'Has input type' );
 
+		/* -------------------- Inverse property label -------------------- */
+		$out['inversePropertyLabel'] = $this->smwFetchOne( $sdata, 'Inverse property label' );
+
 		// Clean null/empty
 		return array_filter(
 			$out,
@@ -228,6 +231,10 @@ class WikiPropertyStore {
 
 		if ( $p->getInputType() !== null ) {
 			$lines[] = '[[Has input type::' . $p->getInputType() . ']]';
+		}
+
+		if ( $p->getInversePropertyLabel() !== null ) {
+			$lines[] = '[[Inverse property label::' . $p->getInversePropertyLabel() . ']]';
 		}
 
 		return implode( "\n", $lines );
