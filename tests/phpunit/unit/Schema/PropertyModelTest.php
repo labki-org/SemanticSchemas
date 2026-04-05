@@ -115,18 +115,18 @@ class PropertyModelTest extends TestCase {
 	public function testInversePropertyLabelSet(): void {
 		$p = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
-			'inversePropertyLabel' => 'Components',
+			'inversePropertyLabel' => 'Is parent of',
 		] );
-		$this->assertSame( 'Components', $p->getInversePropertyLabel() );
+		$this->assertSame( 'Is parent of', $p->getInversePropertyLabel() );
 	}
 
 	public function testToArrayIncludesInversePropertyLabelWhenSet(): void {
 		$p = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
-			'inversePropertyLabel' => 'Components',
+			'inversePropertyLabel' => 'Is parent of',
 		] );
 		$arr = $p->toArray();
-		$this->assertSame( 'Components', $arr['inversePropertyLabel'] );
+		$this->assertSame( 'Is parent of', $arr['inversePropertyLabel'] );
 	}
 
 	public function testToArrayOmitsInversePropertyLabelWhenNull(): void {

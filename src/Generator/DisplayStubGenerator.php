@@ -30,9 +30,6 @@ class DisplayStubGenerator {
 	public const AUTO_REGENERATE_MARKER =
 		'<!-- SemanticSchemas:auto-regenerate - Remove this line to prevent automatic updates -->';
 
-	private const AUTO_BADGE =
-		' <span style="font-weight: normal; font-size: 0.8em; color: gray;">(auto)</span>';
-
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
 	private WikiCategoryStore $categoryStore;
@@ -294,8 +291,10 @@ class DisplayStubGenerator {
 	 * Discover reverse relationships and generate infobox rows.
 	 *
 	 * Scans all categories for Page-type properties that have allowedCategory
-	 * matching the current category and an Inverse property label set. For each
-	 * match, generates a table row with an {{#ask:}} query.
+	 * matching the current category. For each match, generates a table row
+	 * with an {{#ask:}} query. The row label combines the source category
+	 * label with the relationship descriptor (inverse property label or
+	 * property display label as fallback).
 	 */
 	private function generateReverseRelationshipRows( CategoryModel $category ): string {
 		$categoryName = $category->getName();
@@ -314,10 +313,11 @@ class DisplayStubGenerator {
 			$askBase = '[[' . $row['property'] . '::{{FULLPAGENAME}}]]'
 				. ' [[Category:' . $row['sourceCategory'] . ']]';
 
-			// Use format=count for the condition (cheap) and format=list for display
 			$condition = '{{#ask: ' . $askBase . ' | format=count }}';
 			$value = '{{#ask: ' . $askBase . ' | format=list }}';
-			$label = $row['label'] . self::AUTO_BADGE;
+			$label = $row['sourceCategoryLabel']
+				. ' <span style="font-weight: normal; font-size: 0.8em; color: gray;">'
+				. '(auto | ' . htmlspecialchars( $row['relationship'] ) . ')</span>';
 
 			$out .= $this->buildConditionalRow( $condition, $label, $value );
 		}
@@ -330,8 +330,6 @@ class DisplayStubGenerator {
 	 *
 	 * Called once and cached for the lifetime of this generator instance,
 	 * avoiding O(C²) category reads during batch generation.
-	 *
-	 * @return array<string, array<array{label:string, property:string, sourceCategory:string}>>
 	 */
 	private function buildReverseRelationshipIndex(): array {
 		$index = [];
@@ -347,9 +345,9 @@ class DisplayStubGenerator {
 				if ( $target === null ) {
 					continue;
 				}
-				$label = $prop->getInversePropertyLabel() ?? $sourceCat->getLabel();
 				$index[$target][] = [
-					'label' => $label,
+					'sourceCategoryLabel' => $sourceCat->getLabel(),
+					'relationship' => $prop->getInversePropertyLabel() ?? $prop->getLabel(),
 					'property' => $propName,
 					'sourceCategory' => $sourceCatName,
 				];

@@ -212,14 +212,15 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * REVERSE RELATIONSHIPS
 	 * ========================================================================= */
 
-	public function testReverseRelationshipRowGenerated(): void {
+	public function testReverseRelationshipRowWithInverseLabel(): void {
 		$hasProject = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
 			'allowedCategory' => 'Project',
-			'inversePropertyLabel' => 'Components',
+			'inversePropertyLabel' => 'Is parent of',
 		] );
 
 		$componentCat = new CategoryModel( 'Component', [
+			'label' => 'Components',
 			'properties' => [ 'required' => [ 'Has project' ], 'optional' => [] ],
 		] );
 
@@ -238,18 +239,17 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		// Label with auto badge
+		// Source category label + relationship from inverse label
 		$this->assertStringContainsString( '! Components', $content );
-		$this->assertStringContainsString( '(auto)', $content );
-		// Ask query with category filter
+		$this->assertStringContainsString( '(auto | Is parent of)', $content );
+		// Ask query
 		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
 		$this->assertStringContainsString( '[[Category:Component]]', $content );
-		// Uses format=count for condition, format=list for display
 		$this->assertStringContainsString( 'format=count', $content );
 		$this->assertStringContainsString( 'format=list', $content );
 	}
 
-	public function testReverseRelationshipFallsBackToSourceCategoryLabel(): void {
+	public function testReverseRelationshipFallsBackToPropertyLabel(): void {
 		$hasProject = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
 			'allowedCategory' => 'Project',
@@ -275,8 +275,9 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
 		$content = $this->pageCreator->getPageContent( $title );
 
+		// Falls back to property display label
 		$this->assertStringContainsString( '! Components', $content );
-		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
+		$this->assertStringContainsString( '(auto | Project)', $content );
 	}
 
 	public function testNonPageTypePropertyIgnoredForReverseRelationship(): void {
