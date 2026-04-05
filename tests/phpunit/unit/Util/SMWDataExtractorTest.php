@@ -17,13 +17,12 @@ class SMWDataExtractorHarness {
 
 	public function callBuildFieldSubobjectLines(
 		array $taggedEntries,
-		string $idPrefix,
 		string $subobjectType,
 		string $referenceProperty,
 		string $namespacePrefix
 	): array {
 		return $this->buildFieldSubobjectLines(
-			$taggedEntries, $idPrefix, $subobjectType, $referenceProperty, $namespacePrefix
+			$taggedEntries, $subobjectType, $referenceProperty, $namespacePrefix
 		);
 	}
 }
@@ -92,17 +91,17 @@ class SMWDataExtractorTest extends TestCase {
 		];
 
 		$lines = $this->harness->callBuildFieldSubobjectLines(
-			$entries, 'prop-field', 'Has property field', 'Has property reference', 'Property'
+			$entries, 'Has property field', 'Has property reference', 'Property'
 		);
 
 		$text = implode( "\n", $lines );
 
-		$this->assertStringContainsString( '{{#subobject:prop-field-1', $text );
+		$this->assertStringContainsString( '{{#subobject:has_property_field-1', $text );
 		$this->assertStringContainsString( 'Has subobject type = Subobject:Has property field', $text );
 		$this->assertStringContainsString( 'Has property reference = Property:Has name', $text );
 		$this->assertStringContainsString( 'Is required = true', $text );
 
-		$this->assertStringContainsString( '{{#subobject:prop-field-2', $text );
+		$this->assertStringContainsString( '{{#subobject:has_property_field-2', $text );
 		$this->assertStringContainsString( 'Has property reference = Property:Has email', $text );
 		$this->assertStringContainsString( 'Is required = false', $text );
 	}
@@ -113,12 +112,12 @@ class SMWDataExtractorTest extends TestCase {
 		];
 
 		$lines = $this->harness->callBuildFieldSubobjectLines(
-			$entries, 'sub-field', 'Has subobject field', 'Has subobject reference', 'Subobject'
+			$entries, 'Has subobject field', 'Has subobject reference', 'Subobject'
 		);
 
 		$text = implode( "\n", $lines );
 
-		$this->assertStringContainsString( '{{#subobject:sub-field-1', $text );
+		$this->assertStringContainsString( '{{#subobject:has_subobject_field-1', $text );
 		$this->assertStringContainsString( 'Has subobject type = Subobject:Has subobject field', $text );
 		$this->assertStringContainsString( 'Has subobject reference = Subobject:Author', $text );
 		$this->assertStringContainsString( 'Is required = true', $text );
@@ -126,7 +125,7 @@ class SMWDataExtractorTest extends TestCase {
 
 	public function testBuildFieldSubobjectLinesEmptyInput(): void {
 		$lines = $this->harness->callBuildFieldSubobjectLines(
-			[], 'prop-field', 'Has property field', 'Has property reference', 'Property'
+			[], 'Has property field', 'Has property reference', 'Property'
 		);
 		$this->assertSame( [], $lines );
 	}
@@ -139,13 +138,13 @@ class SMWDataExtractorTest extends TestCase {
 		];
 
 		$lines = $this->harness->callBuildFieldSubobjectLines(
-			$entries, 'prop-field', 'Has property field', 'Has property reference', 'Property'
+			$entries, 'Has property field', 'Has property reference', 'Property'
 		);
 
 		$text = implode( "\n", $lines );
 
-		$this->assertStringContainsString( '{{#subobject:prop-field-1', $text );
-		$this->assertStringContainsString( '{{#subobject:prop-field-2', $text );
-		$this->assertStringContainsString( '{{#subobject:prop-field-3', $text );
+		$this->assertStringContainsString( '{{#subobject:has_property_field-1', $text );
+		$this->assertStringContainsString( '{{#subobject:has_property_field-2', $text );
+		$this->assertStringContainsString( '{{#subobject:has_property_field-3', $text );
 	}
 }

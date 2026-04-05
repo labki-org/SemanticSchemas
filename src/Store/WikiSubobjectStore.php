@@ -138,7 +138,7 @@ class WikiSubobjectStore {
 		}
 
 		$lines = array_merge( $lines, $this->buildFieldSubobjectLines(
-			$s->getTaggedProperties(), 'prop-field',
+			$s->getTaggedProperties(),
 			'Has property field', 'Has property reference', 'Property'
 		) );
 

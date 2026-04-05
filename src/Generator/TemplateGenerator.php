@@ -255,7 +255,8 @@ class TemplateGenerator {
 		$out[] = 'Subobject semantic template for Subobject:' . $name;
 		$out[] = '</noinclude><includeonly>';
 
-		$out[] = '{{#subobject:';
+		$idPrefix = NamingHelper::propertyToParameter( $name );
+		$out[] = '{{#subobject:{{#s2counter:' . $idPrefix . '}}';
 		$out[] = ' | Has subobject type = Subobject:' . $name;
 
 		$props = array_merge(

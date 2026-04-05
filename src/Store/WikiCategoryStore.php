@@ -294,13 +294,13 @@ class WikiCategoryStore {
 
 		// Property fields
 		$lines = array_merge( $lines, $this->buildFieldSubobjectLines(
-			$cat->getTaggedProperties(), 'prop-field',
+			$cat->getTaggedProperties(),
 			'Has property field', 'Has property reference', 'Property'
 		) );
 
 		// Subobject fields
 		$lines = array_merge( $lines, $this->buildFieldSubobjectLines(
-			$cat->getTaggedSubobjects(), 'sub-field',
+			$cat->getTaggedSubobjects(),
 			'Has subobject field', 'Has subobject reference', 'Subobject'
 		) );
 

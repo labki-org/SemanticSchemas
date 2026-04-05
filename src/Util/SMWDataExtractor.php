@@ -116,11 +116,13 @@ trait SMWDataExtractor {
 			if ( $ref !== null ) {
 				$subName = $subData->getSubject()->getSubobjectName();
 				$required = $this->smwFetchBoolean( $subData, 'Is required' );
-				$entries[] = [ 'name' => $ref, 'required' => $required ];
+				$entries[$subName] = [ 'name' => $ref, 'required' => $required ];
 			}
 		}
 
-		return $entries;
+		ksort( $entries, SORT_NATURAL );
+
+		return array_values( $entries );
 	}
 
 	/**
@@ -145,8 +147,10 @@ trait SMWDataExtractor {
 	/**
 	 * Build wikitext lines for a set of tagged field subobjects.
 	 *
+	 * ID prefix is derived from the subobject type name to match the
+	 * {{#s2counter:}} prefix used in generated subobject templates.
+	 *
 	 * @param array<array{name:string, required:bool}> $taggedEntries
-	 * @param string $idPrefix Subobject ID prefix (e.g. "prop-field", "sub-field")
 	 * @param string $subobjectType Subobject type name (e.g. "Has property field")
 	 * @param string $referenceProperty Reference property name (e.g. "Has property reference")
 	 * @param string $namespacePrefix Namespace prefix for the reference (e.g. "Property", "Subobject")
@@ -154,11 +158,11 @@ trait SMWDataExtractor {
 	 */
 	protected function buildFieldSubobjectLines(
 		array $taggedEntries,
-		string $idPrefix,
 		string $subobjectType,
 		string $referenceProperty,
 		string $namespacePrefix
 	): array {
+		$idPrefix = strtolower( str_replace( ' ', '_', trim( $subobjectType ) ) );
 		$lines = [];
 		foreach ( $taggedEntries as $i => $entry ) {
 			$id = $idPrefix . '-' . ( $i + 1 );
