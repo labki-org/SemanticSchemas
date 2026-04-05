@@ -292,29 +292,17 @@ class WikiCategoryStore {
 			$lines[] = '[[Has display template::' . $cat->getDisplayTemplateProperty()->getName() . ']]';
 		}
 
-		// Property fields (as ordered subobjects with Is required flag)
-		$propIndex = 0;
-		foreach ( $cat->getTaggedProperties() as $entry ) {
-			$propIndex++;
-			$id = 'prop-field-' . $propIndex;
-			$lines[] = '{{#subobject:' . $id;
-			$lines[] = ' | Has subobject type = Subobject:Has property field';
-			$lines[] = ' | Has property reference = Property:' . $entry['name'];
-			$lines[] = ' | Is required = ' . ( $entry['required'] ? 'true' : 'false' );
-			$lines[] = '}}';
-		}
+		// Property fields
+		$lines = array_merge( $lines, $this->buildFieldSubobjectLines(
+			$cat->getTaggedProperties(), 'prop-field',
+			'Has property field', 'Has property reference', 'Property'
+		) );
 
-		// Subobject fields (as ordered subobjects with Is required flag)
-		$subIndex = 0;
-		foreach ( $cat->getTaggedSubobjects() as $entry ) {
-			$subIndex++;
-			$id = 'sub-field-' . $subIndex;
-			$lines[] = '{{#subobject:' . $id;
-			$lines[] = ' | Has subobject type = Subobject:Has subobject field';
-			$lines[] = ' | Has subobject reference = Subobject:' . $entry['name'];
-			$lines[] = ' | Is required = ' . ( $entry['required'] ? 'true' : 'false' );
-			$lines[] = '}}';
-		}
+		// Subobject fields
+		$lines = array_merge( $lines, $this->buildFieldSubobjectLines(
+			$cat->getTaggedSubobjects(), 'sub-field',
+			'Has subobject field', 'Has subobject reference', 'Subobject'
+		) );
 
 		return implode( "\n", $lines );
 	}

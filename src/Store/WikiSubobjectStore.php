@@ -137,16 +137,10 @@ class WikiSubobjectStore {
 			$lines[] = '[[Has description::' . $s->getDescription() . ']]';
 		}
 
-		$propIndex = 0;
-		foreach ( $s->getTaggedProperties() as $entry ) {
-			$propIndex++;
-			$id = 'prop-field-' . $propIndex;
-			$lines[] = '{{#subobject:' . $id;
-			$lines[] = ' | Has subobject type = Subobject:Has property field';
-			$lines[] = ' | Has property reference = Property:' . $entry['name'];
-			$lines[] = ' | Is required = ' . ( $entry['required'] ? 'true' : 'false' );
-			$lines[] = '}}';
-		}
+		$lines = array_merge( $lines, $this->buildFieldSubobjectLines(
+			$s->getTaggedProperties(), 'prop-field',
+			'Has property field', 'Has property reference', 'Property'
+		) );
 
 		return implode( "\n", $lines );
 	}

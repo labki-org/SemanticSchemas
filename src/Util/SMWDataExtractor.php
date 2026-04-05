@@ -145,6 +145,35 @@ trait SMWDataExtractor {
 	}
 
 	/**
+	 * Build wikitext lines for a set of tagged field subobjects.
+	 *
+	 * @param array<array{name:string, required:bool}> $taggedEntries
+	 * @param string $idPrefix Subobject ID prefix (e.g. "prop-field", "sub-field")
+	 * @param string $subobjectType Subobject type name (e.g. "Has property field")
+	 * @param string $referenceProperty Reference property name (e.g. "Has property reference")
+	 * @param string $namespacePrefix Namespace prefix for the reference (e.g. "Property", "Subobject")
+	 * @return string[] Wikitext lines
+	 */
+	protected function buildFieldSubobjectLines(
+		array $taggedEntries,
+		string $idPrefix,
+		string $subobjectType,
+		string $referenceProperty,
+		string $namespacePrefix
+	): array {
+		$lines = [];
+		foreach ( $taggedEntries as $i => $entry ) {
+			$id = $idPrefix . '-' . ( $i + 1 );
+			$lines[] = '{{#subobject:' . $id;
+			$lines[] = ' | Has subobject type = Subobject:' . $subobjectType;
+			$lines[] = ' | ' . $referenceProperty . ' = ' . $namespacePrefix . ':' . $entry['name'];
+			$lines[] = ' | Is required = ' . ( $entry['required'] ? 'true' : 'false' );
+			$lines[] = '}}';
+		}
+		return $lines;
+	}
+
+	/**
 	 * Extract a value from a SMW DataItem based on type.
 	 *
 	 * The $type parameter acts as a namespace assertion: when the DataItem is a

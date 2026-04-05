@@ -228,6 +228,31 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertEquals( $name, $result->getName() );
 	}
 
+	public function testWriteAndReadRoundtripPreservesPropertyFields(): void {
+		$name = 'RoundtripCat ' . uniqid();
+		$category = new CategoryModel( $name, [
+			'description' => 'Roundtrip test',
+			'properties' => [
+				'required' => [ 'Has name', 'Has email' ],
+				'optional' => [ 'Has phone' ],
+			],
+			'subobjects' => [
+				'required' => [ 'Author' ],
+				'optional' => [ 'Funding' ],
+			],
+		] );
+		$this->categoryStore->writeCategory( $category );
+		$this->executeJobs();
+
+		$result = $this->categoryStore->readCategory( $name );
+
+		$this->assertNotNull( $result );
+		$this->assertSame( [ 'Has name', 'Has email' ], $result->getRequiredProperties() );
+		$this->assertSame( [ 'Has phone' ], $result->getOptionalProperties() );
+		$this->assertSame( [ 'Author' ], $result->getRequiredSubobjects() );
+		$this->assertSame( [ 'Funding' ], $result->getOptionalSubobjects() );
+	}
+
 	/* =========================================================================
 	 * SUBOBJECTS
 	 * ========================================================================= */
