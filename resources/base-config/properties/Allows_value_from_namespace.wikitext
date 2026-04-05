@@ -1,6 +1,6 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Text]]
-[[Has description::Restrict allowed values to pages in this namespace.]]
+[[Has description::Autocomplete suggestions will come from pages in this namespace.]]
 [[Display label::Allowed namespace]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]
