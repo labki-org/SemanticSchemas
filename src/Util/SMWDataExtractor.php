@@ -90,7 +90,7 @@ trait SMWDataExtractor {
 	 * Iterates sub-semantic-data, filters by subobject type, extracts the
 	 * reference property value and the "Is required" boolean, and sorts by
 	 * subobject identifier to preserve insertion order (identifiers are named
-	 * like "prop-field-1", "prop-field-2").
+	 * like "has_property_field-1", "has_property_field-2").
 	 *
 	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
 	 * @param string $subobjectType Subobject type to match (e.g. "Has property field")
@@ -147,9 +147,6 @@ trait SMWDataExtractor {
 	/**
 	 * Build wikitext lines for a set of tagged field subobjects.
 	 *
-	 * ID prefix is derived from the subobject type name to match the
-	 * {{#s2counter:}} prefix used in generated subobject templates.
-	 *
 	 * @param array<array{name:string, required:bool}> $taggedEntries
 	 * @param string $subobjectType Subobject type name (e.g. "Has property field")
 	 * @param string $referenceProperty Reference property name (e.g. "Has property reference")
@@ -162,7 +159,7 @@ trait SMWDataExtractor {
 		string $referenceProperty,
 		string $namespacePrefix
 	): array {
-		$idPrefix = strtolower( str_replace( ' ', '_', trim( $subobjectType ) ) );
+		$idPrefix = \MediaWiki\Extension\SemanticSchemas\Util\NamingHelper::propertyToParameter( $subobjectType );
 		$lines = [];
 		foreach ( $taggedEntries as $i => $entry ) {
 			$id = $idPrefix . '-' . ( $i + 1 );
