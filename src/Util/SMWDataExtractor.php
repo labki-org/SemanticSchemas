@@ -116,13 +116,11 @@ trait SMWDataExtractor {
 			if ( $ref !== null ) {
 				$subName = $subData->getSubject()->getSubobjectName();
 				$required = $this->smwFetchBoolean( $subData, 'Is required' );
-				$entries[$subName] = [ 'name' => $ref, 'required' => $required ];
+				$entries[] = [ 'name' => $ref, 'required' => $required ];
 			}
 		}
 
-		ksort( $entries );
-
-		return array_values( $entries );
+		return $entries;
 	}
 
 	/**
