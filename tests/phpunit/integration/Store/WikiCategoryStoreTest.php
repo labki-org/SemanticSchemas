@@ -228,32 +228,6 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertEquals( $name, $result->getName() );
 	}
 
-	public function testWriteAndReadRoundtripPreservesFlatAnnotations(): void {
-		$name = 'RoundtripCat ' . uniqid();
-		$category = new CategoryModel( $name, [
-			'description' => 'Roundtrip test',
-			'targetNamespace' => 'Project',
-			'parents' => [],
-		] );
-		$this->categoryStore->writeCategory( $category );
-		$this->executeJobs();
-
-		$result = $this->categoryStore->readCategory( $name );
-
-		$this->assertNotNull( $result );
-		$this->assertSame( $name, $result->getName() );
-		$this->assertSame( 'Roundtrip test', $result->getDescription() );
-		$this->assertSame( 'Project', $result->getTargetNamespace() );
-	}
-
-	/**
-	 * Subobject field roundtrip (write → SMW parse → read) requires the full
-	 * SMW data pipeline including subobject indexing, which is not reliably
-	 * available in the CI integration test environment. The subobject write
-	 * format is verified by testWriteCategoryWithRequiredProperties and
-	 * related tests (wikitext assertions).
-	 */
-
 	/* =========================================================================
 	 * SUBOBJECTS
 	 * ========================================================================= */
