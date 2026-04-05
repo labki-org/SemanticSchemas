@@ -159,7 +159,7 @@ trait SMWDataExtractor {
 		string $referenceProperty,
 		string $namespacePrefix
 	): array {
-		$idPrefix = \MediaWiki\Extension\SemanticSchemas\Util\NamingHelper::propertyToParameter( $subobjectType );
+		$idPrefix = NamingHelper::propertyToParameter( $subobjectType );
 		$lines = [];
 		foreach ( $taggedEntries as $i => $entry ) {
 			$id = $idPrefix . '-' . ( $i + 1 );
