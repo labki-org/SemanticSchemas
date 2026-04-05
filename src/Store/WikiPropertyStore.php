@@ -60,6 +60,7 @@ class WikiPropertyStore {
 			'allowsMultipleValues' => false,
 			'hasTemplate' => null,
 			'inputType' => null,
+			'inversePropertyLabel' => null,
 		];
 
 		return new PropertyModel( $canonical, $data );

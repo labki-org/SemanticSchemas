@@ -30,9 +30,15 @@ class DisplayStubGenerator {
 	public const AUTO_REGENERATE_MARKER =
 		'<!-- SemanticSchemas:auto-regenerate - Remove this line to prevent automatic updates -->';
 
+	private const AUTO_BADGE =
+		' <span style="font-weight: normal; font-size: 0.8em; color: gray;">(auto)</span>';
+
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
 	private WikiCategoryStore $categoryStore;
+
+	/** @var ?array Cached reverse relationship index, built once per generation batch. */
+	private ?array $reverseRelationshipCache = null;
 
 	public function __construct(
 		PageCreator $pageCreator,
@@ -173,13 +179,9 @@ class DisplayStubGenerator {
 
 			$valueCall = "{{" . $renderTemplate . " | value=" . $valueExpr . " }}";
 
-			// Hide the entire row when the value is empty.
-			// Uses {{!}} magic word inside #if to escape pipes in wikitext table syntax.
-			$out .= '{{#if:{{{' . $paramName . '|}}}|' . "\n";
-			$out .= '{{!}}-' . "\n";
-			$out .= '! ' . $label . "\n";
-			$out .= '{{!}} ' . $valueCall . "\n";
-			$out .= "}}\n";
+			$out .= $this->buildConditionalRow(
+				'{{{' . $paramName . '|}}}', $label, $valueCall
+			);
 		}
 		return $out;
 	}
@@ -297,52 +299,76 @@ class DisplayStubGenerator {
 	 */
 	private function generateReverseRelationshipRows( CategoryModel $category ): string {
 		$categoryName = $category->getName();
-		$allCategories = $this->categoryStore->getAllCategories();
-		$rows = [];
 
-		foreach ( $allCategories as $sourceCatName => $sourceCat ) {
-			foreach ( $sourceCat->getAllProperties() as $propName ) {
-				$prop = $this->propertyStore->readProperty( $propName );
-				if ( $prop === null ) {
-					continue;
-				}
-				if ( !$prop->isPageType() ) {
-					continue;
-				}
-				if ( $prop->getAllowedCategory() !== $categoryName ) {
-					continue;
-				}
-				if ( $prop->getInversePropertyLabel() === null ) {
-					continue;
-				}
-
-				$rows[] = [
-					'label' => $prop->getInversePropertyLabel(),
-					'property' => $propName,
-					'sourceCategory' => $sourceCatName,
-				];
-			}
+		if ( $this->reverseRelationshipCache === null ) {
+			$this->reverseRelationshipCache = $this->buildReverseRelationshipIndex();
 		}
 
+		$rows = $this->reverseRelationshipCache[$categoryName] ?? [];
 		if ( $rows === [] ) {
 			return '';
 		}
 
 		$out = '';
 		foreach ( $rows as $row ) {
-			$askQuery = '{{#ask: [[' . $row['property'] . '::{{FULLPAGENAME}}]]'
-				. ' [[Category:' . $row['sourceCategory'] . ']]'
-				. ' | format=list }}';
+			$askBase = '[[' . $row['property'] . '::{{FULLPAGENAME}}]]'
+				. ' [[Category:' . $row['sourceCategory'] . ']]';
 
-			$out .= '{{#if: ' . $askQuery . ' |' . "\n";
-			$out .= '{{!}}-' . "\n";
-			$out .= '! ' . $row['label']
-				. ' <span style="font-weight: normal; font-size: 0.8em; color: gray;">(auto)</span>'
-				. "\n";
-			$out .= '{{!}} ' . $askQuery . "\n";
-			$out .= '}}' . "\n";
+			// Use format=count for the condition (cheap) and format=list for display
+			$condition = '{{#ask: ' . $askBase . ' | format=count }}';
+			$value = '{{#ask: ' . $askBase . ' | format=list }}';
+			$label = $row['label'] . self::AUTO_BADGE;
+
+			$out .= $this->buildConditionalRow( $condition, $label, $value );
 		}
 
+		return $out;
+	}
+
+	/**
+	 * Build a reverse relationship index keyed by target category name.
+	 *
+	 * Called once and cached for the lifetime of this generator instance,
+	 * avoiding O(C²) category reads during batch generation.
+	 *
+	 * @return array<string, array<array{label:string, property:string, sourceCategory:string}>>
+	 */
+	private function buildReverseRelationshipIndex(): array {
+		$index = [];
+		$allCategories = $this->categoryStore->getAllCategories();
+
+		foreach ( $allCategories as $sourceCatName => $sourceCat ) {
+			foreach ( $sourceCat->getAllProperties() as $propName ) {
+				$prop = $this->propertyStore->readProperty( $propName );
+				if ( $prop === null || !$prop->isPageType() ) {
+					continue;
+				}
+				$target = $prop->getAllowedCategory();
+				$label = $prop->getInversePropertyLabel();
+				if ( $target === null || $label === null ) {
+					continue;
+				}
+				$index[$target][] = [
+					'label' => $label,
+					'property' => $propName,
+					'sourceCategory' => $sourceCatName,
+				];
+			}
+		}
+
+		return $index;
+	}
+
+	/**
+	 * Build a conditionally-visible wikitext table row.
+	 * Hidden when $condition evaluates to empty/falsy.
+	 */
+	private function buildConditionalRow( string $condition, string $label, string $value ): string {
+		$out = '{{#if: ' . $condition . ' |' . "\n";
+		$out .= '{{!}}-' . "\n";
+		$out .= '! ' . $label . "\n";
+		$out .= '{{!}} ' . $value . "\n";
+		$out .= "}}\n";
 		return $out;
 	}
 }

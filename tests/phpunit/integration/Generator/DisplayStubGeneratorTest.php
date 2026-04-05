@@ -238,9 +238,15 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
 		$content = $this->pageCreator->getPageContent( $title );
 
+		// Label with auto badge
 		$this->assertStringContainsString( '! Components', $content );
+		$this->assertStringContainsString( '(auto)', $content );
+		// Ask query with category filter
 		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
 		$this->assertStringContainsString( '[[Category:Component]]', $content );
+		// Uses format=count for condition, format=list for display
+		$this->assertStringContainsString( 'format=count', $content );
+		$this->assertStringContainsString( 'format=list', $content );
 	}
 
 	public function testNoReverseRelationshipWithoutInverseLabel(): void {
@@ -261,6 +267,34 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$catName = 'Project_' . uniqid();
 		$category = new EffectiveCategoryModel( $catName, [
 			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+
+		$gen->generateOrUpdateDisplayStub( $category );
+
+		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$content = $this->pageCreator->getPageContent( $title );
+
+		$this->assertStringNotContainsString( '{{#ask:', $content );
+	}
+
+	public function testNonPageTypePropertyIgnoredForReverseRelationship(): void {
+		$textProp = new PropertyModel( 'Has tag', [
+			'datatype' => 'Text',
+			'inversePropertyLabel' => 'Tagged items',
+		] );
+
+		$tagCat = new CategoryModel( 'Tag', [
+			'properties' => [ 'required' => [ 'Has tag' ], 'optional' => [] ],
+		] );
+
+		$gen = $this->makeGenerator(
+			[ 'Has tag' => $textProp ],
+			[ 'Tag' => $tagCat ]
+		);
+
+		$catName = 'SomeTarget_' . uniqid();
+		$category = new EffectiveCategoryModel( $catName, [
+			'properties' => [ 'required' => [], 'optional' => [] ],
 		] );
 
 		$gen->generateOrUpdateDisplayStub( $category );
