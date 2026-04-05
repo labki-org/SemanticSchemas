@@ -249,13 +249,14 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringContainsString( 'format=list', $content );
 	}
 
-	public function testNoReverseRelationshipWithoutInverseLabel(): void {
+	public function testReverseRelationshipFallsBackToSourceCategoryLabel(): void {
 		$hasProject = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
 			'allowedCategory' => 'Project',
 		] );
 
 		$componentCat = new CategoryModel( 'Component', [
+			'label' => 'Components',
 			'properties' => [ 'required' => [ 'Has project' ], 'optional' => [] ],
 		] );
 
@@ -264,9 +265,9 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			[ 'Component' => $componentCat ]
 		);
 
-		$catName = 'Project_' . uniqid();
+		$catName = 'Project';
 		$category = new EffectiveCategoryModel( $catName, [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [ 'required' => [], 'optional' => [] ],
 		] );
 
 		$gen->generateOrUpdateDisplayStub( $category );
@@ -274,7 +275,8 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		$this->assertStringNotContainsString( '{{#ask:', $content );
+		$this->assertStringContainsString( '! Components', $content );
+		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
 	}
 
 	public function testNonPageTypePropertyIgnoredForReverseRelationship(): void {

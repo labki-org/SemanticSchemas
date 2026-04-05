@@ -344,10 +344,10 @@ class DisplayStubGenerator {
 					continue;
 				}
 				$target = $prop->getAllowedCategory();
-				$label = $prop->getInversePropertyLabel();
-				if ( $target === null || $label === null ) {
+				if ( $target === null ) {
 					continue;
 				}
+				$label = $prop->getInversePropertyLabel() ?? $sourceCat->getLabel();
 				$index[$target][] = [
 					'label' => $label,
 					'property' => $propName,
