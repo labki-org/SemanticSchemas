@@ -85,19 +85,20 @@ trait SMWDataExtractor {
 	}
 
 	/**
-	 * Read ordered references from SMW subobjects attached to a page.
+	 * Read ordered, tagged field references from SMW subobjects attached to a page.
 	 *
 	 * Iterates sub-semantic-data, filters by subobject type, extracts the
-	 * reference property value, and sorts by subobject identifier to preserve
-	 * insertion order (identifiers are named like "req-prop-1", "req-prop-2").
+	 * reference property value and the "Is required" boolean, and sorts by
+	 * subobject identifier to preserve insertion order (identifiers are named
+	 * like "prop-field-1", "prop-field-2").
 	 *
 	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
-	 * @param string $subobjectType Subobject type to match (e.g. "Required property")
+	 * @param string $subobjectType Subobject type to match (e.g. "Has property field")
 	 * @param string $referenceProperty Property holding the reference (e.g. "Has property reference")
 	 * @param string $referenceType Value type for extraction (e.g. "property", "subobject")
-	 * @return string[] Ordered list of referenced names
+	 * @return array<array{name:string, required:bool}> Ordered list of tagged references
 	 */
-	protected function smwFetchOrderedReferences(
+	protected function smwFetchTaggedFieldReferences(
 		$semanticData,
 		string $subobjectType,
 		string $referenceProperty,
@@ -114,13 +115,33 @@ trait SMWDataExtractor {
 			$ref = $this->smwFetchOne( $subData, $referenceProperty, $referenceType );
 			if ( $ref !== null ) {
 				$subName = $subData->getSubject()->getSubobjectName();
-				$entries[$subName] = $ref;
+				$required = $this->smwFetchBoolean( $subData, 'Is required' );
+				$entries[$subName] = [ 'name' => $ref, 'required' => $required ];
 			}
 		}
 
 		ksort( $entries );
 
 		return array_values( $entries );
+	}
+
+	/**
+	 * Split tagged field references into required and optional name arrays.
+	 *
+	 * @param array<array{name:string, required:bool}> $tagged
+	 * @return array{required:string[], optional:string[]}
+	 */
+	protected function splitTaggedFields( array $tagged ): array {
+		$required = [];
+		$optional = [];
+		foreach ( $tagged as $entry ) {
+			if ( $entry['required'] ) {
+				$required[] = $entry['name'];
+			} else {
+				$optional[] = $entry['name'];
+			}
+		}
+		return [ 'required' => $required, 'optional' => $optional ];
 	}
 
 	/**

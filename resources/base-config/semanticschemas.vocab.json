@@ -132,50 +132,10 @@
 			}
 		},
 		{
-			"page": "Has optional property",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_optional_property.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Has optional subobject",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_optional_subobject.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
 			"page": "Has parent category",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
 				"importFrom": "properties/Has_parent_category.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Has required property",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_required_property.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Has required subobject",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_required_subobject.wikitext"
 			},
 			"options": {
 				"replaceable": true
@@ -252,6 +212,16 @@
 			}
 		},
 		{
+			"page": "Is required",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Is_required.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Subproperty of",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
@@ -302,40 +272,20 @@
 			}
 		},
 		{
-			"page": "Required property",
+			"page": "Has property field",
 			"namespace": "NS_SUBOBJECT",
 			"contents": {
-				"importFrom": "subobjects/Required_property.wikitext"
+				"importFrom": "subobjects/Has_property_field.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Optional property",
+			"page": "Has subobject field",
 			"namespace": "NS_SUBOBJECT",
 			"contents": {
-				"importFrom": "subobjects/Optional_property.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Required subobject",
-			"namespace": "NS_SUBOBJECT",
-			"contents": {
-				"importFrom": "subobjects/Required_subobject.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Optional subobject",
-			"namespace": "NS_SUBOBJECT",
-			"contents": {
-				"importFrom": "subobjects/Optional_subobject.wikitext"
+				"importFrom": "subobjects/Has_subobject_field.wikitext"
 			},
 			"options": {
 				"replaceable": true

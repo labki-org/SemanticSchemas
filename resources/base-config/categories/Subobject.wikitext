@@ -1,9 +1,20 @@
 <!-- SemanticSchemas Start -->
 [[Has description::Defines a subobject type for nested data structures within pages.]]
 [[Has target namespace::Subobject]]
-[[Has required property::Property:Has description]]
-[[Has optional property::Property:Display label]]
-[[Has optional subobject::Subobject:Required property]]
-[[Has optional subobject::Subobject:Optional property]]
+{{#subobject:prop-field-1
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Has description
+ | Is required = true
+}}
+{{#subobject:prop-field-2
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Display label
+ | Is required = false
+}}
+{{#subobject:sub-field-1
+ | Has subobject type = Subobject:Has subobject field
+ | Has subobject reference = Subobject:Has property field
+ | Is required = false
+}}
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

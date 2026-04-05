@@ -1,5 +1,0 @@
-<!-- SemanticSchemas Start -->
-[[Has description::An entry in a category's required subobject list. Preserves insertion order.]]
-[[Has required property::Property:Has subobject reference]]
-<!-- SemanticSchemas End -->
-[[Category:SemanticSchemas-managed]]

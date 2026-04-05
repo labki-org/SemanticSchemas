@@ -1,15 +1,55 @@
 <!-- SemanticSchemas Start -->
 [[Has description::Defines a semantic property for storing data on wiki pages.]]
 [[Has target namespace::Property]]
-[[Has required property::Property:Has description]]
-[[Has required property::Property:Has type]]
-[[Has optional property::Property:Display label]]
-[[Has optional property::Property:Allows multiple values]]
-[[Has optional property::Property:Allows value]]
-[[Has optional property::Property:Subproperty of]]
-[[Has optional property::Property:Allows value from category]]
-[[Has optional property::Property:Allows value from namespace]]
-[[Has optional property::Property:Has template]]
-[[Has optional property::Property:Has input type]]
+{{#subobject:prop-field-1
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Has description
+ | Is required = true
+}}
+{{#subobject:prop-field-2
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Has type
+ | Is required = true
+}}
+{{#subobject:prop-field-3
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Display label
+ | Is required = false
+}}
+{{#subobject:prop-field-4
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Allows multiple values
+ | Is required = false
+}}
+{{#subobject:prop-field-5
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Allows value
+ | Is required = false
+}}
+{{#subobject:prop-field-6
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Subproperty of
+ | Is required = false
+}}
+{{#subobject:prop-field-7
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Allows value from category
+ | Is required = false
+}}
+{{#subobject:prop-field-8
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Allows value from namespace
+ | Is required = false
+}}
+{{#subobject:prop-field-9
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Has template
+ | Is required = false
+}}
+{{#subobject:prop-field-10
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Has input type
+ | Is required = false
+}}
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

@@ -1,14 +1,40 @@
 <!-- SemanticSchemas Start -->
 [[Has description::Defines the schema metadata for categories managed by SemanticSchemas.]]
 [[Has target namespace::Category]]
-[[Has required property::Property:Has description]]
-[[Has optional property::Property:Display label]]
-[[Has optional property::Property:Has target namespace]]
-[[Has optional property::Property:Has parent category]]
-[[Has optional property::Property:Has display format]]
-[[Has optional subobject::Subobject:Required property]]
-[[Has optional subobject::Subobject:Optional property]]
-[[Has optional subobject::Subobject:Required subobject]]
-[[Has optional subobject::Subobject:Optional subobject]]
+{{#subobject:prop-field-1
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Has description
+ | Is required = true
+}}
+{{#subobject:prop-field-2
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Display label
+ | Is required = false
+}}
+{{#subobject:prop-field-3
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Has target namespace
+ | Is required = false
+}}
+{{#subobject:prop-field-4
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Has parent category
+ | Is required = false
+}}
+{{#subobject:prop-field-5
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Has display format
+ | Is required = false
+}}
+{{#subobject:sub-field-1
+ | Has subobject type = Subobject:Has subobject field
+ | Has subobject reference = Subobject:Has property field
+ | Is required = false
+}}
+{{#subobject:sub-field-2
+ | Has subobject type = Subobject:Has subobject field
+ | Has subobject reference = Subobject:Has subobject field
+ | Is required = false
+}}
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

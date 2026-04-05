@@ -1,5 +1,0 @@
-<!-- SemanticSchemas Start -->
-[[Has description::An entry in a category's required property list. Preserves insertion order.]]
-[[Has required property::Property:Has property reference]]
-<!-- SemanticSchemas End -->
-[[Category:SemanticSchemas-managed]]

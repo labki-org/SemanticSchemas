@@ -129,6 +129,22 @@ class SubobjectModel {
 		return in_array( $prop, $this->requiredProperties, true );
 	}
 
+	/**
+	 * Return all properties tagged with their required/optional status.
+	 *
+	 * @return array<array{name:string, required:bool}>
+	 */
+	public function getTaggedProperties(): array {
+		$out = [];
+		foreach ( $this->requiredProperties as $name ) {
+			$out[] = [ 'name' => $name, 'required' => true ];
+		}
+		foreach ( $this->optionalProperties as $name ) {
+			$out[] = [ 'name' => $name, 'required' => false ];
+		}
+		return $out;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */
