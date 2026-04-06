@@ -14,7 +14,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   - description         (string)
  *   - allowedValues       (string[])
  *   - subpropertyOf       (string|null)
- *   - hasTemplate         (string|null) - Template page name or PropertyType reference
+ *   - renderTemplate      (string|null) - Custom template page name for rendering this property's value
  *   - allowedCategory     (string|null)
  *   - allowedNamespace    (string|null)
  *   - allowsMultipleValues (bool)
@@ -34,7 +34,7 @@ class PropertyModel {
 
 	private ?string $subpropertyOf;
 
-	private ?string $hasTemplate;
+	private ?string $renderTemplate;
 
 	private ?string $allowedCategory;
 	private ?string $allowedNamespace;
@@ -97,16 +97,15 @@ class PropertyModel {
 			? trim( $subOf )
 			: null;
 
-		/* -------------------- Template -------------------- */
-		// Read from new hasTemplate field
-		$template = $data['hasTemplate'] ?? null;
+		/* -------------------- Render template -------------------- */
+		$template = $data['renderTemplate'] ?? $data['hasTemplate'] ?? null;
 
-		// Backward compatibility: read from old display['template'] if hasTemplate not set
+		// Backward compatibility: read from old display['template'] if not set
 		if ( $template === null && isset( $data['display']['template'] ) ) {
 			$template = $data['display']['template'];
 		}
 
-		$this->hasTemplate = ( $template !== null && trim( $template ) !== '' )
+		$this->renderTemplate = ( $template !== null && trim( $template ) !== '' )
 			? trim( $template )
 			: null;
 
@@ -235,17 +234,17 @@ class PropertyModel {
 	}
 
 	/* Template config */
-	public function getHasTemplate(): ?string {
-		return $this->hasTemplate;
+	public function getCustomRenderTemplate(): ?string {
+		return $this->renderTemplate;
 	}
 
 	public function getRenderTemplate(): string {
 		// Priority 1: Explicit custom template
-		if ( $this->hasTemplate !== null ) {
+		if ( $this->renderTemplate !== null ) {
 			// Strip namespace prefix if present — wikitext {{Name}} already
 			// resolves in the Template namespace, and hardcoding the prefix
 			// breaks on non-English wikis.
-			return preg_replace( '/^Template:/', '', $this->hasTemplate );
+			return preg_replace( '/^Template:/', '', $this->renderTemplate );
 		}
 		// Priority 2: Datatype-specific template for Page type
 		if ( $this->isPageType() ) {
@@ -288,7 +287,7 @@ class PropertyModel {
 			'description' => $this->description,
 			'allowedValues' => $this->allowedValues,
 			'subpropertyOf' => $this->subpropertyOf,
-			'hasTemplate' => $this->hasTemplate,
+			'renderTemplate' => $this->renderTemplate,
 			'allowedCategory' => $this->allowedCategory,
 			'allowedNamespace' => $this->allowedNamespace,
 			'allowsMultipleValues' => $this->allowsMultipleValues,

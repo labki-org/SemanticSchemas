@@ -9,7 +9,7 @@
 [[Has optional property::Property:Subproperty of]]
 [[Has optional property::Property:Allows value from category]]
 [[Has optional property::Property:Allows value from namespace]]
-[[Has optional property::Property:Has template]]
+[[Has optional property::Property:Has render template]]
 [[Has optional property::Property:Has input type]]
 [[Has optional property::Property:Inverse property label]]
 <!-- SemanticSchemas End -->

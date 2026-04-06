@@ -58,7 +58,7 @@ class WikiPropertyStore {
 			'allowedCategory' => null,
 			'allowedNamespace' => null,
 			'allowsMultipleValues' => false,
-			'hasTemplate' => null,
+			'renderTemplate' => null,
 			'inputType' => null,
 			'inversePropertyLabel' => null,
 		];
@@ -166,11 +166,10 @@ class WikiPropertyStore {
 			$this->smwFetchBoolean( $sdata, 'Allows multiple values' );
 
 		/* -------------------- Template Configuration -------------------- */
-		$hasTemplate = $this->smwFetchOne( $sdata, 'Has template', 'page' );
+		$renderTemplate = $this->smwFetchOne( $sdata, 'Has render template', 'page' );
 
-		if ( $hasTemplate ) {
-			$out['hasTemplate'] = $hasTemplate;
-			$out['templateSource'] = $hasTemplate;
+		if ( $renderTemplate ) {
+			$out['renderTemplate'] = $renderTemplate;
 		}
 
 		/* -------------------- Input type override -------------------- */
@@ -225,9 +224,8 @@ class WikiPropertyStore {
 			$lines[] = '[[Allows value from namespace::' . $p->getAllowedNamespace() . ']]';
 		}
 
-		// Template reference (or source)
-		if ( $p->getHasTemplate() !== null ) {
-			$lines[] = '[[Has template::' . $p->getHasTemplate() . ']]';
+		if ( $p->getCustomRenderTemplate() !== null ) {
+			$lines[] = '[[Has render template::' . $p->getCustomRenderTemplate() . ']]';
 		}
 
 		if ( $p->getInputType() !== null ) {

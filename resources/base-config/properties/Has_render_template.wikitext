@@ -1,6 +1,6 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Page]]
 [[Has description::Custom template for rendering this property's value in display tables (e.g. Template:Property/Email for mailto links).]]
-[[Display label::Property render template]]
+[[Display label::Render template]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]

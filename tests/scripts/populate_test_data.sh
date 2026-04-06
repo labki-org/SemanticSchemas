@@ -76,7 +76,7 @@ echo "==> Creating test properties..."
 # 0. Meta-Properties (Must be created first)
 # ==========================================
 create_property "Has display template" "Template for displaying property values." "Page" ""
-create_property "Has template" "Points to a template for generic usage." "Page" ""
+create_property "Has render template" "Custom template for rendering a property's value." "Page" ""
 
 # ==========================================
 # Core Meta-Properties
@@ -91,7 +91,7 @@ create_property "Has full name" "The full name of a person." "Text" "[[Display l
 
 # Biography with custom display template (using wikitext with HTML allowed via rawhtml extension if needed)
 # For now, using simple wikitext - users can customize the template page directly for styling
-create_property "Has biography" "Biography or description text." "Text" "[[Has template::Template:Property/Typography]]"
+create_property "Has biography" "Biography or description text." "Text" "[[Has render template::Template:Property/Typography]]"
 
 create_property "Has research interests" "Research interests and expertise areas." "Text" "[[Display label::Research Interests]]"
 create_property "Has office location" "Office or workspace location." "Text" ""
@@ -107,9 +107,9 @@ echo "  - Display pattern properties..."
 
 
 # Contact properties using display patterns
-create_property "Has email" "Email address." "Email" "[[Has template::Template:Property/Email]]"
+create_property "Has email" "Email address." "Email" "[[Has render template::Template:Property/Email]]"
 create_property "Has phone" "Phone number." "Telephone number" ""
-create_property "Has website" "Personal or lab website URL." "URL" "[[Has template::Template:Property/Link]]"
+create_property "Has website" "Personal or lab website URL." "URL" "[[Has render template::Template:Property/Link]]"
 create_property "Has orcid" "ORCID identifier (e.g., 0000-0000-0000-0000)." "Text" ""
 
 # ==========================================
@@ -219,7 +219,7 @@ create_category "Person" "[[Has description::A person in our organization.]]
 [[Has optional property::Property:Has website]]
 [[Has optional property::Property:Has birth date]]
 
-[[Has template::Template:Category/table]]"
+[[Has render template::Template:Category/table]]"
 
 # LabMember category (base category for lab members)
 create_category "LabMember" "[[Has description::A member of the lab.]]
