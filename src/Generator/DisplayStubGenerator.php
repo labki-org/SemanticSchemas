@@ -317,7 +317,7 @@ class DisplayStubGenerator {
 			$value = '{{#ask: ' . $askBase . ' | format=list }}';
 			$label = $row['sourceCategoryLabel']
 				. ' <span style="font-weight: normal; font-size: 0.8em; color: gray;">'
-				. '(auto {{!}} ' . htmlspecialchars( $row['relationship'] ) . ')</span>';
+				. '(auto &middot; ' . htmlspecialchars( $row['relationship'] ) . ')</span>';
 
 			$out .= $this->buildConditionalRow( $condition, $label, $value );
 		}
