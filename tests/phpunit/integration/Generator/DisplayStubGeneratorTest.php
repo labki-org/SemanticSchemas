@@ -212,11 +212,11 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * REVERSE RELATIONSHIPS
 	 * ========================================================================= */
 
-	public function testReverseRelationshipRowWithInverseLabel(): void {
+	public function testReverseRelationshipRowWithReverseLabel(): void {
 		$hasProject = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
 			'allowedCategory' => 'Project',
-			'inversePropertyLabel' => 'Is parent of',
+			'reverseLabel' => 'Is parent of',
 		] );
 
 		$componentCat = new CategoryModel( 'Component', [
@@ -239,7 +239,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		// Source category label + relationship from inverse label
+		// Source category label + relationship from reverse label
 		$this->assertStringContainsString( '! Components', $content );
 		$this->assertStringContainsString( '(Is parent of)', $content );
 		// Ask query
@@ -282,7 +282,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testNonPageTypePropertyIgnoredForReverseRelationship(): void {
 		$textProp = new PropertyModel( 'Has tag', [
 			'datatype' => 'Text',
-			'inversePropertyLabel' => 'Tagged items',
+			'reverseLabel' => 'Tagged items',
 		] );
 
 		$tagCat = new CategoryModel( 'Tag', [

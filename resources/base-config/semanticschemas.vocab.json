@@ -232,10 +232,10 @@
 			}
 		},
 		{
-			"page": "Inverse property label",
+			"page": "Reverse label",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
-				"importFrom": "properties/Inverse_property_label.wikitext"
+				"importFrom": "properties/Reverse_label.wikitext"
 			},
 			"options": {
 				"replaceable": true

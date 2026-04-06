@@ -293,8 +293,8 @@ class DisplayStubGenerator {
 	 * Scans all categories for Page-type properties that have allowedCategory
 	 * matching the current category. For each match, generates a table row
 	 * with an {{#ask:}} query. The row label combines the source category
-	 * label with the relationship descriptor (inverse property label or
-	 * property display label as fallback).
+	 * label with the relationship descriptor (reverse label or property
+	 * display label as fallback).
 	 */
 	private function generateReverseRelationshipRows( CategoryModel $category ): string {
 		$categoryName = $category->getName();
@@ -347,7 +347,7 @@ class DisplayStubGenerator {
 				}
 				$index[$target][] = [
 					'sourceCategoryLabel' => $sourceCat->getLabel(),
-					'relationship' => $prop->getInversePropertyLabel() ?? $prop->getLabel(),
+					'relationship' => $prop->getReverseLabel() ?? $prop->getLabel(),
 					'property' => $propName,
 					'sourceCategory' => $sourceCatName,
 				];

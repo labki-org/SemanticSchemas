@@ -1,6 +1,6 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Text]]
 [[Has description::Label describing the reverse relationship in display templates. Only applies to Page-type properties with an allowed category set.]]
-[[Display label::Inverse property label]]
+[[Display label::Reverse label]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]
