@@ -1,7 +1,7 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Page]]
-[[Has description::Custom template for rendering this category's display. Used in addition to the display format, or alone when format is set to none.]]
-[[Display label::Display template]]
+[[Has description::Custom template for rendering a category's page layout. Called after the display format template, or alone when format is set to none.]]
+[[Display label::Category display template]]
 [[Allows value from namespace::Template]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]
