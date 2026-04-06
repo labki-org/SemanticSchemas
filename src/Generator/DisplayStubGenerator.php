@@ -313,13 +313,13 @@ class DisplayStubGenerator {
 			$askBase = '[[' . $row['property'] . '::{{FULLPAGENAME}}]]'
 				. ' [[Category:' . $row['sourceCategory'] . ']]';
 
-			$condition = '{{#ask: ' . $askBase . ' | format=count }}';
-			$value = '{{#ask: ' . $askBase . ' | format=list }}';
+			$askQuery = '{{#ask: ' . $askBase . ' | format=list }}';
 			$label = $row['sourceCategoryLabel']
 				. ' <span style="font-weight: normal; font-size: 0.8em; color: gray;">'
-				. '(' . htmlspecialchars( $row['relationship'] ) . ')</span>';
+				. '(' . htmlspecialchars( $row['relationship'], ENT_QUOTES ) . ')</span>';
 
-			$out .= $this->buildConditionalRow( $condition, $label, $value );
+			$out .= $this->buildConditionalRow( $askQuery, $label, $askQuery );
+
 		}
 
 		return $out;

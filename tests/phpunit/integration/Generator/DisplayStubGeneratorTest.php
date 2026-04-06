@@ -83,7 +83,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testPropertyRowsWrappedInIfCondition(): void {
 		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
 
-		$this->assertStringContainsString( '{{#if:{{{has_name|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_name|}}}|', $content );
 	}
 
 	public function testPropertyRowUsesMagicWordPipeEscape(): void {
@@ -99,9 +99,9 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			[ 'Has name', 'Has email', 'Has phone' ]
 		);
 
-		$this->assertStringContainsString( '{{#if:{{{has_name|}}}|', $content );
-		$this->assertStringContainsString( '{{#if:{{{has_email|}}}|', $content );
-		$this->assertStringContainsString( '{{#if:{{{has_phone|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_name|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_email|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_phone|}}}|', $content );
 	}
 
 	public function testOptionalPropertiesAlsoHaveIfCondition(): void {
@@ -111,7 +111,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			[ 'Has nickname' ]
 		);
 
-		$this->assertStringContainsString( '{{#if:{{{has_nickname|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_nickname|}}}|', $content );
 	}
 
 	/* =========================================================================
@@ -169,7 +169,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			]
 		);
 
-		$this->assertStringContainsString( '{{#if:{{{has_email|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_email|}}}|', $content );
 		$this->assertStringContainsString( 'Property/Email', $content );
 	}
 
@@ -241,11 +241,10 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		// Source category label + relationship from inverse label
 		$this->assertStringContainsString( '! Components', $content );
-		$this->assertStringContainsString( '(auto | Is parent of)', $content );
+		$this->assertStringContainsString( '(Is parent of)', $content );
 		// Ask query
 		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
 		$this->assertStringContainsString( '[[Category:Component]]', $content );
-		$this->assertStringContainsString( 'format=count', $content );
 		$this->assertStringContainsString( 'format=list', $content );
 	}
 
@@ -277,7 +276,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		// Falls back to property display label
 		$this->assertStringContainsString( '! Components', $content );
-		$this->assertStringContainsString( '(auto | Project)', $content );
+		$this->assertStringContainsString( '(Project)', $content );
 	}
 
 	public function testNonPageTypePropertyIgnoredForReverseRelationship(): void {
