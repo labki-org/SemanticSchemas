@@ -92,6 +92,26 @@
 			}
 		},
 		{
+			"page": "Category/collect-ancestors-L3",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/collect-ancestors-L3.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/collect-ancestors-L4",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/collect-ancestors-L4.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Category/render-reverse",
 			"namespace": "NS_TEMPLATE",
 			"contents": {

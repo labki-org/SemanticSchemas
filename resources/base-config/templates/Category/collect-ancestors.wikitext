@@ -6,5 +6,5 @@ Used by Category/table and Category/sidebox to build a deduplicated
 #ask inverse query for all properties in the inheritance chain.
 
 Parameter 1: category name (without namespace prefix)
-Supports up to 3 levels of inheritance (L0 → L1 → L2).
+Supports up to 5 levels of inheritance (L0 → L1 → L2 → L3 → L4).
 </noinclude>
