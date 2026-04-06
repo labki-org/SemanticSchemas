@@ -283,8 +283,8 @@ class WikiCategoryStore {
 		}
 
 		// Display template
-		if ( $cat->getDisplayTemplateProperty() !== null ) {
-			$lines[] = '[[Has display template::' . $cat->getDisplayTemplateProperty()->getName() . ']]';
+		if ( $cat->getDisplayTemplate() !== null ) {
+			$lines[] = '[[Has display template::' . $cat->getDisplayTemplate() . ']]';
 		}
 
 		// Required/optional properties
