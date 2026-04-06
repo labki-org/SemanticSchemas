@@ -83,7 +83,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testPropertyRowsWrappedInIfCondition(): void {
 		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
 
-		$this->assertStringContainsString( '{{#if: {{{has_name|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_name|}}} |', $content );
 	}
 
 	public function testPropertyRowUsesMagicWordPipeEscape(): void {
@@ -99,9 +99,9 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			[ 'Has name', 'Has email', 'Has phone' ]
 		);
 
-		$this->assertStringContainsString( '{{#if: {{{has_name|}}}|', $content );
-		$this->assertStringContainsString( '{{#if: {{{has_email|}}}|', $content );
-		$this->assertStringContainsString( '{{#if: {{{has_phone|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_name|}}} |', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_email|}}} |', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_phone|}}} |', $content );
 	}
 
 	public function testOptionalPropertiesAlsoHaveIfCondition(): void {
@@ -111,7 +111,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			[ 'Has nickname' ]
 		);
 
-		$this->assertStringContainsString( '{{#if: {{{has_nickname|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_nickname|}}} |', $content );
 	}
 
 	/* =========================================================================
@@ -169,7 +169,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			]
 		);
 
-		$this->assertStringContainsString( '{{#if: {{{has_email|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_email|}}} |', $content );
 		$this->assertStringContainsString( 'Property/Email', $content );
 	}
 
