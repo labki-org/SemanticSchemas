@@ -56,11 +56,6 @@ class WikiCategoryStore {
 		$data = $this->loadFromSMW( $title, $categoryName );
 		$cat = new CategoryModel( $categoryName, $data );
 
-		// Resolve display template
-		if ( !empty( $data['display']['template'] ) ) {
-			$cat->setDisplayTemplate( $data['display']['template'] );
-		}
-
 		return $cat;
 	}
 

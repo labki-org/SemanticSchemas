@@ -141,6 +141,10 @@ class CategoryModel {
 		}
 		$this->displayConfig = $display;
 
+		$tpl = $display['template'] ?? null;
+		$this->displayTemplate = ( $tpl !== null && trim( (string)$tpl ) !== '' )
+			? trim( (string)$tpl ) : null;
+
 		/* -------------------- Form Config -------------------- */
 
 		$forms = $data['forms'] ?? [];
@@ -413,10 +417,6 @@ class CategoryModel {
 	/* -------------------------------------------------------------------------
 	 * NEW DISPLAY SYSTEM ACCESSORS
 	 * ------------------------------------------------------------------------- */
-
-	public function setDisplayTemplate( ?string $template ): void {
-		$this->displayTemplate = $template;
-	}
 
 	public function getDisplayTemplate(): ?string {
 		return $this->displayTemplate;

@@ -176,7 +176,6 @@
 				"SemanticSchemas.WikiSubobjectStore",
 				"SemanticSchemas.TemplateGenerator",
 				"SemanticSchemas.FormGenerator",
-				"SemanticSchemas.DisplayStubGenerator",
 				"SemanticSchemas.OntologyInspector",
 				"SemanticSchemas.StateManager",
 				"SemanticSchemas.PageHashComputer",

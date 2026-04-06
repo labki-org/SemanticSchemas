@@ -575,9 +575,9 @@ class TemplateGeneratorTest extends TestCase {
 				'required' => [ 'Has name' ],
 				'optional' => [],
 			],
+			'display' => [ 'template' => 'Template:Person/custom' ],
 		] );
 		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
-		$effective->setDisplayTemplate( 'Template:Person/custom' );
 		$result = $this->generator->generateDispatcherTemplate( $effective );
 
 		// Should have both dynamic display AND custom template
@@ -591,15 +591,32 @@ class TemplateGeneratorTest extends TestCase {
 				'required' => [ 'Has name' ],
 				'optional' => [],
 			],
-			'display' => [ 'format' => 'none' ],
+			'display' => [ 'format' => 'none', 'template' => 'Template:Person/custom' ],
 		] );
 		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
-		$effective->setDisplayTemplate( 'Template:Person/custom' );
 		$result = $this->generator->generateDispatcherTemplate( $effective );
 
 		// Only custom template, no format template
 		$this->assertStringNotContainsString( '{{Category/table', $result );
 		$this->assertStringContainsString( '{{Person/custom', $result );
+	}
+
+	public function testDispatcherCustomTemplateSurvivesInheritanceResolution(): void {
+		$parent = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$child = new CategoryModel( 'Student', [
+			'parents' => [ 'Person' ],
+			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+			'display' => [ 'template' => 'Template:Student/custom' ],
+		] );
+
+		$resolver = new InheritanceResolver( [ 'Person' => $parent, 'Student' => $child ] );
+		$effective = $resolver->getEffectiveCategory( 'Student' );
+		$result = $this->generator->generateDispatcherTemplate( $effective );
+
+		$this->assertStringContainsString( '{{Category/table | category=Student}}', $result );
+		$this->assertStringContainsString( '{{Student/custom', $result );
 	}
 
 	public function testSemanticTemplateForwardsOnlyParentEffectiveParams(): void {

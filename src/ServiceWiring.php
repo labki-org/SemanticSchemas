@@ -1,6 +1,5 @@
 <?php
 
-use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
@@ -23,16 +22,6 @@ return [
 		MediaWikiServices $services
 	): CategoryHierarchyService {
 		return new CategoryHierarchyService(
-			$services->get( 'SemanticSchemas.WikiCategoryStore' )
-		);
-	},
-
-	'SemanticSchemas.DisplayStubGenerator' => static function (
-		MediaWikiServices $services
-	): DisplayStubGenerator {
-		return new DisplayStubGenerator(
-			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.WikiCategoryStore' )
 		);
 	},

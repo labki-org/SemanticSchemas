@@ -248,6 +248,49 @@ class CategoryModelTest extends TestCase {
 		$this->assertEquals( $displayConfig, $model->getDisplayConfig() );
 	}
 
+	public function testDisplayTemplateDefaultsToNull(): void {
+		$model = new CategoryModel( 'TestCategory' );
+		$this->assertNull( $model->getDisplayTemplate() );
+	}
+
+	public function testDisplayTemplateSetFromConstructorData(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'display' => [ 'template' => 'Template:MyDisplay' ],
+		] );
+		$this->assertSame( 'Template:MyDisplay', $model->getDisplayTemplate() );
+	}
+
+	public function testDisplayTemplateSurvivesToArrayRoundTrip(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'display' => [ 'format' => 'table', 'template' => 'Template:MyDisplay' ],
+		] );
+		$rebuilt = new CategoryModel( 'TestCategory', $model->toArray() );
+		$this->assertSame( 'Template:MyDisplay', $rebuilt->getDisplayTemplate() );
+	}
+
+	public function testDisplayTemplateInheritedThroughMerge(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'display' => [ 'template' => 'Template:ParentDisplay' ],
+		] );
+		$child = new CategoryModel( 'Child', [ 'parents' => [ 'Parent' ] ] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertSame( 'Template:ParentDisplay', $merged->getDisplayTemplate() );
+	}
+
+	public function testChildDisplayTemplateOverridesParent(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'display' => [ 'template' => 'Template:ParentDisplay' ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'display' => [ 'template' => 'Template:ChildDisplay' ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertSame( 'Template:ChildDisplay', $merged->getDisplayTemplate() );
+	}
+
 	/* =========================================================================
 	 * FORM CONFIG
 	 * ========================================================================= */
