@@ -1,0 +1,19 @@
+<includeonly>{| class="wikitable source-semanticschemas-sidebox" style="float: right; clear: right; margin: 0 0 1em 1em; width: 300px; background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"
+|-
+! colspan="2" style="background-color: #eaecf0; text-align: center;" | {{#show:Category:{{{category|}}}|?Display label|default={{{category|}}}}} <span style="float: right; font-weight: normal; font-size: 0.8em;">[[Special:FormEdit/{{{category|}}}/{{FULLPAGENAME}}|edit]]</span>
+{{#arraymap:{{{properties|}}}|,|@@prop@@|{{#if:{{#show:{{FULLPAGENAME}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
+! {{#show:@@prop@@|?Display label|default={{PAGENAME:@@prop@@}}}}
+{{!}} {{#show:{{FULLPAGENAME}}|?{{PAGENAME:@@prop@@}}}}}}|\n}}
+{{#ifexpr: {{#ask: [[Allows value from category::{{{category|}}}]] [[Has type::Page]] | format=count }} > 0 |{{#ask: [[Allows value from category::{{{category|}}}]] [[Has type::Page]]
+ | format=template
+ | template=Category/reverse-discover
+ | link=none
+}}}}
+|}</includeonly><noinclude>
+Dynamic sidebox display template for SemanticSchemas categories.
+Same as Category/table but styled as a floating sidebar.
+
+Parameters:
+* category - The category name (without namespace prefix)
+* properties - Comma-separated list of property page names
+</noinclude>

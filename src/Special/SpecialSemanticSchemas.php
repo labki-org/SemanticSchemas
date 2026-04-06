@@ -281,12 +281,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			$displayResult = $this->displayGenerator->generateIfAllowed( $effective );
+			// Display templates are now dynamic (Category/table, Category/sidebox).
+			// Static display stubs are no longer generated for new categories.
 
 			// Log the operation
 			$this->logOperation( 'generate', "Form generated for $categoryName", [
 				'category' => $categoryName,
-				'displayStatus' => $displayResult['status'],
 			] );
 
 			// If triggered from "New page" action, redirect to Form: page
@@ -1138,7 +1138,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		try {
 			$categoryMap = $this->buildCategoryMap();
 			$resolver = new InheritanceResolver( $categoryMap );
-			$generateDisplay = $request->getBool( 'generate-display' );
 
 			$successCount = 0;
 			$totalCount = count( $categories );
@@ -1164,10 +1163,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 						$category, $resolver
 					);
 					$this->formGenerator->generateAndSaveAllForms( $effective );
-
-					if ( $generateDisplay ) {
-						$this->displayGenerator->generateOrUpdateDisplayStub( $effective );
-					}
 
 					$successCount++;
 				} catch ( \Exception $e ) {

@@ -103,11 +103,12 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringNotContainsString( '[[Category:', $result );
 	}
 
-	public function testDispatcherTemplateDoesNotContainCategoryStamp(): void {
+	public function testDispatcherTemplateContainsCategoryStamps(): void {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringNotContainsString( '[[Category:', $result );
+		$this->assertStringContainsString( '[[Category:Person]]', $result );
+		$this->assertStringContainsString( '[[Category:SemanticSchemas-managed]]', $result );
 	}
 
 	public function testGenerateSemanticTemplateWithEmptyNameThrowsException(): void {
@@ -173,11 +174,18 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '{{Person/semantic', $result );
 	}
 
-	public function testGenerateDispatcherTemplateCallsDisplayTemplate(): void {
-		$category = new CategoryModel( 'Person' );
+	public function testGenerateDispatcherTemplateCallsDynamicDisplay(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
+		] );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( '{{Person/display', $result );
+		$this->assertStringContainsString( '{{Category/table', $result );
+		$this->assertStringContainsString( 'category=Person', $result );
+		$this->assertStringContainsString( 'properties=Property:Has name', $result );
 	}
 
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
@@ -508,13 +516,12 @@ class TemplateGeneratorTest extends TestCase {
 
 		$this->assertStringContainsString( '{{Student/semantic', $result );
 		$this->assertStringNotContainsString( '{{Person/semantic', $result );
-		$this->assertStringContainsString( '{{Student/display', $result );
-		// All effective params forwarded
-		$this->assertStringContainsString( 'name', $result );
-		$this->assertStringContainsString( 'student_id', $result );
-		$this->assertStringContainsString( 'email', $result );
-		// No category stamp in dispatcher
-		$this->assertStringNotContainsString( '[[Category:', $result );
+		$this->assertStringContainsString( '{{Category/table', $result );
+		$this->assertStringContainsString( 'Property:Has name', $result );
+		$this->assertStringContainsString( 'Property:Has student ID', $result );
+		$this->assertStringContainsString( 'Property:Has email', $result );
+		// Category stamps now in dispatcher
+		$this->assertStringContainsString( '[[Category:Student]]', $result );
 	}
 
 	public function testSemanticTemplateForEachAncestorHasOwnPropertiesOnly(): void {
@@ -546,6 +553,67 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( 'name', $parentCall );
 		// Student's own #set should not repeat Person's properties
 		$this->assertStringNotContainsString( 'Has name = ', $studentSemantic );
+	}
+
+	public function testDispatcherUsesSideboxFormatWhenConfigured(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
+			'display' => [ 'format' => 'sidebox' ],
+		] );
+		$result = $this->generateDispatcher( $category );
+
+		$this->assertStringContainsString( '{{Category/sidebox', $result );
+		$this->assertStringNotContainsString( '{{Category/table', $result );
+	}
+
+	public function testDispatcherSkipsFormatTemplateWhenNone(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
+			'display' => [ 'format' => 'none' ],
+		] );
+		$result = $this->generateDispatcher( $category );
+
+		$this->assertStringNotContainsString( '{{Category/table', $result );
+		$this->assertStringNotContainsString( '{{Category/sidebox', $result );
+	}
+
+	public function testDispatcherIncludesCustomDisplayTemplate(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
+		] );
+		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
+		$effective->setDisplayTemplate( 'Template:Person/custom' );
+		$result = $this->generator->generateDispatcherTemplate( $effective );
+
+		// Should have both dynamic display AND custom template
+		$this->assertStringContainsString( '{{Category/table', $result );
+		$this->assertStringContainsString( '{{Person/custom', $result );
+	}
+
+	public function testDispatcherCustomTemplateOnlyWithFormatNone(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
+			'display' => [ 'format' => 'none' ],
+		] );
+		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
+		$effective->setDisplayTemplate( 'Template:Person/custom' );
+		$result = $this->generator->generateDispatcherTemplate( $effective );
+
+		// Only custom template, no format template
+		$this->assertStringNotContainsString( '{{Category/table', $result );
+		$this->assertStringContainsString( '{{Person/custom', $result );
 	}
 
 	public function testSemanticTemplateForwardsOnlyParentEffectiveParams(): void {

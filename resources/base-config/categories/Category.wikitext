@@ -10,5 +10,6 @@
 [[Has optional property::Property:Has required subobject]]
 [[Has optional property::Property:Has optional subobject]]
 [[Has optional property::Property:Has display format]]
+[[Has optional property::Property:Has display template]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

@@ -58,8 +58,8 @@ class CategoryModel {
 
 	/* -------------------- New Display System -------------------- */
 
-	/** @var ?PropertyModel Property defining the display format */
-	private ?PropertyModel $displayTemplateProperty = null;
+	/** @var ?string Custom display template page name (e.g. "Template:MyDisplay") */
+	private ?string $displayTemplate = null;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
@@ -345,8 +345,8 @@ class CategoryModel {
 			$merged['format'] = trim( (string)$child['format'] );
 		}
 
-		if ( isset( $child['templateProperty'] ) ) {
-			$merged['templateProperty'] = $child['templateProperty'];
+		if ( isset( $child['template'] ) ) {
+			$merged['template'] = $child['template'];
 		}
 
 		return $merged;
@@ -414,11 +414,11 @@ class CategoryModel {
 	 * NEW DISPLAY SYSTEM ACCESSORS
 	 * ------------------------------------------------------------------------- */
 
-	public function setDisplayTemplateProperty( ?PropertyModel $property ): void {
-		$this->displayTemplateProperty = $property;
+	public function setDisplayTemplate( ?string $template ): void {
+		$this->displayTemplate = $template;
 	}
 
-	public function getDisplayTemplateProperty(): ?PropertyModel {
-		return $this->displayTemplateProperty;
+	public function getDisplayTemplate(): ?string {
+		return $this->displayTemplate;
 	}
 }

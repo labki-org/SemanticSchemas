@@ -1,0 +1,15 @@
+<includeonly>{{#ifexpr: {{#ask: [[Allows value from category::{{{1|}}}]] [[Has type::Page]] | format=count }} > 0 |{{#ask: [[Allows value from category::{{{1|}}}]] [[Has type::Page]]
+ | format=template
+ | template=Category/reverse-discover
+ | link=none
+}}}}</includeonly><noinclude>
+Renders reverse relationship rows for a SemanticSchemas dynamic display template.
+
+Discovers all Page-type properties that have Allows value from category set to
+the given category, then delegates to Category/reverse-discover for each property.
+
+Only runs the discovery query when reverse relationships exist (count > 0) to
+avoid empty whitespace output that would create extra space in the table.
+
+Parameter 1: category name (without namespace prefix)
+</noinclude>

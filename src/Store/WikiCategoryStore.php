@@ -57,11 +57,8 @@ class WikiCategoryStore {
 		$cat = new CategoryModel( $categoryName, $data );
 
 		// Resolve display template
-		if ( !empty( $data['display']['templateProperty'] ) ) {
-			$p = $this->propertyStore->readProperty( $data['display']['templateProperty'] );
-			if ( $p ) {
-				$cat->setDisplayTemplateProperty( $p );
-			}
+		if ( !empty( $data['display']['template'] ) ) {
+			$cat->setDisplayTemplate( $data['display']['template'] );
 		}
 
 		return $cat;
@@ -247,14 +244,14 @@ class WikiCategoryStore {
 
 	private function loadDisplayConfig( $semanticData ): array {
 		$format = $this->smwFetchOne( $semanticData, 'Has display format' );
-		$templateProp = $this->smwFetchOne( $semanticData, 'Has display template', 'property' );
+		$template = $this->smwFetchOne( $semanticData, 'Has display template', 'page' );
 
 		$out = [];
 		if ( $format !== null ) {
 			$out['format'] = strtolower( $format );
 		}
-		if ( $templateProp !== null ) {
-			$out['templateProperty'] = $templateProp;
+		if ( $template !== null ) {
+			$out['template'] = $template;
 		}
 
 		return $out;

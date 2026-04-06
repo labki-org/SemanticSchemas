@@ -2,6 +2,7 @@
 [[Has type::Text]]
 [[Has description::How to lay out the page (table, sidebox, or sections).]]
 [[Display label::Display format]]
+[[Allows value::none]]
 [[Allows value::table]]
 [[Allows value::sidebox]]
 [[Allows value::sections]]

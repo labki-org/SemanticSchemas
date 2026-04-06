@@ -42,6 +42,46 @@
 			}
 		},
 		{
+			"page": "Category/table",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/table.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/sidebox",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/sidebox.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/render-reverse",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/render-reverse.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/reverse-discover",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/reverse-discover.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Allows multiple values",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
@@ -216,6 +256,16 @@
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
 				"importFrom": "properties/Has_template.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Has display template",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_display_template.wikitext"
 			},
 			"options": {
 				"replaceable": true
