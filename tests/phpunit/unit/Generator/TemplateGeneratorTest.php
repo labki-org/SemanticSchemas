@@ -175,17 +175,10 @@ class TemplateGeneratorTest extends TestCase {
 	}
 
 	public function testGenerateDispatcherTemplateCallsDynamicDisplay(): void {
-		$category = new CategoryModel( 'Person', [
-			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
-			],
-		] );
+		$category = new CategoryModel( 'Person' );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( '{{Category/table', $result );
-		$this->assertStringContainsString( 'category=Person', $result );
-		$this->assertStringContainsString( 'properties=Property:Has name', $result );
+		$this->assertStringContainsString( '{{Category/table | category=Person}}', $result );
 	}
 
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
@@ -516,10 +509,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$this->assertStringContainsString( '{{Student/semantic', $result );
 		$this->assertStringNotContainsString( '{{Person/semantic', $result );
-		$this->assertStringContainsString( '{{Category/table', $result );
-		$this->assertStringContainsString( 'Property:Has name', $result );
-		$this->assertStringContainsString( 'Property:Has student ID', $result );
-		$this->assertStringContainsString( 'Property:Has email', $result );
+		$this->assertStringContainsString( '{{Category/table | category=Student}}', $result );
 		// Category stamps now in dispatcher
 		$this->assertStringContainsString( '[[Category:Student]]', $result );
 	}
@@ -557,15 +547,11 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testDispatcherUsesSideboxFormatWhenConfigured(): void {
 		$category = new CategoryModel( 'Person', [
-			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
-			],
 			'display' => [ 'format' => 'sidebox' ],
 		] );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( '{{Category/sidebox', $result );
+		$this->assertStringContainsString( '{{Category/sidebox | category=Person}}', $result );
 		$this->assertStringNotContainsString( '{{Category/table', $result );
 	}
 
@@ -595,7 +581,7 @@ class TemplateGeneratorTest extends TestCase {
 		$result = $this->generator->generateDispatcherTemplate( $effective );
 
 		// Should have both dynamic display AND custom template
-		$this->assertStringContainsString( '{{Category/table', $result );
+		$this->assertStringContainsString( '{{Category/table | category=Person}}', $result );
 		$this->assertStringContainsString( '{{Person/custom', $result );
 	}
 

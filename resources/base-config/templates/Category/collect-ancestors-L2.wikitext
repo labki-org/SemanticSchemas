@@ -1,0 +1,4 @@
+<includeonly>Category:{{{1|}}}</includeonly><noinclude>
+Level 2 (deepest) of ancestor collection. Returns only this category.
+See Category/collect-ancestors.
+</noinclude>

@@ -247,9 +247,9 @@ class TemplateGenerator {
 	 * Generate the dynamic display section of the dispatcher template.
 	 *
 	 * Emits a call to the appropriate format template (Category/table,
-	 * Category/sidebox, etc.) passing the effective property list. If the
-	 * category has a custom display template, that is called after the
-	 * format template (or alone if format is 'none').
+	 * Category/sidebox, etc.) which discovers properties dynamically from
+	 * the SMW store. If the category has a custom display template, that
+	 * is called after the format template (or alone if format is 'none').
 	 *
 	 * @param EffectiveCategoryModel $effective
 	 * @param string[] $allProps Sorted effective property list
@@ -263,18 +263,10 @@ class TemplateGenerator {
 		$format = $effective->getDisplayFormat() ?? 'table';
 		$out = [];
 
-		// Build the property list parameter (namespace-prefixed for #show queries)
-		$propList = implode( ',', array_map(
-			static fn ( string $p ) => 'Property:' . $p,
-			$allProps
-		) );
-
 		// Dynamic format template (table, sidebox, etc.)
+		// Properties are discovered from the SMW store at render time
 		if ( $format !== 'none' ) {
-			$out[] = '{{Category/' . $format;
-			$out[] = ' | category=' . $name;
-			$out[] = ' | properties=' . $propList;
-			$out[] = '}}';
+			$out[] = '{{Category/' . $format . ' | category=' . $name . '}}';
 		}
 
 		// Custom display template (called after format, or alone if format=none)
