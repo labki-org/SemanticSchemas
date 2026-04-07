@@ -94,9 +94,9 @@ Category pages support the following semantic properties to define their schema:
 Category:Person
 ----
 <!-- SemanticSchemas Start -->
+[[Category:Entity]]
 [[Display label::Person]]
 [[Has description::Represents a person in the system]]
-[[Has parent category::Category:Entity]]
 [[Has required property::Property:Has full name]]
 [[Has required property::Property:Has email]]
 [[Has optional property::Property:Has phone]]
