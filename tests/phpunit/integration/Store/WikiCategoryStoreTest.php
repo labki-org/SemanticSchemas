@@ -102,11 +102,18 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '{{#subobject:has_property_field-1', $content );
-		$this->assertStringContainsString( 'Has property reference = Property:Has name', $content );
-		$this->assertStringContainsString( '{{#subobject:has_property_field-2', $content );
-		$this->assertStringContainsString( 'Has property reference = Property:Has email', $content );
-		$this->assertStringContainsString( 'Is required = true', $content );
+
+		// Assert complete subobject blocks (not just individual lines)
+		$this->assertSubobjectBlock( $content, 'has_property_field-1', [
+			'Has subobject type = Subobject:Has property field',
+			'Has property reference = Property:Has name',
+			'Is required = true',
+		] );
+		$this->assertSubobjectBlock( $content, 'has_property_field-2', [
+			'Has subobject type = Subobject:Has property field',
+			'Has property reference = Property:Has email',
+			'Is required = true',
+		] );
 	}
 
 	public function testWriteCategoryWithOptionalProperties(): void {
@@ -123,11 +130,17 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '{{#subobject:has_property_field-1', $content );
-		$this->assertStringContainsString( 'Has property reference = Property:Has phone', $content );
-		$this->assertStringContainsString( '{{#subobject:has_property_field-2', $content );
-		$this->assertStringContainsString( 'Has property reference = Property:Has address', $content );
-		$this->assertStringContainsString( 'Is required = false', $content );
+
+		$this->assertSubobjectBlock( $content, 'has_property_field-1', [
+			'Has subobject type = Subobject:Has property field',
+			'Has property reference = Property:Has phone',
+			'Is required = false',
+		] );
+		$this->assertSubobjectBlock( $content, 'has_property_field-2', [
+			'Has subobject type = Subobject:Has property field',
+			'Has property reference = Property:Has address',
+			'Is required = false',
+		] );
 	}
 
 	public function testWriteCategoryWithTargetNamespace(): void {
@@ -246,11 +259,17 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '{{#subobject:has_subobject_field-1', $content );
-		$this->assertStringContainsString( 'Has subobject reference = Subobject:Author', $content );
-		$this->assertStringContainsString( '{{#subobject:has_subobject_field-2', $content );
-		$this->assertStringContainsString( 'Has subobject reference = Subobject:Publication', $content );
-		$this->assertStringContainsString( 'Is required = true', $content );
+
+		$this->assertSubobjectBlock( $content, 'has_subobject_field-1', [
+			'Has subobject type = Subobject:Has subobject field',
+			'Has subobject reference = Subobject:Author',
+			'Is required = true',
+		] );
+		$this->assertSubobjectBlock( $content, 'has_subobject_field-2', [
+			'Has subobject type = Subobject:Has subobject field',
+			'Has subobject reference = Subobject:Publication',
+			'Is required = true',
+		] );
 	}
 
 	public function testWriteCategoryWithOptionalSubobjects(): void {
@@ -267,11 +286,17 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '{{#subobject:has_subobject_field-1', $content );
-		$this->assertStringContainsString( 'Has subobject reference = Subobject:Funding', $content );
-		$this->assertStringContainsString( '{{#subobject:has_subobject_field-2', $content );
-		$this->assertStringContainsString( 'Has subobject reference = Subobject:Award', $content );
-		$this->assertStringContainsString( 'Is required = false', $content );
+
+		$this->assertSubobjectBlock( $content, 'has_subobject_field-1', [
+			'Has subobject type = Subobject:Has subobject field',
+			'Has subobject reference = Subobject:Funding',
+			'Is required = false',
+		] );
+		$this->assertSubobjectBlock( $content, 'has_subobject_field-2', [
+			'Has subobject type = Subobject:Has subobject field',
+			'Has subobject reference = Subobject:Award',
+			'Is required = false',
+		] );
 	}
 
 	/* =========================================================================
@@ -306,12 +331,30 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( 'Has property reference = Property:Has name', $content );
-		$this->assertStringContainsString( 'Has property reference = Property:Has email', $content );
-		$this->assertStringContainsString( 'Has subobject reference = Subobject:Author', $content );
-		$this->assertStringContainsString( 'Has subobject reference = Subobject:Funding', $content );
-		$this->assertStringContainsString( 'Has subobject type = Subobject:Has property field', $content );
-		$this->assertStringContainsString( 'Has subobject type = Subobject:Has subobject field', $content );
+
+		// Property fields
+		$this->assertSubobjectBlock( $content, 'has_property_field-1', [
+			'Has subobject type = Subobject:Has property field',
+			'Has property reference = Property:Has name',
+			'Is required = true',
+		] );
+		$this->assertSubobjectBlock( $content, 'has_property_field-2', [
+			'Has subobject type = Subobject:Has property field',
+			'Has property reference = Property:Has email',
+			'Is required = false',
+		] );
+
+		// Subobject fields
+		$this->assertSubobjectBlock( $content, 'has_subobject_field-1', [
+			'Has subobject type = Subobject:Has subobject field',
+			'Has subobject reference = Subobject:Author',
+			'Is required = true',
+		] );
+		$this->assertSubobjectBlock( $content, 'has_subobject_field-2', [
+			'Has subobject type = Subobject:Has subobject field',
+			'Has subobject reference = Subobject:Funding',
+			'Is required = false',
+		] );
 	}
 
 	/* =========================================================================
@@ -343,6 +386,39 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 		$managed = $this->categoryStore->getManagedParents( $testcat );
 		$this->assertArrayEquals( $expected, $managed );
+	}
+
+	/**
+	 * Assert that a complete {{#subobject:$id ...}} block exists in the content
+	 * and contains all expected lines within that single block.
+	 *
+	 * @param string $content The full page wikitext
+	 * @param string $id The subobject identifier (e.g. "has_property_field-1")
+	 * @param string[] $expectedLines Lines that must appear within this block
+	 */
+	private function assertSubobjectBlock(
+		string $content,
+		string $id,
+		array $expectedLines
+	): void {
+		// Extract the block: from {{#subobject:$id to the next }}
+		$pattern = '/\{\{#subobject:' . preg_quote( $id, '/' ) . '\b[^}]*\}\}/s';
+		$this->assertMatchesRegularExpression(
+			$pattern,
+			$content,
+			"Subobject block '$id' not found in content"
+		);
+
+		preg_match( $pattern, $content, $matches );
+		$block = $matches[0];
+
+		foreach ( $expectedLines as $line ) {
+			$this->assertStringContainsString(
+				$line,
+				$block,
+				"Expected line '$line' not found within subobject block '$id'"
+			);
+		}
 	}
 
 	/**

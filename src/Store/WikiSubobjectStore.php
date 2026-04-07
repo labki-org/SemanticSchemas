@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Store;
 
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\Title\Title;
@@ -88,10 +89,8 @@ class WikiSubobjectStore {
 		}
 
 		// Property fields (subobject-based with Is required flag)
-		$out['properties'] = $this->splitTaggedFields(
-			$this->smwFetchTaggedFieldReferences(
-				$sdata, 'Has property field', 'Has property reference', 'property'
-			)
+		$out['properties'] = $this->smwFetchTaggedFieldReferences(
+			$sdata, 'Has property field', 'Has property reference', 'property'
 		);
 
 		return $out;
@@ -137,10 +136,10 @@ class WikiSubobjectStore {
 			$lines[] = '[[Has description::' . $s->getDescription() . ']]';
 		}
 
-		$lines = array_merge( $lines, $this->buildFieldSubobjectLines(
-			$s->getTaggedProperties(),
-			'Has property field', 'Has property reference', 'Property'
-		) );
+		$propWikitext = FieldDeclaration::toWikitextAll( $s->getPropertyFields() );
+		if ( $propWikitext !== '' ) {
+			$lines[] = $propWikitext;
+		}
 
 		return implode( "\n", $lines );
 	}

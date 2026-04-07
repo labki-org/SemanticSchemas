@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
 use InvalidArgumentException;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use PHPUnit\Framework\TestCase;
 
@@ -92,6 +93,37 @@ class SubobjectModelTest extends TestCase {
 	public function testGetTaggedPropertiesReturnsEmptyWhenNone(): void {
 		$model = new SubobjectModel( 'Empty' );
 		$this->assertSame( [], $model->getTaggedProperties() );
+	}
+
+	/* =========================================================================
+	 * FIELD DECLARATIONS
+	 * ========================================================================= */
+
+	public function testGetPropertyFieldsReturnsFieldDeclarations(): void {
+		$model = new SubobjectModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street' ],
+				'optional' => [ 'Has zip' ],
+			],
+		] );
+		$fields = $model->getPropertyFields();
+		$this->assertCount( 2, $fields );
+		$this->assertInstanceOf( FieldDeclaration::class, $fields[0] );
+		$this->assertSame( 'Has street', $fields[0]->getName() );
+		$this->assertTrue( $fields[0]->isRequired() );
+		$this->assertSame( 'Has zip', $fields[1]->getName() );
+		$this->assertFalse( $fields[1]->isRequired() );
+	}
+
+	public function testConstructorAcceptsTaggedFormat(): void {
+		$model = new SubobjectModel( 'Address', [
+			'properties' => [
+				[ 'name' => 'Has street', 'required' => true ],
+				[ 'name' => 'Has zip', 'required' => false ],
+			],
+		] );
+		$this->assertSame( [ 'Has street' ], $model->getRequiredProperties() );
+		$this->assertSame( [ 'Has zip' ], $model->getOptionalProperties() );
 	}
 
 	/* =========================================================================

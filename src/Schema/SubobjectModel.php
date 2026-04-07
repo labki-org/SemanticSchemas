@@ -12,7 +12,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  * It defines only:
  *   - label
  *   - description
- *   - required/optional properties
+ *   - required/optional properties (as FieldDeclaration[])
  *
  * There is no inheritance or subtype merging.
  */
@@ -22,11 +22,8 @@ class SubobjectModel {
 	private string $label;
 	private string $description;
 
-	/** @var string[] */
-	private array $requiredProperties;
-
-	/** @var string[] */
-	private array $optionalProperties;
+	/** @var FieldDeclaration[] */
+	private array $propertyFields;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
@@ -68,26 +65,9 @@ class SubobjectModel {
 				"Subobject '{$name}': 'properties' must be an array."
 			);
 		}
-
-		$req = $props['required'] ?? [];
-		$opt = $props['optional'] ?? [];
-
-		if ( !is_array( $req ) || !is_array( $opt ) ) {
-			throw new InvalidArgumentException(
-				"Subobject '{$name}': 'properties.required' and 'properties.optional' must be arrays."
-			);
-		}
-
-		$this->requiredProperties = NamingHelper::normalizeList( $req );
-		$this->optionalProperties = NamingHelper::normalizeList( $opt );
-
-		$overlap = array_intersect( $this->requiredProperties, $this->optionalProperties );
-		if ( $overlap !== [] ) {
-			throw new InvalidArgumentException(
-				"Subobject '{$name}' has properties listed as both required and optional: "
-				. implode( ', ', $overlap )
-			);
-		}
+		$this->propertyFields = FieldDeclaration::parseInput(
+			$props, FieldDeclaration::TYPE_PROPERTY, "Subobject '{$name}'"
+		);
 	}
 
 	/* -------------------------------------------------------------------------
@@ -106,43 +86,40 @@ class SubobjectModel {
 		return $this->description;
 	}
 
+	/** @return FieldDeclaration[] */
+	public function getPropertyFields(): array {
+		return $this->propertyFields;
+	}
+
 	/** @return string[] */
 	public function getRequiredProperties(): array {
-		return $this->requiredProperties;
+		return FieldDeclaration::filterNames( $this->propertyFields, true );
 	}
 
 	/** @return string[] */
 	public function getOptionalProperties(): array {
-		return $this->optionalProperties;
+		return FieldDeclaration::filterNames( $this->propertyFields, false );
 	}
 
 	/** @return string[] */
 	public function getAllProperties(): array {
-		return array_values(
-			array_unique(
-				array_merge( $this->requiredProperties, $this->optionalProperties )
-			)
-		);
+		return FieldDeclaration::names( $this->propertyFields );
 	}
 
 	public function isPropertyRequired( string $prop ): bool {
-		return in_array( $prop, $this->requiredProperties, true );
+		foreach ( $this->propertyFields as $field ) {
+			if ( $field->getName() === $prop ) {
+				return $field->isRequired();
+			}
+		}
+		return false;
 	}
 
 	/**
-	 * Return all properties tagged with their required/optional status.
-	 *
 	 * @return array<array{name:string, required:bool}>
 	 */
 	public function getTaggedProperties(): array {
-		$out = [];
-		foreach ( $this->requiredProperties as $name ) {
-			$out[] = [ 'name' => $name, 'required' => true ];
-		}
-		foreach ( $this->optionalProperties as $name ) {
-			$out[] = [ 'name' => $name, 'required' => false ];
-		}
-		return $out;
+		return FieldDeclaration::tagged( $this->propertyFields );
 	}
 
 	/* -------------------------------------------------------------------------
@@ -154,8 +131,8 @@ class SubobjectModel {
 			'label' => $this->label,
 			'description' => $this->description,
 			'properties' => [
-				'required' => $this->requiredProperties,
-				'optional' => $this->optionalProperties,
+				'required' => $this->getRequiredProperties(),
+				'optional' => $this->getOptionalProperties(),
 			],
 		];
 	}

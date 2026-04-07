@@ -17,13 +17,8 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   targetNamespace: string|null
  *   renderAs: string|null - TemplateFormat category reference
  *
- *   properties:
- *     required: string[]
- *     optional: string[]
- *
- *   subobjects:
- *     required: string[]
- *     optional: string[]
+ *   properties: FieldDeclaration[] (or legacy split format for backward compat)
+ *   subobjects: FieldDeclaration[] (or legacy split format for backward compat)
  *
  *   display:
  *     format: string|null
@@ -47,11 +42,11 @@ class CategoryModel {
 	private ?string $targetNamespace;
 	private ?string $renderAs;
 
-	private array $requiredProperties;
-	private array $optionalProperties;
+	/** @var FieldDeclaration[] */
+	private array $propertyFields;
 
-	private array $requiredSubobjects;
-	private array $optionalSubobjects;
+	/** @var FieldDeclaration[] */
+	private array $subobjectFields;
 
 	private array $displayConfig;
 	private array $formConfig;
@@ -103,17 +98,9 @@ class CategoryModel {
 		if ( !is_array( $props ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'properties' must be an array." );
 		}
-
-		$this->requiredProperties = NamingHelper::normalizeList( $props['required'] ?? [] );
-		$this->optionalProperties = NamingHelper::normalizeList( $props['optional'] ?? [] );
-
-		$dup = array_intersect( $this->requiredProperties, $this->optionalProperties );
-		if ( $dup !== [] ) {
-			throw new InvalidArgumentException(
-				"Category '{$name}' has properties listed as both required and optional: " .
-				implode( ', ', $dup )
-			);
-		}
+		$this->propertyFields = FieldDeclaration::parseInput(
+			$props, FieldDeclaration::TYPE_PROPERTY, "Category '{$name}'"
+		);
 
 		/* -------------------- Subobjects -------------------- */
 
@@ -121,17 +108,9 @@ class CategoryModel {
 		if ( !is_array( $subs ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'subobjects' must be an array." );
 		}
-
-		$this->requiredSubobjects = NamingHelper::normalizeList( $subs['required'] ?? [] );
-		$this->optionalSubobjects = NamingHelper::normalizeList( $subs['optional'] ?? [] );
-
-		$dupSG = array_intersect( $this->requiredSubobjects, $this->optionalSubobjects );
-		if ( $dupSG !== [] ) {
-			throw new InvalidArgumentException(
-				"Category '{$name}' has subobjects listed as both required and optional: " .
-				implode( ', ', $dupSG )
-			);
-		}
+		$this->subobjectFields = FieldDeclaration::parseInput(
+			$subs, FieldDeclaration::TYPE_SUBOBJECT, "Category '{$name}'"
+		);
 
 		/* -------------------- Display Config -------------------- */
 
@@ -178,66 +157,56 @@ class CategoryModel {
 		return $this->renderAs;
 	}
 
-	/* -------------------- Properties -------------------- */
+	/* -------------------- Property Fields -------------------- */
+
+	/** @return FieldDeclaration[] */
+	public function getPropertyFields(): array {
+		return $this->propertyFields;
+	}
 
 	public function getRequiredProperties(): array {
-		return $this->requiredProperties;
+		return FieldDeclaration::filterNames( $this->propertyFields, true );
 	}
 
 	public function getOptionalProperties(): array {
-		return $this->optionalProperties;
+		return FieldDeclaration::filterNames( $this->propertyFields, false );
 	}
 
 	public function getAllProperties(): array {
-		return array_values( array_unique(
-			array_merge( $this->requiredProperties, $this->optionalProperties )
-		) );
+		return FieldDeclaration::names( $this->propertyFields );
 	}
 
 	/**
-	 * Return all properties tagged with their required/optional status.
-	 *
 	 * @return array<array{name:string, required:bool}>
 	 */
 	public function getTaggedProperties(): array {
-		$out = [];
-		foreach ( $this->requiredProperties as $name ) {
-			$out[] = [ 'name' => $name, 'required' => true ];
-		}
-		foreach ( $this->optionalProperties as $name ) {
-			$out[] = [ 'name' => $name, 'required' => false ];
-		}
-		return $out;
+		return FieldDeclaration::tagged( $this->propertyFields );
 	}
 
-	/* -------------------- Subobjects -------------------- */
+	/* -------------------- Subobject Fields -------------------- */
+
+	/** @return FieldDeclaration[] */
+	public function getSubobjectFields(): array {
+		return $this->subobjectFields;
+	}
 
 	public function getRequiredSubobjects(): array {
-		return $this->requiredSubobjects;
+		return FieldDeclaration::filterNames( $this->subobjectFields, true );
 	}
 
 	public function getOptionalSubobjects(): array {
-		return $this->optionalSubobjects;
+		return FieldDeclaration::filterNames( $this->subobjectFields, false );
 	}
 
 	public function hasSubobjects(): bool {
-		return $this->requiredSubobjects !== [] || $this->optionalSubobjects !== [];
+		return $this->subobjectFields !== [];
 	}
 
 	/**
-	 * Return all subobjects tagged with their required/optional status.
-	 *
 	 * @return array<array{name:string, required:bool}>
 	 */
 	public function getTaggedSubobjects(): array {
-		$out = [];
-		foreach ( $this->requiredSubobjects as $name ) {
-			$out[] = [ 'name' => $name, 'required' => true ];
-		}
-		foreach ( $this->optionalSubobjects as $name ) {
-			$out[] = [ 'name' => $name, 'required' => false ];
-		}
-		return $out;
+		return FieldDeclaration::tagged( $this->subobjectFields );
 	}
 
 	/* -------------------- Display + Forms -------------------- */
@@ -261,33 +230,17 @@ class CategoryModel {
 	public function mergeWithParent( CategoryModel $parent ): EffectiveCategoryModel {
 		/* -------------------- Properties -------------------- */
 
-		$mergedRequired = array_values( array_unique( array_merge(
-			$parent->getRequiredProperties(),
-			$this->requiredProperties
-		) ) );
-
-		$mergedOptional = array_values( array_diff(
-			array_unique( array_merge(
-				$parent->getOptionalProperties(),
-				$this->optionalProperties
-			) ),
-			$mergedRequired
-		) );
+		$mergedProps = self::mergeFieldDeclarations(
+			$parent->getPropertyFields(),
+			$this->propertyFields
+		);
 
 		/* -------------------- Subobjects -------------------- */
 
-		$mergedRequiredSG = array_values( array_unique( array_merge(
-			$parent->getRequiredSubobjects(),
-			$this->requiredSubobjects
-		) ) );
-
-		$mergedOptionalSG = array_values( array_diff(
-			array_unique( array_merge(
-				$parent->getOptionalSubobjects(),
-				$this->optionalSubobjects
-			) ),
-			$mergedRequiredSG
-		) );
+		$mergedSubs = self::mergeFieldDeclarations(
+			$parent->getSubobjectFields(),
+			$this->subobjectFields
+		);
 
 		/* -------------------- Display -------------------- */
 
@@ -313,18 +266,39 @@ class CategoryModel {
 				'description' => $this->description,
 				'targetNamespace' => $this->targetNamespace,
 				'renderAs' => $this->renderAs ?? $parent->getRenderAs(),
-				'properties' => [
-					'required' => $mergedRequired,
-					'optional' => $mergedOptional,
-				],
-				'subobjects' => [
-					'required' => $mergedRequiredSG,
-					'optional' => $mergedOptionalSG,
-				],
+				'properties' => FieldDeclaration::tagged( $mergedProps ),
+				'subobjects' => FieldDeclaration::tagged( $mergedSubs ),
 				'display' => $mergedDisplay,
 				'forms' => $mergedForms,
 			]
 		);
+	}
+
+	/**
+	 * Merge parent and child field declarations.
+	 *
+	 * If a field appears in both, required wins (child can promote optional to required).
+	 * Order: required fields first, then optional.
+	 *
+	 * @param FieldDeclaration[] $parentFields
+	 * @param FieldDeclaration[] $childFields
+	 * @return FieldDeclaration[]
+	 */
+	private static function mergeFieldDeclarations( array $parentFields, array $childFields ): array {
+		$required = [];
+		$optional = [];
+
+		foreach ( array_merge( $parentFields, $childFields ) as $field ) {
+			$name = $field->getName();
+			if ( $field->isRequired() ) {
+				$required[$name] = $field;
+				unset( $optional[$name] );
+			} elseif ( !isset( $required[$name] ) ) {
+				$optional[$name] = $field;
+			}
+		}
+
+		return array_values( array_merge( $required, $optional ) );
 	}
 
 	/* -------------------------------------------------------------------------
@@ -379,15 +353,15 @@ class CategoryModel {
 			'label' => $this->label,
 			'description' => $this->description,
 			'properties' => [
-				'required' => $this->requiredProperties,
-				'optional' => $this->optionalProperties,
+				'required' => $this->getRequiredProperties(),
+				'optional' => $this->getOptionalProperties(),
 			],
 		];
 
 		if ( $this->hasSubobjects() ) {
 			$out['subobjects'] = [
-				'required' => $this->requiredSubobjects,
-				'optional' => $this->optionalSubobjects,
+				'required' => $this->getRequiredSubobjects(),
+				'optional' => $this->getOptionalSubobjects(),
 			];
 		}
 

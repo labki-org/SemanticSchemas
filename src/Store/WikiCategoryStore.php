@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\MainConfigNames;
@@ -231,16 +232,12 @@ class WikiCategoryStore {
 
 			'parents' => $this->smwFetchMany( $sdata, 'Has parent category', 'category' ),
 
-			'properties' => $this->splitTaggedFields(
-				$this->smwFetchTaggedFieldReferences(
-					$sdata, 'Has property field', 'Has property reference', 'property'
-				)
+			'properties' => $this->smwFetchTaggedFieldReferences(
+				$sdata, 'Has property field', 'Has property reference', 'property'
 			),
 
-			'subobjects' => $this->splitTaggedFields(
-				$this->smwFetchTaggedFieldReferences(
-					$sdata, 'Has subobject field', 'Has subobject reference', 'subobject'
-				)
+			'subobjects' => $this->smwFetchTaggedFieldReferences(
+				$sdata, 'Has subobject field', 'Has subobject reference', 'subobject'
 			),
 
 			'display' => $this->loadDisplayConfig( $sdata ),
@@ -293,16 +290,16 @@ class WikiCategoryStore {
 		}
 
 		// Property fields
-		$lines = array_merge( $lines, $this->buildFieldSubobjectLines(
-			$cat->getTaggedProperties(),
-			'Has property field', 'Has property reference', 'Property'
-		) );
+		$propWikitext = FieldDeclaration::toWikitextAll( $cat->getPropertyFields() );
+		if ( $propWikitext !== '' ) {
+			$lines[] = $propWikitext;
+		}
 
 		// Subobject fields
-		$lines = array_merge( $lines, $this->buildFieldSubobjectLines(
-			$cat->getTaggedSubobjects(),
-			'Has subobject field', 'Has subobject reference', 'Subobject'
-		) );
+		$subWikitext = FieldDeclaration::toWikitextAll( $cat->getSubobjectFields() );
+		if ( $subWikitext !== '' ) {
+			$lines[] = $subWikitext;
+		}
 
 		return implode( "\n", $lines );
 	}

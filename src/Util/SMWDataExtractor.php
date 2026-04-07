@@ -7,7 +7,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Util;
  * -----------------
  * Shared trait for extracting values from SMW SemanticData objects.
  *
- * Used by WikiCategoryStore and WikiPropertyStore to avoid code duplication
+ * Used by WikiCategoryStore and WikiSubobjectStore to avoid code duplication
  * in SMW data extraction logic.
  */
 trait SMWDataExtractor {
@@ -123,53 +123,6 @@ trait SMWDataExtractor {
 		ksort( $entries, SORT_NATURAL );
 
 		return array_values( $entries );
-	}
-
-	/**
-	 * Split tagged field references into required and optional name arrays.
-	 *
-	 * @param array<array{name:string, required:bool}> $tagged
-	 * @return array{required:string[], optional:string[]}
-	 */
-	protected function splitTaggedFields( array $tagged ): array {
-		$required = [];
-		$optional = [];
-		foreach ( $tagged as $entry ) {
-			if ( $entry['required'] ) {
-				$required[] = $entry['name'];
-			} else {
-				$optional[] = $entry['name'];
-			}
-		}
-		return [ 'required' => $required, 'optional' => $optional ];
-	}
-
-	/**
-	 * Build wikitext lines for a set of tagged field subobjects.
-	 *
-	 * @param array<array{name:string, required:bool}> $taggedEntries
-	 * @param string $subobjectType Subobject type name (e.g. "Has property field")
-	 * @param string $referenceProperty Reference property name (e.g. "Has property reference")
-	 * @param string $namespacePrefix Namespace prefix for the reference (e.g. "Property", "Subobject")
-	 * @return string[] Wikitext lines
-	 */
-	protected function buildFieldSubobjectLines(
-		array $taggedEntries,
-		string $subobjectType,
-		string $referenceProperty,
-		string $namespacePrefix
-	): array {
-		$idPrefix = NamingHelper::propertyToParameter( $subobjectType );
-		$lines = [];
-		foreach ( $taggedEntries as $i => $entry ) {
-			$id = $idPrefix . '-' . ( $i + 1 );
-			$lines[] = '{{#subobject:' . $id;
-			$lines[] = ' | Has subobject type = Subobject:' . $subobjectType;
-			$lines[] = ' | ' . $referenceProperty . ' = ' . $namespacePrefix . ':' . $entry['name'];
-			$lines[] = ' | Is required = ' . ( $entry['required'] ? 'true' : 'false' );
-			$lines[] = '}}';
-		}
-		return $lines;
 	}
 
 	/**
