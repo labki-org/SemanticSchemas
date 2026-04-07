@@ -145,7 +145,7 @@ create_property "Has advisor" "Academic advisor or supervisor." "Page" "[[Displa
 create_property "Has lab" "Lab or research group affiliation." "Page" "[[Display label::Lab]]"
 create_property "Has institution" "Institutional affiliation." "Page" "[[Display label::Institution]]"
 create_property "Has department" "Department affiliation." "Page" "[[Display label::Department]]
-[[Allows value from category::Department]]
+[[Allows value from category::Category:Department]]
 [[Allows multiple values::true]]"
 create_property "Has collaborator" "Research collaborators." "Page" "[[Allows multiple values::true]]"
 
@@ -153,7 +153,7 @@ create_property "Has collaborator" "Research collaborators." "Page" "[[Allows mu
 # Property Type: Publication Subobject Fields
 # ==========================================
 echo "  - Publication subobject properties..."
-create_property "Has author" "Author referenced by a publication." "Page" "[[Allows value from category::Person]]"
+create_property "Has author" "Author referenced by a publication." "Page" "[[Allows value from category::Category:Person]]"
 create_property "Has author order" "Ordering index for publication authors." "Number" ""
 create_property "Is co-first author" "Marks whether the author is co-first." "Boolean" ""
 create_property "Is corresponding author" "Marks whether the author is corresponding." "Boolean" ""
@@ -727,7 +727,7 @@ echo "  - Date/Time: Has birth date, Has start date, Has end date, Has publicati
 echo "  - Numeric: Has cohort year, Has publication count, Has h index, Has room number"
 echo "  - Boolean: Has active status, Has public profile"
 echo "  - Page/Reference: Has advisor, Has lab, Has institution, Has collaborator"
-echo "  - With Autocomplete: Has department (demonstrates [[Allows value from category::Department]])"
+echo "  - With Autocomplete: Has department (demonstrates [[Allows value from category::Category:Department]])"
 echo "  - With Allowed Values: Has lab role, Has academic level, Has employment status"
 echo "  - With Multiple Values: Has department, Has collaborator, Has keywords"
 echo "  - Specialized: Has geographic location, Has code repository"
