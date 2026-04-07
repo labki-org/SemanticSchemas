@@ -224,13 +224,11 @@ class WikiCategoryStore {
 		$subject = \SMW\DIWikiPage::newFromTitle( $title );
 		$sdata = $store->getSemanticData( $subject );
 
-		$parents = $title->getParentCategories();
-
 		return [
 			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
 			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
 			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
-			'parents' => $parents,
+			'parents' => $title->getParentCategories(),
 			'properties' => [
 				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
 				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),
