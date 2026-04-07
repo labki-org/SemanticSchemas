@@ -26,7 +26,8 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 		);
 		$this->propertyStore = new WikiPropertyStore(
 			$this->pageCreator,
-			$services->getConnectionProvider()
+			$services->getConnectionProvider(),
+			$services->getContentLanguage()
 		);
 	}
 
@@ -247,7 +248,7 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 
 		$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Allows value from category::Person]]', $content );
+		$this->assertStringContainsString( '[[Allows value from category::Category:Person]]', $content );
 	}
 
 	public function testWritePropertyWithDateDatatype(): void {

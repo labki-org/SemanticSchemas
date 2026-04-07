@@ -96,4 +96,47 @@ class PropertyInputMapperTest extends TestCase {
 		] );
 		$this->assertSame( 'text', $this->mapper->getInputType( $p ) );
 	}
+
+	/* =========================================================================
+	 * AUTOCOMPLETE FROM CATEGORY / NAMESPACE
+	 * ========================================================================= */
+
+	public function testAllowedCategorySetsAutocompleteInputType(): void {
+		$p = new PropertyModel( 'Has test', [
+			'datatype' => 'Page',
+			'allowedCategory' => 'Person',
+		] );
+		$this->assertSame( 'combobox', $this->mapper->getInputType( $p ) );
+	}
+
+	public function testAllowedCategoryGeneratesValuesFromCategoryParam(): void {
+		$p = new PropertyModel( 'Has test', [
+			'datatype' => 'Page',
+			'allowedCategory' => 'Person',
+		] );
+		$params = $this->mapper->getInputParameters( $p );
+		$this->assertSame( 'Person', $params['values from category'] );
+		$this->assertSame( 'on', $params['autocomplete'] );
+	}
+
+	public function testAllowedNamespaceGeneratesValuesFromNamespaceParam(): void {
+		$p = new PropertyModel( 'Has test', [
+			'datatype' => 'Page',
+			'allowedNamespace' => 'Category',
+		] );
+		$params = $this->mapper->getInputParameters( $p );
+		$this->assertSame( 'Category', $params['values from namespace'] );
+		$this->assertSame( 'on', $params['autocomplete'] );
+	}
+
+	public function testAllowedCategoryAppearsInGeneratedInputDefinition(): void {
+		$p = new PropertyModel( 'Has test', [
+			'datatype' => 'Page',
+			'allowedCategory' => 'Person',
+		] );
+		$definition = $this->mapper->generateInputDefinition( $p );
+		$this->assertStringContainsString( 'input type=combobox', $definition );
+		$this->assertStringContainsString( 'values from category=Person', $definition );
+		$this->assertStringContainsString( 'autocomplete=on', $definition );
+	}
 }

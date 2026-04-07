@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
+use MediaWiki\Language\Language;
 use MediaWiki\Title\Title;
 use Wikimedia\Rdbms\IConnectionProvider;
 
@@ -24,13 +25,16 @@ class WikiPropertyStore {
 
 	private PageCreator $pageCreator;
 	private IConnectionProvider $connectionProvider;
+	private Language $contentLanguage;
 
 	public function __construct(
 		PageCreator $pageCreator,
-		IConnectionProvider $connectionProvider
+		IConnectionProvider $connectionProvider,
+		Language $contentLanguage
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->connectionProvider = $connectionProvider;
+		$this->contentLanguage = $contentLanguage;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -157,7 +161,7 @@ class WikiPropertyStore {
 			$this->smwFetchOne( $sdata, 'Subproperty of', 'property' );
 
 		$out['allowedCategory'] =
-			$this->smwFetchOne( $sdata, 'Allows value from category', 'text' );
+			$this->smwFetchOne( $sdata, 'Allows value from category', 'category' );
 
 		$out['allowedNamespace'] =
 			$this->smwFetchOne( $sdata, 'Allows value from namespace', 'text' );
@@ -217,7 +221,8 @@ class WikiPropertyStore {
 		}
 
 		if ( $p->getAllowedCategory() !== null ) {
-			$lines[] = '[[Allows value from category::' . $p->getAllowedCategory() . ']]';
+			$categoryPrefix = $this->contentLanguage->getFormattedNsText( NS_CATEGORY );
+			$lines[] = '[[Allows value from category::' . $categoryPrefix . ':' . $p->getAllowedCategory() . ']]';
 		}
 
 		if ( $p->getAllowedNamespace() !== null ) {

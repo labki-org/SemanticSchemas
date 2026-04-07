@@ -1,6 +1,7 @@
 <!-- SemanticSchemas Start -->
-[[Has type::Text]]
-[[Has description::Category to use for autocomplete suggestions.]]
-[[Display label::Autocomplete from category]]
+[[Has type::Page]]
+[[Has description::Autocomplete suggestions will come from pages in this category.]]
+[[Display label::Allowed category]]
+[[Allows value from namespace::Category]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]
