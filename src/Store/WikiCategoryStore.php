@@ -224,11 +224,7 @@ class WikiCategoryStore {
 		$subject = \SMW\DIWikiPage::newFromTitle( $title );
 		$sdata = $store->getSemanticData( $subject );
 
-		$page = $this->pageCreator->getWikiPage( $title );
-		$parents = array_map(
-			static fn ( Title $cat ) => $cat->getText(),
-			[ ...$page->getCategories() ]
-		);
+		$parents = $title->getParentCategories();
 
 		return [
 			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
