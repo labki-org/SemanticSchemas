@@ -222,6 +222,16 @@
 			}
 		},
 		{
+			"page": "Has sort order",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_sort_order.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Subproperty of",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {

@@ -62,10 +62,11 @@ class FieldDeclarationTest extends TestCase {
 		$wikitext = $field->toWikitext( 1 );
 
 		$expected = implode( "\n", [
-			'{{#subobject:has_property_field-1',
+			'{{#subobject:',
 			' | Has subobject type = Subobject:Has property field',
 			' | Has property reference = Property:Has name',
 			' | Is required = true',
+			' | Has sort order = 1',
 			'}}',
 		] );
 
@@ -77,10 +78,11 @@ class FieldDeclarationTest extends TestCase {
 		$wikitext = $field->toWikitext( 2 );
 
 		$expected = implode( "\n", [
-			'{{#subobject:has_property_field-2',
+			'{{#subobject:',
 			' | Has subobject type = Subobject:Has property field',
 			' | Has property reference = Property:Has email',
 			' | Is required = false',
+			' | Has sort order = 2',
 			'}}',
 		] );
 
@@ -96,10 +98,11 @@ class FieldDeclarationTest extends TestCase {
 		$wikitext = $field->toWikitext( 1 );
 
 		$expected = implode( "\n", [
-			'{{#subobject:has_subobject_field-1',
+			'{{#subobject:',
 			' | Has subobject type = Subobject:Has subobject field',
 			' | Has subobject reference = Subobject:Author',
 			' | Is required = true',
+			' | Has sort order = 1',
 			'}}',
 		] );
 
@@ -118,17 +121,16 @@ class FieldDeclarationTest extends TestCase {
 
 		$wikitext = FieldDeclaration::toWikitextAll( $fields );
 
-		// Each block is a complete {{#subobject:...}} declaration
-		$this->assertStringContainsString( '{{#subobject:has_property_field-1', $wikitext );
 		$this->assertStringContainsString( 'Has property reference = Property:Has name', $wikitext );
 		$this->assertStringContainsString( 'Is required = true', $wikitext );
+		$this->assertStringContainsString( 'Has sort order = 1', $wikitext );
 
-		$this->assertStringContainsString( '{{#subobject:has_property_field-2', $wikitext );
 		$this->assertStringContainsString( 'Has property reference = Property:Has email', $wikitext );
 		$this->assertStringContainsString( 'Is required = false', $wikitext );
+		$this->assertStringContainsString( 'Has sort order = 2', $wikitext );
 	}
 
-	public function testToWikitextAllSequentialIds(): void {
+	public function testToWikitextAllSequentialSortOrder(): void {
 		$fields = [
 			FieldDeclaration::property( 'A', true ),
 			FieldDeclaration::property( 'B', false ),
@@ -137,9 +139,9 @@ class FieldDeclarationTest extends TestCase {
 
 		$wikitext = FieldDeclaration::toWikitextAll( $fields );
 
-		$this->assertStringContainsString( '{{#subobject:has_property_field-1', $wikitext );
-		$this->assertStringContainsString( '{{#subobject:has_property_field-2', $wikitext );
-		$this->assertStringContainsString( '{{#subobject:has_property_field-3', $wikitext );
+		$this->assertStringContainsString( 'Has sort order = 1', $wikitext );
+		$this->assertStringContainsString( 'Has sort order = 2', $wikitext );
+		$this->assertStringContainsString( 'Has sort order = 3', $wikitext );
 	}
 
 	public function testToWikitextAllEmpty(): void {
@@ -161,10 +163,11 @@ class FieldDeclarationTest extends TestCase {
 		$this->assertStringStartsWith( '{{#subobject:', $block );
 		$this->assertStringEndsWith( '}}', $block );
 
-		// The block must contain the type, reference, and required flag
+		// The block must contain the type, reference, required flag, and sort order
 		$this->assertStringContainsString( 'Has subobject type = Subobject:Has property field', $block );
 		$this->assertStringContainsString( 'Has property reference = Property:Has name', $block );
 		$this->assertStringContainsString( 'Is required = true', $block );
+		$this->assertStringContainsString( 'Has sort order = 1', $block );
 	}
 
 	public function testToWikitextBlockContainsAllFieldsForSubobject(): void {
@@ -177,5 +180,6 @@ class FieldDeclarationTest extends TestCase {
 		$this->assertStringContainsString( 'Has subobject type = Subobject:Has subobject field', $block );
 		$this->assertStringContainsString( 'Has subobject reference = Subobject:Funding', $block );
 		$this->assertStringContainsString( 'Is required = false', $block );
+		$this->assertStringContainsString( 'Has sort order = 3', $block );
 	}
 }

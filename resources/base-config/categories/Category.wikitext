@@ -1,40 +1,47 @@
 <!-- SemanticSchemas Start -->
 [[Has description::Defines the schema metadata for categories managed by SemanticSchemas.]]
 [[Has target namespace::Category]]
-{{#subobject:prop-field-1
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Has description
  | Is required = true
+ | Has sort order = 1
 }}
-{{#subobject:prop-field-2
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Display label
  | Is required = false
+ | Has sort order = 2
 }}
-{{#subobject:prop-field-3
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Has target namespace
  | Is required = false
+ | Has sort order = 3
 }}
-{{#subobject:prop-field-4
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Has parent category
  | Is required = false
+ | Has sort order = 4
 }}
-{{#subobject:prop-field-5
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Has display format
  | Is required = false
+ | Has sort order = 5
 }}
-{{#subobject:sub-field-1
+{{#subobject:
  | Has subobject type = Subobject:Has subobject field
  | Has subobject reference = Subobject:Has property field
  | Is required = false
+ | Has sort order = 1
 }}
-{{#subobject:sub-field-2
+{{#subobject:
  | Has subobject type = Subobject:Has subobject field
  | Has subobject reference = Subobject:Has subobject field
  | Is required = false
+ | Has sort order = 2
 }}
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

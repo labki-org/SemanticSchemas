@@ -105,15 +105,17 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$content = $this->pageCreator->getPageContent( $title );
 
 		// Assert complete subobject blocks (not just individual lines)
-		$this->assertSubobjectBlock( $content, 'has_property_field-1', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has property field',
 			'Has property reference = Property:Has name',
 			'Is required = true',
+			'Has sort order = 1',
 		] );
-		$this->assertSubobjectBlock( $content, 'has_property_field-2', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has property field',
 			'Has property reference = Property:Has email',
 			'Is required = true',
+			'Has sort order = 2',
 		] );
 	}
 
@@ -132,15 +134,17 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		$this->assertSubobjectBlock( $content, 'has_property_field-1', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has property field',
 			'Has property reference = Property:Has phone',
 			'Is required = false',
+			'Has sort order = 1',
 		] );
-		$this->assertSubobjectBlock( $content, 'has_property_field-2', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has property field',
 			'Has property reference = Property:Has address',
 			'Is required = false',
+			'Has sort order = 2',
 		] );
 	}
 
@@ -261,15 +265,17 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		$this->assertSubobjectBlock( $content, 'has_subobject_field-1', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has subobject field',
 			'Has subobject reference = Subobject:Author',
 			'Is required = true',
+			'Has sort order = 1',
 		] );
-		$this->assertSubobjectBlock( $content, 'has_subobject_field-2', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has subobject field',
 			'Has subobject reference = Subobject:Publication',
 			'Is required = true',
+			'Has sort order = 2',
 		] );
 	}
 
@@ -288,15 +294,17 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		$this->assertSubobjectBlock( $content, 'has_subobject_field-1', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has subobject field',
 			'Has subobject reference = Subobject:Funding',
 			'Is required = false',
+			'Has sort order = 1',
 		] );
-		$this->assertSubobjectBlock( $content, 'has_subobject_field-2', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has subobject field',
 			'Has subobject reference = Subobject:Award',
 			'Is required = false',
+			'Has sort order = 2',
 		] );
 	}
 
@@ -334,27 +342,31 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$content = $this->pageCreator->getPageContent( $title );
 
 		// Property fields
-		$this->assertSubobjectBlock( $content, 'has_property_field-1', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has property field',
 			'Has property reference = Property:Has name',
 			'Is required = true',
+			'Has sort order = 1',
 		] );
-		$this->assertSubobjectBlock( $content, 'has_property_field-2', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has property field',
 			'Has property reference = Property:Has email',
 			'Is required = false',
+			'Has sort order = 2',
 		] );
 
 		// Subobject fields
-		$this->assertSubobjectBlock( $content, 'has_subobject_field-1', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has subobject field',
 			'Has subobject reference = Subobject:Author',
 			'Is required = true',
+			'Has sort order = 1',
 		] );
-		$this->assertSubobjectBlock( $content, 'has_subobject_field-2', [
+		$this->assertSubobjectBlock( $content, [
 			'Has subobject type = Subobject:Has subobject field',
 			'Has subobject reference = Subobject:Funding',
 			'Is required = false',
+			'Has sort order = 2',
 		] );
 	}
 
@@ -390,36 +402,43 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 	}
 
 	/**
-	 * Assert that a complete {{#subobject:$id ...}} block exists in the content
-	 * and contains all expected lines within that single block.
+	 * Assert that a complete {{#subobject:...}} block exists in the content
+	 * containing all expected lines within a single block.
 	 *
 	 * @param string $content The full page wikitext
-	 * @param string $id The subobject identifier (e.g. "has_property_field-1")
-	 * @param string[] $expectedLines Lines that must appear within this block
+	 * @param string[] $expectedLines Lines that must all appear within one block
 	 */
 	private function assertSubobjectBlock(
 		string $content,
-		string $id,
 		array $expectedLines
 	): void {
-		// Extract the block: from {{#subobject:$id to the next }}
-		$pattern = '/\{\{#subobject:' . preg_quote( $id, '/' ) . '\b[^}]*\}\}/s';
-		$this->assertMatchesRegularExpression(
-			$pattern,
-			$content,
-			"Subobject block '$id' not found in content"
+		// Extract all subobject blocks
+		preg_match_all( '/\{\{#subobject:[^}]*\}\}/s', $content, $matches );
+		$this->assertNotEmpty(
+			$matches[0],
+			'No subobject blocks found in content'
 		);
 
-		preg_match( $pattern, $content, $matches );
-		$block = $matches[0];
-
-		foreach ( $expectedLines as $line ) {
-			$this->assertStringContainsString(
-				$line,
-				$block,
-				"Expected line '$line' not found within subobject block '$id'"
-			);
+		// Find a block that contains ALL expected lines
+		foreach ( $matches[0] as $block ) {
+			$allFound = true;
+			foreach ( $expectedLines as $line ) {
+				if ( !str_contains( $block, $line ) ) {
+					$allFound = false;
+					break;
+				}
+			}
+			if ( $allFound ) {
+				// Found a matching block — assertion passes
+				$this->assertTrue( true );
+				return;
+			}
 		}
+
+		$this->fail(
+			"No subobject block contains all expected lines:\n  "
+			. implode( "\n  ", $expectedLines )
+		);
 	}
 
 	/**

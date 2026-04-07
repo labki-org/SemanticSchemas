@@ -256,8 +256,9 @@ class TemplateGenerator {
 		$out[] = '</noinclude><includeonly>';
 
 		$idPrefix = NamingHelper::propertyToParameter( $name );
-		$out[] = '{{#subobject:{{#s2counter:' . $idPrefix . '}}';
+		$out[] = '{{#subobject:';
 		$out[] = ' | Has subobject type = Subobject:' . $name;
+		$out[] = ' | Has sort order = {{#s2counter:' . $idPrefix . '}}';
 
 		$props = array_merge(
 			$sub->getRequiredProperties(),
@@ -350,6 +351,8 @@ class TemplateGenerator {
 
 			$rowTemplate = 'Subobject/' . $subName . '/row';
 
+			$out[] = ' | sort=Has sort order';
+			$out[] = ' | order=asc';
 			$out[] = ' | format=template';
 			$out[] = ' | template=' . $rowTemplate;
 			$out[] = ' | default=<tr><td colspan="' . count( $props ) . '">No entries yet.</td></tr>';

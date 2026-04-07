@@ -223,18 +223,21 @@ class FieldDeclaration {
 	/**
 	 * Generate the wikitext subobject block for this field declaration.
 	 *
-	 * @param int $index 1-based position index used in the subobject identifier
+	 * Uses anonymous subobjects (SMW assigns a stable hash-based ID) with an
+	 * explicit sort order property so that #ask queries can preserve ordering.
+	 *
+	 * @param int $index 1-based position index used for sort ordering
 	 * @return string Complete {{#subobject:...}} block
 	 */
 	public function toWikitext( int $index ): string {
 		$config = self::FIELD_CONFIG[$this->fieldType];
-		$idPrefix = NamingHelper::propertyToParameter( $config['subobjectType'] );
 
 		$lines = [];
-		$lines[] = '{{#subobject:' . $idPrefix . '-' . $index;
+		$lines[] = '{{#subobject:';
 		$lines[] = ' | Has subobject type = Subobject:' . $config['subobjectType'];
 		$lines[] = ' | ' . $config['referenceProperty'] . ' = ' . $config['namespacePrefix'] . ':' . $this->name;
 		$lines[] = ' | Is required = ' . ( $this->required ? 'true' : 'false' );
+		$lines[] = ' | Has sort order = ' . $index;
 		$lines[] = '}}';
 
 		return implode( "\n", $lines );

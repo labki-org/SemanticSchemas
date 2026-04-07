@@ -102,22 +102,22 @@ class DisplayParserFunctions {
 	 * ===================================================================== */
 
 	/**
-	 * {{#s2counter:prefix}} — returns "prefix-1", "prefix-2", etc.
+	 * {{#s2counter:prefix}} — returns "1", "2", "3", etc.
 	 *
 	 * Increments per call within a single page parse. Each prefix has its
-	 * own independent counter. Used in subobject templates to generate
-	 * sequential IDs that preserve field ordering across page saves.
+	 * own independent counter. Used in subobject templates to populate
+	 * the "Has sort order" property for preserving ordering in queries.
 	 *
 	 * @param Parser $parser
-	 * @param string $prefix ID prefix (e.g. "prop-field")
-	 * @return string
+	 * @param string $prefix Counter namespace (e.g. "has_property_field")
+	 * @return string The numeric counter value
 	 */
 	public function renderCounter( Parser $parser, string $prefix = 'field' ): string {
 		$output = $parser->getOutput();
 		$key = 's2counter-' . $prefix;
 		$count = ( $output->getExtensionData( $key ) ?? 0 ) + 1;
 		$output->setExtensionData( $key, $count );
-		return $prefix . '-' . $count;
+		return (string)$count;
 	}
 
 	/* =====================================================================

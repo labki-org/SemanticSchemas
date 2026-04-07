@@ -89,8 +89,7 @@ trait SMWDataExtractor {
 	 *
 	 * Iterates sub-semantic-data, filters by subobject type, extracts the
 	 * reference property value and the "Is required" boolean, and sorts by
-	 * subobject identifier to preserve insertion order (identifiers are named
-	 * like "has_property_field-1", "has_property_field-2").
+	 * the "Has sort order" property to preserve declaration order.
 	 *
 	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
 	 * @param string $subobjectType Subobject type to match (e.g. "Has property field")
@@ -114,13 +113,14 @@ trait SMWDataExtractor {
 
 			$ref = $this->smwFetchOne( $subData, $referenceProperty, $referenceType );
 			if ( $ref !== null ) {
-				$subName = $subData->getSubject()->getSubobjectName();
 				$required = $this->smwFetchBoolean( $subData, 'Is required' );
-				$entries[$subName] = [ 'name' => $ref, 'required' => $required ];
+				$sortOrder = $this->smwFetchOne( $subData, 'Has sort order' );
+				$key = $sortOrder ?? '0';
+				$entries[$key] = [ 'name' => $ref, 'required' => $required ];
 			}
 		}
 
-		ksort( $entries, SORT_NATURAL );
+		ksort( $entries, SORT_NUMERIC );
 
 		return array_values( $entries );
 	}
@@ -148,6 +148,10 @@ trait SMWDataExtractor {
 	protected function smwExtractValue( $di, string $type ): ?string {
 		if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
 			return trim( $di->getString() );
+		}
+
+		if ( $di instanceof \SMWDINumber ) {
+			return (string)$di->getNumber();
 		}
 
 		if ( $di instanceof \SMW\DIWikiPage ) {

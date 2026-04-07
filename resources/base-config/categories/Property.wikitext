@@ -1,55 +1,65 @@
 <!-- SemanticSchemas Start -->
 [[Has description::Defines a semantic property for storing data on wiki pages.]]
 [[Has target namespace::Property]]
-{{#subobject:prop-field-1
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Has description
  | Is required = true
+ | Has sort order = 1
 }}
-{{#subobject:prop-field-2
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Has type
  | Is required = true
+ | Has sort order = 2
 }}
-{{#subobject:prop-field-3
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Display label
  | Is required = false
+ | Has sort order = 3
 }}
-{{#subobject:prop-field-4
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Allows multiple values
  | Is required = false
+ | Has sort order = 4
 }}
-{{#subobject:prop-field-5
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Allows value
  | Is required = false
+ | Has sort order = 5
 }}
-{{#subobject:prop-field-6
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Subproperty of
  | Is required = false
+ | Has sort order = 6
 }}
-{{#subobject:prop-field-7
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Allows value from category
  | Is required = false
+ | Has sort order = 7
 }}
-{{#subobject:prop-field-8
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Allows value from namespace
  | Is required = false
+ | Has sort order = 8
 }}
-{{#subobject:prop-field-9
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Has template
  | Is required = false
+ | Has sort order = 9
 }}
-{{#subobject:prop-field-10
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Has input type
  | Is required = false
+ | Has sort order = 10
 }}
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

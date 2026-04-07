@@ -1,15 +1,17 @@
 <!-- SemanticSchemas Start -->
 [[Has description::A subobject field entry in a category schema. Preserves insertion order.]]
 [[Display label::Subobject field]]
-{{#subobject:prop-field-1
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Has subobject reference
  | Is required = true
+ | Has sort order = 1
 }}
-{{#subobject:prop-field-2
+{{#subobject:
  | Has subobject type = Subobject:Has property field
  | Has property reference = Property:Is required
  | Is required = true
+ | Has sort order = 2
 }}
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]
