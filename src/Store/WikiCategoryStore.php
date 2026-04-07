@@ -233,6 +233,8 @@ class WikiCategoryStore {
 				'optional' => $this->smwFetchMany( $sdata, 'Has optional subobject', 'subobject' ),
 			],
 
+			'backlinksFor' => $this->smwFetchMany( $sdata, 'Show backlinks for', 'property' ),
+
 			'display' => $this->loadDisplayConfig( $sdata ),
 		];
 	}
@@ -280,6 +282,11 @@ class WikiCategoryStore {
 		// Display template
 		if ( $cat->getDisplayTemplate() !== null ) {
 			$lines[] = '[[Has display template::' . $cat->getDisplayTemplate() . ']]';
+		}
+
+		// Backlink properties
+		foreach ( $cat->getBacklinksFor() as $prop ) {
+			$lines[] = "[[Show backlinks for::Property:$prop]]";
 		}
 
 		// Required/optional properties

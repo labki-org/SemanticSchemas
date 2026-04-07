@@ -710,7 +710,7 @@ create_page "Table_View_Test_Page" "{{Test Table View
 echo ""
 echo "==> Refreshing Semantic MediaWiki data..."
 echo "This may take a minute as SMW re-parses all pages to extract properties..."
-docker compose exec -T mediawiki php extensions/SemanticMediaWiki/maintenance/rebuildData.php -f --skip-properties --report-runtime
+docker compose exec -T wiki php extensions/SemanticMediaWiki/maintenance/rebuildData.php -f --skip-properties --report-runtime
 
 echo ""
 echo "========================================"
