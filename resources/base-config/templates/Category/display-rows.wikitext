@@ -1,0 +1,12 @@
+<includeonly>{{#arraymap:{{#ask: [[-Has required property::{{Category/collect-ancestors|{{{category|}}}}}]] OR [[-Has optional property::{{Category/collect-ancestors|{{{category|}}}}}]] | format=plainlist | link=none | sep=, }}|,|@@prop@@|{{#if:{{#show:{{FULLPAGENAME}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
+! {{#show:@@prop@@|?Display label|default={{PAGENAME:@@prop@@}}}}
+{{!}} {{#show:{{FULLPAGENAME}}|?{{PAGENAME:@@prop@@}}}}}}|\n}}</includeonly><noinclude>
+Renders property value rows for a SemanticSchemas category display.
+
+Discovers all properties (including inherited) by walking the ancestor
+chain via Category/collect-ancestors, then renders a table row for each
+property whose value is non-empty on the current page.
+
+Parameter:
+* category - The category name (without namespace prefix)
+</noinclude>

@@ -42,6 +42,26 @@
 			}
 		},
 		{
+			"page": "Category/display-header",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/display-header.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/display-rows",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/display-rows.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Category/table",
 			"namespace": "NS_TEMPLATE",
 			"contents": {

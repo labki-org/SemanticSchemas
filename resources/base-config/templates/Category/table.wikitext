@@ -1,20 +1,12 @@
 <includeonly>{| class="wikitable source-semanticschemas"
-|-
-! colspan="2" style="background-color: #eaecf0; text-align: center;" | {{#show:Category:{{{category|}}}|?Display label|default={{{category|}}}}} <span style="float: right; font-weight: normal; font-size: 0.8em;">[[Special:FormEdit/{{{category|}}}/{{FULLPAGENAME}}|edit]]</span>
-{{#arraymap:{{#ask: [[-Has required property::{{Category/collect-ancestors|{{{category|}}}}}]] OR [[-Has optional property::{{Category/collect-ancestors|{{{category|}}}}}]] | format=plainlist | link=none | sep=, }}|,|@@prop@@|{{#if:{{#show:{{FULLPAGENAME}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
-! {{#show:@@prop@@|?Display label|default={{PAGENAME:@@prop@@}}}}
-{{!}} {{#show:{{FULLPAGENAME}}|?{{PAGENAME:@@prop@@}}}}}}|\n}}
-{{#ifexpr: {{#ask: [[Allows value from category::{{{category|}}}]] [[Has type::Page]] | format=count }} > 0 |{{#ask: [[Allows value from category::{{{category|}}}]] [[Has type::Page]]
- | format=template
- | template=Category/reverse-discover
- | link=none
-}}}}
+{{Category/display-header | category={{{category|}}} }}
+{{Category/display-rows | category={{{category|}}} }}
+{{Category/render-reverse | {{{category|}}} }}
 |}</includeonly><noinclude>
 Dynamic table display template for SemanticSchemas categories.
 
-Fully self-defining: discovers all properties (including inherited) from the
-SMW store by walking the category's ancestor chain via Category/collect-ancestors,
-then querying for properties with a deduplicated #ask inverse query.
+Composes display-header, display-rows, and render-reverse into a
+full-width wikitable layout.
 
 Parameter:
 * category - The category name (without namespace prefix)
