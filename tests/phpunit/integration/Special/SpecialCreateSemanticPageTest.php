@@ -35,7 +35,8 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 		);
 		$propertyStore = new WikiPropertyStore(
 			$this->pageCreator,
-			$services->getConnectionProvider()
+			$services->getConnectionProvider(),
+			$services->getContentLanguage()
 		);
 		$this->categoryStore = new WikiCategoryStore(
 			$this->pageCreator,
