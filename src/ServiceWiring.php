@@ -132,7 +132,8 @@ return [
 	): WikiPropertyStore {
 		return new WikiPropertyStore(
 			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->getConnectionProvider()
+			$services->getConnectionProvider(),
+			$services->getContentLanguage()
 		);
 	},
 
