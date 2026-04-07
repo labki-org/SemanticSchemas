@@ -34,9 +34,6 @@ class DisplayStubGenerator {
 	private WikiPropertyStore $propertyStore;
 	private WikiCategoryStore $categoryStore;
 
-	/** @var ?array Cached reverse relationship index, built once per generation batch. */
-	private ?array $reverseRelationshipCache = null;
-
 	public function __construct(
 		PageCreator $pageCreator,
 		WikiPropertyStore $propertyStore,
@@ -288,73 +285,57 @@ class DisplayStubGenerator {
 	}
 
 	/**
-	 * Discover reverse relationships and generate infobox rows.
+	 * Generate backlink rows for properties declared via "Show backlinks for" on the category.
 	 *
-	 * Scans all categories for Page-type properties that have allowedCategory
-	 * matching the current category. For each match, generates a table row
-	 * with an {{#ask:}} query. The row label combines the source category
-	 * label with the relationship descriptor (reverse label or property
-	 * display label as fallback).
+	 * For each declared property, finds all categories that use it and generates
+	 * a conditional row per source category with an {{#ask:}} query. Rows are
+	 * grouped under a "Backlinks" header.
 	 */
 	private function generateReverseRelationshipRows( CategoryModel $category ): string {
-		$categoryName = $category->getName();
-
-		if ( $this->reverseRelationshipCache === null ) {
-			$this->reverseRelationshipCache = $this->buildReverseRelationshipIndex();
-		}
-
-		$rows = $this->reverseRelationshipCache[$categoryName] ?? [];
-		if ( $rows === [] ) {
+		$backlinksFor = $category->getBacklinksFor();
+		if ( $backlinksFor === [] ) {
 			return '';
 		}
 
-		$out = '';
-		foreach ( $rows as $row ) {
-			$askBase = '[[' . $row['property'] . '::{{FULLPAGENAME}}]]'
-				. ' [[Category:' . $row['sourceCategory'] . ']]';
-
-			$askQuery = '{{#ask: ' . $askBase . ' | format=list }}';
-			$label = $row['sourceCategoryLabel']
-				. ' <span style="font-weight: normal; font-size: 0.8em; color: gray;">'
-				. '(' . htmlspecialchars( $row['relationship'], ENT_QUOTES ) . ')</span>';
-
-			$out .= $this->buildConditionalRow( $askQuery, $label, $askQuery );
-
-		}
-
-		return $out;
-	}
-
-	/**
-	 * Build a reverse relationship index keyed by target category name.
-	 *
-	 * Called once and cached for the lifetime of this generator instance,
-	 * avoiding O(C²) category reads during batch generation.
-	 */
-	private function buildReverseRelationshipIndex(): array {
-		$index = [];
 		$allCategories = $this->categoryStore->getAllCategories();
+		$rows = '';
 
-		foreach ( $allCategories as $sourceCatName => $sourceCat ) {
-			foreach ( $sourceCat->getAllProperties() as $propName ) {
-				$prop = $this->propertyStore->readProperty( $propName );
-				if ( $prop === null || !$prop->isPageType() ) {
+		foreach ( $backlinksFor as $propName ) {
+			$prop = $this->propertyStore->readProperty( $propName );
+			if ( $prop === null || !$prop->isPageType() ) {
+				continue;
+			}
+
+			$reverseLabel = $prop->getReverseLabel() ?? $prop->getLabel();
+
+			foreach ( $allCategories as $sourceCatName => $sourceCat ) {
+				if ( !in_array( $propName, $sourceCat->getAllProperties() ) ) {
 					continue;
 				}
-				$target = $prop->getAllowedCategory();
-				if ( $target === null ) {
-					continue;
-				}
-				$index[$target][] = [
-					'sourceCategoryLabel' => $sourceCat->getLabel(),
-					'relationship' => $prop->getReverseLabel() ?? $prop->getLabel(),
-					'property' => $propName,
-					'sourceCategory' => $sourceCatName,
-				];
+
+				$askQuery = '{{#ask: [[' . $propName . '::{{FULLPAGENAME}}]]'
+					. ' [[Category:' . $sourceCatName . ']]'
+					. ' | format=list }}';
+
+				$label = $sourceCat->getLabel()
+					. ' <span style="font-weight: normal; font-size: 0.8em; color: gray;">'
+					. '([[Property:' . $propName . '|' . $reverseLabel . ']])</span>';
+
+				$rows .= $this->buildConditionalRow( $askQuery, $label, $askQuery );
 			}
 		}
 
-		return $index;
+		if ( $rows === '' ) {
+			return '';
+		}
+
+		return $this->buildBacklinksHeader() . $rows;
+	}
+
+	private function buildBacklinksHeader(): string {
+		return "|-\n"
+			. '! colspan="2" style="background-color: #eaecf0; text-align: center; '
+			. 'font-size: 0.9em;" | Backlinks' . "\n";
 	}
 
 	/**

@@ -212,7 +212,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * REVERSE RELATIONSHIPS
 	 * ========================================================================= */
 
-	public function testReverseRelationshipRowWithReverseLabel(): void {
+	public function testBacklinkRowWithReverseLabel(): void {
 		$hasProject = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
 			'allowedCategory' => 'Project',
@@ -232,6 +232,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$catName = 'Project';
 		$category = new EffectiveCategoryModel( $catName, [
 			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'backlinksFor' => [ 'Has project' ],
 		] );
 
 		$gen->generateOrUpdateDisplayStub( $category );
@@ -239,16 +240,18 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		// Source category label + relationship from reverse label
+		// Backlinks header
+		$this->assertStringContainsString( 'Backlinks', $content );
+		// Source category label + property link with reverse label
 		$this->assertStringContainsString( '! Components', $content );
-		$this->assertStringContainsString( '(Is parent of)', $content );
-		// Ask query
+		$this->assertStringContainsString( '[[Property:Has project|Is parent of]]', $content );
+		// Ask query scoped to source category
 		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
 		$this->assertStringContainsString( '[[Category:Component]]', $content );
 		$this->assertStringContainsString( 'format=list', $content );
 	}
 
-	public function testReverseRelationshipFallsBackToPropertyLabel(): void {
+	public function testBacklinkRowFallsBackToPropertyLabel(): void {
 		$hasProject = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
 			'allowedCategory' => 'Project',
@@ -267,6 +270,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$catName = 'Project';
 		$category = new EffectiveCategoryModel( $catName, [
 			'properties' => [ 'required' => [], 'optional' => [] ],
+			'backlinksFor' => [ 'Has project' ],
 		] );
 
 		$gen->generateOrUpdateDisplayStub( $category );
@@ -274,12 +278,42 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		// Falls back to property display label
+		// Falls back to property display label in the link
 		$this->assertStringContainsString( '! Components', $content );
-		$this->assertStringContainsString( '(Project)', $content );
+		$this->assertStringContainsString( '[[Property:Has project|Project]]', $content );
 	}
 
-	public function testNonPageTypePropertyIgnoredForReverseRelationship(): void {
+	public function testNoBacklinkRowsWithoutDeclaration(): void {
+		$hasProject = new PropertyModel( 'Has project', [
+			'datatype' => 'Page',
+			'allowedCategory' => 'Project',
+		] );
+
+		$componentCat = new CategoryModel( 'Component', [
+			'properties' => [ 'required' => [ 'Has project' ], 'optional' => [] ],
+		] );
+
+		$gen = $this->makeGenerator(
+			[ 'Has project' => $hasProject ],
+			[ 'Component' => $componentCat ]
+		);
+
+		// Category does NOT declare backlinksFor — no rows should appear
+		$catName = 'Project';
+		$category = new EffectiveCategoryModel( $catName, [
+			'properties' => [ 'required' => [], 'optional' => [] ],
+		] );
+
+		$gen->generateOrUpdateDisplayStub( $category );
+
+		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$content = $this->pageCreator->getPageContent( $title );
+
+		$this->assertStringNotContainsString( '{{#ask:', $content );
+		$this->assertStringNotContainsString( 'Backlinks', $content );
+	}
+
+	public function testNonPageTypeBacklinkPropertyIgnored(): void {
 		$textProp = new PropertyModel( 'Has tag', [
 			'datatype' => 'Text',
 			'reverseLabel' => 'Tagged items',
@@ -297,6 +331,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$catName = 'SomeTarget_' . uniqid();
 		$category = new EffectiveCategoryModel( $catName, [
 			'properties' => [ 'required' => [], 'optional' => [] ],
+			'backlinksFor' => [ 'Has tag' ],
 		] );
 
 		$gen->generateOrUpdateDisplayStub( $category );
