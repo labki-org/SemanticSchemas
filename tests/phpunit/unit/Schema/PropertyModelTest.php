@@ -115,18 +115,18 @@ class PropertyModelTest extends TestCase {
 	public function testReverseLabelSet(): void {
 		$p = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
-			'reverseLabel' => 'Is parent of',
+			'reverseLabel' => 'Components',
 		] );
-		$this->assertSame( 'Is parent of', $p->getReverseLabel() );
+		$this->assertSame( 'Components', $p->getReverseLabel() );
 	}
 
 	public function testToArrayIncludesReverseLabelWhenSet(): void {
 		$p = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
-			'reverseLabel' => 'Is parent of',
+			'reverseLabel' => 'Components',
 		] );
 		$arr = $p->toArray();
-		$this->assertSame( 'Is parent of', $arr['reverseLabel'] );
+		$this->assertSame( 'Components', $arr['reverseLabel'] );
 	}
 
 	public function testToArrayOmitsReverseLabelWhenNull(): void {

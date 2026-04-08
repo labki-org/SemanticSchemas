@@ -5,7 +5,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
@@ -32,16 +31,13 @@ class DisplayStubGenerator {
 
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
-	private WikiCategoryStore $categoryStore;
 
 	public function __construct(
 		PageCreator $pageCreator,
-		WikiPropertyStore $propertyStore,
-		WikiCategoryStore $categoryStore
+		WikiPropertyStore $propertyStore
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->propertyStore = $propertyStore;
-		$this->categoryStore = $categoryStore;
 	}
 
 	/**
@@ -287,9 +283,9 @@ class DisplayStubGenerator {
 	/**
 	 * Generate backlink rows for properties declared via "Show backlinks for" on the category.
 	 *
-	 * For each declared property, finds all categories that use it and generates
-	 * a conditional row per source category with an {{#ask:}} query. Rows are
-	 * grouped under a "Backlinks" header.
+	 * For each declared property, generates a single conditional row with an
+	 * {{#ask:}} query that finds all pages linking here via that property.
+	 * Rows are grouped under a "Backlinks" header, labeled by the backlink label.
 	 */
 	private function generateReverseRelationshipRows( CategoryModel $category ): string {
 		$backlinksFor = $category->getBacklinksFor();
@@ -297,7 +293,6 @@ class DisplayStubGenerator {
 			return '';
 		}
 
-		$allCategories = $this->categoryStore->getAllCategories();
 		$rows = '';
 
 		foreach ( $backlinksFor as $propName ) {
@@ -308,21 +303,10 @@ class DisplayStubGenerator {
 
 			$reverseLabel = $prop->getReverseLabel() ?? $prop->getLabel();
 
-			foreach ( $allCategories as $sourceCatName => $sourceCat ) {
-				if ( !in_array( $propName, $sourceCat->getAllProperties() ) ) {
-					continue;
-				}
+			$askQuery = '{{#ask: [[' . $propName . '::{{FULLPAGENAME}}]]'
+				. ' | format=list }}';
 
-				$askQuery = '{{#ask: [[' . $propName . '::{{FULLPAGENAME}}]]'
-					. ' [[Category:' . $sourceCatName . ']]'
-					. ' | format=list }}';
-
-				$label = $sourceCat->getLabel()
-					. ' <span style="font-weight: normal; font-size: 0.8em; color: gray;">'
-					. '([[Property:' . $propName . '|' . $reverseLabel . ']])</span>';
-
-				$rows .= $this->buildConditionalRow( $askQuery, $label, $askQuery );
-			}
+			$rows .= $this->buildConditionalRow( $askQuery, $reverseLabel, $askQuery );
 		}
 
 		if ( $rows === '' ) {

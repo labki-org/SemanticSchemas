@@ -32,8 +32,7 @@ return [
 	): DisplayStubGenerator {
 		return new DisplayStubGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->get( 'SemanticSchemas.WikiCategoryStore' )
+			$services->get( 'SemanticSchemas.WikiPropertyStore' )
 		);
 	},
 

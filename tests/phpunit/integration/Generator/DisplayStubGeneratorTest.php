@@ -3,11 +3,9 @@
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
-use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWikiIntegrationTestCase;
 
@@ -35,18 +33,13 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * @return DisplayStubGenerator
 	 */
 	private function makeGenerator(
-		array $propertyMap = [],
-		array $categoryMap = []
+		array $propertyMap = []
 	): DisplayStubGenerator {
 		$propStore = $this->createMock( WikiPropertyStore::class );
 		$propStore->method( 'readProperty' )
 			->willReturnCallback( static fn ( string $name ) => $propertyMap[$name] ?? null );
 
-		$catStore = $this->createMock( WikiCategoryStore::class );
-		$catStore->method( 'getAllCategories' )
-			->willReturn( $categoryMap );
-
-		return new DisplayStubGenerator( $this->pageCreator, $propStore, $catStore );
+		return new DisplayStubGenerator( $this->pageCreator, $propStore );
 	}
 
 	/**
@@ -216,17 +209,11 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$hasProject = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
 			'allowedCategory' => 'Project',
-			'reverseLabel' => 'Is parent of',
-		] );
-
-		$componentCat = new CategoryModel( 'Component', [
-			'label' => 'Components',
-			'properties' => [ 'required' => [ 'Has project' ], 'optional' => [] ],
+			'reverseLabel' => 'Components',
 		] );
 
 		$gen = $this->makeGenerator(
-			[ 'Has project' => $hasProject ],
-			[ 'Component' => $componentCat ]
+			[ 'Has project' => $hasProject ]
 		);
 
 		$catName = 'Project';
@@ -242,12 +229,12 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		// Backlinks header
 		$this->assertStringContainsString( 'Backlinks', $content );
-		// Source category label + property link with reverse label
+		// Row labeled with the reverse label
 		$this->assertStringContainsString( '! Components', $content );
-		$this->assertStringContainsString( '[[Property:Has project|Is parent of]]', $content );
-		// Ask query scoped to source category
+		// Ask query finds all pages linking here via this property
 		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
-		$this->assertStringContainsString( '[[Category:Component]]', $content );
+		// No category filter in ask query — all pages with this property are shown together
+		$this->assertStringNotContainsString( '[[Category:Component]]', $content );
 		$this->assertStringContainsString( 'format=list', $content );
 	}
 
@@ -257,14 +244,8 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			'allowedCategory' => 'Project',
 		] );
 
-		$componentCat = new CategoryModel( 'Component', [
-			'label' => 'Components',
-			'properties' => [ 'required' => [ 'Has project' ], 'optional' => [] ],
-		] );
-
 		$gen = $this->makeGenerator(
-			[ 'Has project' => $hasProject ],
-			[ 'Component' => $componentCat ]
+			[ 'Has project' => $hasProject ]
 		);
 
 		$catName = 'Project';
@@ -278,9 +259,8 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		// Falls back to property display label in the link
-		$this->assertStringContainsString( '! Components', $content );
-		$this->assertStringContainsString( '[[Property:Has project|Project]]', $content );
+		// Falls back to property display label when no reverse label set
+		$this->assertStringContainsString( '! Project', $content );
 	}
 
 	public function testNoBacklinkRowsWithoutDeclaration(): void {
@@ -289,13 +269,8 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			'allowedCategory' => 'Project',
 		] );
 
-		$componentCat = new CategoryModel( 'Component', [
-			'properties' => [ 'required' => [ 'Has project' ], 'optional' => [] ],
-		] );
-
 		$gen = $this->makeGenerator(
-			[ 'Has project' => $hasProject ],
-			[ 'Component' => $componentCat ]
+			[ 'Has project' => $hasProject ]
 		);
 
 		// Category does NOT declare backlinksFor — no rows should appear
@@ -319,13 +294,8 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			'reverseLabel' => 'Tagged items',
 		] );
 
-		$tagCat = new CategoryModel( 'Tag', [
-			'properties' => [ 'required' => [ 'Has tag' ], 'optional' => [] ],
-		] );
-
 		$gen = $this->makeGenerator(
-			[ 'Has tag' => $textProp ],
-			[ 'Tag' => $tagCat ]
+			[ 'Has tag' => $textProp ]
 		);
 
 		$catName = 'SomeTarget_' . uniqid();
