@@ -257,8 +257,8 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
 		$content = $this->pageCreator->getPageContent( $title );
 
-		// Falls back to property display label when no reverse label set
-		$this->assertStringContainsString( '! Project', $content );
+		// Falls back to property name when no inverse label set
+		$this->assertStringContainsString( '! Has project', $content );
 	}
 
 	public function testNoBacklinkRowsWithoutDeclaration(): void {
