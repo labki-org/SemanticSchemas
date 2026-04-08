@@ -19,6 +19,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   - allowedNamespace    (string|null)
  *   - allowsMultipleValues (bool)
  *   - inputType            (string|null) - Explicit PageForms input type override
+ *   - inverseLabel         (string|null) - Label describing the inverse relationship
  */
 class PropertyModel {
 
@@ -40,6 +41,8 @@ class PropertyModel {
 	private bool $allowsMultipleValues;
 
 	private ?string $inputType;
+
+	private ?string $inverseLabel;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
@@ -125,6 +128,11 @@ class PropertyModel {
 		$it = $data['inputType'] ?? null;
 		$this->inputType = ( $it !== null && trim( (string)$it ) !== '' )
 			? trim( (string)$it ) : null;
+
+		/* -------------------- Backlink label -------------------- */
+		$invLabel = $data['inverseLabel'] ?? null;
+		$this->inverseLabel = ( $invLabel !== null && trim( (string)$invLabel ) !== '' )
+			? trim( (string)$invLabel ) : null;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -265,6 +273,10 @@ class PropertyModel {
 		return $this->inputType;
 	}
 
+	public function getInverseLabel(): ?string {
+		return $this->inverseLabel;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */
@@ -281,6 +293,7 @@ class PropertyModel {
 			'allowedNamespace' => $this->allowedNamespace,
 			'allowsMultipleValues' => $this->allowsMultipleValues,
 			'inputType' => $this->inputType,
+			'inverseLabel' => $this->inverseLabel,
 		];
 
 		// Remove nulls + empty arrays, but preserve boolean false

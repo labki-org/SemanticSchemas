@@ -1,0 +1,7 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::Properties whose incoming links should be shown as backlinks on pages in this category.]]
+[[Display label::Show backlinks for]]
+[[Allows value from namespace::Property]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]
