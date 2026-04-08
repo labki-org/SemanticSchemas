@@ -112,7 +112,7 @@ class PropertyModelTest extends TestCase {
 		$this->assertNull( $p->getInverseLabel() );
 	}
 
-	public function testReverseLabelSet(): void {
+	public function testInverseLabelSet(): void {
 		$p = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
 			'reverseLabel' => 'Components',
