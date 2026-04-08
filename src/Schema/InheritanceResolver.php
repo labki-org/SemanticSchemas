@@ -85,7 +85,10 @@ class InheritanceResolver {
 		$merged = null;
 
 		foreach ( $linear as $name ) {
-			$current = $this->categoryMap[$name];
+			$current = $this->categoryMap[$name] ?? null;
+			if ( $current === null ) {
+				continue;
+			}
 
 			if ( $merged === null ) {
 				$merged = $current;
