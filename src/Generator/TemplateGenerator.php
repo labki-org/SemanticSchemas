@@ -47,6 +47,11 @@ class TemplateGenerator {
 	 * For Page-type properties with allowedNamespace, this adds the namespace
 	 * prefix to ensure SMW correctly interprets values as page references.
 	 *
+	 * This is necessary because Page Forms autocomplete returns bare page names
+	 * without namespace prefixes (e.g. "MyPage" instead of "Project:MyPage").
+	 * The template must re-add the prefix so SMW stores the fully qualified
+	 * page reference.
+	 *
 	 * @param string $propertyName The SMW property name
 	 * @param string $param The template parameter name
 	 * @return string The wikitext for the property line
