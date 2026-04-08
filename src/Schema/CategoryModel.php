@@ -53,6 +53,9 @@ class CategoryModel {
 	private array $requiredSubobjects;
 	private array $optionalSubobjects;
 
+	/** @var string[] Property names whose incoming links to show as backlinks. */
+	private array $backlinksFor;
+
 	private array $displayConfig;
 	private array $formConfig;
 
@@ -132,6 +135,10 @@ class CategoryModel {
 				implode( ', ', $dupSG )
 			);
 		}
+
+		/* -------------------- Backlinks -------------------- */
+
+		$this->backlinksFor = NamingHelper::normalizeList( $data['backlinksFor'] ?? [] );
 
 		/* -------------------- Display Config -------------------- */
 
@@ -240,6 +247,13 @@ class CategoryModel {
 		return $out;
 	}
 
+	/* -------------------- Backlinks -------------------- */
+
+	/** @return string[] */
+	public function getBacklinksFor(): array {
+		return $this->backlinksFor;
+	}
+
 	/* -------------------- Display + Forms -------------------- */
 
 	public function getDisplayConfig(): array {
@@ -289,6 +303,13 @@ class CategoryModel {
 			$mergedRequiredSG
 		) );
 
+		/* -------------------- Backlinks -------------------- */
+
+		$mergedBacklinksFor = array_values( array_unique( array_merge(
+			$parent->getBacklinksFor(),
+			$this->backlinksFor
+		) ) );
+
 		/* -------------------- Display -------------------- */
 
 		$mergedDisplay = self::mergeDisplayConfigs(
@@ -321,6 +342,7 @@ class CategoryModel {
 					'required' => $mergedRequiredSG,
 					'optional' => $mergedOptionalSG,
 				],
+				'backlinksFor' => $mergedBacklinksFor,
 				'display' => $mergedDisplay,
 				'forms' => $mergedForms,
 			]
@@ -389,6 +411,10 @@ class CategoryModel {
 				'required' => $this->requiredSubobjects,
 				'optional' => $this->optionalSubobjects,
 			];
+		}
+
+		if ( $this->backlinksFor !== [] ) {
+			$out['backlinksFor'] = $this->backlinksFor;
 		}
 
 		if ( $this->displayConfig !== [] ) {

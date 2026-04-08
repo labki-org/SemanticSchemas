@@ -114,6 +114,7 @@ class DisplayStubGenerator {
 		$content = "{| class=\"wikitable source-semanticschemas\"\n";
 		$content .= $this->buildCategoryHeadingRow( $category->getName(), $category->getLabel() );
 		$content .= $this->generatePropertyRows( $category );
+		$content .= $this->generateBacklinkRows( $category );
 		$content .= "|}\n";
 
 		return $content;
@@ -136,6 +137,7 @@ class DisplayStubGenerator {
 		$content = '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
 		$content .= $this->buildCategoryHeadingRow( $category->getName(), $category->getLabel() );
 		$content .= $this->generatePropertyRows( $category );
+		$content .= $this->generateBacklinkRows( $category );
 		$content .= "|}\n";
 
 		return $content;
@@ -167,13 +169,9 @@ class DisplayStubGenerator {
 
 			$valueCall = "{{" . $renderTemplate . " | value=" . $valueExpr . " }}";
 
-			// Hide the entire row when the value is empty.
-			// Uses {{!}} magic word inside #if to escape pipes in wikitext table syntax.
-			$out .= '{{#if:{{{' . $paramName . '|}}}|' . "\n";
-			$out .= '{{!}}-' . "\n";
-			$out .= '! ' . $label . "\n";
-			$out .= '{{!}} ' . $valueCall . "\n";
-			$out .= "}}\n";
+			$out .= $this->buildConditionalRow(
+				'{{{' . $paramName . '|}}}', $label, $valueCall
+			);
 		}
 		return $out;
 	}
@@ -284,5 +282,63 @@ class DisplayStubGenerator {
 			return false;
 		}
 		return str_contains( $content, self::AUTO_REGENERATE_MARKER );
+	}
+
+	/**
+	 * Generate backlink rows for properties declared via "Show backlinks for" on the category.
+	 *
+	 * For each declared property, generates a single conditional row with an
+	 * {{#ask:}} query that finds all pages linking here via that property.
+	 * Rows are grouped under a "Backlinks" header, labeled by the backlink label.
+	 */
+	private function generateBacklinkRows( CategoryModel $category ): string {
+		$backlinksFor = $category->getBacklinksFor();
+		if ( $backlinksFor === [] ) {
+			return '';
+		}
+
+		$rows = '';
+
+		foreach ( $backlinksFor as $propName ) {
+			$prop = $this->propertyStore->readProperty( $propName );
+			if ( $prop === null ) {
+				// Implicitly page-typed
+				$inverseLabel = $propName;
+			} elseif ( $prop->isPageType() ) {
+				$inverseLabel = $prop->getInverseLabel() ?? $prop->getName();
+			} else {
+				continue;
+			}
+
+			$askQuery = '{{#ask: [[' . $propName . '::{{FULLPAGENAME}}]]'
+				. ' | format=list }}';
+
+			$rows .= $this->buildConditionalRow( $askQuery, $inverseLabel, $askQuery );
+		}
+
+		if ( $rows === '' ) {
+			return '';
+		}
+
+		return $this->buildBacklinksHeader() . $rows;
+	}
+
+	private function buildBacklinksHeader(): string {
+		return "|-\n"
+			. '! colspan="2" style="background-color: #eaecf0; text-align: center; '
+			. 'font-size: 0.9em;" | Backlinks' . "\n";
+	}
+
+	/**
+	 * Build a conditionally-visible wikitext table row.
+	 * Hidden when $condition evaluates to empty/falsy.
+	 */
+	private function buildConditionalRow( string $condition, string $label, string $value ): string {
+		$out = '{{#if: ' . $condition . ' |' . "\n";
+		$out .= '{{!}}-' . "\n";
+		$out .= '! ' . $label . "\n";
+		$out .= '{{!}} ' . $value . "\n";
+		$out .= "}}\n";
+		return $out;
 	}
 }

@@ -32,7 +32,9 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * @param array<string, PropertyModel> $propertyMap
 	 * @return DisplayStubGenerator
 	 */
-	private function makeGenerator( array $propertyMap = [] ): DisplayStubGenerator {
+	private function makeGenerator(
+		array $propertyMap = []
+	): DisplayStubGenerator {
 		$propStore = $this->createMock( WikiPropertyStore::class );
 		$propStore->method( 'readProperty' )
 			->willReturnCallback( static fn ( string $name ) => $propertyMap[$name] ?? null );
@@ -74,7 +76,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testPropertyRowsWrappedInIfCondition(): void {
 		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
 
-		$this->assertStringContainsString( '{{#if:{{{has_name|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_name|}}} |', $content );
 	}
 
 	public function testPropertyRowUsesMagicWordPipeEscape(): void {
@@ -90,9 +92,9 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			[ 'Has name', 'Has email', 'Has phone' ]
 		);
 
-		$this->assertStringContainsString( '{{#if:{{{has_name|}}}|', $content );
-		$this->assertStringContainsString( '{{#if:{{{has_email|}}}|', $content );
-		$this->assertStringContainsString( '{{#if:{{{has_phone|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_name|}}} |', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_email|}}} |', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_phone|}}} |', $content );
 	}
 
 	public function testOptionalPropertiesAlsoHaveIfCondition(): void {
@@ -102,7 +104,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			[ 'Has nickname' ]
 		);
 
-		$this->assertStringContainsString( '{{#if:{{{has_nickname|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_nickname|}}} |', $content );
 	}
 
 	/* =========================================================================
@@ -160,7 +162,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 			]
 		);
 
-		$this->assertStringContainsString( '{{#if:{{{has_email|}}}|', $content );
+		$this->assertStringContainsString( '{{#if: {{{has_email|}}} |', $content );
 		$this->assertStringContainsString( 'Property/Email', $content );
 	}
 
@@ -197,5 +199,114 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
 
 		$this->assertStringContainsString( 'value={{{has_name|}}}', $content );
+	}
+
+	/* =========================================================================
+	 * REVERSE RELATIONSHIPS
+	 * ========================================================================= */
+
+	public function testBacklinkRowWithReverseLabel(): void {
+		$hasProject = new PropertyModel( 'Has project', [
+			'datatype' => 'Page',
+			'allowedCategory' => 'Project',
+			'inverseLabel' => 'Components',
+		] );
+
+		$gen = $this->makeGenerator(
+			[ 'Has project' => $hasProject ]
+		);
+
+		$catName = 'Project';
+		$category = new EffectiveCategoryModel( $catName, [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'backlinksFor' => [ 'Has project' ],
+		] );
+
+		$gen->generateOrUpdateDisplayStub( $category );
+
+		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$content = $this->pageCreator->getPageContent( $title );
+
+		// Backlinks header
+		$this->assertStringContainsString( 'Backlinks', $content );
+		// Row labeled with the reverse label
+		$this->assertStringContainsString( '! Components', $content );
+		// Ask query finds all pages linking here via this property
+		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
+		$this->assertStringContainsString( 'format=list', $content );
+	}
+
+	public function testBacklinkRowFallsBackToPropertyLabel(): void {
+		$hasProject = new PropertyModel( 'Has project', [
+			'datatype' => 'Page',
+			'allowedCategory' => 'Project',
+		] );
+
+		$gen = $this->makeGenerator(
+			[ 'Has project' => $hasProject ]
+		);
+
+		$catName = 'Project';
+		$category = new EffectiveCategoryModel( $catName, [
+			'properties' => [ 'required' => [], 'optional' => [] ],
+			'backlinksFor' => [ 'Has project' ],
+		] );
+
+		$gen->generateOrUpdateDisplayStub( $category );
+
+		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$content = $this->pageCreator->getPageContent( $title );
+
+		// Falls back to property name when no inverse label set
+		$this->assertStringContainsString( '! Has project', $content );
+	}
+
+	public function testNoBacklinkRowsWithoutDeclaration(): void {
+		$hasProject = new PropertyModel( 'Has project', [
+			'datatype' => 'Page',
+			'allowedCategory' => 'Project',
+		] );
+
+		$gen = $this->makeGenerator(
+			[ 'Has project' => $hasProject ]
+		);
+
+		// Category does NOT declare backlinksFor — no rows should appear
+		$catName = 'Project';
+		$category = new EffectiveCategoryModel( $catName, [
+			'properties' => [ 'required' => [], 'optional' => [] ],
+		] );
+
+		$gen->generateOrUpdateDisplayStub( $category );
+
+		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$content = $this->pageCreator->getPageContent( $title );
+
+		$this->assertStringNotContainsString( '{{#ask:', $content );
+		$this->assertStringNotContainsString( 'Backlinks', $content );
+	}
+
+	public function testNonPageTypeBacklinkPropertyIgnored(): void {
+		$textProp = new PropertyModel( 'Has tag', [
+			'datatype' => 'Text',
+			'reverseLabel' => 'Tagged items',
+		] );
+
+		$gen = $this->makeGenerator(
+			[ 'Has tag' => $textProp ]
+		);
+
+		$catName = 'SomeTarget_' . uniqid();
+		$category = new EffectiveCategoryModel( $catName, [
+			'properties' => [ 'required' => [], 'optional' => [] ],
+			'backlinksFor' => [ 'Has tag' ],
+		] );
+
+		$gen->generateOrUpdateDisplayStub( $category );
+
+		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$content = $this->pageCreator->getPageContent( $title );
+
+		$this->assertStringNotContainsString( '{{#ask:', $content );
 	}
 }
