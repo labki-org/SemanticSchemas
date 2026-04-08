@@ -64,7 +64,7 @@ class WikiPropertyStore {
 			'allowsMultipleValues' => false,
 			'renderTemplate' => null,
 			'inputType' => null,
-			'reverseLabel' => null,
+			'inverseLabel' => null,
 		];
 
 		return new PropertyModel( $canonical, $data );
@@ -179,8 +179,8 @@ class WikiPropertyStore {
 		/* -------------------- Input type override -------------------- */
 		$out['inputType'] = $this->smwFetchOne( $sdata, 'Has input type' );
 
-		/* -------------------- Reverse label -------------------- */
-		$out['reverseLabel'] = $this->smwFetchOne( $sdata, 'Reverse label' );
+		/* -------------------- Inverse label -------------------- */
+		$out['inverseLabel'] = $this->smwFetchOne( $sdata, 'Inverse property label' );
 
 		// Clean null/empty
 		return array_filter(
@@ -237,8 +237,8 @@ class WikiPropertyStore {
 			$lines[] = '[[Has input type::' . $p->getInputType() . ']]';
 		}
 
-		if ( $p->getReverseLabel() !== null ) {
-			$lines[] = '[[Reverse label::' . $p->getReverseLabel() . ']]';
+		if ( $p->getInverseLabel() !== null ) {
+			$lines[] = '[[Inverse property label::' . $p->getInverseLabel() . ']]';
 		}
 
 		return implode( "\n", $lines );

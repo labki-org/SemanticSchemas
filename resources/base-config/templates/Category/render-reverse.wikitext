@@ -1,15 +1,19 @@
-<includeonly>{{#ifexpr: {{#ask: [[Allows value from category::{{{1|}}}]] [[Has type::Page]] | format=count }} > 0 |{{#ask: [[Allows value from category::{{{1|}}}]] [[Has type::Page]]
- | format=template
- | template=Category/reverse-discover
- | link=none
-}}}}</includeonly><noinclude>
-Renders reverse relationship rows for a SemanticSchemas dynamic display template.
+<includeonly>{{#ifexpr: 0{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|+{{#ask:[[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]]|format=count}}|}} > 0 |
+|-
+! colspan="2" style="background-color: #eaecf0; text-align: center; font-size: 0.9em;" {{!}} Backlinks
+{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|{{#ifexpr: {{#ask: [[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]] | format=count }} > 0 |{{!}}-
+! {{#show:@@prop@@|?Inverse property label|default={{PAGENAME:@@prop@@}}}}
+{{!}} {{#ask: [[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]] | format=list }}}}|\n}}}}</includeonly><noinclude>
+Renders backlink rows for properties declared via "Show backlinks for" on the category.
 
-Discovers all Page-type properties that have Allows value from category set to
-the given category, then delegates to Category/reverse-discover for each property.
+Reads the category's Show backlinks for property to get the opt-in list of
+properties. Only shows the Backlinks header when at least one property has
+actual backlink results (aggregate count check across all properties).
 
-Only runs the discovery query when reverse relationships exist (count > 0) to
-avoid empty whitespace output that would create extra space in the table.
+For each property with results, renders a conditional row with an #ask query
+that finds all pages linking to the current page via that property.
+
+Label is the property's Inverse property label, falling back to property name.
 
 Parameter 1: category name (without namespace prefix)
 </noinclude>

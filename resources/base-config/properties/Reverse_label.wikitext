@@ -1,6 +1,0 @@
-<!-- SemanticSchemas Start -->
-[[Has type::Text]]
-[[Has description::Label describing the reverse relationship in display templates. Used as the display name when a property appears in a category's backlinks section.]]
-[[Display label::Reverse label]]
-<!-- SemanticSchemas End -->
-[[Category:SemanticSchemas-managed-property]]

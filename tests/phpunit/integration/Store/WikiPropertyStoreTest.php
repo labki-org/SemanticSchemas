@@ -310,11 +310,11 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringNotContainsString( 'Has input type', $content );
 	}
 
-	public function testWritePropertyWithReverseLabel(): void {
+	public function testWritePropertyWithInverseLabel(): void {
 		$name = 'Has mentor ' . uniqid();
 		$property = new PropertyModel( $name, [
 			'datatype' => 'Page',
-			'reverseLabel' => 'Mentees',
+			'inverseLabel' => 'Mentees',
 		] );
 
 		$result = $this->propertyStore->writeProperty( $property );
@@ -322,7 +322,7 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Reverse label::Mentees]]', $content );
+		$this->assertStringContainsString( '[[Inverse property label::Mentees]]', $content );
 	}
 
 	/**

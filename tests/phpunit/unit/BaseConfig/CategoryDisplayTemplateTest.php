@@ -175,47 +175,47 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$this->assertStringContainsString(
 			'format=count',
 			$content,
-			'render-reverse must check count before rendering'
+			'render-reverse must check backlink counts before rendering'
 		);
 	}
 
-	public function testRenderReverseFiltersPageTypeProperties(): void {
+	public function testRenderReverseReadsShowBacklinksFor(): void {
 		$content = $this->loadTemplate( 'render-reverse' );
 
 		$this->assertStringContainsString(
-			'[[Has type::Page]]',
+			'?Show backlinks for',
 			$content,
-			'render-reverse must filter to Page-type properties only'
+			'render-reverse must read Show backlinks for from the category'
 		);
 	}
 
-	public function testRenderReverseDelegatesToReverseDiscover(): void {
+	public function testRenderReverseShowsBacklinksHeader(): void {
 		$content = $this->loadTemplate( 'render-reverse' );
 
 		$this->assertStringContainsString(
-			'template=Category/reverse-discover',
+			'{{!}} Backlinks',
 			$content,
-			'render-reverse must delegate to reverse-discover for per-property rendering'
+			'render-reverse must show a Backlinks header'
 		);
 	}
 
-	public function testReverseDiscoverShowsInversePropertyLabel(): void {
-		$content = $this->loadTemplate( 'reverse-discover' );
+	public function testRenderReverseShowsInversePropertyLabel(): void {
+		$content = $this->loadTemplate( 'render-reverse' );
 
 		$this->assertStringContainsString(
 			'Inverse property label',
 			$content,
-			'reverse-discover must use the Inverse property label for relationship names'
+			'render-reverse must use the Inverse property label for relationship names'
 		);
 	}
 
-	public function testReverseDiscoverFallsBackToDisplayLabel(): void {
-		$content = $this->loadTemplate( 'reverse-discover' );
+	public function testRenderReverseFallsBackToPropertyName(): void {
+		$content = $this->loadTemplate( 'render-reverse' );
 
 		$this->assertStringContainsString(
-			'?Display label|default=',
+			'default={{PAGENAME:',
 			$content,
-			'reverse-discover must fall back to Display label when no inverse label set'
+			'render-reverse must fall back to property name when no inverse label set'
 		);
 	}
 

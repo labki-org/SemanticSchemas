@@ -142,16 +142,6 @@
 			}
 		},
 		{
-			"page": "Category/reverse-discover",
-			"namespace": "NS_TEMPLATE",
-			"contents": {
-				"importFrom": "templates/Category/reverse-discover.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
 			"page": "Allows multiple values",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
@@ -352,10 +342,10 @@
 			}
 		},
 		{
-			"page": "Reverse label",
+			"page": "Inverse property label",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
-				"importFrom": "properties/Reverse_label.wikitext"
+				"importFrom": "properties/Inverse_property_label.wikitext"
 			},
 			"options": {
 				"replaceable": true

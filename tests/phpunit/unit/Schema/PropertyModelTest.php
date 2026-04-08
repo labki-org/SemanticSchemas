@@ -104,34 +104,34 @@ class PropertyModelTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * REVERSE LABEL
+	 * INVERSE LABEL
 	 * ========================================================================= */
 
-	public function testReverseLabelDefaultsToNull(): void {
+	public function testInverseLabelDefaultsToNull(): void {
 		$p = new PropertyModel( 'Has test', [ 'datatype' => 'Page' ] );
-		$this->assertNull( $p->getReverseLabel() );
+		$this->assertNull( $p->getInverseLabel() );
 	}
 
-	public function testReverseLabelSet(): void {
+	public function testInverseLabelSet(): void {
 		$p = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
-			'reverseLabel' => 'Is parent of',
+			'inverseLabel' => 'Components',
 		] );
-		$this->assertSame( 'Is parent of', $p->getReverseLabel() );
+		$this->assertSame( 'Components', $p->getInverseLabel() );
 	}
 
-	public function testToArrayIncludesReverseLabelWhenSet(): void {
+	public function testToArrayIncludesInverseLabelWhenSet(): void {
 		$p = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
-			'reverseLabel' => 'Is parent of',
+			'inverseLabel' => 'Components',
 		] );
 		$arr = $p->toArray();
-		$this->assertSame( 'Is parent of', $arr['reverseLabel'] );
+		$this->assertSame( 'Components', $arr['inverseLabel'] );
 	}
 
-	public function testToArrayOmitsReverseLabelWhenNull(): void {
+	public function testToArrayOmitsInverseLabelWhenNull(): void {
 		$p = new PropertyModel( 'Has project', [ 'datatype' => 'Page' ] );
 		$arr = $p->toArray();
-		$this->assertArrayNotHasKey( 'reverseLabel', $arr );
+		$this->assertArrayNotHasKey( 'inverseLabel', $arr );
 	}
 }
