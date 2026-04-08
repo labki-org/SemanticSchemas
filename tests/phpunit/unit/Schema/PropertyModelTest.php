@@ -117,7 +117,7 @@ class PropertyModelTest extends TestCase {
 			'datatype' => 'Page',
 			'inverseLabel' => 'Components',
 		] );
-		$this->assertSame( 'Components', $p->getReverseLabel() );
+		$this->assertSame( 'Components', $p->getInverseLabel() );
 	}
 
 	public function testToArrayIncludesInverseLabelWhenSet(): void {
