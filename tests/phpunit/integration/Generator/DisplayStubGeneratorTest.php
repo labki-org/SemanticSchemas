@@ -22,7 +22,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$services = $this->getServiceContainer();
 		$this->pageCreator = new PageCreator(
 			$services->getWikiPageFactory(),
-			$services->getDeletePageFactory()
+			$services->getDeletePageFactory(),
 		);
 	}
 
@@ -38,8 +38,9 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$propStore = $this->createMock( WikiPropertyStore::class );
 		$propStore->method( 'readProperty' )
 			->willReturnCallback( static fn ( string $name ) => $propertyMap[$name] ?? null );
+		$language = $this->getServiceContainer()->getContentLanguage();
 
-		return new DisplayStubGenerator( $this->pageCreator, $propStore );
+		return new DisplayStubGenerator( $this->pageCreator, $propStore, $language );
 	}
 
 	/**
