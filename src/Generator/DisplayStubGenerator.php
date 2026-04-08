@@ -137,7 +137,7 @@ class DisplayStubGenerator {
 		$content = '{| class="wikitable source-semanticschemas-sidebox" style="' . $tableStyle . "\"\n";
 		$content .= $this->buildCategoryHeadingRow( $category->getName(), $category->getLabel() );
 		$content .= $this->generatePropertyRows( $category );
-		$content .= $this->generateReverseRelationshipRows( $category );
+		$content .= $this->generateBacklinkRows( $category );
 		$content .= "|}\n";
 
 		return $content;
