@@ -1,0 +1,8 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::Category types that may optionally be present as subobjects.]]
+[[Allows multiple values::true]]
+[[Display label::Optional subobjects]]
+[[Allows value from namespace::Category]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

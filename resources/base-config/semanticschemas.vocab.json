@@ -142,10 +142,30 @@
 			}
 		},
 		{
+			"page": "Has optional subobject",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_optional_subobject.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Has required property",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
 				"importFrom": "properties/Has_required_property.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Has required subobject",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_required_subobject.wikitext"
 			},
 			"options": {
 				"replaceable": true

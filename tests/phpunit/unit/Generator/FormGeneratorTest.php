@@ -6,6 +6,7 @@ use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use PHPUnit\Framework\TestCase;
 
@@ -30,7 +31,8 @@ class FormGeneratorTest extends TestCase {
 		$this->generator = new FormGenerator(
 			$this->createMock( PageCreator::class ),
 			$this->propertyStore,
-			$inputMapper
+			$inputMapper,
+			$this->createMock( WikiCategoryStore::class )
 		);
 	}
 

@@ -6,6 +6,8 @@
 [[Has optional property::Property:Has target namespace]]
 [[Has optional property::Property:Has required property]]
 [[Has optional property::Property:Has optional property]]
+[[Has optional property::Property:Has required subobject]]
+[[Has optional property::Property:Has optional subobject]]
 [[Has optional property::Property:Has display format]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

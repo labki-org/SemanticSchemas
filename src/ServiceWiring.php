@@ -41,7 +41,8 @@ return [
 		return new FormGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->get( 'SemanticSchemas.PropertyInputMapper' )
+			$services->get( 'SemanticSchemas.PropertyInputMapper' ),
+			$services->get( 'SemanticSchemas.WikiCategoryStore' )
 		);
 	},
 
@@ -106,6 +107,7 @@ return [
 	): TemplateGenerator {
 		return new TemplateGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
+			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' )
 		);
 	},

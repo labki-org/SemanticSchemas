@@ -6,6 +6,7 @@ use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
@@ -17,6 +18,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  * Features:
  * - Automatic field generation from CategoryModel schema
  * - Required and optional property sections
+ * - Subobject repeatable blocks with minimum instances
  * - Namespace support for page creation
  * - Automatic hierarchy preview (when parent category property detected)
  */
@@ -25,15 +27,18 @@ class FormGenerator {
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
 	private PropertyInputMapper $inputMapper;
+	private WikiCategoryStore $categoryStore;
 
 	public function __construct(
 		PageCreator $pageCreator,
 		WikiPropertyStore $propertyStore,
-		PropertyInputMapper $inputMapper
+		PropertyInputMapper $inputMapper,
+		WikiCategoryStore $categoryStore
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->propertyStore = $propertyStore;
 		$this->inputMapper = $inputMapper;
+		$this->categoryStore = $categoryStore;
 	}
 
 	private function s( ?string $v ): string {
@@ -242,6 +247,75 @@ class FormGenerator {
 		return implode( '|', $params );
 	}
 
+	/**
+	 * Subobject repeatable blocks.
+	 *
+	 * Subobject types are categories — looked up via WikiCategoryStore.
+	 */
+	private function generateSubobjectSections( CategoryModel $category ): array {
+		$required = $category->getRequiredSubobjects();
+		$optional = $category->getOptionalSubobjects();
+
+		$all = [];
+		foreach ( $required as $n ) {
+			$all[$n] = true;
+		}
+		foreach ( $optional as $n ) {
+			if ( !isset( $all[$n] ) ) {
+				$all[$n] = false;
+			}
+		}
+
+		if ( empty( $all ) ) {
+			return [];
+		}
+
+		$out = [];
+
+		foreach ( $all as $subName => $isRequired ) {
+
+			$model = $this->categoryStore->readCategory( $subName );
+			if ( !$model instanceof CategoryModel ) {
+				wfLogWarning( "SemanticSchemas: Missing subobject category:$subName" );
+				continue;
+			}
+
+			$label = $this->s( $model->getLabel() ?: $model->getName() );
+
+			$out[] = '=== ' . $label . ' ===';
+			$out[] = '';
+
+			$templateName = 'Subobject/' . $this->s( $model->getName() );
+
+			$for = [ $templateName, 'multiple' ];
+			if ( $isRequired ) {
+				$for[] = 'minimum instances=1';
+			}
+
+			$out[] = '{{{for template|' . implode( '|', $for ) . '}}}';
+			$out[] = '';
+
+			// Generate table for subobject properties
+			$subProps = array_merge( $model->getRequiredProperties(), $model->getOptionalProperties() );
+			if ( !empty( $subProps ) ) {
+				$out[] = '{| class="formtable"';
+
+				foreach ( $subProps as $p ) {
+					$must = in_array( $p, $model->getRequiredProperties(), true );
+					$out = array_merge( $out, $this->generateTableField( $p, $must ) );
+				}
+
+				$out[] = '|}';
+				$out[] = '';
+			}
+
+			$out[] = '{{{end template}}}';
+			$out[] = '';
+		}
+
+		return $out;
+	}
+
 	/* ----------------------------------------------------------
 	 * Save + utilities
 	 * -------------------------------------------------------- */
@@ -314,6 +388,10 @@ class FormGenerator {
 		$lines = array_merge( $lines, $this->wrapNowiki( $fieldLines ) );
 
 		$lines[] = '<nowiki>{{{end template}}}</nowiki>';
+		$lines[] = '';
+
+		$subLines = $this->generateSubobjectSections( $category );
+		$lines = array_merge( $lines, $this->wrapNowiki( $subLines ) );
 
 		$lines[] = '</includeonly>';
 

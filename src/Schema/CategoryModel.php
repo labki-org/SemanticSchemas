@@ -46,6 +46,9 @@ class CategoryModel {
 	private array $requiredProperties;
 	private array $optionalProperties;
 
+	private array $requiredSubobjects;
+	private array $optionalSubobjects;
+
 	private array $displayConfig;
 	private array $formConfig;
 
@@ -105,6 +108,24 @@ class CategoryModel {
 			throw new InvalidArgumentException(
 				"Category '{$name}' has properties listed as both required and optional: " .
 				implode( ', ', $dup )
+			);
+		}
+
+		/* -------------------- Subobjects -------------------- */
+
+		$subs = $data['subobjects'] ?? [];
+		if ( !is_array( $subs ) ) {
+			throw new InvalidArgumentException( "Category '{$name}': 'subobjects' must be an array." );
+		}
+
+		$this->requiredSubobjects = NamingHelper::normalizeList( $subs['required'] ?? [] );
+		$this->optionalSubobjects = NamingHelper::normalizeList( $subs['optional'] ?? [] );
+
+		$dupSG = array_intersect( $this->requiredSubobjects, $this->optionalSubobjects );
+		if ( $dupSG !== [] ) {
+			throw new InvalidArgumentException(
+				"Category '{$name}' has subobjects listed as both required and optional: " .
+				implode( ', ', $dupSG )
 			);
 		}
 
@@ -185,6 +206,36 @@ class CategoryModel {
 		return $out;
 	}
 
+	/* -------------------- Subobjects -------------------- */
+
+	public function getRequiredSubobjects(): array {
+		return $this->requiredSubobjects;
+	}
+
+	public function getOptionalSubobjects(): array {
+		return $this->optionalSubobjects;
+	}
+
+	public function hasSubobjects(): bool {
+		return $this->requiredSubobjects !== [] || $this->optionalSubobjects !== [];
+	}
+
+	/**
+	 * Return all subobjects tagged with their required/optional status.
+	 *
+	 * @return array<array{name:string, required:bool}>
+	 */
+	public function getTaggedSubobjects(): array {
+		$out = [];
+		foreach ( $this->requiredSubobjects as $name ) {
+			$out[] = [ 'name' => $name, 'required' => true ];
+		}
+		foreach ( $this->optionalSubobjects as $name ) {
+			$out[] = [ 'name' => $name, 'required' => false ];
+		}
+		return $out;
+	}
+
 	/* -------------------- Display + Forms -------------------- */
 
 	public function getDisplayConfig(): array {
@@ -219,6 +270,21 @@ class CategoryModel {
 			$mergedRequired
 		) );
 
+		/* -------------------- Subobjects -------------------- */
+
+		$mergedRequiredSG = array_values( array_unique( array_merge(
+			$parent->getRequiredSubobjects(),
+			$this->requiredSubobjects
+		) ) );
+
+		$mergedOptionalSG = array_values( array_diff(
+			array_unique( array_merge(
+				$parent->getOptionalSubobjects(),
+				$this->optionalSubobjects
+			) ),
+			$mergedRequiredSG
+		) );
+
 		/* -------------------- Display -------------------- */
 
 		$mergedDisplay = self::mergeDisplayConfigs(
@@ -246,6 +312,10 @@ class CategoryModel {
 				'properties' => [
 					'required' => $mergedRequired,
 					'optional' => $mergedOptional,
+				],
+				'subobjects' => [
+					'required' => $mergedRequiredSG,
+					'optional' => $mergedOptionalSG,
 				],
 				'display' => $mergedDisplay,
 				'forms' => $mergedForms,
@@ -309,6 +379,13 @@ class CategoryModel {
 				'optional' => $this->optionalProperties,
 			],
 		];
+
+		if ( $this->hasSubobjects() ) {
+			$out['subobjects'] = [
+				'required' => $this->requiredSubobjects,
+				'optional' => $this->optionalSubobjects,
+			];
+		}
 
 		if ( $this->displayConfig !== [] ) {
 			$out['display'] = $this->displayConfig;
