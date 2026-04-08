@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
+use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
@@ -183,6 +184,82 @@ class FormGeneratorTest extends TestCase {
 		// Field definitions live in the composite slot, not the main form
 		$this->assertStringNotContainsString( '{{{field|', $result );
 		$this->assertStringNotContainsString( '{{{for template|', $result );
+	}
+
+	/* =========================================================================
+	 * COMPOSITE SLOT — subobject sections
+	 * ========================================================================= */
+
+	public function testCompositeFormConvertsSubobjectHeadingsToHtml(): void {
+		$catStore = $this->createMock( WikiCategoryStore::class );
+		$subCategory = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street' ],
+				'optional' => [ 'Has city' ],
+			],
+		] );
+
+		$catStore->method( 'readCategory' )
+			->with( 'Address' )
+			->willReturn( $subCategory );
+
+		$inputMapper = $this->createMock( PropertyInputMapper::class );
+		$inputMapper->method( 'generateInputDefinition' )
+			->willReturn( 'input type=text' );
+
+		$gen = new FormGenerator(
+			$this->createMock( PageCreator::class ),
+			$this->propertyStore,
+			$inputMapper,
+			$catStore
+		);
+
+		$category = new EffectiveCategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		] );
+
+		$result = $gen->generateCompositeForm( $category );
+
+		// Wiki === headings should be converted to <h3> for transclusion
+		$this->assertStringContainsString( '<h3>Address</h3>', $result );
+		$this->assertStringNotContainsString( '=== Address ===', $result );
+	}
+
+	public function testCompositeFormIncludesSubobjectFields(): void {
+		$catStore = $this->createMock( WikiCategoryStore::class );
+		$subCategory = new CategoryModel( 'Phone', [
+			'label' => 'Phone Numbers',
+			'properties' => [
+				'required' => [ 'Has phone number' ],
+				'optional' => [ 'Has phone type' ],
+			],
+		] );
+
+		$catStore->method( 'readCategory' )
+			->with( 'Phone' )
+			->willReturn( $subCategory );
+
+		$inputMapper = $this->createMock( PropertyInputMapper::class );
+		$inputMapper->method( 'generateInputDefinition' )
+			->willReturn( 'input type=text' );
+
+		$gen = new FormGenerator(
+			$this->createMock( PageCreator::class ),
+			$this->propertyStore,
+			$inputMapper,
+			$catStore
+		);
+
+		$category = new EffectiveCategoryModel( 'Person', [
+			'properties' => [ 'required' => [], 'optional' => [] ],
+			'subobjects' => [ 'required' => [], 'optional' => [ 'Phone' ] ],
+		] );
+
+		$result = $gen->generateCompositeForm( $category );
+
+		$this->assertStringContainsString( 'Subobject/Phone', $result );
+		$this->assertStringContainsString( 'has_phone_number', $result );
 	}
 
 	/* =========================================================================

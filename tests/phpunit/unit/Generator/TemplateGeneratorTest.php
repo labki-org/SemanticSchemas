@@ -506,4 +506,84 @@ class TemplateGeneratorTest extends TestCase {
 		// Student-only param should NOT be forwarded to Person
 		$this->assertStringNotContainsString( 'student_id', $parentSection );
 	}
+
+	/* =========================================================================
+	 * SUBOBJECT TEMPLATE GENERATION
+	 * ========================================================================= */
+
+	public function testSubobjectTemplateUsesAtCategory(): void {
+		$catStore = $this->createMock( WikiCategoryStore::class );
+		$propStore = $this->createMock( WikiPropertyStore::class );
+
+		$subCategory = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street', 'Has city' ],
+				'optional' => [],
+			],
+		] );
+
+		$catStore->method( 'readCategory' )
+			->with( 'Address' )
+			->willReturn( $subCategory );
+
+		$gen = new TemplateGenerator(
+			$this->createMock( PageCreator::class ),
+			$catStore,
+			$propStore
+		);
+
+		$category = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		] );
+
+		$effective = new EffectiveCategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		] );
+
+		$dispatcher = $gen->generateDispatcherTemplate( $effective );
+
+		// Dispatcher should include subobject display section
+		$this->assertStringContainsString( '[[Category:Address]]', $dispatcher );
+		$this->assertStringContainsString( 'Subobject/Address/row', $dispatcher );
+	}
+
+	public function testSubobjectMultiValuePropertyUsesSep(): void {
+		$catStore = $this->createMock( WikiCategoryStore::class );
+
+		$subCategory = new CategoryModel( 'Metadata', [
+			'properties' => [
+				'required' => [ 'Has tags' ],
+				'optional' => [],
+			],
+		] );
+
+		$catStore->method( 'readCategory' )
+			->willReturn( $subCategory );
+
+		$propStore = $this->createMock( WikiPropertyStore::class );
+		$propStore->method( 'readProperty' )
+			->willReturn( new PropertyModel( 'Has tags', [
+				'datatype' => 'Text',
+				'allowsMultipleValues' => true,
+			] ) );
+
+		$gen = new TemplateGenerator(
+			$this->createMock( PageCreator::class ),
+			$catStore,
+			$propStore
+		);
+
+		$category = new EffectiveCategoryModel( 'Article', [
+			'properties' => [ 'required' => [], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'Metadata' ], 'optional' => [] ],
+		] );
+
+		$dispatcher = $gen->generateDispatcherTemplate( $category );
+		// Dispatcher contains the display section querying by category
+		$this->assertStringContainsString( '[[Category:Metadata]]', $dispatcher );
+		// Display section asks for the Has tags property
+		$this->assertStringContainsString( '?Has tags', $dispatcher );
+	}
 }

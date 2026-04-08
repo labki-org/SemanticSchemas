@@ -59,6 +59,17 @@ class CategoryModelTest extends TestCase {
 		] );
 	}
 
+	public function testDuplicateRequiredOptionalSubobjectThrowsException(): void {
+		$this->expectException( InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'both required and optional' );
+		new CategoryModel( 'TestCategory', [
+			'subobjects' => [
+				'required' => [ 'Address' ],
+				'optional' => [ 'Address' ],
+			],
+		] );
+	}
+
 	/* =========================================================================
 	 * BASIC ACCESSORS
 	 * ========================================================================= */
@@ -169,6 +180,60 @@ class CategoryModelTest extends TestCase {
 	}
 
 	/* =========================================================================
+	 * SUBOBJECT ACCESSORS
+	 * ========================================================================= */
+
+	public function testGetRequiredSubobjects(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'subobjects' => [
+				'required' => [ 'Author' ],
+				'optional' => [],
+			],
+		] );
+		$this->assertEquals( [ 'Author' ], $model->getRequiredSubobjects() );
+	}
+
+	public function testGetOptionalSubobjects(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'subobjects' => [
+				'required' => [],
+				'optional' => [ 'Funding' ],
+			],
+		] );
+		$this->assertEquals( [ 'Funding' ], $model->getOptionalSubobjects() );
+	}
+
+	public function testHasSubobjectsReturnsTrue(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'subobjects' => [ 'required' => [ 'Author' ], 'optional' => [] ],
+		] );
+		$this->assertTrue( $model->hasSubobjects() );
+	}
+
+	public function testHasSubobjectsReturnsFalse(): void {
+		$model = new CategoryModel( 'TestCategory' );
+		$this->assertFalse( $model->hasSubobjects() );
+	}
+
+	public function testGetTaggedSubobjectsReturnsBothWithFlags(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'subobjects' => [
+				'required' => [ 'Author' ],
+				'optional' => [ 'Funding' ],
+			],
+		] );
+		$tagged = $model->getTaggedSubobjects();
+		$this->assertCount( 2, $tagged );
+		$this->assertSame( [ 'name' => 'Author', 'required' => true ], $tagged[0] );
+		$this->assertSame( [ 'name' => 'Funding', 'required' => false ], $tagged[1] );
+	}
+
+	public function testGetTaggedSubobjectsReturnsEmptyWhenNone(): void {
+		$model = new CategoryModel( 'TestCategory' );
+		$this->assertSame( [], $model->getTaggedSubobjects() );
+	}
+
+	/* =========================================================================
 	 * DISPLAY CONFIG
 	 * ========================================================================= */
 
@@ -266,9 +331,42 @@ class CategoryModelTest extends TestCase {
 		$this->assertEquals( 'ChildFormat', $merged->getRenderAs() );
 	}
 
+	public function testMergeWithParentMergesSubobjects(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'subobjects' => [ 'required' => [ 'ParentSub' ], 'optional' => [] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'subobjects' => [ 'required' => [ 'ChildSub' ], 'optional' => [] ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertContains( 'ParentSub', $merged->getRequiredSubobjects() );
+		$this->assertContains( 'ChildSub', $merged->getRequiredSubobjects() );
+	}
+
 	/* =========================================================================
 	 * EXPORT
 	 * ========================================================================= */
+
+	public function testToArrayOmitsEmptySubobjects(): void {
+		$model = new CategoryModel( 'TestCategory' );
+		$arr = $model->toArray();
+		$this->assertArrayNotHasKey( 'subobjects', $arr );
+	}
+
+	public function testToArrayIncludesSubobjectsWhenPresent(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'subobjects' => [
+				'required' => [ 'Author' ],
+				'optional' => [ 'Funding' ],
+			],
+		] );
+		$arr = $model->toArray();
+		$this->assertArrayHasKey( 'subobjects', $arr );
+		$this->assertEquals( [ 'Author' ], $arr['subobjects']['required'] );
+		$this->assertEquals( [ 'Funding' ], $arr['subobjects']['optional'] );
+	}
 
 	public function testToArrayContainsAllFields(): void {
 		$model = new CategoryModel( 'TestCategory', [
