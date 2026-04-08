@@ -287,7 +287,7 @@ class DisplayStubGenerator {
 	 * {{#ask:}} query that finds all pages linking here via that property.
 	 * Rows are grouped under a "Backlinks" header, labeled by the backlink label.
 	 */
-	private function generateReverseRelationshipRows( CategoryModel $category ): string {
+	private function generateBacklinkRows( CategoryModel $category ): string {
 		$backlinksFor = $category->getBacklinksFor();
 		if ( $backlinksFor === [] ) {
 			return '';
