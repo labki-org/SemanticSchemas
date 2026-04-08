@@ -266,6 +266,8 @@ class TemplateGenerator {
 		foreach ( $props as $p ) {
 			$param = NamingHelper::propertyToParameter( $p );
 			$line = $this->generatePropertyLine( $p, $param );
+			// Null means multi-value Page property needing inline annotations,
+			// which don't work inside #subobject blocks — skip them here
 			if ( $line !== null ) {
 				$out[] = $line;
 			}

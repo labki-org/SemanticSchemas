@@ -253,26 +253,16 @@ class FormGenerator {
 	 * Subobject types are categories — looked up via WikiCategoryStore.
 	 */
 	private function generateSubobjectSections( CategoryModel $category ): array {
-		$required = $category->getRequiredSubobjects();
-		$optional = $category->getOptionalSubobjects();
-
-		$all = [];
-		foreach ( $required as $n ) {
-			$all[$n] = true;
-		}
-		foreach ( $optional as $n ) {
-			if ( !isset( $all[$n] ) ) {
-				$all[$n] = false;
-			}
-		}
-
-		if ( empty( $all ) ) {
+		$tagged = $category->getTaggedSubobjects();
+		if ( empty( $tagged ) ) {
 			return [];
 		}
 
 		$out = [];
 
-		foreach ( $all as $subName => $isRequired ) {
+		foreach ( $tagged as $entry ) {
+			$subName = $entry['name'];
+			$isRequired = $entry['required'];
 
 			$model = $this->categoryStore->readCategory( $subName );
 			if ( !$model instanceof CategoryModel ) {
@@ -296,13 +286,12 @@ class FormGenerator {
 			$out[] = '';
 
 			// Generate table for subobject properties
-			$subProps = array_merge( $model->getRequiredProperties(), $model->getOptionalProperties() );
-			if ( !empty( $subProps ) ) {
+			$taggedProps = $model->getTaggedProperties();
+			if ( !empty( $taggedProps ) ) {
 				$out[] = '{| class="formtable"';
 
-				foreach ( $subProps as $p ) {
-					$must = in_array( $p, $model->getRequiredProperties(), true );
-					$out = array_merge( $out, $this->generateTableField( $p, $must ) );
+				foreach ( $taggedProps as $prop ) {
+					$out = array_merge( $out, $this->generateTableField( $prop['name'], $prop['required'] ) );
 				}
 
 				$out[] = '|}';
