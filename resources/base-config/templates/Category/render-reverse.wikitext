@@ -1,5 +1,5 @@
 <includeonly>{{#ifexpr: 0{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|+{{#ask:[[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]]|format=count}}|}} > 0 |
-|-
+{{!}}-
 ! colspan="2" style="background-color: #eaecf0; text-align: center; font-size: 0.9em;" {{!}} Backlinks
 {{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|{{#ifexpr: {{#ask: [[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]] | format=count }} > 0 |{{!}}-
 ! {{#show:@@prop@@|?Inverse property label|default={{PAGENAME:@@prop@@}}}}
