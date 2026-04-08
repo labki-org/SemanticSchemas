@@ -228,7 +228,10 @@ class WikiCategoryStore {
 			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
 			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
 			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
-			'parents' => $title->getParentCategories(),
+			'parents' => array_map(
+				static fn ( $key ) => str_replace( '_', ' ', preg_replace( '/^Category:/', '', $key ) ),
+				array_keys( $title->getParentCategories() )
+			),
 			'properties' => [
 				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
 				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),

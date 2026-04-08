@@ -117,6 +117,9 @@ class InheritanceResolver {
 			?? throw new RuntimeException( "Unknown category: $categoryName" );
 		$result = [];
 		foreach ( $category->getParents() as $parentName ) {
+			if ( !isset( $this->categoryMap[$parentName] ) ) {
+				continue;
+			}
 			$result[$parentName] = $this->getEffectiveCategory( $parentName );
 		}
 		return $result;
