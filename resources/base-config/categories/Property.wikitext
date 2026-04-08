@@ -61,5 +61,11 @@
  | Is required = false
  | Has sort order = 10
 }}
+{{#subobject:
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Inverse property label
+ | Is required = false
+ | Has sort order = 11
+}}
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

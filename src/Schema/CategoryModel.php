@@ -48,6 +48,9 @@ class CategoryModel {
 	/** @var FieldDeclaration[] */
 	private array $subobjectFields;
 
+	/** @var string[] Property names whose incoming links to show as backlinks. */
+	private array $backlinksFor;
+
 	private array $displayConfig;
 	private array $formConfig;
 
@@ -111,6 +114,10 @@ class CategoryModel {
 		$this->subobjectFields = FieldDeclaration::parseInput(
 			$subs, FieldDeclaration::TYPE_SUBOBJECT, "Category '{$name}'"
 		);
+
+		/* -------------------- Backlinks -------------------- */
+
+		$this->backlinksFor = NamingHelper::normalizeList( $data['backlinksFor'] ?? [] );
 
 		/* -------------------- Display Config -------------------- */
 
@@ -209,6 +216,13 @@ class CategoryModel {
 		return FieldDeclaration::tagged( $this->subobjectFields );
 	}
 
+	/* -------------------- Backlinks -------------------- */
+
+	/** @return string[] */
+	public function getBacklinksFor(): array {
+		return $this->backlinksFor;
+	}
+
 	/* -------------------- Display + Forms -------------------- */
 
 	public function getDisplayConfig(): array {
@@ -242,6 +256,13 @@ class CategoryModel {
 			$this->subobjectFields
 		);
 
+		/* -------------------- Backlinks -------------------- */
+
+		$mergedBacklinksFor = array_values( array_unique( array_merge(
+			$parent->getBacklinksFor(),
+			$this->backlinksFor
+		) ) );
+
 		/* -------------------- Display -------------------- */
 
 		$mergedDisplay = self::mergeDisplayConfigs(
@@ -268,6 +289,7 @@ class CategoryModel {
 				'renderAs' => $this->renderAs ?? $parent->getRenderAs(),
 				'properties' => FieldDeclaration::tagged( $mergedProps ),
 				'subobjects' => FieldDeclaration::tagged( $mergedSubs ),
+				'backlinksFor' => $mergedBacklinksFor,
 				'display' => $mergedDisplay,
 				'forms' => $mergedForms,
 			]
@@ -363,6 +385,10 @@ class CategoryModel {
 				'required' => $this->getRequiredSubobjects(),
 				'optional' => $this->getOptionalSubobjects(),
 			];
+		}
+
+		if ( $this->backlinksFor !== [] ) {
+			$out['backlinksFor'] = $this->backlinksFor;
 		}
 
 		if ( $this->displayConfig !== [] ) {

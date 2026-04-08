@@ -1,6 +1,6 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Text]]
-[[Has description::Autocomplete suggestions will come from pages in this namespace.]]
+[[Has description::Autocomplete from pages in this namespace. Input values omit the namespace prefix; the template adds it automatically.]]
 [[Display label::Allowed namespace]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]

@@ -32,6 +32,12 @@
  | Has sort order = 5
 }}
 {{#subobject:
+ | Has subobject type = Subobject:Has property field
+ | Has property reference = Property:Show backlinks for
+ | Is required = false
+ | Has sort order = 6
+}}
+{{#subobject:
  | Has subobject type = Subobject:Has subobject field
  | Has subobject reference = Subobject:Has property field
  | Is required = false
