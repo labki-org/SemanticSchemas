@@ -129,7 +129,7 @@ class PropertyModel {
 		$this->inputType = ( $it !== null && trim( (string)$it ) !== '' )
 			? trim( (string)$it ) : null;
 
-		/* -------------------- Reverse label -------------------- */
+		/* -------------------- Backlink label -------------------- */
 		$invLabel = $data['reverseLabel'] ?? null;
 		$this->reverseLabel = ( $invLabel !== null && trim( (string)$invLabel ) !== '' )
 			? trim( (string)$invLabel ) : null;

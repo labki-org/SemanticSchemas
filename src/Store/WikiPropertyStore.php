@@ -180,7 +180,7 @@ class WikiPropertyStore {
 		/* -------------------- Input type override -------------------- */
 		$out['inputType'] = $this->smwFetchOne( $sdata, 'Has input type' );
 
-		/* -------------------- Reverse label -------------------- */
+		/* -------------------- Backlink label -------------------- */
 		$out['reverseLabel'] = $this->smwFetchOne( $sdata, 'Inverse property label' );
 
 		// Clean null/empty
