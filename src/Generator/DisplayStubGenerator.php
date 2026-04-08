@@ -297,11 +297,14 @@ class DisplayStubGenerator {
 
 		foreach ( $backlinksFor as $propName ) {
 			$prop = $this->propertyStore->readProperty( $propName );
-			if ( $prop === null || !$prop->isPageType() ) {
-				continue;
+			if ( $prop === null ) {
+			    // Implicitly page-typed
+			    $inverseLabel = $propName;
+			} elseif ( $prop->isPageType() ) {
+				$inverseLabel = $prop->getInverseLabel() ?? $prop->getLabel();
+			} else {
+			    continue;
 			}
-
-			$reverseLabel = $prop->getReverseLabel() ?? $prop->getLabel();
 
 			$askQuery = '{{#ask: [[' . $propName . '::{{FULLPAGENAME}}]]'
 				. ' | format=list }}';
