@@ -42,7 +42,7 @@ class PropertyModel {
 
 	private ?string $inputType;
 
-	private ?string $reverseLabel;
+	private ?string $inverseLabel;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
