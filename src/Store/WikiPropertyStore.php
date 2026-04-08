@@ -181,7 +181,7 @@ class WikiPropertyStore {
 		$out['inputType'] = $this->smwFetchOne( $sdata, 'Has input type' );
 
 		/* -------------------- Reverse label -------------------- */
-		$out['reverseLabel'] = $this->smwFetchOne( $sdata, 'Reverse label' );
+		$out['reverseLabel'] = $this->smwFetchOne( $sdata, 'Inverse property label' );
 
 		// Clean null/empty
 		return array_filter(
@@ -240,7 +240,7 @@ class WikiPropertyStore {
 		}
 
 		if ( $p->getReverseLabel() !== null ) {
-			$lines[] = '[[Reverse label::' . $p->getReverseLabel() . ']]';
+			$lines[] = '[[Inverse property label::' . $p->getReverseLabel() . ']]';
 		}
 
 		return implode( "\n", $lines );

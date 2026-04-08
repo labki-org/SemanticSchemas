@@ -322,7 +322,7 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, SMW_NS_PROPERTY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Reverse label::Mentees]]', $content );
+		$this->assertStringContainsString( '[[Inverse property label::Mentees]]', $content );
 	}
 
 	/**
