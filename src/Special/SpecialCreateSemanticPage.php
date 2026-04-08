@@ -33,7 +33,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 	 * Meta-categories that create pages in their own namespaces and should
 	 * not be mixed with regular page categories.
 	 */
-	private const META_CATEGORY_NAMES = [ 'Category', 'Property', 'Subobject' ];
+	private const META_CATEGORY_NAMES = [ 'Category', 'Property' ];
 
 	private WikiCategoryStore $categoryStore;
 	private PageCreator $pageCreator;

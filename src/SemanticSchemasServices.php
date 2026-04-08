@@ -14,7 +14,6 @@ use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\MediaWikiServices;
 
 /**
@@ -44,10 +43,6 @@ class SemanticSchemasServices {
 
 	public static function getWikiCategoryStore( MediaWikiServices $services ): WikiCategoryStore {
 		return $services->get( 'SemanticSchemas.WikiCategoryStore' );
-	}
-
-	public static function getWikiSubobjectStore( MediaWikiServices $services ): WikiSubobjectStore {
-		return $services->get( 'SemanticSchemas.WikiSubobjectStore' );
 	}
 
 	public static function getStateManager( MediaWikiServices $services ): StateManager {

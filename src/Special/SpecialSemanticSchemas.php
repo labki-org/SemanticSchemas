@@ -12,7 +12,6 @@ use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Html\Html;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
@@ -27,7 +26,7 @@ use ObjectCacheFactory;
  * - Overview: Dashboard with category status and sync state
  * - Validate: Check wiki state for errors and modifications
  * - Generate: Regenerate templates/forms/displays
- * - Hierarchy: Visualize category inheritance and subobjects
+ * - Hierarchy: Visualize category inheritance
  *
  * Architecture:
  * - Schema is treated as the source of truth
@@ -50,7 +49,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
-	private WikiSubobjectStore $subobjectStore;
 	private TemplateGenerator $templateGenerator;
 	private FormGenerator $formGenerator;
 	private DisplayStubGenerator $displayGenerator;
@@ -68,7 +66,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	public function __construct(
 		WikiCategoryStore $categoryStore,
 		WikiPropertyStore $propertyStore,
-		WikiSubobjectStore $subobjectStore,
 		TemplateGenerator $templateGenerator,
 		FormGenerator $formGenerator,
 		DisplayStubGenerator $displayGenerator,
@@ -80,7 +77,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		parent::__construct( 'SemanticSchemas', 'editinterface' );
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
-		$this->subobjectStore = $subobjectStore;
 		$this->templateGenerator = $templateGenerator;
 		$this->formGenerator = $formGenerator;
 		$this->displayGenerator = $displayGenerator;
@@ -214,7 +210,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * - Dispatcher template (always regenerated)
 	 * - Semantic template (always regenerated)
 	 * - Display template (conditional - only if not user-customized)
-	 * - Subobject templates (always regenerated)
 	 *
 	 * After generation, redirects to the Form page.
 	 */
@@ -670,7 +665,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function renderSummaryGrid( array $stats, array $state ): string {
 		$categoryCount = (int)( $stats['categoryCount'] ?? 0 );
 		$propertyCount = (int)( $stats['propertyCount'] ?? 0 );
-		$subobjectCount = (int)( $stats['subobjectCount'] ?? 0 );
 		$lang = $this->getLanguage();
 
 		return Html::rawElement(
@@ -683,10 +677,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$this->renderStatCard(
 				$this->msg( 'semanticschemas-label-properties' )->text(),
 				$lang->formatNum( $propertyCount ),
-			) .
-			$this->renderStatCard(
-				$this->msg( 'semanticschemas-label-subobjects' )->text(),
-				$lang->formatNum( $subobjectCount ),
 			) .
 			$this->renderStatCard(
 				$this->msg( 'semanticschemas-label-last-change' )->text(),
@@ -1049,7 +1039,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	}
 
 	/**
-	 * Compute hashes for all schema entities (categories, properties, subobjects).
+	 * Compute hashes for all schema entities (categories, properties).
 	 *
 	 * @return array<string, string> Map of page names to their computed hashes
 	 */
@@ -1064,11 +1054,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		foreach ( $this->propertyStore->getAllProperties() as $property ) {
 			$name = $property->getName();
 			$pageHashes["Property:$name"] = $this->hashComputer->computePropertyModelHash( $property );
-		}
-
-		foreach ( $this->subobjectStore->getAllSubobjects() as $subobject ) {
-			$name = $subobject->getName();
-			$pageHashes["Subobject:$name"] = $this->hashComputer->computeSubobjectModelHash( $subobject );
 		}
 
 		return $pageHashes;

@@ -4,7 +4,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Title\Title;
 
 /**
@@ -39,16 +38,13 @@ class PageHashComputer {
 
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
-	private WikiSubobjectStore $subobjectStore;
 
 	public function __construct(
 		WikiCategoryStore $categoryStore,
-		WikiPropertyStore $propertyStore,
-		WikiSubobjectStore $subobjectStore
+		WikiPropertyStore $propertyStore
 	) {
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
-		$this->subobjectStore = $subobjectStore;
 	}
 
 	/**
@@ -72,20 +68,10 @@ class PageHashComputer {
 	}
 
 	/**
-	 * Compute hash for a SubobjectModel based on canonical schema fields.
-	 *
-	 * @param SubobjectModel $subobject
-	 * @return string
-	 */
-	public function computeSubobjectModelHash( SubobjectModel $subobject ): string {
-		return $this->computeSchemaHash( $subobject->toArray() );
-	}
-
-	/**
 	 * Compute hash for a schema-managed page based on its prefixed name.
 	 * Routes to the appropriate model-based hash method.
 	 *
-	 * @param string $pageName Prefixed page name (e.g., "Category:Name", "Property:Name", "Subobject:Name")
+	 * @param string $pageName Prefixed page name (e.g., "Category:Name", "Property:Name")
 	 * @return string SHA256 hash (with "sha256:" prefix)
 	 */
 	public function computeHashForPageModel( string $pageName ): string {
@@ -104,11 +90,6 @@ class PageHashComputer {
 					$prop = $this->propertyStore->readProperty( $name );
 					return $prop instanceof PropertyModel
 						? $this->computePropertyModelHash( $prop )
-						: $this->hashContent( '' );
-				case 'subobject':
-					$sub = $this->subobjectStore->readSubobject( $name );
-					return $sub instanceof SubobjectModel
-						? $this->computeSubobjectModelHash( $sub )
 						: $this->hashContent( '' );
 				default:
 					// Unknown type, fall through and hash empty

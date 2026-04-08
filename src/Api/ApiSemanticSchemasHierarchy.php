@@ -123,10 +123,6 @@ class ApiSemanticSchemasHierarchy extends ApiBase {
 		if ( isset( $data['inheritedProperties'] ) ) {
 			$convertList( $data['inheritedProperties'], 'required' );
 		}
-
-		if ( isset( $data['inheritedSubobjects'] ) ) {
-			$convertList( $data['inheritedSubobjects'], 'required' );
-		}
 	}
 
 	/* =====================================================================

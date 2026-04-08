@@ -1,5 +1,5 @@
 {
-	"description": "SemanticSchemas base configuration — meta-properties, meta-categories, subobjects, and display templates",
+	"description": "SemanticSchemas base configuration — meta-properties, meta-categories, and display templates",
 	"import": [
 		{
 			"page": "Property/Default",
@@ -142,16 +142,6 @@
 			}
 		},
 		{
-			"page": "Has optional subobject",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_optional_subobject.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
 			"page": "Has required property",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
@@ -162,30 +152,10 @@
 			}
 		},
 		{
-			"page": "Has required subobject",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_required_subobject.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
 			"page": "Has section separator",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
 				"importFrom": "properties/Has_section_separator.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Has subobject type",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_subobject_type.wikitext"
 			},
 			"options": {
 				"replaceable": true
@@ -262,16 +232,6 @@
 			}
 		},
 		{
-			"page": "Subobject",
-			"namespace": "NS_CATEGORY",
-			"contents": {
-				"importFrom": "categories/Subobject.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
 			"page": "CompositeForm",
 			"namespace": "PF_NS_FORM",
 			"contents": {
@@ -287,17 +247,6 @@
 			"description": "Sets the default form for all pages in the Property: namespace",
 			"contents": {
 				"importFrom": "project/Property.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Subobject",
-			"namespace": "NS_PROJECT",
-			"description": "Sets the default form for all pages in the Subobject: namespace",
-			"contents": {
-				"importFrom": "project/Subobject.wikitext"
 			},
 			"options": {
 				"replaceable": true

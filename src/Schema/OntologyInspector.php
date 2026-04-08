@@ -6,7 +6,6 @@ use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 
 /**
  * OntologyInspector
@@ -22,7 +21,6 @@ class OntologyInspector {
 
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
-	private WikiSubobjectStore $subobjectStore;
 
 	private StateManager $stateManager;
 	private PageHashComputer $hashComputer;
@@ -31,14 +29,12 @@ class OntologyInspector {
 	public function __construct(
 		WikiCategoryStore $categoryStore,
 		WikiPropertyStore $propertyStore,
-		WikiSubobjectStore $subobjectStore,
 		StateManager $stateManager,
 		PageHashComputer $hashComputer,
 		SchemaValidator $validator
 	) {
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
-		$this->subobjectStore = $subobjectStore;
 		$this->stateManager = $stateManager;
 		$this->hashComputer = $hashComputer;
 		$this->validator = $validator;
@@ -53,17 +49,14 @@ class OntologyInspector {
 	private function buildSchemaArray(): array {
 		$categories = $this->categoryStore->getAllCategories();
 		$properties = $this->propertyStore->getAllProperties();
-		$subobjects = $this->subobjectStore->getAllSubobjects();
 
 		ksort( $categories );
 		ksort( $properties );
-		ksort( $subobjects );
 
 		$schema = [
 			'schemaVersion' => SchemaLoader::SCHEMA_VERSION,
 			'categories' => [],
 			'properties' => [],
-			'subobjects' => [],
 		];
 
 		foreach ( $categories as $name => $model ) {
@@ -72,10 +65,6 @@ class OntologyInspector {
 
 		foreach ( $properties as $name => $model ) {
 			$schema['properties'][$name] = $model->toArray();
-		}
-
-		foreach ( $subobjects as $name => $model ) {
-			$schema['subobjects'][$name] = $model->toArray();
 		}
 
 		return $schema;
@@ -87,28 +76,23 @@ class OntologyInspector {
 	 * @return array{
 	 *   categoryCount:int,
 	 *   propertyCount:int,
-	 *   subobjectCount:int,
 	 *   categoriesWithParents:int,
 	 *   categoriesWithProperties:int,
 	 *   categoriesWithDisplay:int,
-	 *   categoriesWithForms:int,
-	 *   categoriesWithSubobjects:int
+	 *   categoriesWithForms:int
 	 * }
 	 */
 	public function getStatistics(): array {
 		$categories = $this->categoryStore->getAllCategories();
 		$properties = $this->propertyStore->getAllProperties();
-		$subobjects = $this->subobjectStore->getAllSubobjects();
 
 		$stats = [
 			'categoryCount' => count( $categories ),
 			'propertyCount' => count( $properties ),
-			'subobjectCount' => count( $subobjects ),
 			'categoriesWithParents' => 0,
 			'categoriesWithProperties' => 0,
 			'categoriesWithDisplay' => 0,
 			'categoriesWithForms' => 0,
-			'categoriesWithSubobjects' => 0,
 		];
 
 		foreach ( $categories as $cat ) {
@@ -126,10 +110,6 @@ class OntologyInspector {
 
 			if ( $cat->getFormConfig() ) {
 				$stats['categoriesWithForms']++;
-			}
-
-			if ( $cat->getRequiredSubobjects() || $cat->getOptionalSubobjects() ) {
-				$stats['categoriesWithSubobjects']++;
 			}
 		}
 
@@ -160,7 +140,7 @@ class OntologyInspector {
 
 		$current = [];
 		foreach ( $stored as $pageName => $hashInfo ) {
-			// Page names are stored as "Category:Name", "Property:Name", "Subobject:Name"
+			// Page names are stored as "Category:Name", "Property:Name"
 			if ( !preg_match( '/^([^:]+):(.+)$/', $pageName, $m ) ) {
 				$modified[] = $pageName;
 				continue;
@@ -186,15 +166,6 @@ class OntologyInspector {
 						continue 2;
 					}
 					$current[$pageName] = $this->hashComputer->computePropertyModelHash( $model );
-					break;
-
-				case 'subobject':
-					$model = $this->subobjectStore->readSubobject( $name );
-					if ( !$model ) {
-						$modified[] = $pageName;
-						continue 2;
-					}
-					$current[$pageName] = $this->hashComputer->computeSubobjectModelHash( $model );
 					break;
 
 				default:

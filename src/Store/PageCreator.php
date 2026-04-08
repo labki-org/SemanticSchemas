@@ -183,9 +183,6 @@ class PageCreator {
 				case 'property':
 					$namespace = defined( 'SMW_NS_PROPERTY' ) ? constant( 'SMW_NS_PROPERTY' ) : NS_MAIN;
 					break;
-				case 'subobject':
-					$namespace = defined( 'NS_SUBOBJECT' ) ? constant( 'NS_SUBOBJECT' ) : NS_MAIN;
-					break;
 				default:
 					// Unknown prefix, try to parse as a regular title
 					return Title::newFromText( $pageName );

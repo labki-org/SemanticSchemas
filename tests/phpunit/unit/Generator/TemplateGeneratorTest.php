@@ -8,10 +8,8 @@ use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -30,7 +28,6 @@ class TemplateGeneratorTest extends TestCase {
 
 		$this->generator = new TemplateGenerator(
 			$this->createMock( PageCreator::class ),
-			$this->createMock( WikiSubobjectStore::class ),
 			$this->createMock( WikiPropertyStore::class )
 		);
 	}
@@ -315,7 +312,6 @@ class TemplateGeneratorTest extends TestCase {
 
 		return new TemplateGenerator(
 			$this->createMock( PageCreator::class ),
-			$this->createMock( WikiSubobjectStore::class ),
 			$propStore
 		);
 	}
@@ -417,68 +413,6 @@ class TemplateGeneratorTest extends TestCase {
 		$result = $gen->generateSemanticTemplate( $category );
 		$this->assertStringContainsString( 'Has homepage = {{{has_homepage|}}}', $result );
 		$this->assertStringNotContainsString( '+sep=', $result );
-	}
-
-	public function testSubobjectMultiValuePropertyUsesSep(): void {
-		$propertyMap = [
-			'Has tags' => new PropertyModel( 'Has tags', [
-				'datatype' => 'Text',
-				'allowsMultipleValues' => true,
-			] ),
-		];
-
-		$propStore = $this->createMock( WikiPropertyStore::class );
-		$propStore->method( 'readProperty' )
-			->willReturnCallback( static fn ( string $name ) => $propertyMap[$name] ?? null );
-
-		$subStore = $this->createMock( WikiSubobjectStore::class );
-		$subStore->method( 'readSubobject' )
-			->with( 'Metadata' )
-			->willReturn( new SubobjectModel( 'Metadata', [
-				'properties' => [
-					'required' => [ 'Has tags' ],
-					'optional' => [],
-				],
-			] ) );
-
-		// Capture content written to the subobject semantic template
-		$writtenContent = [];
-		$pageCreator = $this->createMock( PageCreator::class );
-		$pageCreator->method( 'makeTitle' )
-			->willReturn( $this->createMock( \MediaWiki\Title\Title::class ) );
-		$pageCreator->method( 'createOrUpdatePage' )
-			->willReturnCallback( static function ( $title, $content ) use ( &$writtenContent ) {
-				$writtenContent[] = $content;
-				return true;
-			} );
-
-		$gen = new TemplateGenerator( $pageCreator, $subStore, $propStore );
-
-		$category = new CategoryModel( 'Article', [
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
-			'subobjects' => [
-				'required' => [ 'Metadata' ],
-				'optional' => [],
-			],
-		] );
-
-		$resolver = new InheritanceResolver( [ 'Article' => $category ] );
-		$gen->generateAllTemplates( $category, $resolver );
-
-		// Find the subobject semantic template (contains #subobject:)
-		$subobjectContent = null;
-		foreach ( $writtenContent as $content ) {
-			if ( strpos( $content, '{{#subobject:' ) !== false ) {
-				$subobjectContent = $content;
-				break;
-			}
-		}
-
-		$this->assertNotNull( $subobjectContent, 'Subobject semantic template should be generated' );
-		$this->assertStringContainsString( 'Has tags = {{{has_tags|}}} |+sep=,', $subobjectContent );
 	}
 
 	/* =========================================================================

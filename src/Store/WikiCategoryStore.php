@@ -234,11 +234,6 @@ class WikiCategoryStore {
 				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),
 			],
 
-			'subobjects' => [
-				'required' => $this->smwFetchMany( $sdata, 'Has required subobject', 'subobject' ),
-				'optional' => $this->smwFetchMany( $sdata, 'Has optional subobject', 'subobject' ),
-			],
-
 			'display' => $this->loadDisplayConfig( $sdata ),
 		];
 	}
@@ -295,15 +290,6 @@ class WikiCategoryStore {
 
 		foreach ( $cat->getOptionalProperties() as $prop ) {
 			$lines[] = "[[Has optional property::Property:$prop]]";
-		}
-
-		// Subobjects
-		foreach ( $cat->getRequiredSubobjects() as $sg ) {
-			$lines[] = "[[Has required subobject::Subobject:$sg]]";
-		}
-
-		foreach ( $cat->getOptionalSubobjects() as $sg ) {
-			$lines[] = "[[Has optional subobject::Subobject:$sg]]";
 		}
 
 		return implode( "\n", $lines );

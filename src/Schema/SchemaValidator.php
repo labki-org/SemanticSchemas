@@ -61,13 +61,12 @@ class SchemaValidator {
 
 		$categories = $schema['categories'];
 		$properties = $schema['properties'];
-		$subobjects = $schema['subobjects'] ?? [];
 
 		foreach ( $categories as $categoryName => $categoryData ) {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateCategory( $categoryName, $categoryData, $categories, $properties, $subobjects )
+				$this->validateCategory( $categoryName, $categoryData, $categories, $properties )
 			);
 		}
 
@@ -76,14 +75,6 @@ class SchemaValidator {
 				$errors,
 				$warnings,
 				$this->validateProperty( $propertyName, $propertyData, $categories )
-			);
-		}
-
-		foreach ( $subobjects as $subobjectName => $subobjectData ) {
-			$this->mergeResults(
-				$errors,
-				$warnings,
-				$this->validateSubobject( $subobjectName, $subobjectData, $properties )
 			);
 		}
 
@@ -387,8 +378,7 @@ class SchemaValidator {
 		string $categoryName,
 		array $categoryData,
 		array $allCategories,
-		array $allProperties,
-		array $allSubobjects
+		array $allProperties
 	): array {
 		$errors = [];
 		$warnings = [];
@@ -434,21 +424,6 @@ class SchemaValidator {
 			);
 		}
 
-		if ( isset( $categoryData['subobjects'] ) ) {
-			$this->mergeResults(
-				$errors,
-				$warnings,
-				$this->validateRequiredOptionalBuckets(
-					'category',
-					$categoryName,
-					$categoryData['subobjects'],
-					$allSubobjects,
-					'subobject',
-					'subobjects'
-				)
-			);
-		}
-
 		if ( isset( $categoryData['forms'] ) ) {
 			$this->mergeResults(
 				$errors,
@@ -489,59 +464,6 @@ class SchemaValidator {
 		$errors = array_merge(
 			$errors,
 			$this->validateReferences( 'category', $categoryName, $parents, $allCategories, 'parent category' )
-		);
-
-		return [ 'errors' => $errors, 'warnings' => $warnings ];
-	}
-
-	/* ======================================================================
-	 * SUBOBJECT VALIDATION
-	 * ====================================================================== */
-
-	private function validateSubobject(
-		string $subobjectName,
-		array $subobjectData,
-		array $allProperties
-	): array {
-		$errors = [];
-		$warnings = [];
-
-		if ( trim( $subobjectName ) === '' ) {
-			$errors[] = $this->formatError(
-				'subobject',
-				$subobjectName,
-				'Name cannot be empty',
-				'Provide a non-empty subobject name'
-			);
-			return [ 'errors' => $errors, 'warnings' => $warnings ];
-		}
-
-		if ( !isset( $subobjectData['properties'] ) ) {
-			return [ 'errors' => $errors, 'warnings' => $warnings ];
-		}
-
-		$props = $subobjectData['properties'];
-		if ( !is_array( $props ) ) {
-			$errors[] = $this->formatError(
-				'subobject',
-				$subobjectName,
-				'properties must be an array with required/optional keys',
-				'Use {"required": [...], "optional": [...]}'
-			);
-			return [ 'errors' => $errors, 'warnings' => $warnings ];
-		}
-
-		$this->mergeResults(
-			$errors,
-			$warnings,
-			$this->validateRequiredOptionalBuckets(
-				'subobject',
-				$subobjectName,
-				$props,
-				$allProperties,
-				'property',
-				'properties'
-			)
 		);
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];

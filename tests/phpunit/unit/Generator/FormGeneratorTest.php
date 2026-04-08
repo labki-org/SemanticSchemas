@@ -5,10 +5,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Generator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -17,7 +15,6 @@ use PHPUnit\Framework\TestCase;
 class FormGeneratorTest extends TestCase {
 
 	private FormGenerator $generator;
-	private WikiSubobjectStore $subobjectStore;
 	private WikiPropertyStore $propertyStore;
 
 	protected function setUp(): void {
@@ -26,8 +23,6 @@ class FormGeneratorTest extends TestCase {
 		$this->propertyStore = $this->createMock( WikiPropertyStore::class );
 		$this->propertyStore->method( 'readProperty' )->willReturn( null );
 
-		$this->subobjectStore = $this->createMock( WikiSubobjectStore::class );
-
 		$inputMapper = $this->createMock( PropertyInputMapper::class );
 		$inputMapper->method( 'generateInputDefinition' )
 			->willReturn( 'input type=text' );
@@ -35,8 +30,7 @@ class FormGeneratorTest extends TestCase {
 		$this->generator = new FormGenerator(
 			$this->createMock( PageCreator::class ),
 			$this->propertyStore,
-			$inputMapper,
-			$this->subobjectStore
+			$inputMapper
 		);
 	}
 
@@ -74,37 +68,6 @@ class FormGeneratorTest extends TestCase {
 	/* =========================================================================
 	 * COMPOSITE SLOT — heading conversion
 	 * ========================================================================= */
-
-	public function testCompositeFormConvertsSubobjectHeadingsToHtml(): void {
-		$subobject = new SubobjectModel( 'Address', [
-			'label' => 'Address',
-			'properties' => [
-				'required' => [ 'Has street' ],
-				'optional' => [],
-			],
-		] );
-
-		$this->subobjectStore->method( 'readSubobject' )
-			->willReturn( $subobject );
-
-		$category = new EffectiveCategoryModel( 'Person', [
-			'label' => 'Person',
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
-			'subobjects' => [
-				'required' => [ 'Address' ],
-				'optional' => [],
-			],
-		] );
-
-		$result = $this->generator->generateCompositeForm( $category );
-
-		// Subobject heading should be converted from === to <h3>
-		$this->assertStringContainsString( '<h3>Address</h3>', $result );
-		$this->assertStringNotContainsString( '=== Address ===', $result );
-	}
 
 	public function testCompositeFormCategoryHeadingIsHtmlH2(): void {
 		$category = new EffectiveCategoryModel( 'Person', [
@@ -218,40 +181,6 @@ class FormGeneratorTest extends TestCase {
 		// Field definitions live in the composite slot, not the main form
 		$this->assertStringNotContainsString( '{{{field|', $result );
 		$this->assertStringNotContainsString( '{{{for template|', $result );
-	}
-
-	/* =========================================================================
-	 * COMPOSITE SLOT — subobject sections
-	 * ========================================================================= */
-
-	public function testCompositeFormIncludesSubobjectFields(): void {
-		$subobject = new SubobjectModel( 'Phone', [
-			'label' => 'Phone',
-			'properties' => [
-				'required' => [ 'Has phone number' ],
-				'optional' => [ 'Has phone type' ],
-			],
-		] );
-
-		$this->subobjectStore->method( 'readSubobject' )
-			->willReturn( $subobject );
-
-		$category = new EffectiveCategoryModel( 'Contact', [
-			'label' => 'Contact',
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
-			'subobjects' => [
-				'required' => [ 'Phone' ],
-				'optional' => [],
-			],
-		] );
-
-		$result = $this->generator->generateCompositeForm( $category );
-
-		$this->assertStringContainsString( 'field|has_phone_number', $result );
-		$this->assertStringContainsString( 'field|has_phone_type', $result );
 	}
 
 	/* =========================================================================

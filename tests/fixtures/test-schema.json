@@ -931,21 +931,5 @@
             },
             "allowsMultipleValues": false
         }
-    },
-    "subobjects": {
-        "PublicationAuthor": {
-            "label": "PublicationAuthor",
-            "description": "Captures publication author entries (repeatable).",
-            "properties": {
-                "required": [
-                    "Has author",
-                    "Has author order"
-                ],
-                "optional": [
-                    "Is co-first author",
-                    "Is corresponding author"
-                ]
-            }
-        }
     }
 }

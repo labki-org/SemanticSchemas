@@ -11,7 +11,6 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
  * Builds structured hierarchy data describing:
  *   - Category ancestry (nodes + parents)
  *   - Inherited properties (required/optional, source category)
- *   - Inherited subobjects (required/optional, source category)
  *
  * This data feeds:
  *   - The hierarchy API for frontend visualization
@@ -43,7 +42,6 @@ class CategoryHierarchyService {
 			'rootCategory' => $fullName,
 			'nodes' => [],
 			'inheritedProperties' => [],
-			'inheritedSubobjects' => [],
 		];
 
 		$allCategories = $this->categoryStore->getAllCategories();
@@ -72,12 +70,6 @@ class CategoryHierarchyService {
 			$allCategories
 		);
 
-		$result['inheritedSubobjects'] = $this->extractInheritedSubobjects(
-			$categoryName,
-			$resolver,
-			$allCategories
-		);
-
 		return $result;
 	}
 
@@ -99,7 +91,6 @@ class CategoryHierarchyService {
 			'rootCategory' => $fullName,
 			'nodes' => [],
 			'inheritedProperties' => [],
-			'inheritedSubobjects' => [],
 		];
 
 		$allCategories = $this->categoryStore->getAllCategories();
@@ -131,12 +122,6 @@ class CategoryHierarchyService {
 
 		// Extract inherited properties
 		$result['inheritedProperties'] = $this->extractVirtualInheritedProperties(
-			$parents,
-			$allCategories
-		);
-
-		// Extract inherited subobjects
-		$result['inheritedSubobjects'] = $this->extractVirtualInheritedSubobjects(
 			$parents,
 			$allCategories
 		);
@@ -200,26 +185,13 @@ class CategoryHierarchyService {
 		return $output;
 	}
 
-	private function extractInheritedSubobjects(
-		string $name,
-		InheritanceResolver $resolver,
-		array $all
-	): array {
-		$output = [];
-		$seen = [];
-		$this->collectSubobjectsFromAncestors(
-			$resolver->getAncestors( $name ), $all, $output, $seen
-		);
-		return $output;
-	}
-
 	/* =====================================================================
 	 * INTERNAL: VIRTUAL-INHERITANCE (FORM PREVIEW)
 	 *
 	 * "Virtual" means the category does not yet exist in the wiki. When the
 	 * user is creating a new category via the UI, these methods resolve what
-	 * properties and subobjects the new category *would* inherit from its
-	 * chosen parents so the form can preview inherited fields in real time.
+	 * properties the new category *would* inherit from its chosen parents
+	 * so the form can preview inherited fields in real time.
 	 * ===================================================================== */
 
 	/**
@@ -247,37 +219,6 @@ class CategoryHierarchyService {
 
 		foreach ( $parents as $parent ) {
 			$this->collectPropertiesFromAncestors(
-				$resolver->getAncestors( $parent ), $all, $output, $seen
-			);
-		}
-
-		return $output;
-	}
-
-	/**
-	 * Collect inherited subobjects for a category that does not yet exist.
-	 *
-	 * Same as extractVirtualInheritedProperties but for subobject definitions.
-	 *
-	 * @param string[] $parents Parent category names (no namespace prefix)
-	 * @param array<string,\MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel> $all
-	 *   All existing CategoryModels keyed by name
-	 * @return array List of inherited subobject descriptors
-	 */
-	private function extractVirtualInheritedSubobjects(
-		array $parents,
-		array $all
-	): array {
-		if ( empty( $parents ) ) {
-			return [];
-		}
-
-		$output = [];
-		$seen = [];
-		$resolver = new InheritanceResolver( $all );
-
-		foreach ( $parents as $parent ) {
-			$this->collectSubobjectsFromAncestors(
 				$resolver->getAncestors( $parent ), $all, $output, $seen
 			);
 		}
@@ -324,38 +265,4 @@ class CategoryHierarchyService {
 		}
 	}
 
-	/**
-	 * Iterate ancestors and collect subobjects with deduplication.
-	 *
-	 * @param string[] $ancestors Ordered ancestor list
-	 * @param array $all All category models keyed by name
-	 * @param array &$output Accumulates result entries
-	 * @param array &$seen Tracks already-collected item names
-	 */
-	private function collectSubobjectsFromAncestors(
-		array $ancestors,
-		array $all,
-		array &$output,
-		array &$seen
-	): void {
-		foreach ( $ancestors as $ancestor ) {
-			$model = $all[$ancestor] ?? null;
-			if ( !$model ) {
-				continue;
-			}
-
-			$source = "Category:$ancestor";
-
-			foreach ( $model->getTaggedSubobjects() as $tagged ) {
-				if ( !isset( $seen[$tagged['name']] ) ) {
-					$output[] = [
-						'subobjectTitle' => 'Subobject:' . $tagged['name'],
-						'sourceCategory' => $source,
-						'required' => $tagged['required'],
-					];
-					$seen[$tagged['name']] = true;
-				}
-			}
-		}
-	}
 }

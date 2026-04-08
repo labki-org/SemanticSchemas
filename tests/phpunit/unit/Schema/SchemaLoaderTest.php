@@ -390,11 +390,9 @@ YAML;
 		$this->assertArrayHasKey( 'schemaVersion', $result );
 		$this->assertArrayHasKey( 'categories', $result );
 		$this->assertArrayHasKey( 'properties', $result );
-		$this->assertArrayHasKey( 'subobjects', $result );
 		$this->assertSame( '1.0', $result['schemaVersion'] );
 		$this->assertIsArray( $result['categories'] );
 		$this->assertIsArray( $result['properties'] );
-		$this->assertIsArray( $result['subobjects'] );
 	}
 
 	public function testCreateEmptySchemaIsEmpty(): void {
@@ -402,7 +400,6 @@ YAML;
 
 		$this->assertEmpty( $result['categories'] );
 		$this->assertEmpty( $result['properties'] );
-		$this->assertEmpty( $result['subobjects'] );
 	}
 
 	/* =========================================================================
@@ -414,7 +411,6 @@ YAML;
 			'schemaVersion' => '1.0',
 			'categories' => [],
 			'properties' => [],
-			'subobjects' => [],
 		];
 
 		$result = $this->loader->hasValidStructure( $schema );
@@ -426,7 +422,6 @@ YAML;
 		$schema = [
 			'categories' => [],
 			'properties' => [],
-			'subobjects' => [],
 		];
 
 		$result = $this->loader->hasValidStructure( $schema );
@@ -438,7 +433,6 @@ YAML;
 		$schema = [
 			'schemaVersion' => '1.0',
 			'properties' => [],
-			'subobjects' => [],
 		];
 
 		$result = $this->loader->hasValidStructure( $schema );
@@ -450,19 +444,6 @@ YAML;
 		$schema = [
 			'schemaVersion' => '1.0',
 			'categories' => [],
-			'subobjects' => [],
-		];
-
-		$result = $this->loader->hasValidStructure( $schema );
-
-		$this->assertFalse( $result );
-	}
-
-	public function testHasValidStructureReturnsFalseForMissingSubobjects(): void {
-		$schema = [
-			'schemaVersion' => '1.0',
-			'categories' => [],
-			'properties' => [],
 		];
 
 		$result = $this->loader->hasValidStructure( $schema );
@@ -475,7 +456,6 @@ YAML;
 			'schemaVersion' => '1.0',
 			'categories' => 'not an array',
 			'properties' => [],
-			'subobjects' => [],
 		];
 
 		$result = $this->loader->hasValidStructure( $schema );

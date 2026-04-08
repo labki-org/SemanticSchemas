@@ -13,7 +13,6 @@ use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\MediaWikiServices;
 
 /** @phpcs-require-sorted-array */
@@ -42,8 +41,7 @@ return [
 		return new FormGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->get( 'SemanticSchemas.PropertyInputMapper' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' )
+			$services->get( 'SemanticSchemas.PropertyInputMapper' )
 		);
 	},
 
@@ -53,7 +51,6 @@ return [
 		return new OntologyInspector(
 			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
 			$services->get( 'SemanticSchemas.StateManager' ),
 			$services->get( 'SemanticSchemas.PageHashComputer' ),
 			$services->get( 'SemanticSchemas.SchemaValidator' )
@@ -74,8 +71,7 @@ return [
 	): PageHashComputer {
 		return new PageHashComputer(
 			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' )
+			$services->get( 'SemanticSchemas.WikiPropertyStore' )
 		);
 	},
 
@@ -110,7 +106,6 @@ return [
 	): TemplateGenerator {
 		return new TemplateGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' )
 		);
 	},
@@ -133,15 +128,6 @@ return [
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->getConnectionProvider(),
 			$services->getContentLanguage()
-		);
-	},
-
-	'SemanticSchemas.WikiSubobjectStore' => static function (
-		MediaWikiServices $services
-	): WikiSubobjectStore {
-		return new WikiSubobjectStore(
-			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->getConnectionProvider()
 		);
 	},
 

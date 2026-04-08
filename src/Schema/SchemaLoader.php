@@ -212,15 +212,13 @@ class SchemaLoader {
 			'schemaVersion' => self::SCHEMA_VERSION,
 			'categories' => [],
 			'properties' => [],
-			'subobjects' => [],
 		];
 	}
 
 	public function hasValidStructure( array $schema ): bool {
 		return isset( $schema['schemaVersion'] )
 			&& is_array( $schema['categories'] ?? null )
-			&& is_array( $schema['properties'] ?? null )
-			&& is_array( $schema['subobjects'] ?? null );
+			&& is_array( $schema['properties'] ?? null );
 	}
 
 	/* -------------------------------------------------------------------------
