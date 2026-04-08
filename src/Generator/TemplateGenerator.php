@@ -47,11 +47,16 @@ class TemplateGenerator {
 	 * For Page-type properties with allowedNamespace, this adds the namespace
 	 * prefix to ensure SMW correctly interprets values as page references.
 	 *
+	 * This is necessary because Page Forms autocomplete returns bare page names
+	 * without namespace prefixes (e.g. "MyPage" instead of "Project:MyPage").
+	 * The template must re-add the prefix so SMW stores the fully qualified
+	 * page reference.
+	 *
 	 * @param string $propertyName The SMW property name
 	 * @param string $param The template parameter name
-	 * @return string|null The wikitext for the property line, or null if handled elsewhere
+	 * @return string The wikitext for the property line
 	 */
-	private function generatePropertyLine( string $propertyName, string $param ): ?string {
+	private function generatePropertyLine( string $propertyName, string $param ): string {
 		$propModel = $this->propertyStore->readProperty( $propertyName );
 
 		// Default: simple property = value
@@ -70,33 +75,14 @@ class TemplateGenerator {
 		}
 
 		if ( $propModel->allowsMultipleValues() ) {
-			// Multi-value Page property: handled via inline annotations outside #set
-			return null;
+			// Multi-value Page property with namespace: prefix each value via #arraymap inside #set
+			return ' | ' . $propertyName . ' = {{#arraymap:{{{' . $param .
+				'|}}}|,|@@item@@|' . $allowedNamespace . ':@@item@@|,}} |+sep=,';
 		}
 
 		// Single value: conditional prefix
 		return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|' .
 			$allowedNamespace . ':{{{' . $param . '|}}}|}}';
-	}
-
-	/**
-	 * Generate inline annotation for multi-value Page property with namespace prefix.
-	 *
-	 * Uses [[Property::Namespace:Value]] syntax which creates separate property values.
-	 *
-	 * @param string $propertyName The SMW property name
-	 * @param string $param The template parameter name
-	 * @param string $allowedNamespace The namespace to prefix values with
-	 * @return string The wikitext for inline annotations
-	 */
-	private function generateInlineAnnotation(
-		string $propertyName,
-		string $param,
-		string $allowedNamespace
-	): string {
-		// Use #arraymap to create [[Property::Namespace:Value]] for each value
-		return '{{#arraymap:{{{' . $param .
-			'|}}}|,|@@item@@|[[' . $propertyName . '::' . $allowedNamespace . ':@@item@@]]|}}';
 	}
 
 	/* =====================================================================
@@ -145,33 +131,12 @@ class TemplateGenerator {
 		/* Own property storage */
 		$out[] = '{{#set:';
 
-		// Track properties that need inline annotations (multi-value Page with namespace)
-		$inlineAnnotations = [];
-
 		foreach ( $props as $p ) {
 			$param = NamingHelper::propertyToParameter( $p );
-			$line = $this->generatePropertyLine( $p, $param );
-
-			if ( $line !== null ) {
-				$out[] = $line;
-			} else {
-				// Property needs inline annotation - get the namespace
-				$propModel = $this->propertyStore->readProperty( $p );
-				if ( $propModel instanceof PropertyModel ) {
-					$allowedNamespace = $propModel->getAllowedNamespace();
-					if ( $allowedNamespace !== null && $allowedNamespace !== '' ) {
-						$inlineAnnotations[] = $this->generateInlineAnnotation( $p, $param, $allowedNamespace );
-					}
-				}
-			}
+			$out[] = $this->generatePropertyLine( $p, $param );
 		}
 
 		$out[] = '}}';
-
-		// Add inline annotations for multi-value Page properties
-		foreach ( $inlineAnnotations as $annotation ) {
-			$out[] = $annotation;
-		}
 
 		$out[] = '</includeonly>';
 
@@ -265,12 +230,7 @@ class TemplateGenerator {
 
 		foreach ( $props as $p ) {
 			$param = NamingHelper::propertyToParameter( $p );
-			$line = $this->generatePropertyLine( $p, $param );
-			// For subobjects, skip multi-value Page properties (null return)
-			// as inline annotations don't work with #subobject
-			if ( $line !== null ) {
-				$out[] = $line;
-			}
+			$out[] = $this->generatePropertyLine( $p, $param );
 		}
 
 		$out[] = '}}';

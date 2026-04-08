@@ -183,6 +183,10 @@ class DisplayStubGenerator {
 	 * For multi-value properties, uses #arraymap to prefix each value.
 	 * For other properties, returns the raw parameter reference.
 	 *
+	 * Namespace prefixing is needed because Page Forms autocomplete returns bare
+	 * page names (e.g. "MyPage") without the namespace. The display template must
+	 * re-add the prefix so links resolve to the correct namespaced page.
+	 *
 	 * @param \MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel $property
 	 * @param string $paramName
 	 * @return string Wikitext expression for the value
