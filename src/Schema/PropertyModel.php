@@ -19,7 +19,7 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   - allowedNamespace    (string|null)
  *   - allowsMultipleValues (bool)
  *   - inputType            (string|null) - Explicit PageForms input type override
- *   - reverseLabel         (string|null) - Label describing the reverse relationship
+ *   - inverseLabel         (string|null) - Label describing the inverse relationship
  */
 class PropertyModel {
 
