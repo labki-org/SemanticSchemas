@@ -273,8 +273,8 @@ class PropertyModel {
 		return $this->inputType;
 	}
 
-	public function getReverseLabel(): ?string {
-		return $this->reverseLabel;
+	public function getInverseLabel(): ?string {
+		return $this->inverseLabel;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -293,7 +293,7 @@ class PropertyModel {
 			'allowedNamespace' => $this->allowedNamespace,
 			'allowsMultipleValues' => $this->allowsMultipleValues,
 			'inputType' => $this->inputType,
-			'reverseLabel' => $this->reverseLabel,
+			'inverseLabel' => $this->inverseLabel,
 		];
 
 		// Remove nulls + empty arrays, but preserve boolean false

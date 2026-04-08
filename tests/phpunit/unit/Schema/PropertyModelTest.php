@@ -104,10 +104,10 @@ class PropertyModelTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * REVERSE LABEL
+	 * INVERSE LABEL
 	 * ========================================================================= */
 
-	public function testReverseLabelDefaultsToNull(): void {
+	public function testInverseLabelDefaultsToNull(): void {
 		$p = new PropertyModel( 'Has test', [ 'datatype' => 'Page' ] );
 		$this->assertNull( $p->getInverseLabel() );
 	}

@@ -309,7 +309,7 @@ class DisplayStubGenerator {
 			$askQuery = '{{#ask: [[' . $propName . '::{{FULLPAGENAME}}]]'
 				. ' | format=list }}';
 
-			$rows .= $this->buildConditionalRow( $askQuery, $reverseLabel, $askQuery );
+			$rows .= $this->buildConditionalRow( $askQuery, $inverseLabel, $askQuery );
 		}
 
 		if ( $rows === '' ) {

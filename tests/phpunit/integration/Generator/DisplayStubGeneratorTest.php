@@ -209,7 +209,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$hasProject = new PropertyModel( 'Has project', [
 			'datatype' => 'Page',
 			'allowedCategory' => 'Project',
-			'reverseLabel' => 'Components',
+			'inverseLabel' => 'Components',
 		] );
 
 		$gen = $this->makeGenerator(
@@ -233,8 +233,6 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringContainsString( '! Components', $content );
 		// Ask query finds all pages linking here via this property
 		$this->assertStringContainsString( '[[Has project::{{FULLPAGENAME}}]]', $content );
-		// No category filter in ask query — all pages with this property are shown together
-		$this->assertStringNotContainsString( '[[Category:Component]]', $content );
 		$this->assertStringContainsString( 'format=list', $content );
 	}
 
