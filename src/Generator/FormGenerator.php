@@ -256,7 +256,7 @@ class FormGenerator {
 	 */
 	private function generateSubobjectSections(
 		CategoryModel $category,
-		?InheritanceResolver $resolver = null
+		InheritanceResolver $resolver
 	): array {
 		$tagged = $category->getTaggedSubobjects();
 		if ( empty( $tagged ) ) {
@@ -269,19 +269,11 @@ class FormGenerator {
 			$subName = $entry['name'];
 			$isRequired = $entry['required'];
 
-			if ( $resolver !== null ) {
-				try {
-					$model = $resolver->getEffectiveCategory( $subName );
-				} catch ( \Exception $e ) {
-					wfLogWarning( "SemanticSchemas: Cannot resolve subobject category:$subName" );
-					continue;
-				}
-			} else {
-				$model = $this->categoryStore->readCategory( $subName );
-				if ( !$model instanceof CategoryModel ) {
-					wfLogWarning( "SemanticSchemas: Missing subobject category:$subName" );
-					continue;
-				}
+			try {
+				$model = $resolver->getEffectiveCategory( $subName );
+			} catch ( \Exception $e ) {
+				wfLogWarning( "SemanticSchemas: Cannot resolve subobject category:$subName" );
+				continue;
 			}
 
 			$label = $this->s( $model->getLabel() ?: $model->getName() );
@@ -371,7 +363,7 @@ class FormGenerator {
 	 */
 	public function generateCompositeForm(
 		EffectiveCategoryModel $category,
-		?InheritanceResolver $resolver = null
+		InheritanceResolver $resolver
 	): string {
 		$name = trim( $category->getName() );
 		$label = trim( $category->getLabel() );
@@ -406,7 +398,7 @@ class FormGenerator {
 
 	public function generateAndSaveCompositeForm(
 		EffectiveCategoryModel $category,
-		?InheritanceResolver $resolver = null
+		InheritanceResolver $resolver
 	): bool {
 		try {
 			$txt = $this->generateCompositeForm( $category, $resolver );
@@ -425,7 +417,7 @@ class FormGenerator {
 	 */
 	public function generateAndSaveAllForms(
 		EffectiveCategoryModel $category,
-		?InheritanceResolver $resolver = null
+		InheritanceResolver $resolver
 	): bool {
 		$formSuccess = $this->generateAndSaveForm( $category );
 		$compositeSuccess = $this->generateAndSaveCompositeForm( $category, $resolver );

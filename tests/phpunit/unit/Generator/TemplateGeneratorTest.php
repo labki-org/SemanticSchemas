@@ -148,7 +148,8 @@ class TemplateGeneratorTest extends TestCase {
 	 */
 	private function generateDispatcher( CategoryModel $category ): string {
 		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
-		return $this->generator->generateDispatcherTemplate( $effective );
+		$resolver = new InheritanceResolver( [ $category->getName() => $category ] );
+		return $this->generator->generateDispatcherTemplate( $effective, $resolver );
 	}
 
 	public function testGenerateDispatcherTemplateReturnsString(): void {
@@ -198,7 +199,8 @@ class TemplateGeneratorTest extends TestCase {
 		$category = $this->createMock( EffectiveCategoryModel::class );
 		$category->method( 'getName' )->willReturn( '' );
 
-		$this->generator->generateDispatcherTemplate( $category );
+		$resolver = new InheritanceResolver( [] );
+		$this->generator->generateDispatcherTemplate( $category, $resolver );
 	}
 
 	/* =========================================================================
@@ -443,7 +445,7 @@ class TemplateGeneratorTest extends TestCase {
 		$resolver = new InheritanceResolver( $categoryMap );
 		$effective = $resolver->getEffectiveCategory( 'Student' );
 
-		$result = $this->generator->generateDispatcherTemplate( $effective );
+		$result = $this->generator->generateDispatcherTemplate( $effective, $resolver );
 
 		$this->assertStringContainsString( '{{Student/semantic', $result );
 		$this->assertStringNotContainsString( '{{Person/semantic', $result );

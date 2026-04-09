@@ -168,12 +168,12 @@ class TemplateGenerator {
 	 * Generate content for the dispatcher template.
 	 *
 	 * @param EffectiveCategoryModel $effective The fully merged category
-	 * @param ?InheritanceResolver $resolver For resolving subobject category inheritance
+	 * @param InheritanceResolver $resolver For resolving subobject category inheritance
 	 * @return string
 	 */
 	public function generateDispatcherTemplate(
 		EffectiveCategoryModel $effective,
-		?InheritanceResolver $resolver = null
+		InheritanceResolver $resolver
 	): string {
 		$name = trim( $effective->getName() );
 		if ( $name === '' ) {
@@ -200,12 +200,10 @@ class TemplateGenerator {
 		$out[] = '';
 
 		/* Subobject sections */
-		if ( $resolver !== null ) {
-			$out = array_merge(
-				$out,
-				$this->generateSubobjectDisplaySections( $effective, $resolver )
-			);
-		}
+		$out = array_merge(
+			$out,
+			$this->generateSubobjectDisplaySections( $effective, $resolver )
+		);
 
 		$out[] = '</includeonly>';
 
