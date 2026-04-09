@@ -342,7 +342,10 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->runJobs();
 
 		$cats = $this->categoryStore->getAllCategories();
-		$this->assertArrayEquals( $cats['ChildCategory']->getParents(), [ Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY, 'ParentCategory' ] );
+		$this->assertArrayEquals(
+			$cats['ChildCategory']->getParents(),
+			[ Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY, 'ParentCategory' ]
+		);
 	}
 
 	/**
