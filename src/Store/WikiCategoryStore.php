@@ -111,15 +111,15 @@ class WikiCategoryStore {
 		$res = $dbr->newSelectQueryBuilder()
 			->select( 'page_title' )
 			->from( 'page' )
-			->where( [ 'page_namespace' => NS_CATEGORY ] )
+			->where( [
+				'page_namespace' => NS_CATEGORY,
+				$dbr->expr( 'page_title', '!=', Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY )
+			] )
 			->caller( __METHOD__ )
 			->fetchResultSet();
 
 		foreach ( $res as $row ) {
 			$name = str_replace( '_', ' ', $row->page_title );
-			if ( $name === Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY ) {
-				continue;
-			}
 			$cat = $this->readCategory( $name );
 			if ( $cat ) {
 				$out[$name] = $cat;
@@ -224,11 +224,17 @@ class WikiCategoryStore {
 		$subject = \SMW\DIWikiPage::newFromTitle( $title );
 		$sdata = $store->getSemanticData( $subject );
 
+		# strip namespace prefix from parent categories
+		$parents = array_map(
+			static fn ( string $parentName )=>explode( ':', $parentName )[1],
+			array_keys( $title->getParentCategories() )
+		);
+
 		return [
 			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
 			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
 			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
-			'parents' => $title->getParentCategories(),
+			'parents' => $parents,
 			'properties' => [
 				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
 				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),

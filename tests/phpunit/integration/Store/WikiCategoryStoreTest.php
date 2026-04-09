@@ -302,7 +302,7 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 	}
 
 	/* =========================================================================
-	  * Managed Parents
+	  * Parents
 	  * ========================================================================= */
 
 	public static function parentsProvider(): array {
@@ -330,6 +330,19 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 		$managed = $this->categoryStore->getManagedParents( $testcat );
 		$this->assertArrayEquals( $expected, $managed );
+	}
+
+	public function testNamespaceStrippedFromParents() {
+		$category = new CategoryModel( "ChildCategory", [
+			'parents' => [ 'ParentCategory' ]
+		] );
+
+		$this->categoryStore->writeCategory( $category );
+
+		$this->runJobs();
+
+		$cats = $this->categoryStore->getAllCategories();
+		$this->assertArrayEquals( $cats['ChildCategory']->getParents(), [ Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY, 'ParentCategory' ] );
 	}
 
 	/**
