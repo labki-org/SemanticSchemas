@@ -264,17 +264,15 @@ class TemplateGenerator {
 	 * ===================================================================== */
 
 	private function generateSubobjectDisplaySections( EffectiveCategoryModel $category ): array {
-		$required = $category->getRequiredSubobjects();
-		$optional = $category->getOptionalSubobjects();
-
-		$all = array_unique( array_merge( $required, $optional ) );
-		if ( empty( $all ) ) {
+		$tagged = $category->getTaggedSubobjects();
+		if ( empty( $tagged ) ) {
 			return [];
 		}
 
 		$out = [];
 
-		foreach ( $all as $subName ) {
+		foreach ( $tagged as $entry ) {
+			$subName = $entry['name'];
 			$sub = $this->categoryStore->readCategory( $subName );
 			if ( !$sub instanceof CategoryModel ) {
 				wfLogWarning( "SemanticSchemas: Missing subobject category definition '$subName'" );
