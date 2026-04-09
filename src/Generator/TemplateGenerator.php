@@ -224,7 +224,7 @@ class TemplateGenerator {
 		$out[] = '</noinclude><includeonly>';
 
 		$out[] = '{{#subobject:';
-		$out[] = ' | @category = ' . $name;
+		$out[] = ' |@category=' . $name;
 
 		$props = $sub->getAllProperties();
 
