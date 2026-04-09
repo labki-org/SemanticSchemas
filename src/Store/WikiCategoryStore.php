@@ -111,15 +111,15 @@ class WikiCategoryStore {
 		$res = $dbr->newSelectQueryBuilder()
 			->select( 'page_title' )
 			->from( 'page' )
-			->where( [ 'page_namespace' => NS_CATEGORY ] )
+			->where( [
+				'page_namespace' => NS_CATEGORY,
+				$dbr->expr( 'page_title', '!=', Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY )
+			] )
 			->caller( __METHOD__ )
 			->fetchResultSet();
 
 		foreach ( $res as $row ) {
 			$name = str_replace( '_', ' ', $row->page_title );
-			if ( $name === Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY ) {
-				continue;
-			}
 			$cat = $this->readCategory( $name );
 			if ( $cat ) {
 				$out[$name] = $cat;
@@ -224,14 +224,17 @@ class WikiCategoryStore {
 		$subject = \SMW\DIWikiPage::newFromTitle( $title );
 		$sdata = $store->getSemanticData( $subject );
 
+		# strip namespace prefix from parent categories
+		$parents = array_map(
+			static fn ( string $parentName )=>explode( ':', $parentName )[1],
+			array_keys( $title->getParentCategories() )
+		);
+
 		return [
 			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
 			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
 			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
-			'parents' => array_map(
-				static fn ( $key ) => str_replace( '_', ' ', preg_replace( '/^Category:/', '', $key ) ),
-				array_keys( $title->getParentCategories() )
-			),
+			'parents' => $parents,
 			'properties' => [
 				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
 				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),
@@ -240,6 +243,8 @@ class WikiCategoryStore {
 				'required' => $this->smwFetchMany( $sdata, 'Has required subobject', 'category' ),
 				'optional' => $this->smwFetchMany( $sdata, 'Has optional subobject', 'category' ),
 			],
+
+			'backlinksFor' => $this->smwFetchMany( $sdata, 'Show backlinks for', 'property' ),
 
 			'display' => $this->loadDisplayConfig( $sdata ),
 		];
@@ -288,6 +293,11 @@ class WikiCategoryStore {
 		// Display template
 		if ( $cat->getDisplayTemplateProperty() !== null ) {
 			$lines[] = '[[Has display template::' . $cat->getDisplayTemplateProperty()->getName() . ']]';
+		}
+
+		// Backlink properties
+		foreach ( $cat->getBacklinksFor() as $prop ) {
+			$lines[] = "[[Show backlinks for::Property:$prop]]";
 		}
 
 		// Required/optional properties

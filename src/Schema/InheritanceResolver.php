@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
+use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use RuntimeException;
 
 /**
@@ -85,10 +86,11 @@ class InheritanceResolver {
 		$merged = null;
 
 		foreach ( $linear as $name ) {
-			$current = $this->categoryMap[$name] ?? null;
-			if ( $current === null ) {
+			if ( !array_key_exists( $name, $this->categoryMap ) ) {
+				// Fine - parent is declared, but category page doesn't exist.
 				continue;
 			}
+			$current = $this->categoryMap[$name];
 
 			if ( $merged === null ) {
 				$merged = $current;
@@ -117,7 +119,7 @@ class InheritanceResolver {
 			?? throw new RuntimeException( "Unknown category: $categoryName" );
 		$result = [];
 		foreach ( $category->getParents() as $parentName ) {
-			if ( !isset( $this->categoryMap[$parentName] ) ) {
+			if ( !array_key_exists( $parentName, $this->categoryMap ) ) {
 				continue;
 			}
 			$result[$parentName] = $this->getEffectiveCategory( $parentName );
@@ -178,7 +180,11 @@ class InheritanceResolver {
 		}
 
 		$category = $this->categoryMap[$categoryName];
-		$parents = $category->getParents();
+		// the SemanticSchemas-managed category is just a marker
+		$parents = array_filter(
+			$category->getParents(),
+			static fn ( $parent ) => $parent != Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY
+		);
 
 		if ( $parents === [] ) {
 			return [ $categoryName ];

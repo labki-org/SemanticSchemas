@@ -36,6 +36,7 @@ if ( !function_exists( 'wfLogWarning' ) ) {
 // so the real MW Title class will never be loaded.
 if ( !class_exists( 'MediaWiki\\Title\\Title', false ) ) {
 	require_once __DIR__ . '/stubs/Title.php';
+	require_once __DIR__ . '/stubs/Language.php';
 }
 
 // Mock wfTimestamp if not defined (used by StateManager)

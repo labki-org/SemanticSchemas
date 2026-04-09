@@ -221,6 +221,15 @@ class InheritanceResolverTest extends TestCase {
 		$resolver->getEffectiveCategory( 'Unknown' );
 	}
 
+	public function testNonexistentParentIgnored(): void {
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person', [ 'parents' => [ 'NonExistentCategory' ] ] ),
+		] );
+		// Mostly just testing that we don't throw and ignore these
+		$effective = $resolver->getEffectiveCategory( 'Person' );
+		$this->assertEquals( [ 'NonExistentCategory' ], $effective->getParents() );
+	}
+
 	/* =========================================================================
 	 * CACHING
 	 * ========================================================================= */
