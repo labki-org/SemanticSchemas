@@ -86,7 +86,7 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $childName, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( "[[Has parent category::Category:$parentName]]", $content );
+		$this->assertStringContainsString( "[[Category:$parentName]]", $content );
 	}
 
 	public function testWriteCategoryWithRequiredProperties(): void {
@@ -302,7 +302,7 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 	}
 
 	/* =========================================================================
-	  * Managed Parents
+	  * Parents
 	  * ========================================================================= */
 
 	public static function parentsProvider(): array {
@@ -330,6 +330,22 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 		$managed = $this->categoryStore->getManagedParents( $testcat );
 		$this->assertArrayEquals( $expected, $managed );
+	}
+
+	public function testNamespaceStrippedFromParents() {
+		$category = new CategoryModel( "ChildCategory", [
+			'parents' => [ 'ParentCategory' ]
+		] );
+
+		$this->categoryStore->writeCategory( $category );
+
+		$this->runJobs();
+
+		$cats = $this->categoryStore->getAllCategories();
+		$this->assertArrayEquals(
+			$cats['ChildCategory']->getParents(),
+			[ Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY, 'ParentCategory' ]
+		);
 	}
 
 	/**

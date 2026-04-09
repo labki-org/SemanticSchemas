@@ -246,8 +246,6 @@ create_category "Organization" "[[Has description::An organization or institutio
 # Lab category (inherits from Organization)
 create_category "Lab" "[[Has description::A research lab or group.]]
 
-[[Has parent category::Category:Organization]]
-
 === Required Properties ===
 [[Has required property::Property:Has lab]]
 
@@ -300,8 +298,6 @@ echo "  - Single inheritance hierarchies..."
 # Faculty category (inherits from Person only)
 create_category "Faculty" "[[Has description::Faculty member.]]
 
-[[Has parent category::Category:Person]]
-
 === Required Properties ===
 [[Has required property::Property:Has department]]
 [[Has required property::Property:Has institution]]
@@ -317,8 +313,6 @@ create_category "Faculty" "[[Has description::Faculty member.]]
 # Student category (base for all students, inherits from Person)
 create_category "Student" "[[Has description::A student.]]
 
-[[Has parent category::Category:Person]]
-
 === Required Properties ===
 [[Has required property::Property:Has advisor]]
 [[Has required property::Property:Has academic level]]
@@ -331,8 +325,6 @@ create_category "Student" "[[Has description::A student.]]
 # Undergraduate category (inherits from Student, single inheritance chain)
 create_category "Undergraduate" "[[Has description::An undergraduate student.]]
 
-[[Has parent category::Category:Student]]
-
 === Optional Properties ===
 [[Has optional property::Property:Has employment status]]
 [[Category:Student]]"
@@ -341,9 +333,6 @@ echo "  - Multiple inheritance hierarchies..."
 
 # GraduateStudent category (multiple inheritance: Person + LabMember)
 create_category "GraduateStudent" "[[Has description::A graduate student in the lab.]]
-
-[[Has parent category::Category:Person]]
-[[Has parent category::Category:LabMember]]
 
 === Required Properties ===
 [[Has required property::Property:Has advisor]]
@@ -360,9 +349,6 @@ create_category "GraduateStudent" "[[Has description::A graduate student in the 
 # Postdoc category (multiple inheritance: Person + LabMember)
 create_category "Postdoc" "[[Has description::A postdoctoral researcher in the lab.]]
 
-[[Has parent category::Category:Person]]
-[[Has parent category::Category:LabMember]]
-
 === Required Properties ===
 [[Has required property::Property:Has lab]]
 [[Has required property::Property:Has start date]]
@@ -377,9 +363,6 @@ create_category "Postdoc" "[[Has description::A postdoctoral researcher in the l
 # PI category (Principal Investigator, inherits from Faculty + LabMember)
 create_category "PI" "[[Has description::A principal investigator (lab head).]]
 
-[[Has parent category::Category:Faculty]]
-[[Has parent category::Category:LabMember]]
-
 === Required Properties ===
 [[Has required property::Property:Has lab]]
 
@@ -393,8 +376,6 @@ echo "  - Deep hierarchy examples..."
 # PhDStudent category (deep inheritance: Person -> Student -> GraduateStudent + LabMember)
 create_category "PhDStudent" "[[Has description::A PhD student in the lab.]]
 
-[[Has parent category::Category:GraduateStudent]]
-
 === Optional Properties ===
 [[Has optional property::Property:Has thesis title]]
 [[Has optional property::Property:Has degree]]
@@ -402,8 +383,6 @@ create_category "PhDStudent" "[[Has description::A PhD student in the lab.]]
 
 # MastersStudent category (deep inheritance: Person -> Student -> GraduateStudent)
 create_category "MastersStudent" "[[Has description::A masters student.]]
-
-[[Has parent category::Category:GraduateStudent]]
 
 === Optional Properties ===
 [[Has optional property::Property:Has thesis title]]
@@ -720,7 +699,7 @@ echo ""
 echo "Created:"
 echo ""
 echo "PROPERTIES (35+):"
-echo "  - Meta: Display label, Has description, Allows multiple values, Has target namespace, Has parent category, Has required property, Has optional property, Has required subobject, Has optional subobject"
+echo "  - Meta: Display label, Has description, Allows multiple values, Has target namespace, Has required property, Has optional property, Has required subobject, Has optional subobject"
 echo "  - Text: Has full name, Has biography, Has research interests, Has office location"
 echo "  - Contact: Has email, Has phone, Has website, Has orcid"
 echo "  - Date/Time: Has birth date, Has start date, Has end date, Has publication date"

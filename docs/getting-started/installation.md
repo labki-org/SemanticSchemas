@@ -48,7 +48,7 @@ php maintenance/update.php
 
 This automatically installs all required base configuration pages via SMW's built-in content importer:
 - **Templates:** `Template:Property/Default`, `Template:Property/Email`, `Template:Property/Link`, `Template:Property/Page`
-- **Properties:** ~24 meta-properties like `Has type`, `Has description`, `Has parent category`, etc.
+- **Properties:** ~24 meta-properties like `Has type`, `Has description`, etc.
 - **Subobjects:** `Display section` for organizing property display
 - **Categories:** `Category`, `Property`, `Subobject` meta-categories
 

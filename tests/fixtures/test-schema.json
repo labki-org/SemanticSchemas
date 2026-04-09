@@ -12,7 +12,6 @@
                 ],
                 "optional": [
                     "Has target namespace",
-                    "Has parent category",
                     "Has required property",
                     "Has optional property",
                     "Has required subgroup",
@@ -731,17 +730,6 @@
                 "fromProperty": null
             },
             "allowsMultipleValues": false
-        },
-        "Has parent category": {
-            "datatype": "Text",
-            "label": "Has parent category",
-            "description": "Specifies parent categories for inheritance in the category hierarchy.",
-            "display": {
-                "type": null,
-                "template": null,
-                "fromProperty": null
-            },
-            "allowsMultipleValues": true
         },
         "Has phone": {
             "datatype": "Text",
