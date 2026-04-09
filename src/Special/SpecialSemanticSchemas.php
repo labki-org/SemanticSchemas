@@ -265,7 +265,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			$formSuccess = $this->formGenerator->generateAndSaveAllForms( $effective );
+			$formSuccess = $this->formGenerator->generateAndSaveAllForms( $effective, $resolver );
 
 			if ( !$formSuccess ) {
 				$output->addHTML( Html::errorBox(
@@ -1148,7 +1148,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 					$this->templateGenerator->generateAllTemplates(
 						$category, $resolver
 					);
-					$this->formGenerator->generateAndSaveAllForms( $effective );
+					$this->formGenerator->generateAndSaveAllForms( $effective, $resolver );
 
 					if ( $generateDisplay ) {
 						$this->displayGenerator->generateOrUpdateDisplayStub( $effective );

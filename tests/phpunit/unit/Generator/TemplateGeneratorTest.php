@@ -514,9 +514,6 @@ class TemplateGeneratorTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testSubobjectTemplateUsesAtCategory(): void {
-		$catStore = $this->createMock( WikiCategoryStore::class );
-		$propStore = $this->createMock( WikiPropertyStore::class );
-
 		$subCategory = new CategoryModel( 'Address', [
 			'properties' => [
 				'required' => [ 'Has street', 'Has city' ],
@@ -524,36 +521,62 @@ class TemplateGeneratorTest extends TestCase {
 			],
 		] );
 
-		$catStore->method( 'readCategory' )
-			->with( 'Address' )
-			->willReturn( $subCategory );
-
-		$gen = new TemplateGenerator(
-			$this->createMock( PageCreator::class ),
-			$catStore,
-			$propStore
-		);
-
-		$category = new CategoryModel( 'Person', [
+		$person = new CategoryModel( 'Person', [
 			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
 			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
 		] );
 
-		$effective = new EffectiveCategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'Address' => $subCategory,
 		] );
 
-		$dispatcher = $gen->generateDispatcherTemplate( $effective );
+		$effective = $resolver->getEffectiveCategory( 'Person' );
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective, $resolver );
 
 		// Dispatcher should include subobject display section
 		$this->assertStringContainsString( '[[Category:Address]]', $dispatcher );
 		$this->assertStringContainsString( 'Subobject/Address/row', $dispatcher );
 	}
 
-	public function testSubobjectMultiValuePropertyUsesSep(): void {
-		$catStore = $this->createMock( WikiCategoryStore::class );
+	public function testSubobjectDisplayIncludesInheritedProperties(): void {
+		$baseAddress = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street', 'Has city' ],
+				'optional' => [],
+			],
+		] );
 
+		$mailingAddress = new CategoryModel( 'MailingAddress', [
+			'parents' => [ 'Address' ],
+			'properties' => [
+				'required' => [ 'Has zip' ],
+				'optional' => [],
+			],
+		] );
+
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'MailingAddress' ], 'optional' => [] ],
+		] );
+
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'Address' => $baseAddress,
+			'MailingAddress' => $mailingAddress,
+		] );
+
+		$effective = $resolver->getEffectiveCategory( 'Person' );
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective, $resolver );
+
+		// Display section should include inherited properties from Address
+		$this->assertStringContainsString( '?Has street', $dispatcher );
+		$this->assertStringContainsString( '?Has city', $dispatcher );
+		// And own property from MailingAddress
+		$this->assertStringContainsString( '?Has zip', $dispatcher );
+	}
+
+	public function testSubobjectMultiValuePropertyUsesSep(): void {
 		$subCategory = new CategoryModel( 'Metadata', [
 			'properties' => [
 				'required' => [ 'Has tags' ],
@@ -561,28 +584,19 @@ class TemplateGeneratorTest extends TestCase {
 			],
 		] );
 
-		$catStore->method( 'readCategory' )
-			->willReturn( $subCategory );
-
-		$propStore = $this->createMock( WikiPropertyStore::class );
-		$propStore->method( 'readProperty' )
-			->willReturn( new PropertyModel( 'Has tags', [
-				'datatype' => 'Text',
-				'allowsMultipleValues' => true,
-			] ) );
-
-		$gen = new TemplateGenerator(
-			$this->createMock( PageCreator::class ),
-			$catStore,
-			$propStore
-		);
-
-		$category = new EffectiveCategoryModel( 'Article', [
+		$article = new CategoryModel( 'Article', [
 			'properties' => [ 'required' => [], 'optional' => [] ],
 			'subobjects' => [ 'required' => [ 'Metadata' ], 'optional' => [] ],
 		] );
 
-		$dispatcher = $gen->generateDispatcherTemplate( $category );
+		$resolver = new InheritanceResolver( [
+			'Article' => $article,
+			'Metadata' => $subCategory,
+		] );
+
+		$effective = $resolver->getEffectiveCategory( 'Article' );
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective, $resolver );
+
 		// Dispatcher contains the display section querying by category
 		$this->assertStringContainsString( '[[Category:Metadata]]', $dispatcher );
 		// Display section asks for the Has tags property
