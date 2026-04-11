@@ -202,8 +202,8 @@ class CategoryModel {
 	 *
 	 * @return array<array{name:string, required:bool}>
 	 */
-	public function getTaggedProperties(): array {
-		return self::tagRequiredOptional( $this->requiredProperties, $this->optionalProperties );
+	public function getAnnotatedProperties(): array {
+		return self::annotateRequiredOptional( $this->requiredProperties, $this->optionalProperties );
 	}
 
 	/* -------------------- Subobjects -------------------- */
@@ -225,8 +225,8 @@ class CategoryModel {
 	 *
 	 * @return array<array{name:string, required:bool}>
 	 */
-	public function getTaggedSubobjects(): array {
-		return self::tagRequiredOptional( $this->requiredSubobjects, $this->optionalSubobjects );
+	public function getAnnotatedSubobjects(): array {
+		return self::annotateRequiredOptional( $this->requiredSubobjects, $this->optionalSubobjects );
 	}
 
 	/* -------------------- Backlinks -------------------- */
@@ -320,7 +320,7 @@ class CategoryModel {
 	 *
 	 * @return array<array{name:string, required:bool}>
 	 */
-	private static function tagRequiredOptional( array $required, array $optional ): array {
+	private static function annotateRequiredOptional( array $required, array $optional ): array {
 		$out = [];
 		foreach ( $required as $name ) {
 			$out[] = [ 'name' => $name, 'required' => true ];

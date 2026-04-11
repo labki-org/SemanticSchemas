@@ -161,22 +161,22 @@ class CategoryModelTest extends TestCase {
 		$this->assertCount( 2, $allProps );
 	}
 
-	public function testGetTaggedPropertiesReturnsBothWithFlags(): void {
+	public function testGetAnnotatedPropertiesReturnsBothWithFlags(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
 				'required' => [ 'Has name' ],
 				'optional' => [ 'Has email' ],
 			],
 		] );
-		$tagged = $model->getTaggedProperties();
+		$tagged = $model->getAnnotatedProperties();
 		$this->assertCount( 2, $tagged );
 		$this->assertSame( [ 'name' => 'Has name', 'required' => true ], $tagged[0] );
 		$this->assertSame( [ 'name' => 'Has email', 'required' => false ], $tagged[1] );
 	}
 
-	public function testGetTaggedPropertiesReturnsEmptyWhenNone(): void {
+	public function testGetAnnotatedPropertiesReturnsEmptyWhenNone(): void {
 		$model = new CategoryModel( 'TestCategory' );
-		$this->assertSame( [], $model->getTaggedProperties() );
+		$this->assertSame( [], $model->getAnnotatedProperties() );
 	}
 
 	/* =========================================================================
@@ -215,22 +215,22 @@ class CategoryModelTest extends TestCase {
 		$this->assertFalse( $model->hasSubobjects() );
 	}
 
-	public function testGetTaggedSubobjectsReturnsBothWithFlags(): void {
+	public function testGetAnnotatedSubobjectsReturnsBothWithFlags(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
 				'required' => [ 'Author' ],
 				'optional' => [ 'Funding' ],
 			],
 		] );
-		$tagged = $model->getTaggedSubobjects();
+		$tagged = $model->getAnnotatedSubobjects();
 		$this->assertCount( 2, $tagged );
 		$this->assertSame( [ 'name' => 'Author', 'required' => true ], $tagged[0] );
 		$this->assertSame( [ 'name' => 'Funding', 'required' => false ], $tagged[1] );
 	}
 
-	public function testGetTaggedSubobjectsReturnsEmptyWhenNone(): void {
+	public function testGetAnnotatedSubobjectsReturnsEmptyWhenNone(): void {
 		$model = new CategoryModel( 'TestCategory' );
-		$this->assertSame( [], $model->getTaggedSubobjects() );
+		$this->assertSame( [], $model->getAnnotatedSubobjects() );
 	}
 
 	/* =========================================================================

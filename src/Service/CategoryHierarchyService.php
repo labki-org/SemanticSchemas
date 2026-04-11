@@ -307,7 +307,7 @@ class CategoryHierarchyService {
 
 			$source = "Category:$ancestor";
 
-			foreach ( $model->getTaggedProperties() as $tagged ) {
+			foreach ( $model->getAnnotatedProperties() as $tagged ) {
 				if ( !isset( $seen[$tagged['name']] ) ) {
 					$output[] = [
 						'propertyTitle' => 'Property:' . $tagged['name'],
@@ -342,7 +342,7 @@ class CategoryHierarchyService {
 
 			$source = "Category:$ancestor";
 
-			foreach ( $model->getTaggedSubobjects() as $tagged ) {
+			foreach ( $model->getAnnotatedSubobjects() as $tagged ) {
 				if ( !isset( $seen[$tagged['name']] ) ) {
 					$output[] = [
 						'subobjectTitle' => 'Category:' . $tagged['name'],

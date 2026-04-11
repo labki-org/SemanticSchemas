@@ -383,7 +383,7 @@ class DisplayStubGenerator {
 			return '';
 		}
 
-		$tagged = $category->getTaggedSubobjects();
+		$tagged = $category->getAnnotatedSubobjects();
 		if ( empty( $tagged ) ) {
 			return '';
 		}
