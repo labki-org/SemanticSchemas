@@ -168,12 +168,10 @@ class TemplateGenerator {
 	 * Generate content for the dispatcher template.
 	 *
 	 * @param EffectiveCategoryModel $effective The fully merged category
-	 * @param InheritanceResolver $resolver For resolving subobject category inheritance
 	 * @return string
 	 */
 	public function generateDispatcherTemplate(
-		EffectiveCategoryModel $effective,
-		InheritanceResolver $resolver
+		EffectiveCategoryModel $effective
 	): string {
 		$name = trim( $effective->getName() );
 		if ( $name === '' ) {
@@ -198,12 +196,6 @@ class TemplateGenerator {
 		/* Display template */
 		$out = array_merge( $out, $this->generateTemplateCall( $name . '/display', $allProps ) );
 		$out[] = '';
-
-		/* Subobject sections */
-		$out = array_merge(
-			$out,
-			$this->generateSubobjectDisplaySections( $effective, $resolver )
-		);
 
 		$out[] = '</includeonly>';
 
@@ -243,89 +235,6 @@ class TemplateGenerator {
 		return implode( "\n", $out );
 	}
 
-	private function generateSubobjectRowTemplate( EffectiveCategoryModel $sub ): string {
-		$name = $sub->getName();
-		$props = $sub->getAllProperties();
-
-		$out = [];
-		$out[] = '<noinclude>Auto-generated row template for subobject ' . $name . '</noinclude>';
-		$out[] = '<includeonly>';
-		$out[] = '|-';
-
-		$i = 2;
-		foreach ( $props as $p ) {
-			$out[] = '| {{{' . $i . '|}}}';
-			$i++;
-		}
-
-		$out[] = '</includeonly>';
-
-		return implode( "\n", $out );
-	}
-
-	/* =====================================================================
-	 * SUBOBJECT DISPLAY
-	 * ===================================================================== */
-
-	private function generateSubobjectDisplaySections(
-		EffectiveCategoryModel $category,
-		InheritanceResolver $resolver
-	): array {
-		$tagged = $category->getTaggedSubobjects();
-		if ( empty( $tagged ) ) {
-			return [];
-		}
-
-		$out = [];
-
-		foreach ( $tagged as $entry ) {
-			$subName = $entry['name'];
-			try {
-				$sub = $resolver->getEffectiveCategory( $subName );
-			} catch ( \Exception $e ) {
-				wfLogWarning( "SemanticSchemas: Cannot resolve subobject category '$subName'" );
-				continue;
-			}
-
-			$label = $sub->getLabel() ?: $sub->getName();
-			$props = $sub->getAllProperties();
-			if ( empty( $props ) ) {
-				continue;
-			}
-
-			$out[] = '=== ' . $label . ' ===';
-			$out[] = '';
-			$out[] = '{| class="wikitable s2-subobject-table"';
-			$out[] = '|-';
-
-			/* header row */
-			foreach ( $props as $p ) {
-				$lab = NamingHelper::generatePropertyLabel( $p );
-				$out[] = '! ' . $lab;
-			}
-
-			/* SMW #ask — uses [[Category:X]] instead of Has subobject type */
-			$askQuery = '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] '
-				. '[[Category:' . $subName . ']]';
-			$out[] = $askQuery;
-
-			foreach ( $props as $p ) {
-				$out[] = ' | ?' . $p;
-			}
-
-			$rowTemplate = $subName . '/subobject/row';
-
-			$out[] = ' | format=template';
-			$out[] = ' | template=' . $rowTemplate;
-			$out[] = ' | default=<tr><td colspan="' . count( $props ) . '">No entries yet.</td></tr>';
-			$out[] = '}}';
-			$out[] = '|}';
-			$out[] = '';
-		}
-
-		return $out;
-	}
-
 	/* =====================================================================
 	 * PUBLIC: FULL TEMPLATE GENERATION ENTRYPOINT
 	 * ===================================================================== */
@@ -356,34 +265,18 @@ class TemplateGenerator {
 
 		/* Dispatcher */
 		try {
-			$content = $this->generateDispatcherTemplate( $effective, $resolver );
+			$content = $this->generateDispatcherTemplate( $effective );
 			$this->updateTemplate( $name, $content );
 		} catch ( \Exception $e ) {
 			$errors[] = "Error generating dispatcher template for $name: " . $e->getMessage();
 		}
 
-		/* Subobject templates — collect from the full chain */
-		$subs = array_merge(
-			$effective->getRequiredSubobjects(),
-			$effective->getOptionalSubobjects()
-		);
-		$subs = array_unique( $subs );
-
-		foreach ( $subs as $subName ) {
-			try {
-				$subEffective = $resolver->getEffectiveCategory( $subName );
-
-				/* semantic template */
-				$content = $this->generateSubobjectTemplate( $subEffective );
-				$this->updateTemplate( $subName . '/subobject', $content );
-
-				/* row template */
-				$rowContent = $this->generateSubobjectRowTemplate( $subEffective );
-				$this->updateTemplate( $subName . '/subobject/row', $rowContent );
-
-			} catch ( \Exception $e ) {
-				$errors[] = "Error generating templates for subobject '$subName': " . $e->getMessage();
-			}
+		/* Subobject template — every category gets one */
+		try {
+			$content = $this->generateSubobjectTemplate( $effective );
+			$this->updateTemplate( $name . '/subobject', $content );
+		} catch ( \Exception $e ) {
+			$errors[] = "Error generating subobject template for $name: " . $e->getMessage();
 		}
 
 		return [

@@ -122,7 +122,7 @@ class RegenerateArtifacts extends Maintenance {
 		}
 
 		if ( $generateDisplay ) {
-			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective );
+			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective, $resolver );
 			if ( !empty( $displayResult['error'] ) ) {
 				$this->output( "  ✗ Display template failed: {$displayResult['error']}\n" );
 			} elseif ( $displayResult['created'] ) {

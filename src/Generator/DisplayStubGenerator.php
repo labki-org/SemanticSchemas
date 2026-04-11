@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
@@ -48,12 +49,16 @@ class DisplayStubGenerator {
 	 * Generate and save the display template stub.
 	 *
 	 * @param EffectiveCategoryModel $category
+	 * @param ?InheritanceResolver $resolver For resolving subobject category properties
 	 * @return array Result array with keys: 'created' (bool), 'updated' (bool), 'message' (string)
 	 */
-	public function generateOrUpdateDisplayStub( EffectiveCategoryModel $category ): array {
+	public function generateOrUpdateDisplayStub(
+		EffectiveCategoryModel $category,
+		?InheritanceResolver $resolver = null
+	): array {
 		$existed = $this->displayStubExists( $category->getName() );
 
-		$titleText = $this->generateDisplayContent( $category );
+		$titleText = $this->generateDisplayContent( $category, $resolver );
 		if ( $titleText === '' ) {
 			return [
 				'created' => false,
@@ -73,9 +78,13 @@ class DisplayStubGenerator {
 
 	/**
 	 * @param CategoryModel $category
+	 * @param ?InheritanceResolver $resolver For resolving subobject category properties
 	 * @return string
 	 */
-	public function generateWikitext( CategoryModel $category ): string {
+	public function generateWikitext(
+		CategoryModel $category,
+		?InheritanceResolver $resolver = null
+	): string {
 		$format = $category->getDisplayFormat();
 
 		if ( $format === 'sidebox' ) {
@@ -84,19 +93,26 @@ class DisplayStubGenerator {
 			$body = $this->generateTableBody( $category );
 		}
 
+		$body .= $this->generateSubobjectSections( $category, $resolver );
+
 		$body = self::AUTO_REGENERATE_MARKER . "\n"
 			. "<includeonly>\n"
 			. $body;
 
+		// Category tags are wrapped in #ifeq so they can be suppressed when
+		// the display template is transcluded from an #ask query (e.g. to
+		// show subobject data on a parent page via userparam=nocat).
+		$categoryPrefix = $this->language->getFormattedNsText( NS_CATEGORY );
+		$catTags = '';
 		// FIXME: Temporary special-case hack to exclude Category:Category membership -
 		// prevent categories from inheriting the metacategory fields.
 		// To be resolved in #122 after removing the need for generation,
 		// where this will become part of the pre-packaged Template:Category template
-		$categoryPrefix = $this->language->getFormattedNsText( NS_CATEGORY );
 		if ( $category->getName() !== $categoryPrefix ) {
-			$body .= '[[' . $categoryPrefix . ':' . $category->getName() . "]]" . "\n";
+			$catTags .= '[[' . $categoryPrefix . ':' . $category->getName() . ']]' . "\n";
 		}
-		$body .= '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' . "\n"
+		$catTags .= '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' . "\n";
+		$body .= '{{#ifeq:{{{userparam|}}}|nocat||' . $catTags . '}}' . "\n"
 			. "</includeonly><noinclude>[[" . $categoryPrefix . ":SemanticSchemas-managed-display]]</noinclude>";
 
 		return $body;
@@ -104,16 +120,20 @@ class DisplayStubGenerator {
 
 	/**
 	 * @param CategoryModel $category
+	 * @param ?InheritanceResolver $resolver
 	 * @return string The prefixed title string of the generated page, or empty string on failure.
 	 */
-	private function generateDisplayContent( CategoryModel $category ): string {
+	private function generateDisplayContent(
+		CategoryModel $category,
+		?InheritanceResolver $resolver = null
+	): string {
 		$categoryName = $category->getName();
 		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
 		if ( !$title ) {
 			return '';
 		}
 
-		$content = $this->generateWikitext( $category );
+		$content = $this->generateWikitext( $category, $resolver );
 
 		$this->pageCreator->createOrUpdatePage(
 			$title,
@@ -245,9 +265,13 @@ class DisplayStubGenerator {
 	 * - If it exists but NO marker, preserve it (user customized)
 	 *
 	 * @param EffectiveCategoryModel $category
+	 * @param ?InheritanceResolver $resolver For resolving subobject category properties
 	 * @return array{status: string, message: string}
 	 */
-	public function generateIfAllowed( EffectiveCategoryModel $category ): array {
+	public function generateIfAllowed(
+		EffectiveCategoryModel $category,
+		?InheritanceResolver $resolver = null
+	): array {
 		$categoryName = $category->getName();
 		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
 
@@ -260,7 +284,7 @@ class DisplayStubGenerator {
 
 		// Template doesn't exist - create it
 		if ( !$this->pageCreator->pageExists( $title ) ) {
-			$this->generateDisplayContent( $category );
+			$this->generateDisplayContent( $category, $resolver );
 			return [
 				'status' => 'created',
 				'message' => "Display template created: {$title->getPrefixedText()}"
@@ -269,7 +293,7 @@ class DisplayStubGenerator {
 
 		// Template exists and has marker - safe to regenerate
 		if ( $this->hasAutoRegenerateMarker( $title ) ) {
-			$this->generateDisplayContent( $category );
+			$this->generateDisplayContent( $category, $resolver );
 			return [
 				'status' => 'updated',
 				'message' => "Display template updated: {$title->getPrefixedText()}"
@@ -341,6 +365,66 @@ class DisplayStubGenerator {
 		return "|-\n"
 			. '! colspan="2" style="background-color: #eaecf0; text-align: center; '
 			. 'font-size: 0.9em;" | Backlinks' . "\n";
+	}
+
+	/**
+	 * Generate #ask sections for subobject categories, using their display templates.
+	 *
+	 * Wrapped in {{#ifeq:userparam|nocat}} so these sections are suppressed
+	 * when the display template is itself being rendered as a subobject display
+	 * from a parent's #ask query. Nested subobject queries can't resolve
+	 * correctly (SMW subobjects are flat, page-level entities).
+	 */
+	private function generateSubobjectSections(
+		CategoryModel $category,
+		?InheritanceResolver $resolver
+	): string {
+		if ( $resolver === null ) {
+			return '';
+		}
+
+		$tagged = $category->getTaggedSubobjects();
+		if ( empty( $tagged ) ) {
+			return '';
+		}
+
+		$sections = '';
+
+		foreach ( $tagged as $entry ) {
+			$subName = $entry['name'];
+			try {
+				$sub = $resolver->getEffectiveCategory( $subName );
+			} catch ( \Exception $e ) {
+				continue;
+			}
+
+			$props = $sub->getAllProperties();
+			if ( empty( $props ) ) {
+				continue;
+			}
+
+			$label = $sub->getLabel() ?: $sub->getName();
+			$sections .= '=== ' . $label . " ===\n";
+			$sections .= '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] [[Category:' . $subName . ']]' . "\n";
+
+			foreach ( $props as $p ) {
+				$param = NamingHelper::propertyToParameter( $p );
+				$sections .= ' | ?' . $p . ' = ' . $param . "\n";
+			}
+
+			$sections .= ' | format=template' . "\n";
+			$sections .= ' | template=' . $subName . '/display' . "\n";
+			$sections .= ' | named args=yes' . "\n";
+			$sections .= ' | userparam=nocat' . "\n";
+			$sections .= ' | mainlabel=-' . "\n";
+			$sections .= '}}' . "\n";
+		}
+
+		if ( $sections === '' ) {
+			return '';
+		}
+
+		return '{{#ifeq:{{{userparam|}}}|nocat||' . "\n" . $sections . '}}' . "\n";
 	}
 
 	/**

@@ -276,7 +276,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			$displayResult = $this->displayGenerator->generateIfAllowed( $effective );
+			$displayResult = $this->displayGenerator->generateIfAllowed( $effective, $resolver );
 
 			// Log the operation
 			$this->logOperation( 'generate', "Form generated for $categoryName", [
@@ -1151,7 +1151,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 					$this->formGenerator->generateAndSaveAllForms( $effective, $resolver );
 
 					if ( $generateDisplay ) {
-						$this->displayGenerator->generateOrUpdateDisplayStub( $effective );
+						$this->displayGenerator->generateOrUpdateDisplayStub( $effective, $resolver );
 					}
 
 					$successCount++;
