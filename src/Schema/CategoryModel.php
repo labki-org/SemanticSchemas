@@ -21,6 +21,10 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *     required: string[]
  *     optional: string[]
  *
+ *   subobjects:
+ *     required: string[]
+ *     optional: string[]
+ *
  *   display:
  *     format: string|null
  *

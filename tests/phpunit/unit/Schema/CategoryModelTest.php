@@ -345,6 +345,50 @@ class CategoryModelTest extends TestCase {
 		$this->assertContains( 'ChildSub', $merged->getRequiredSubobjects() );
 	}
 
+	public function testMergePromotesOptionalSubobjectToRequired(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'subobjects' => [ 'required' => [], 'optional' => [ 'Address' ] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertContains( 'Address', $merged->getRequiredSubobjects() );
+		$this->assertNotContains( 'Address', $merged->getOptionalSubobjects() );
+	}
+
+	public function testMergeDeduplicatesProperties(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'properties' => [ 'required' => [ 'Has name', 'Has age' ], 'optional' => [] ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$required = $merged->getRequiredProperties();
+		$this->assertCount( 1, array_keys( array_filter( $required, fn ( $p ) => $p === 'Has name' ) ) );
+		$this->assertContains( 'Has age', $required );
+	}
+
+	public function testMergeKeepsOptionalWhenNotPromoted(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [ 'Has email' ] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'properties' => [ 'required' => [], 'optional' => [ 'Has phone' ] ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertContains( 'Has email', $merged->getOptionalProperties() );
+		$this->assertContains( 'Has phone', $merged->getOptionalProperties() );
+		$this->assertNotContains( 'Has email', $merged->getRequiredProperties() );
+	}
+
 	/* =========================================================================
 	 * EXPORT
 	 * ========================================================================= */
