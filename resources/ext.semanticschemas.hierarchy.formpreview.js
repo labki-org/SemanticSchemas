@@ -7,7 +7,7 @@
  * - Watches the parent category field for changes
  * - Makes API calls to compute inheritance hierarchy
  * - Displays a tree visualization of parent/child relationships
- * - Shows inherited properties
+ * - Shows inherited properties and subobjects
  * - Auto-populates free text field with category membership tags
  *
  * Architecture:
@@ -330,7 +330,46 @@
 			$propContainer.append( $optionalSection );
 		}
 
-		$container.empty().append( $propContainer );
+		// Render subobject summary
+		const subobjects = hierarchyData.inheritedSubobjects || [];
+		const $subobjectSection = $( '<div>' ).addClass( 's2-prop-type-section' );
+		$subobjectSection.append(
+			$( '<h4>' ).addClass( 's2-prop-type-heading' ).text( 'Subobjects (' + subobjects.length + ')' )
+		);
+
+		if ( subobjects.length === 0 ) {
+			$subobjectSection.append(
+				$( '<p>' ).addClass( 's2-hierarchy-empty' ).text( 'No subobjects defined.' )
+			);
+		} else {
+			const $subobjectList = $( '<ul>' ).addClass( 's2-prop-list s2-prop-list-by-type' );
+			subobjects.forEach( ( entry ) => {
+				const $li = $( '<li>' ).addClass( entry.required ? 's2-prop-required' : 's2-prop-optional' );
+				const subobjectTitle = entry.subobjectTitle || '';
+				if ( subobjectTitle ) {
+					const href = mw.util.getUrl( subobjectTitle );
+					const displayName = subobjectTitle.replace( /^Category:/, '' );
+					$li.append(
+						$( '<a>' )
+							.attr( 'href', href )
+							.attr( 'title', subobjectTitle )
+							.text( displayName )
+					);
+				} else {
+					$li.text( '(unnamed subobject)' );
+				}
+				$li.append(
+					' ',
+					$( '<span>' )
+						.addClass( 's2-prop-badge' )
+						.text( entry.required ? 'required' : 'optional' )
+				);
+				$subobjectList.append( $li );
+			} );
+			$subobjectSection.append( $subobjectList );
+		}
+
+		$container.empty().append( $propContainer, $subobjectSection );
 	}
 
 	/**

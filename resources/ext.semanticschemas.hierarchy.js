@@ -275,6 +275,62 @@
 	}
 
 	/* =======================================================================
+	 * SUBOBJECT TABLE
+	 * ======================================================================= */
+
+	function renderSubobjectTable( $container, data ) {
+		const list = data.inheritedSubobjects || [];
+		if ( !list.length ) {
+			return renderEmpty( $container, msg( 'semanticschemas-hierarchy-no-subobjects' ) );
+		}
+
+		const $table = $( '<table>' )
+			.addClass( 'wikitable s2-subobject-summary' )
+			.append(
+				$( '<thead>' ).append(
+					$( '<tr>' )
+						.append( $( '<th>' ).text( msg( 'semanticschemas-hierarchy-subobject-name' ) ) )
+						.append( $( '<th>' ).text( msg( 'semanticschemas-hierarchy-source-category' ) ) )
+						.append( $( '<th>' ).text( msg( 'semanticschemas-hierarchy-required-state' ) ) )
+				)
+			);
+
+		const $tbody = $( '<tbody>' );
+
+		for ( const s of list ) {
+			const required = isRequired( s.required );
+			$tbody.append(
+				$( '<tr>' )
+					.append(
+						$( '<td>' ).append(
+							s.subobjectTitle ?
+								buildLink( s.subobjectTitle, 'Category' ) :
+								stripPrefix( s.subobjectTitle, 'Category' ) || '—'
+						)
+					)
+					.append(
+						$( '<td>' ).append(
+							s.sourceCategory ?
+								buildLink( s.sourceCategory, 'Category' ) :
+								stripPrefix( s.sourceCategory, 'Category' ) || '—'
+						)
+					)
+					.append(
+						$( '<td>' )
+							.addClass( required ? 's2-prop-required' : 's2-prop-optional' )
+							.text(
+								required ?
+									msg( 'semanticschemas-hierarchy-required' ) :
+									msg( 'semanticschemas-hierarchy-optional' )
+							)
+					)
+			);
+		}
+
+		$container.empty().append( $table.append( $tbody ) );
+	}
+
+	/* =======================================================================
 	 * PROPERTIES TAB WRAPPER
 	 * ======================================================================= */
 
@@ -350,6 +406,7 @@
 
 				const $tree = $( '<div>' ).addClass( 's2-hierarchy-tree-container' );
 				const $props = $( '<div>' ).addClass( 's2-hierarchy-props-container' );
+				const $subs = $( '<div>' ).addClass( 's2-hierarchy-subobjects-container' );
 
 				$root.empty().append(
 					$( '<div>' ).addClass( 's2-hierarchy-section' )
@@ -361,11 +418,17 @@
 						.append(
 							$( '<h3>' ).text( msg( 'semanticschemas-hierarchy-props-title' ) ),
 							$props
+						),
+					$( '<div>' ).addClass( 's2-hierarchy-section' )
+						.append(
+							$( '<h3>' ).text( msg( 'semanticschemas-hierarchy-subobjects-title' ) ),
+							$subs
 						)
 				);
 
 				renderHierarchyTree( $tree, payload );
 				renderPropertyTable( $props, payload );
+				renderSubobjectTable( $subs, payload );
 			} )
 			.fail( ( code, result ) => {
 				$root.removeClass( 's2-hierarchy-loading' );
