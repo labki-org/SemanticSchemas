@@ -538,7 +538,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		// Dispatcher should include subobject display section
 		$this->assertStringContainsString( '[[Category:Address]]', $dispatcher );
-		$this->assertStringContainsString( 'Subobject/Address/row', $dispatcher );
+		$this->assertStringContainsString( 'Address/subobject/row', $dispatcher );
 	}
 
 	public function testSubobjectDisplayIncludesInheritedProperties(): void {

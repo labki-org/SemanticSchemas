@@ -281,7 +281,7 @@ class FormGenerator {
 			$out[] = '=== ' . $label . ' ===';
 			$out[] = '';
 
-			$templateName = 'Subobject/' . $this->s( $model->getName() );
+			$templateName = $this->s( $model->getName() ) . '/subobject';
 
 			$for = [ $templateName, 'multiple' ];
 			if ( $isRequired ) {

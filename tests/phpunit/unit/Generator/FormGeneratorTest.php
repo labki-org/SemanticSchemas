@@ -237,7 +237,7 @@ class FormGeneratorTest extends TestCase {
 
 		$result = $this->generator->generateCompositeForm( $category, $resolver );
 
-		$this->assertStringContainsString( 'Subobject/Phone', $result );
+		$this->assertStringContainsString( 'Phone/subobject', $result );
 		$this->assertStringContainsString( 'has_phone_number', $result );
 	}
 
