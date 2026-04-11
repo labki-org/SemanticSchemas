@@ -370,7 +370,7 @@ class CategoryModelTest extends TestCase {
 
 		$merged = $child->mergeWithParent( $parent );
 		$required = $merged->getRequiredProperties();
-		$this->assertCount( 1, array_keys( array_filter( $required, fn ( $p ) => $p === 'Has name' ) ) );
+		$this->assertCount( 1, array_keys( array_filter( $required, static fn ( $p ) => $p === 'Has name' ) ) );
 		$this->assertContains( 'Has age', $required );
 	}
 

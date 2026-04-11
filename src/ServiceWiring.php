@@ -5,7 +5,6 @@ use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
-use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -81,12 +80,6 @@ return [
 		MediaWikiServices $services
 	): PropertyInputMapper {
 		return new PropertyInputMapper();
-	},
-
-	'SemanticSchemas.SchemaLoader' => static function (
-		MediaWikiServices $services
-	): SchemaLoader {
-		return new SchemaLoader();
 	},
 
 	'SemanticSchemas.SchemaValidator' => static function (

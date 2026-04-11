@@ -27,6 +27,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Schema;
  */
 class SchemaValidator {
 
+	public const SCHEMA_VERSION = '1.0';
+
 	/** @var array Custom validation rules registered by extensions */
 	private $customValidators = [];
 
@@ -103,7 +105,7 @@ class SchemaValidator {
 				'schema',
 				'',
 				'Missing required field: schemaVersion',
-				'Add "schemaVersion": "' . SchemaLoader::SCHEMA_VERSION . '" to the schema root'
+				'Add "schemaVersion": "' . self::SCHEMA_VERSION . '" to the schema root'
 			);
 		}
 

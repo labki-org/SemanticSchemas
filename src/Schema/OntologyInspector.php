@@ -54,7 +54,7 @@ class OntologyInspector {
 		ksort( $properties );
 
 		$schema = [
-			'schemaVersion' => SchemaLoader::SCHEMA_VERSION,
+			'schemaVersion' => SchemaValidator::SCHEMA_VERSION,
 			'categories' => [],
 			'properties' => [],
 		];

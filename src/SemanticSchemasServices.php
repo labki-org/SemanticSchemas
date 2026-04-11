@@ -6,7 +6,6 @@ use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
-use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -71,10 +70,6 @@ class SemanticSchemasServices {
 
 	public static function getCategoryHierarchyService( MediaWikiServices $services ): CategoryHierarchyService {
 		return $services->get( 'SemanticSchemas.CategoryHierarchyService' );
-	}
-
-	public static function getSchemaLoader( MediaWikiServices $services ): SchemaLoader {
-		return $services->get( 'SemanticSchemas.SchemaLoader' );
 	}
 
 	public static function getSchemaValidator( MediaWikiServices $services ): SchemaValidator {
