@@ -392,11 +392,11 @@ class DisplayStubGenerator {
 
 		foreach ( $tagged as $entry ) {
 			$subName = $entry['name'];
-			try {
-				$sub = $resolver->getEffectiveCategory( $subName );
-			} catch ( \Exception $e ) {
+			if ( !$resolver->hasCategory( $subName ) ) {
 				continue;
 			}
+
+			$sub = $resolver->getEffectiveCategory( $subName );
 
 			$props = $sub->getAllProperties();
 			if ( empty( $props ) ) {

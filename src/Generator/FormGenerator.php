@@ -269,12 +269,12 @@ class FormGenerator {
 			$subName = $entry['name'];
 			$isRequired = $entry['required'];
 
-			try {
-				$model = $resolver->getEffectiveCategory( $subName );
-			} catch ( \Exception $e ) {
-				wfLogWarning( "SemanticSchemas: Cannot resolve subobject category:$subName" );
+			if ( !$resolver->hasCategory( $subName ) ) {
+				// Category page doesn't exist yet — nothing to generate
 				continue;
 			}
+
+			$model = $resolver->getEffectiveCategory( $subName );
 
 			$label = $this->s( $model->getLabel() ?: $model->getName() );
 
