@@ -44,7 +44,7 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testCategoryTagsWrappedInUserparamConditional() {
 		$cat = new CategoryModel( "TestCategory" );
 		$generated = $this->generator->generateWikitext( $cat );
-		$this->assertStringContainsString( '{{#ifeq:{{{userparam|}}}|nocat||', $generated );
+		$this->assertStringContainsString( '{{#ifeq:{{{#userparam|}}}|nocat||', $generated );
 		$this->assertStringContainsString( '[[Category:TestCategory]]', $generated );
 	}
 
@@ -139,7 +139,7 @@ class DisplayStubGeneratorTest extends TestCase {
 		// Subobject #ask sections are wrapped so they are suppressed when
 		// the display template is used as a subobject display from a parent
 		$this->assertMatchesRegularExpression(
-			'/\{\{#ifeq:\{\{\{userparam\|\}\}\}\|nocat\|\|.*#ask/s',
+			'/\{\{#ifeq:\{\{\{#userparam\|\}\}\}\|nocat\|\|.*#ask/s',
 			$generated
 		);
 	}

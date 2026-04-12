@@ -112,7 +112,7 @@ class DisplayStubGenerator {
 			$catTags .= '[[' . $categoryPrefix . ':' . $category->getName() . ']]' . "\n";
 		}
 		$catTags .= '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' . "\n";
-		$body .= '{{#ifeq:{{{userparam|}}}|nocat||' . $catTags . '}}' . "\n"
+		$body .= '{{#ifeq:{{{#userparam|}}}|nocat||' . $catTags . '}}' . "\n"
 			. "</includeonly><noinclude>[[" . $categoryPrefix . ":SemanticSchemas-managed-display]]</noinclude>";
 
 		return $body;
@@ -426,7 +426,7 @@ class DisplayStubGenerator {
 			return '';
 		}
 
-		return '{{#ifeq:{{{userparam|}}}|nocat||' . "\n" . $sections . '}}' . "\n";
+		return '{{#ifeq:{{{#userparam|}}}|nocat||' . "\n" . $sections . '}}' . "\n";
 	}
 
 	/**
