@@ -169,7 +169,7 @@ class PageCreator {
 			return null;
 		}
 
-		// Handle prefixed names like "Category:Name", "Property:Name", "Subobject:Name"
+		// Handle prefixed names like "Category:Name", "Property:Name"
 		if ( preg_match( '/^([^:]+):(.+)$/', $pageName, $matches ) ) {
 			$prefix = $matches[1];
 			$name = $matches[2];

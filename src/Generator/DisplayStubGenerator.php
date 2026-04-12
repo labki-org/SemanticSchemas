@@ -405,7 +405,9 @@ class DisplayStubGenerator {
 
 			$label = $sub->getLabel() ?: $sub->getName();
 			$sections .= '=== ' . $label . " ===\n";
-			$sections .= '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] [[Category:' . $subName . ']]' . "\n";
+			$catNs = $this->language->getFormattedNsText( NS_CATEGORY );
+			$sections .= '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]]'
+				. ' [[' . $catNs . ':' . $subName . ']]' . "\n";
 
 			foreach ( $props as $p ) {
 				$param = NamingHelper::propertyToParameter( $p );

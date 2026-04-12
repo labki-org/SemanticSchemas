@@ -826,7 +826,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$html .= Html::element( 'th', [], 'Category' );
 		$html .= Html::element( 'th', [], 'Parents' );
 		$html .= Html::element( 'th', [], 'Properties' );
-		$html .= Html::element( 'th', [], 'Template' );
+		$html .= Html::element( 'th', [], 'Semantic' );
 		$html .= Html::element( 'th', [], 'Form' );
 		$html .= Html::element( 'th', [], 'Display' );
 		$html .= Html::element( 'th', [], $this->msg( 'semanticschemas-status-modified-outside' )->text() );
