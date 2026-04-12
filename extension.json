@@ -89,7 +89,10 @@
 				"semanticschemas-hierarchy-unknown-category",
 				"semanticschemas-hierarchy-unnamed-property",
 				"semanticschemas-hierarchy-required",
-				"semanticschemas-hierarchy-optional"
+				"semanticschemas-hierarchy-optional",
+				"semanticschemas-hierarchy-no-subobjects",
+				"semanticschemas-hierarchy-subobject-name",
+				"semanticschemas-hierarchy-subobjects-title"
 			],
 			"localBasePath": "",
 			"remoteExtPath": "SemanticSchemas",
