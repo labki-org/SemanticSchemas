@@ -218,6 +218,39 @@ class SchemaValidatorTest extends TestCase {
 	}
 
 	/* =========================================================================
+	 * SUBOBJECT VALIDATION
+	 * ========================================================================= */
+
+	public function testUndefinedSubobjectCategoryReturnsError(): void {
+		$schema = $this->getValidSchema();
+		$schema['categories']['TestCategory']['subobjects'] = [
+			'required' => [ 'NonexistentCategory' ],
+			'optional' => [],
+		];
+
+		$errors = $this->validator->validateSchema( $schema );
+		$this->assertNotEmpty( $errors );
+		$this->assertStringContainsString( 'NonexistentCategory', $errors[0] );
+	}
+
+	public function testDefinedSubobjectCategoryPassesValidation(): void {
+		$schema = $this->getValidSchema();
+		$schema['categories']['Address'] = [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
+			],
+		];
+		$schema['categories']['TestCategory']['subobjects'] = [
+			'required' => [ 'Address' ],
+			'optional' => [],
+		];
+
+		$errors = $this->validator->validateSchema( $schema );
+		$this->assertEmpty( $errors );
+	}
+
+	/* =========================================================================
 	 * WARNINGS (SEVERITY LEVELS)
 	 * ========================================================================= */
 

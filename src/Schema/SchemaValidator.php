@@ -426,6 +426,21 @@ class SchemaValidator {
 			);
 		}
 
+		if ( isset( $categoryData['subobjects'] ) ) {
+			$this->mergeResults(
+				$errors,
+				$warnings,
+				$this->validateRequiredOptionalBuckets(
+					'category',
+					$categoryName,
+					$categoryData['subobjects'],
+					$allCategories,
+					'category',
+					'subobjects'
+				)
+			);
+		}
+
 		if ( isset( $categoryData['forms'] ) ) {
 			$this->mergeResults(
 				$errors,
