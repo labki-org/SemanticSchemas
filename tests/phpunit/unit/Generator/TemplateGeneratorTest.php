@@ -538,4 +538,61 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringNotContainsString( '#ask', $dispatcher );
 		$this->assertStringNotContainsString( 'Address/subobject/row', $dispatcher );
 	}
+
+	/**
+	 * Helper: call the private generateSubobjectTemplate method via reflection.
+	 */
+	private function callGenerateSubobjectTemplate( EffectiveCategoryModel $sub ): string {
+		$method = new \ReflectionMethod( $this->generator, 'generateSubobjectTemplate' );
+		$method->setAccessible( true );
+		return $method->invoke( $this->generator, $sub );
+	}
+
+	public function testSubobjectTemplateUsesAtCategory(): void {
+		$address = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street', 'Has city' ],
+				'optional' => [],
+			],
+		] );
+
+		$resolver = new InheritanceResolver( [ 'Address' => $address ] );
+		$effective = $resolver->getEffectiveCategory( 'Address' );
+		$result = $this->callGenerateSubobjectTemplate( $effective );
+
+		$this->assertStringContainsString( '{{#subobject:', $result );
+		$this->assertStringContainsString( '@category=Address', $result );
+		$this->assertStringContainsString( 'Has street', $result );
+		$this->assertStringContainsString( 'Has city', $result );
+	}
+
+	public function testSubobjectTemplateIncludesInheritedProperties(): void {
+		$base = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street', 'Has city' ],
+				'optional' => [],
+			],
+		] );
+		$child = new CategoryModel( 'MailingAddress', [
+			'parents' => [ 'Address' ],
+			'properties' => [
+				'required' => [ 'Has zip' ],
+				'optional' => [],
+			],
+		] );
+
+		$resolver = new InheritanceResolver( [
+			'Address' => $base,
+			'MailingAddress' => $child,
+		] );
+		$effective = $resolver->getEffectiveCategory( 'MailingAddress' );
+		$result = $this->callGenerateSubobjectTemplate( $effective );
+
+		$this->assertStringContainsString( '@category=MailingAddress', $result );
+		// Inherited from Address
+		$this->assertStringContainsString( 'Has street', $result );
+		$this->assertStringContainsString( 'Has city', $result );
+		// Own property
+		$this->assertStringContainsString( 'Has zip', $result );
+	}
 }
