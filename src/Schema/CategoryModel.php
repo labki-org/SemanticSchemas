@@ -242,6 +242,8 @@ class CategoryModel {
 	 * ------------------------------------------------------------------------- */
 
 	public function mergeWithParent( CategoryModel $parent ): EffectiveCategoryModel {
+		/* -------------------- Properties -------------------- */
+
 		$mergedProps = self::mergeFieldDeclarations(
 			$parent->getPropertyFields(),
 			$this->propertyFields

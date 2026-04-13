@@ -123,15 +123,17 @@ trait SMWDataExtractor {
 			$ref = $this->smwFetchOne( $subData, $referenceProperty, $referenceType );
 			if ( $ref !== null ) {
 				$required = $this->smwFetchBoolean( $subData, 'Is required' );
-				$sortOrder = $this->smwFetchOne( $subData, 'Has sort order' );
-				$key = $sortOrder ?? '0';
-				$entries[$key] = [ 'name' => $ref, 'required' => $required ];
+				$sortOrder = (int)( $this->smwFetchOne( $subData, 'Has sort order' ) ?? 0 );
+				$entries[] = [ 'name' => $ref, 'required' => $required, 'sort' => $sortOrder ];
 			}
 		}
 
-		ksort( $entries, SORT_NUMERIC );
+		usort( $entries, static fn ( $a, $b ) => $a['sort'] <=> $b['sort'] );
 
-		return array_values( $entries );
+		return array_map(
+			static fn ( $e ) => [ 'name' => $e['name'], 'required' => $e['required'] ],
+			$entries
+		);
 	}
 
 	/**

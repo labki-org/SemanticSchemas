@@ -227,7 +227,7 @@ class WikiCategoryStore {
 
 		# strip namespace prefix from parent categories
 		$parents = array_map(
-			static fn ( string $parentName )=>explode( ':', $parentName )[1],
+			static fn ( string $parentName ) => explode( ':', $parentName, 2 )[1],
 			array_keys( $title->getParentCategories() )
 		);
 
