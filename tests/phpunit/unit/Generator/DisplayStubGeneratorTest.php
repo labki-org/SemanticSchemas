@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Language\Language;
@@ -28,15 +29,89 @@ class DisplayStubGeneratorTest extends TestCase {
 		$this->generator = new DisplayStubGenerator( $pageCreator, $propertyStore, $language );
 	}
 
-	public function testNormalCategoryIncludesCategoryTag() {
+	public function testDisplayTemplateDoesNotContainCategoryTags() {
 		$cat = new CategoryModel( "TestCategory" );
 		$generated = $this->generator->generateWikitext( $cat );
-		$this->assertStringContainsString( '[[Category:TestCategory]]', $generated );
+		// Category membership is declared in the dispatcher, not the display template
+		$this->assertStringNotContainsString( '[[Category:TestCategory]]', $generated );
 	}
 
-	public function testCategoryCategoryExcludesCategoryTag() {
-		$cat = new CategoryModel( "Category" );
-		$generated = $this->generator->generateWikitext( $cat );
-		$this->assertStringNotContainsString( '[[Category:Category]]', $generated );
+	public function testSubobjectSectionsUseDisplayTemplate() {
+		$address = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street', 'Has city' ],
+				'optional' => [],
+			],
+		] );
+
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		] );
+
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'Address' => $address,
+		] );
+
+		$generated = $this->generator->generateWikitext( $person, $resolver );
+
+		// #ask query for subobject display
+		$this->assertStringContainsString( '[[-Has subobject::{{FULLPAGENAME}}]]', $generated );
+		$this->assertStringContainsString( '[[Category:Address]]', $generated );
+		// Aliased printouts matching display template parameter names
+		$this->assertStringContainsString( '?Has street = has_street', $generated );
+		$this->assertStringContainsString( '?Has city = has_city', $generated );
+		// Uses the subobject's display template
+		$this->assertStringContainsString( 'template=Address/display', $generated );
+		$this->assertStringContainsString( 'named args=yes', $generated );
+	}
+
+	public function testSubobjectDisplayIncludesInheritedProperties() {
+		$baseAddress = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street', 'Has city' ],
+				'optional' => [],
+			],
+		] );
+
+		$mailingAddress = new CategoryModel( 'MailingAddress', [
+			'parents' => [ 'Address' ],
+			'properties' => [
+				'required' => [ 'Has zip' ],
+				'optional' => [],
+			],
+		] );
+
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'MailingAddress' ], 'optional' => [] ],
+		] );
+
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'Address' => $baseAddress,
+			'MailingAddress' => $mailingAddress,
+		] );
+
+		$generated = $this->generator->generateWikitext( $person, $resolver );
+
+		// Inherited properties from Address
+		$this->assertStringContainsString( '?Has street', $generated );
+		$this->assertStringContainsString( '?Has city', $generated );
+		// Own property from MailingAddress
+		$this->assertStringContainsString( '?Has zip', $generated );
+	}
+
+	public function testNoSubobjectSectionsWithoutResolver() {
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		] );
+
+		$generated = $this->generator->generateWikitext( $person );
+
+		$this->assertStringNotContainsString( '#ask', $generated );
+		$this->assertStringNotContainsString( 'Address/display', $generated );
 	}
 }

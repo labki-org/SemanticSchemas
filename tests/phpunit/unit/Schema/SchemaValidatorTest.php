@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
-use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use PHPUnit\Framework\TestCase;
 
@@ -222,32 +221,33 @@ class SchemaValidatorTest extends TestCase {
 	 * SUBOBJECT VALIDATION
 	 * ========================================================================= */
 
-	public function testUndefinedSubobjectInCategoryReturnsError(): void {
+	public function testUndefinedSubobjectCategoryReturnsError(): void {
 		$schema = $this->getValidSchema();
 		$schema['categories']['TestCategory']['subobjects'] = [
-			'required' => [ 'UndefinedSubobject' ],
+			'required' => [ 'NonexistentCategory' ],
 			'optional' => [],
 		];
 
 		$errors = $this->validator->validateSchema( $schema );
 		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'UndefinedSubobject', $errors[0] );
+		$this->assertStringContainsString( 'NonexistentCategory', $errors[0] );
 	}
 
-	public function testSubobjectWithDuplicatePropertyListsReturnsError(): void {
+	public function testDefinedSubobjectCategoryPassesValidation(): void {
 		$schema = $this->getValidSchema();
-		$schema['subobjects'] = [
-			'TestSubobject' => [
-				'properties' => [
-					'required' => [ 'Has name' ],
-					'optional' => [ 'Has name' ],
-				],
+		$schema['categories']['Address'] = [
+			'properties' => [
+				'required' => [ 'Has name' ],
+				'optional' => [],
 			],
+		];
+		$schema['categories']['TestCategory']['subobjects'] = [
+			'required' => [ 'Address' ],
+			'optional' => [],
 		];
 
 		$errors = $this->validator->validateSchema( $schema );
-		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'both required and optional', $errors[0] );
+		$this->assertEmpty( $errors );
 	}
 
 	/* =========================================================================
@@ -293,7 +293,7 @@ class SchemaValidatorTest extends TestCase {
 
 	public function testMetaCategoryDoesNotTriggerMissingDisplayFormWarnings(): void {
 		$schema = [
-			'schemaVersion' => SchemaLoader::SCHEMA_VERSION,
+			'schemaVersion' => SchemaValidator::SCHEMA_VERSION,
 			'categories' => [
 				'Category' => [
 					'targetNamespace' => 'Category',

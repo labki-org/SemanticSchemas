@@ -169,7 +169,7 @@ class PageCreator {
 			return null;
 		}
 
-		// Handle prefixed names like "Category:Name", "Property:Name", "Subobject:Name"
+		// Handle prefixed names like "Category:Name", "Property:Name"
 		if ( preg_match( '/^([^:]+):(.+)$/', $pageName, $matches ) ) {
 			$prefix = $matches[1];
 			$name = $matches[2];
@@ -182,9 +182,6 @@ class PageCreator {
 					break;
 				case 'property':
 					$namespace = defined( 'SMW_NS_PROPERTY' ) ? constant( 'SMW_NS_PROPERTY' ) : NS_MAIN;
-					break;
-				case 'subobject':
-					$namespace = defined( 'NS_SUBOBJECT' ) ? constant( 'NS_SUBOBJECT' ) : NS_MAIN;
 					break;
 				default:
 					// Unknown prefix, try to parse as a regular title

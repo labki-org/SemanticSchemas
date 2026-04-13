@@ -206,15 +206,8 @@ class CategoryModel {
 	 *
 	 * @return array<array{name:string, required:bool}>
 	 */
-	public function getTaggedProperties(): array {
-		$out = [];
-		foreach ( $this->requiredProperties as $name ) {
-			$out[] = [ 'name' => $name, 'required' => true ];
-		}
-		foreach ( $this->optionalProperties as $name ) {
-			$out[] = [ 'name' => $name, 'required' => false ];
-		}
-		return $out;
+	public function getAnnotatedProperties(): array {
+		return self::annotateRequiredOptional( $this->requiredProperties, $this->optionalProperties );
 	}
 
 	/* -------------------- Subobjects -------------------- */
@@ -236,15 +229,8 @@ class CategoryModel {
 	 *
 	 * @return array<array{name:string, required:bool}>
 	 */
-	public function getTaggedSubobjects(): array {
-		$out = [];
-		foreach ( $this->requiredSubobjects as $name ) {
-			$out[] = [ 'name' => $name, 'required' => true ];
-		}
-		foreach ( $this->optionalSubobjects as $name ) {
-			$out[] = [ 'name' => $name, 'required' => false ];
-		}
-		return $out;
+	public function getAnnotatedSubobjects(): array {
+		return self::annotateRequiredOptional( $this->requiredSubobjects, $this->optionalSubobjects );
 	}
 
 	/* -------------------- Backlinks -------------------- */
@@ -273,35 +259,15 @@ class CategoryModel {
 	 * ------------------------------------------------------------------------- */
 
 	public function mergeWithParent( CategoryModel $parent ): EffectiveCategoryModel {
-		/* -------------------- Properties -------------------- */
+		[ $mergedRequired, $mergedOptional ] = self::mergeRequiredOptionalLists(
+			$parent->getRequiredProperties(), $this->requiredProperties,
+			$parent->getOptionalProperties(), $this->optionalProperties
+		);
 
-		$mergedRequired = array_values( array_unique( array_merge(
-			$parent->getRequiredProperties(),
-			$this->requiredProperties
-		) ) );
-
-		$mergedOptional = array_values( array_diff(
-			array_unique( array_merge(
-				$parent->getOptionalProperties(),
-				$this->optionalProperties
-			) ),
-			$mergedRequired
-		) );
-
-		/* -------------------- Subobjects -------------------- */
-
-		$mergedRequiredSG = array_values( array_unique( array_merge(
-			$parent->getRequiredSubobjects(),
-			$this->requiredSubobjects
-		) ) );
-
-		$mergedOptionalSG = array_values( array_diff(
-			array_unique( array_merge(
-				$parent->getOptionalSubobjects(),
-				$this->optionalSubobjects
-			) ),
-			$mergedRequiredSG
-		) );
+		[ $mergedRequiredSG, $mergedOptionalSG ] = self::mergeRequiredOptionalLists(
+			$parent->getRequiredSubobjects(), $this->requiredSubobjects,
+			$parent->getOptionalSubobjects(), $this->optionalSubobjects
+		);
 
 		/* -------------------- Backlinks -------------------- */
 
@@ -352,6 +318,43 @@ class CategoryModel {
 	/* -------------------------------------------------------------------------
 	 * MERGE HELPERS
 	 * ------------------------------------------------------------------------- */
+
+	/**
+	 * Tag items from required/optional lists with a boolean flag.
+	 *
+	 * @return array<array{name:string, required:bool}>
+	 */
+	private static function annotateRequiredOptional( array $required, array $optional ): array {
+		$out = [];
+		foreach ( $required as $name ) {
+			$out[] = [ 'name' => $name, 'required' => true ];
+		}
+		foreach ( $optional as $name ) {
+			$out[] = [ 'name' => $name, 'required' => false ];
+		}
+		return $out;
+	}
+
+	/**
+	 * Merge parent+child required/optional lists, promoting optional→required on conflict.
+	 *
+	 * @return array{0: string[], 1: string[]} [ mergedRequired, mergedOptional ]
+	 */
+	private static function mergeRequiredOptionalLists(
+		array $parentRequired, array $childRequired,
+		array $parentOptional, array $childOptional
+	): array {
+		$mergedRequired = array_values( array_unique( array_merge(
+			$parentRequired, $childRequired
+		) ) );
+
+		$mergedOptional = array_values( array_diff(
+			array_unique( array_merge( $parentOptional, $childOptional ) ),
+			$mergedRequired
+		) );
+
+		return [ $mergedRequired, $mergedOptional ];
+	}
 
 	private static function mergeDisplayConfigs( array $parent, array $child ): array {
 		if ( $parent === [] ) {

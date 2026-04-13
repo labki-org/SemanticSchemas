@@ -47,6 +47,13 @@ class InheritanceResolver {
 	 * ---------------------------------------------------------------------- */
 
 	/**
+	 * Check if a category exists in the resolver's category map.
+	 */
+	public function hasCategory( string $categoryName ): bool {
+		return isset( $this->categoryMap[$categoryName] );
+	}
+
+	/**
 	 * Return a C3-linearized list including the category itself.
 	 *
 	 * Index 0 = most specific (the category itself)

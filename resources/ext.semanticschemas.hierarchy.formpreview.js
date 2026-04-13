@@ -348,7 +348,7 @@
 				const subobjectTitle = entry.subobjectTitle || '';
 				if ( subobjectTitle ) {
 					const href = mw.util.getUrl( subobjectTitle );
-					const displayName = subobjectTitle.replace( /^Subobject:/, '' );
+					const displayName = subobjectTitle.replace( /^Category:/, '' );
 					$li.append(
 						$( '<a>' )
 							.attr( 'href', href )

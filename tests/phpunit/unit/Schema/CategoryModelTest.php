@@ -52,21 +52,21 @@ class CategoryModelTest extends TestCase {
 		] );
 	}
 
+	public function testNonArrayPropertiesThrowsException(): void {
+		$this->expectException( InvalidArgumentException::class );
+		new CategoryModel( 'TestCategory', [
+			'properties' => 'not an array',
+		] );
+	}
+
 	public function testDuplicateRequiredOptionalSubobjectThrowsException(): void {
 		$this->expectException( InvalidArgumentException::class );
 		$this->expectExceptionMessage( 'both required and optional' );
 		new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [ 'Author' ],
+				'required' => [ 'Address' ],
+				'optional' => [ 'Address' ],
 			],
-		] );
-	}
-
-	public function testNonArrayPropertiesThrowsException(): void {
-		$this->expectException( InvalidArgumentException::class );
-		new CategoryModel( 'TestCategory', [
-			'properties' => 'not an array',
 		] );
 	}
 
@@ -161,22 +161,22 @@ class CategoryModelTest extends TestCase {
 		$this->assertCount( 2, $allProps );
 	}
 
-	public function testGetTaggedPropertiesReturnsBothWithFlags(): void {
+	public function testGetAnnotatedPropertiesReturnsBothWithFlags(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
 				'required' => [ 'Has name' ],
 				'optional' => [ 'Has email' ],
 			],
 		] );
-		$tagged = $model->getTaggedProperties();
+		$tagged = $model->getAnnotatedProperties();
 		$this->assertCount( 2, $tagged );
 		$this->assertSame( [ 'name' => 'Has name', 'required' => true ], $tagged[0] );
 		$this->assertSame( [ 'name' => 'Has email', 'required' => false ], $tagged[1] );
 	}
 
-	public function testGetTaggedPropertiesReturnsEmptyWhenNone(): void {
+	public function testGetAnnotatedPropertiesReturnsEmptyWhenNone(): void {
 		$model = new CategoryModel( 'TestCategory' );
-		$this->assertSame( [], $model->getTaggedProperties() );
+		$this->assertSame( [], $model->getAnnotatedProperties() );
 	}
 
 	/* =========================================================================
@@ -205,10 +205,7 @@ class CategoryModelTest extends TestCase {
 
 	public function testHasSubobjectsReturnsTrue(): void {
 		$model = new CategoryModel( 'TestCategory', [
-			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [],
-			],
+			'subobjects' => [ 'required' => [ 'Author' ], 'optional' => [] ],
 		] );
 		$this->assertTrue( $model->hasSubobjects() );
 	}
@@ -218,22 +215,22 @@ class CategoryModelTest extends TestCase {
 		$this->assertFalse( $model->hasSubobjects() );
 	}
 
-	public function testGetTaggedSubobjectsReturnsBothWithFlags(): void {
+	public function testGetAnnotatedSubobjectsReturnsBothWithFlags(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
 				'required' => [ 'Author' ],
 				'optional' => [ 'Funding' ],
 			],
 		] );
-		$tagged = $model->getTaggedSubobjects();
+		$tagged = $model->getAnnotatedSubobjects();
 		$this->assertCount( 2, $tagged );
 		$this->assertSame( [ 'name' => 'Author', 'required' => true ], $tagged[0] );
 		$this->assertSame( [ 'name' => 'Funding', 'required' => false ], $tagged[1] );
 	}
 
-	public function testGetTaggedSubobjectsReturnsEmptyWhenNone(): void {
+	public function testGetAnnotatedSubobjectsReturnsEmptyWhenNone(): void {
 		$model = new CategoryModel( 'TestCategory' );
-		$this->assertSame( [], $model->getTaggedSubobjects() );
+		$this->assertSame( [], $model->getAnnotatedSubobjects() );
 	}
 
 	/* =========================================================================
@@ -315,26 +312,6 @@ class CategoryModelTest extends TestCase {
 		$this->assertNotContains( 'Has prop', $merged->getOptionalProperties() );
 	}
 
-	public function testMergeWithParentMergesSubobjects(): void {
-		$parent = new CategoryModel( 'Parent', [
-			'subobjects' => [
-				'required' => [ 'ParentSub' ],
-				'optional' => [],
-			],
-		] );
-		$child = new CategoryModel( 'Child', [
-			'parents' => [ 'Parent' ],
-			'subobjects' => [
-				'required' => [ 'ChildSub' ],
-				'optional' => [],
-			],
-		] );
-
-		$merged = $child->mergeWithParent( $parent );
-		$this->assertContains( 'ParentSub', $merged->getRequiredSubobjects() );
-		$this->assertContains( 'ChildSub', $merged->getRequiredSubobjects() );
-	}
-
 	public function testMergeWithParentInheritsRenderAs(): void {
 		$parent = new CategoryModel( 'Parent', [ 'renderAs' => 'ParentFormat' ] );
 		$child = new CategoryModel( 'Child', [ 'parents' => [ 'Parent' ] ] );
@@ -354,9 +331,86 @@ class CategoryModelTest extends TestCase {
 		$this->assertEquals( 'ChildFormat', $merged->getRenderAs() );
 	}
 
+	public function testMergeWithParentMergesSubobjects(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'subobjects' => [ 'required' => [ 'ParentSub' ], 'optional' => [] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'subobjects' => [ 'required' => [ 'ChildSub' ], 'optional' => [] ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertContains( 'ParentSub', $merged->getRequiredSubobjects() );
+		$this->assertContains( 'ChildSub', $merged->getRequiredSubobjects() );
+	}
+
+	public function testMergePromotesOptionalSubobjectToRequired(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'subobjects' => [ 'required' => [], 'optional' => [ 'Address' ] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertContains( 'Address', $merged->getRequiredSubobjects() );
+		$this->assertNotContains( 'Address', $merged->getOptionalSubobjects() );
+	}
+
+	public function testMergeDeduplicatesProperties(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'properties' => [ 'required' => [ 'Has name', 'Has age' ], 'optional' => [] ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$required = $merged->getRequiredProperties();
+		$this->assertCount( 1, array_keys( array_filter( $required, static fn ( $p ) => $p === 'Has name' ) ) );
+		$this->assertContains( 'Has age', $required );
+	}
+
+	public function testMergeKeepsOptionalWhenNotPromoted(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [ 'Has email' ] ],
+		] );
+		$child = new CategoryModel( 'Child', [
+			'parents' => [ 'Parent' ],
+			'properties' => [ 'required' => [], 'optional' => [ 'Has phone' ] ],
+		] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertContains( 'Has email', $merged->getOptionalProperties() );
+		$this->assertContains( 'Has phone', $merged->getOptionalProperties() );
+		$this->assertNotContains( 'Has email', $merged->getRequiredProperties() );
+	}
+
 	/* =========================================================================
 	 * EXPORT
 	 * ========================================================================= */
+
+	public function testToArrayOmitsEmptySubobjects(): void {
+		$model = new CategoryModel( 'TestCategory' );
+		$arr = $model->toArray();
+		$this->assertArrayNotHasKey( 'subobjects', $arr );
+	}
+
+	public function testToArrayIncludesSubobjectsWhenPresent(): void {
+		$model = new CategoryModel( 'TestCategory', [
+			'subobjects' => [
+				'required' => [ 'Author' ],
+				'optional' => [ 'Funding' ],
+			],
+		] );
+		$arr = $model->toArray();
+		$this->assertArrayHasKey( 'subobjects', $arr );
+		$this->assertEquals( [ 'Author' ], $arr['subobjects']['required'] );
+		$this->assertEquals( [ 'Funding' ], $arr['subobjects']['optional'] );
+	}
 
 	public function testToArrayContainsAllFields(): void {
 		$model = new CategoryModel( 'TestCategory', [
@@ -378,23 +432,6 @@ class CategoryModelTest extends TestCase {
 		$this->assertArrayHasKey( 'properties', $array );
 		$this->assertArrayHasKey( 'display', $array );
 		$this->assertArrayHasKey( 'forms', $array );
-	}
-
-	public function testToArrayOmitsEmptySubobjects(): void {
-		$model = new CategoryModel( 'TestCategory' );
-		$array = $model->toArray();
-		$this->assertArrayNotHasKey( 'subobjects', $array );
-	}
-
-	public function testToArrayIncludesSubobjectsWhenPresent(): void {
-		$model = new CategoryModel( 'TestCategory', [
-			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [],
-			],
-		] );
-		$array = $model->toArray();
-		$this->assertArrayHasKey( 'subobjects', $array );
 	}
 
 	/* =========================================================================

@@ -8,10 +8,10 @@ use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
+use MediaWiki\Language\Language;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -28,10 +28,15 @@ class TemplateGeneratorTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
+		$language = $this->createMock( Language::class );
+		$language->method( 'getFormattedNsText' )
+			->willReturn( 'Category' );
+
 		$this->generator = new TemplateGenerator(
 			$this->createMock( PageCreator::class ),
-			$this->createMock( WikiSubobjectStore::class ),
-			$this->createMock( WikiPropertyStore::class )
+			$this->createMock( WikiCategoryStore::class ),
+			$this->createMock( WikiPropertyStore::class ),
+			$language
 		);
 	}
 
@@ -103,11 +108,11 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringNotContainsString( '[[Category:', $result );
 	}
 
-	public function testDispatcherTemplateDoesNotContainCategoryStamp(): void {
+	public function testDispatcherTemplateContainsCategoryStamp(): void {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringNotContainsString( '[[Category:', $result );
+		$this->assertStringContainsString( '[[Category:Person]]', $result );
 	}
 
 	public function testGenerateSemanticTemplateWithEmptyNameThrowsException(): void {
@@ -313,10 +318,15 @@ class TemplateGeneratorTest extends TestCase {
 		$propStore->method( 'readProperty' )
 			->willReturnCallback( static fn ( string $name ) => $propertyMap[$name] ?? null );
 
+		$language = $this->createMock( Language::class );
+		$language->method( 'getFormattedNsText' )
+			->willReturn( 'Category' );
+
 		return new TemplateGenerator(
 			$this->createMock( PageCreator::class ),
-			$this->createMock( WikiSubobjectStore::class ),
-			$propStore
+			$this->createMock( WikiCategoryStore::class ),
+			$propStore,
+			$language
 		);
 	}
 
@@ -421,68 +431,6 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringNotContainsString( '+sep=', $result );
 	}
 
-	public function testSubobjectMultiValuePropertyUsesSep(): void {
-		$propertyMap = [
-			'Has tags' => new PropertyModel( 'Has tags', [
-				'datatype' => 'Text',
-				'allowsMultipleValues' => true,
-			] ),
-		];
-
-		$propStore = $this->createMock( WikiPropertyStore::class );
-		$propStore->method( 'readProperty' )
-			->willReturnCallback( static fn ( string $name ) => $propertyMap[$name] ?? null );
-
-		$subStore = $this->createMock( WikiSubobjectStore::class );
-		$subStore->method( 'readSubobject' )
-			->with( 'Metadata' )
-			->willReturn( new SubobjectModel( 'Metadata', [
-				'properties' => [
-					'required' => [ 'Has tags' ],
-					'optional' => [],
-				],
-			] ) );
-
-		// Capture content written to the subobject semantic template
-		$writtenContent = [];
-		$pageCreator = $this->createMock( PageCreator::class );
-		$pageCreator->method( 'makeTitle' )
-			->willReturn( $this->createMock( \MediaWiki\Title\Title::class ) );
-		$pageCreator->method( 'createOrUpdatePage' )
-			->willReturnCallback( static function ( $title, $content ) use ( &$writtenContent ) {
-				$writtenContent[] = $content;
-				return true;
-			} );
-
-		$gen = new TemplateGenerator( $pageCreator, $subStore, $propStore );
-
-		$category = new CategoryModel( 'Article', [
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
-			'subobjects' => [
-				'required' => [ 'Metadata' ],
-				'optional' => [],
-			],
-		] );
-
-		$resolver = new InheritanceResolver( [ 'Article' => $category ] );
-		$gen->generateAllTemplates( $category, $resolver );
-
-		// Find the subobject semantic template (contains #subobject:)
-		$subobjectContent = null;
-		foreach ( $writtenContent as $content ) {
-			if ( strpos( $content, '{{#subobject:' ) !== false ) {
-				$subobjectContent = $content;
-				break;
-			}
-		}
-
-		$this->assertNotNull( $subobjectContent, 'Subobject semantic template should be generated' );
-		$this->assertStringContainsString( 'Has tags = {{{has_tags|}}} |+sep=,', $subobjectContent );
-	}
-
 	/* =========================================================================
 	 * MODULAR TEMPLATES — INHERITANCE CHAIN
 	 * ========================================================================= */
@@ -515,8 +463,8 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( 'name', $result );
 		$this->assertStringContainsString( 'student_id', $result );
 		$this->assertStringContainsString( 'email', $result );
-		// No category stamp in dispatcher
-		$this->assertStringNotContainsString( '[[Category:', $result );
+		// Category membership in dispatcher
+		$this->assertStringContainsString( '[[Category:Student]]', $result );
 	}
 
 	public function testSemanticTemplateForEachAncestorHasOwnPropertiesOnly(): void {
@@ -570,5 +518,112 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( 'name', $parentSection );
 		// Student-only param should NOT be forwarded to Person
 		$this->assertStringNotContainsString( 'student_id', $parentSection );
+	}
+
+	/* =========================================================================
+	 * SUBOBJECT TEMPLATE GENERATION
+	 * ========================================================================= */
+
+	public function testDispatcherContainsCategoryMembership(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+
+		$dispatcher = $this->generateDispatcher( $category );
+
+		$this->assertStringContainsString( '[[Category:Person]]', $dispatcher );
+		$this->assertStringContainsString( '[[Category:SemanticSchemas-managed]]', $dispatcher );
+	}
+
+	public function testDispatcherExcludesSelfMembershipForMetacategory(): void {
+		$category = new CategoryModel( 'Category' );
+
+		$dispatcher = $this->generateDispatcher( $category );
+
+		$this->assertStringNotContainsString( '[[Category:Category]]', $dispatcher );
+		$this->assertStringContainsString( '[[Category:SemanticSchemas-managed]]', $dispatcher );
+	}
+
+	public function testDispatcherDoesNotContainSubobjectDisplay(): void {
+		$subCategory = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street', 'Has city' ],
+				'optional' => [],
+			],
+		] );
+
+		$person = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		] );
+
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'Address' => $subCategory,
+		] );
+
+		$effective = $resolver->getEffectiveCategory( 'Person' );
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective );
+
+		// Dispatcher should NOT contain subobject display — that lives in the display template
+		$this->assertStringNotContainsString( '#ask', $dispatcher );
+		$this->assertStringNotContainsString( 'Address/subobject/row', $dispatcher );
+	}
+
+	/**
+	 * Helper: call the private generateSubobjectTemplate method via reflection.
+	 */
+	private function callGenerateSubobjectTemplate( EffectiveCategoryModel $sub ): string {
+		$method = new \ReflectionMethod( $this->generator, 'generateSubobjectTemplate' );
+		$method->setAccessible( true );
+		return $method->invoke( $this->generator, $sub );
+	}
+
+	public function testSubobjectTemplateUsesAtCategory(): void {
+		$address = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street', 'Has city' ],
+				'optional' => [],
+			],
+		] );
+
+		$resolver = new InheritanceResolver( [ 'Address' => $address ] );
+		$effective = $resolver->getEffectiveCategory( 'Address' );
+		$result = $this->callGenerateSubobjectTemplate( $effective );
+
+		$this->assertStringContainsString( '{{#subobject:', $result );
+		$this->assertStringContainsString( '@category=Address', $result );
+		$this->assertStringContainsString( 'Has street', $result );
+		$this->assertStringContainsString( 'Has city', $result );
+	}
+
+	public function testSubobjectTemplateIncludesInheritedProperties(): void {
+		$base = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street', 'Has city' ],
+				'optional' => [],
+			],
+		] );
+		$child = new CategoryModel( 'MailingAddress', [
+			'parents' => [ 'Address' ],
+			'properties' => [
+				'required' => [ 'Has zip' ],
+				'optional' => [],
+			],
+		] );
+
+		$resolver = new InheritanceResolver( [
+			'Address' => $base,
+			'MailingAddress' => $child,
+		] );
+		$effective = $resolver->getEffectiveCategory( 'MailingAddress' );
+		$result = $this->callGenerateSubobjectTemplate( $effective );
+
+		$this->assertStringContainsString( '@category=MailingAddress', $result );
+		// Inherited from Address
+		$this->assertStringContainsString( 'Has street', $result );
+		$this->assertStringContainsString( 'Has city', $result );
+		// Own property
+		$this->assertStringContainsString( 'Has zip', $result );
 	}
 }

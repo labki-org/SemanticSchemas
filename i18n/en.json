@@ -120,7 +120,6 @@
 	"semanticschemas-label-not-available": "Not available",
 	"semanticschemas-label-properties": "Properties",
 	"semanticschemas-label-schema-hash": "Source schema hash",
-	"semanticschemas-label-subobjects": "Subobjects",
 	"semanticschemas-log-header": "This log tracks SemanticSchemas operations (import, export, generate)",
 	"semanticschemas-log-name": "SemanticSchemas log",
 	"semanticschemas-overview": "Overview",

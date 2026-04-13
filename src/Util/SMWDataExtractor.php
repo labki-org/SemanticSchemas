@@ -17,7 +17,7 @@ trait SMWDataExtractor {
 	 *
 	 * @param \SMW\SemanticData $semanticData
 	 * @param string $propName Property label
-	 * @param string $type Value type: 'text', 'property', 'category', 'subobject', 'page'
+	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null
 	 */
 	protected function smwFetchOne( $semanticData, string $propName, string $type = 'text' ): ?string {
@@ -30,7 +30,7 @@ trait SMWDataExtractor {
 	 *
 	 * @param \SMW\SemanticData $semanticData
 	 * @param string $propName Property label
-	 * @param string $type Value type: 'text', 'property', 'category', 'subobject', 'page'
+	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return array
 	 */
 	protected function smwFetchMany( $semanticData, string $propName, string $type = 'text' ): array {
@@ -97,11 +97,10 @@ trait SMWDataExtractor {
 	 *   - 'text'      — returns the page text (no namespace check)
 	 *   - 'property'  — requires SMW_NS_PROPERTY
 	 *   - 'category'  — requires NS_CATEGORY
-	 *   - 'subobject' — requires NS_SUBOBJECT
 	 *   - 'page'      — returns prefixed text (no namespace check)
 	 *
 	 * @param \SMW\DataItem $di
-	 * @param string $type Value type: 'text', 'property', 'category', 'subobject', 'page'
+	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null The extracted value, or null if the DataItem type or namespace doesn't match
 	 */
 	protected function smwExtractValue( $di, string $type ): ?string {
@@ -123,9 +122,6 @@ trait SMWDataExtractor {
 
 				case 'category':
 					return $t->getNamespace() === NS_CATEGORY ? $text : null;
-
-				case 'subobject':
-					return $t->getNamespace() === NS_SUBOBJECT ? $text : null;
 
 				case 'page':
 					return $t->getPrefixedText();

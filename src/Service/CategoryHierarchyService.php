@@ -135,7 +135,6 @@ class CategoryHierarchyService {
 			$allCategories
 		);
 
-		// Extract inherited subobjects
 		$result['inheritedSubobjects'] = $this->extractVirtualInheritedSubobjects(
 			$parents,
 			$allCategories
@@ -257,11 +256,8 @@ class CategoryHierarchyService {
 	/**
 	 * Collect inherited subobjects for a category that does not yet exist.
 	 *
-	 * Same as extractVirtualInheritedProperties but for subobject definitions.
-	 *
 	 * @param string[] $parents Parent category names (no namespace prefix)
 	 * @param array<string,\MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel> $all
-	 *   All existing CategoryModels keyed by name
 	 * @return array List of inherited subobject descriptors
 	 */
 	private function extractVirtualInheritedSubobjects(
@@ -311,7 +307,7 @@ class CategoryHierarchyService {
 
 			$source = "Category:$ancestor";
 
-			foreach ( $model->getTaggedProperties() as $tagged ) {
+			foreach ( $model->getAnnotatedProperties() as $tagged ) {
 				if ( !isset( $seen[$tagged['name']] ) ) {
 					$output[] = [
 						'propertyTitle' => 'Property:' . $tagged['name'],
@@ -346,10 +342,10 @@ class CategoryHierarchyService {
 
 			$source = "Category:$ancestor";
 
-			foreach ( $model->getTaggedSubobjects() as $tagged ) {
+			foreach ( $model->getAnnotatedSubobjects() as $tagged ) {
 				if ( !isset( $seen[$tagged['name']] ) ) {
 					$output[] = [
-						'subobjectTitle' => 'Subobject:' . $tagged['name'],
+						'subobjectTitle' => 'Category:' . $tagged['name'],
 						'sourceCategory' => $source,
 						'required' => $tagged['required'],
 					];
@@ -358,4 +354,5 @@ class CategoryHierarchyService {
 			}
 		}
 	}
+
 }

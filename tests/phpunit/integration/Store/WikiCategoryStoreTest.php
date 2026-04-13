@@ -241,8 +241,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Has required subobject::Subobject:Author]]', $content );
-		$this->assertStringContainsString( '[[Has required subobject::Subobject:Publication]]', $content );
+		$this->assertStringContainsString( '[[Has required subobject::Category:Author]]', $content );
+		$this->assertStringContainsString( '[[Has required subobject::Category:Publication]]', $content );
 	}
 
 	public function testWriteCategoryWithOptionalSubobjects(): void {
@@ -259,8 +259,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $name, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( '[[Has optional subobject::Subobject:Funding]]', $content );
-		$this->assertStringContainsString( '[[Has optional subobject::Subobject:Award]]', $content );
+		$this->assertStringContainsString( '[[Has optional subobject::Category:Funding]]', $content );
+		$this->assertStringContainsString( '[[Has optional subobject::Category:Award]]', $content );
 	}
 
 	/* =========================================================================
@@ -297,8 +297,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$content = $this->pageCreator->getPageContent( $title );
 		$this->assertStringContainsString( '[[Has required property::Property:Has name]]', $content );
 		$this->assertStringContainsString( '[[Has optional property::Property:Has email]]', $content );
-		$this->assertStringContainsString( '[[Has required subobject::Subobject:Author]]', $content );
-		$this->assertStringContainsString( '[[Has optional subobject::Subobject:Funding]]', $content );
+		$this->assertStringContainsString( '[[Has required subobject::Category:Author]]', $content );
+		$this->assertStringContainsString( '[[Has optional subobject::Category:Funding]]', $content );
 	}
 
 	/* =========================================================================

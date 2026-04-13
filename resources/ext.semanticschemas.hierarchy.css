@@ -263,40 +263,6 @@
 }
 
 /* ========================================================
-   Subobject Table
-   ======================================================== */
-
-.s2-subobject-summary {
-	width: 100%;
-	border-collapse: collapse;
-	margin-top: 0.75rem;
-	border-radius: var(--ss-radius-md, 10px);
-	overflow: hidden;
-	border: 1px solid var(--ss-slate-200, #e2e8f0);
-}
-
-.s2-subobject-summary th,
-.s2-subobject-summary td {
-	padding: 0.625rem 0.875rem;
-}
-
-.s2-subobject-summary th {
-	background: var(--ss-slate-50, #f8fafc);
-	font-size: 0.6875rem;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--ss-slate-600, #475569);
-	text-align: left;
-	border-bottom: 2px solid var(--ss-slate-200, #e2e8f0);
-}
-
-.s2-subobject-summary td {
-	border-bottom: 1px solid var(--ss-slate-100, #f1f5f9);
-	font-size: 0.875rem;
-}
-
-/* ========================================================
    Special Page Form
    ======================================================== */
 

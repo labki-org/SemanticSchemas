@@ -4,11 +4,11 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
@@ -28,18 +28,18 @@ class FormGenerator {
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
 	private PropertyInputMapper $inputMapper;
-	private WikiSubobjectStore $subobjectStore;
+	private WikiCategoryStore $categoryStore;
 
 	public function __construct(
 		PageCreator $pageCreator,
 		WikiPropertyStore $propertyStore,
 		PropertyInputMapper $inputMapper,
-		WikiSubobjectStore $subobjectStore
+		WikiCategoryStore $categoryStore
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->propertyStore = $propertyStore;
 		$this->inputMapper = $inputMapper;
-		$this->subobjectStore = $subobjectStore;
+		$this->categoryStore = $categoryStore;
 	}
 
 	private function s( ?string $v ): string {
@@ -250,41 +250,38 @@ class FormGenerator {
 
 	/**
 	 * Subobject repeatable blocks.
+	 *
+	 * Subobject types are categories resolved through InheritanceResolver
+	 * to include inherited properties from parent categories.
 	 */
-	private function generateSubobjectSections( CategoryModel $category ): array {
-		$required = $category->getRequiredSubobjects();
-		$optional = $category->getOptionalSubobjects();
-
-		$all = [];
-		foreach ( $required as $n ) {
-			$all[$n] = true;
-		}
-		foreach ( $optional as $n ) {
-			if ( !isset( $all[$n] ) ) {
-				$all[$n] = false;
-			}
-		}
-
-		if ( empty( $all ) ) {
+	private function generateSubobjectSections(
+		CategoryModel $category,
+		InheritanceResolver $resolver
+	): array {
+		$tagged = $category->getAnnotatedSubobjects();
+		if ( empty( $tagged ) ) {
 			return [];
 		}
 
 		$out = [];
 
-		foreach ( $all as $subName => $isRequired ) {
+		foreach ( $tagged as $entry ) {
+			$subName = $entry['name'];
+			$isRequired = $entry['required'];
 
-			$model = $this->subobjectStore->readSubobject( $subName );
-			if ( !$model instanceof SubobjectModel ) {
-				wfLogWarning( "SemanticSchemas: Missing Subobject:$subName" );
+			if ( !$resolver->hasCategory( $subName ) ) {
+				// Category page doesn't exist yet — nothing to generate
 				continue;
 			}
+
+			$model = $resolver->getEffectiveCategory( $subName );
 
 			$label = $this->s( $model->getLabel() ?: $model->getName() );
 
 			$out[] = '=== ' . $label . ' ===';
 			$out[] = '';
 
-			$templateName = 'Subobject/' . $this->s( $model->getName() );
+			$templateName = $this->s( $model->getName() ) . '/subobject';
 
 			$for = [ $templateName, 'multiple' ];
 			if ( $isRequired ) {
@@ -295,13 +292,12 @@ class FormGenerator {
 			$out[] = '';
 
 			// Generate table for subobject properties
-			$subProps = array_merge( $model->getRequiredProperties(), $model->getOptionalProperties() );
-			if ( !empty( $subProps ) ) {
+			$taggedProps = $model->getAnnotatedProperties();
+			if ( !empty( $taggedProps ) ) {
 				$out[] = '{| class="formtable"';
 
-				foreach ( $subProps as $p ) {
-					$must = $model->isPropertyRequired( $p );
-					$out = array_merge( $out, $this->generateTableField( $p, $must ) );
+				foreach ( $taggedProps as $prop ) {
+					$out = array_merge( $out, $this->generateTableField( $prop['name'], $prop['required'] ) );
 				}
 
 				$out[] = '|}';
@@ -365,7 +361,10 @@ class FormGenerator {
 	 * Produces a form fragment with nowiki-wrapped field directives,
 	 * designed to be transcluded by Form:CompositeForm via {{Form:Category/composite}}.
 	 */
-	public function generateCompositeForm( EffectiveCategoryModel $category ): string {
+	public function generateCompositeForm(
+		EffectiveCategoryModel $category,
+		InheritanceResolver $resolver
+	): string {
 		$name = trim( $category->getName() );
 		$label = trim( $category->getLabel() );
 
@@ -389,7 +388,7 @@ class FormGenerator {
 		$lines[] = '<nowiki>{{{end template}}}</nowiki>';
 		$lines[] = '';
 
-		$subLines = $this->generateSubobjectSections( $category );
+		$subLines = $this->generateSubobjectSections( $category, $resolver );
 		$lines = array_merge( $lines, $this->wrapNowiki( $subLines ) );
 
 		$lines[] = '</includeonly>';
@@ -397,9 +396,12 @@ class FormGenerator {
 		return implode( "\n", $lines );
 	}
 
-	public function generateAndSaveCompositeForm( EffectiveCategoryModel $category ): bool {
+	public function generateAndSaveCompositeForm(
+		EffectiveCategoryModel $category,
+		InheritanceResolver $resolver
+	): bool {
 		try {
-			$txt = $this->generateCompositeForm( $category );
+			$txt = $this->generateCompositeForm( $category, $resolver );
 			return $this->updateForm( $category->getName() . '/composite', $txt );
 		} catch ( \Exception $e ) {
 			wfLogWarning(
@@ -413,9 +415,12 @@ class FormGenerator {
 	/**
 	 * Generate and save both the regular form and composite form.
 	 */
-	public function generateAndSaveAllForms( EffectiveCategoryModel $category ): bool {
+	public function generateAndSaveAllForms(
+		EffectiveCategoryModel $category,
+		InheritanceResolver $resolver
+	): bool {
 		$formSuccess = $this->generateAndSaveForm( $category );
-		$compositeSuccess = $this->generateAndSaveCompositeForm( $category );
+		$compositeSuccess = $this->generateAndSaveCompositeForm( $category, $resolver );
 		return $formSuccess && $compositeSuccess;
 	}
 

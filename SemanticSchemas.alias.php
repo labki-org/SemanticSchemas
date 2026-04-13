@@ -6,13 +6,6 @@
  * @ingroup Extensions
  */
 
-if ( !defined( 'NS_SUBOBJECT' ) ) {
-	define( 'NS_SUBOBJECT', 3300 );
-}
-if ( !defined( 'NS_SUBOBJECT_TALK' ) ) {
-	define( 'NS_SUBOBJECT_TALK', 3301 );
-}
-
 if ( !defined( 'PF_NS_FORM' ) ) {
 	define( 'PF_NS_FORM', 106 );
 }

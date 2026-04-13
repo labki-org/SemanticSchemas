@@ -20,9 +20,6 @@ if ( !defined( 'NS_MEDIAWIKI' ) ) {
 if ( !defined( 'NS_CATEGORY' ) ) {
 	define( 'NS_CATEGORY', 14 );
 }
-if ( !defined( 'NS_SUBOBJECT' ) ) {
-	define( 'NS_SUBOBJECT', 3300 );
-}
 if ( !defined( 'TS_ISO_8601' ) ) {
 	define( 'TS_ISO_8601', 4 );
 }
