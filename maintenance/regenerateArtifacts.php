@@ -115,14 +115,14 @@ class RegenerateArtifacts extends Maintenance {
 			$this->output( "  ✗ Form generation failed\n" );
 		}
 
-		if ( $formGenerator->generateAndSaveCompositeForm( $effective ) ) {
+		if ( $formGenerator->generateAndSaveCompositeForm( $effective, $resolver ) ) {
 			$this->output( "  ✓ Generated composite form\n" );
 		} else {
 			$this->output( "  ✗ Composite form generation failed\n" );
 		}
 
 		if ( $generateDisplay ) {
-			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective );
+			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective, $resolver );
 			if ( !empty( $displayResult['error'] ) ) {
 				$this->output( "  ✗ Display template failed: {$displayResult['error']}\n" );
 			} elseif ( $displayResult['created'] ) {

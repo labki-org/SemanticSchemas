@@ -1,0 +1,17 @@
+<!-- SemanticSchemas Start -->
+[[Has description::A field declaration entry in a category schema. Preserves insertion order.]]
+[[Display label::Field]]
+{{#subobject:
+ |@category=Field
+ | For property = Property:For property
+ | Is required = true
+ | Has sort order = 1
+}}
+{{#subobject:
+ |@category=Field
+ | For property = Property:Is required
+ | Is required = false
+ | Has sort order = 2
+}}
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed]]

@@ -63,8 +63,8 @@ class FieldDeclarationTest extends TestCase {
 
 		$expected = implode( "\n", [
 			'{{#subobject:',
-			' | Has subobject type = Subobject:Has property field',
-			' | Has property reference = Property:Has name',
+			' |@category=Field',
+			' | For property = Property:Has name',
 			' | Is required = true',
 			' | Has sort order = 1',
 			'}}',
@@ -79,8 +79,8 @@ class FieldDeclarationTest extends TestCase {
 
 		$expected = implode( "\n", [
 			'{{#subobject:',
-			' | Has subobject type = Subobject:Has property field',
-			' | Has property reference = Property:Has email',
+			' |@category=Field',
+			' | For property = Property:Has email',
 			' | Is required = false',
 			' | Has sort order = 2',
 			'}}',
@@ -99,8 +99,8 @@ class FieldDeclarationTest extends TestCase {
 
 		$expected = implode( "\n", [
 			'{{#subobject:',
-			' | Has subobject type = Subobject:Has subobject field',
-			' | Has subobject reference = Subobject:Author',
+			' |@category=Field',
+			' | For property = Category:Author',
 			' | Is required = true',
 			' | Has sort order = 1',
 			'}}',
@@ -121,11 +121,11 @@ class FieldDeclarationTest extends TestCase {
 
 		$wikitext = FieldDeclaration::toWikitextAll( $fields );
 
-		$this->assertStringContainsString( 'Has property reference = Property:Has name', $wikitext );
+		$this->assertStringContainsString( 'For property = Property:Has name', $wikitext );
 		$this->assertStringContainsString( 'Is required = true', $wikitext );
 		$this->assertStringContainsString( 'Has sort order = 1', $wikitext );
 
-		$this->assertStringContainsString( 'Has property reference = Property:Has email', $wikitext );
+		$this->assertStringContainsString( 'For property = Property:Has email', $wikitext );
 		$this->assertStringContainsString( 'Is required = false', $wikitext );
 		$this->assertStringContainsString( 'Has sort order = 2', $wikitext );
 	}
@@ -163,9 +163,9 @@ class FieldDeclarationTest extends TestCase {
 		$this->assertStringStartsWith( '{{#subobject:', $block );
 		$this->assertStringEndsWith( '}}', $block );
 
-		// The block must contain the type, reference, required flag, and sort order
-		$this->assertStringContainsString( 'Has subobject type = Subobject:Has property field', $block );
-		$this->assertStringContainsString( 'Has property reference = Property:Has name', $block );
+		// The block must contain the category, reference, required flag, and sort order
+		$this->assertStringContainsString( '@category=Field', $block );
+		$this->assertStringContainsString( 'For property = Property:Has name', $block );
 		$this->assertStringContainsString( 'Is required = true', $block );
 		$this->assertStringContainsString( 'Has sort order = 1', $block );
 	}
@@ -177,8 +177,8 @@ class FieldDeclarationTest extends TestCase {
 		$this->assertStringStartsWith( '{{#subobject:', $block );
 		$this->assertStringEndsWith( '}}', $block );
 
-		$this->assertStringContainsString( 'Has subobject type = Subobject:Has subobject field', $block );
-		$this->assertStringContainsString( 'Has subobject reference = Subobject:Funding', $block );
+		$this->assertStringContainsString( '@category=Field', $block );
+		$this->assertStringContainsString( 'For property = Category:Funding', $block );
 		$this->assertStringContainsString( 'Is required = false', $block );
 		$this->assertStringContainsString( 'Has sort order = 3', $block );
 	}

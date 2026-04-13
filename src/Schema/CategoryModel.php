@@ -186,7 +186,7 @@ class CategoryModel {
 	/**
 	 * @return array<array{name:string, required:bool}>
 	 */
-	public function getTaggedProperties(): array {
+	public function getAnnotatedProperties(): array {
 		return FieldDeclaration::tagged( $this->propertyFields );
 	}
 
@@ -212,7 +212,7 @@ class CategoryModel {
 	/**
 	 * @return array<array{name:string, required:bool}>
 	 */
-	public function getTaggedSubobjects(): array {
+	public function getAnnotatedSubobjects(): array {
 		return FieldDeclaration::tagged( $this->subobjectFields );
 	}
 
@@ -242,8 +242,6 @@ class CategoryModel {
 	 * ------------------------------------------------------------------------- */
 
 	public function mergeWithParent( CategoryModel $parent ): EffectiveCategoryModel {
-		/* -------------------- Properties -------------------- */
-
 		$mergedProps = self::mergeFieldDeclarations(
 			$parent->getPropertyFields(),
 			$this->propertyFields

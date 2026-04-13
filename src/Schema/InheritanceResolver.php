@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
+use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use RuntimeException;
 
 /**
@@ -46,6 +47,13 @@ class InheritanceResolver {
 	 * ---------------------------------------------------------------------- */
 
 	/**
+	 * Check if a category exists in the resolver's category map.
+	 */
+	public function hasCategory( string $categoryName ): bool {
+		return isset( $this->categoryMap[$categoryName] );
+	}
+
+	/**
 	 * Return a C3-linearized list including the category itself.
 	 *
 	 * Index 0 = most specific (the category itself)
@@ -85,6 +93,10 @@ class InheritanceResolver {
 		$merged = null;
 
 		foreach ( $linear as $name ) {
+			if ( !array_key_exists( $name, $this->categoryMap ) ) {
+				// Fine - parent is declared, but category page doesn't exist.
+				continue;
+			}
 			$current = $this->categoryMap[$name];
 
 			if ( $merged === null ) {
@@ -114,6 +126,9 @@ class InheritanceResolver {
 			?? throw new RuntimeException( "Unknown category: $categoryName" );
 		$result = [];
 		foreach ( $category->getParents() as $parentName ) {
+			if ( !array_key_exists( $parentName, $this->categoryMap ) ) {
+				continue;
+			}
 			$result[$parentName] = $this->getEffectiveCategory( $parentName );
 		}
 		return $result;
@@ -172,7 +187,11 @@ class InheritanceResolver {
 		}
 
 		$category = $this->categoryMap[$categoryName];
-		$parents = $category->getParents();
+		// the SemanticSchemas-managed category is just a marker
+		$parents = array_filter(
+			$category->getParents(),
+			static fn ( $parent ) => $parent != Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY
+		);
 
 		if ( $parents === [] ) {
 			return [ $categoryName ];

@@ -6,7 +6,6 @@ use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
-use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -14,7 +13,6 @@ use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\MediaWikiServices;
 
 /**
@@ -46,10 +44,6 @@ class SemanticSchemasServices {
 		return $services->get( 'SemanticSchemas.WikiCategoryStore' );
 	}
 
-	public static function getWikiSubobjectStore( MediaWikiServices $services ): WikiSubobjectStore {
-		return $services->get( 'SemanticSchemas.WikiSubobjectStore' );
-	}
-
 	public static function getStateManager( MediaWikiServices $services ): StateManager {
 		return $services->get( 'SemanticSchemas.StateManager' );
 	}
@@ -76,10 +70,6 @@ class SemanticSchemasServices {
 
 	public static function getCategoryHierarchyService( MediaWikiServices $services ): CategoryHierarchyService {
 		return $services->get( 'SemanticSchemas.CategoryHierarchyService' );
-	}
-
-	public static function getSchemaLoader( MediaWikiServices $services ): SchemaLoader {
-		return $services->get( 'SemanticSchemas.SchemaLoader' );
 	}
 
 	public static function getSchemaValidator( MediaWikiServices $services ): SchemaValidator {

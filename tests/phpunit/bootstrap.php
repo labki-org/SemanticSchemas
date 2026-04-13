@@ -20,9 +20,6 @@ if ( !defined( 'NS_MEDIAWIKI' ) ) {
 if ( !defined( 'NS_CATEGORY' ) ) {
 	define( 'NS_CATEGORY', 14 );
 }
-if ( !defined( 'NS_SUBOBJECT' ) ) {
-	define( 'NS_SUBOBJECT', 3300 );
-}
 if ( !defined( 'TS_ISO_8601' ) ) {
 	define( 'TS_ISO_8601', 4 );
 }
@@ -39,6 +36,7 @@ if ( !function_exists( 'wfLogWarning' ) ) {
 // so the real MW Title class will never be loaded.
 if ( !class_exists( 'MediaWiki\\Title\\Title', false ) ) {
 	require_once __DIR__ . '/stubs/Title.php';
+	require_once __DIR__ . '/stubs/Language.php';
 }
 
 // Mock wfTimestamp if not defined (used by StateManager)

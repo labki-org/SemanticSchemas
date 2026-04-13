@@ -21,18 +21,18 @@ class FieldDeclaration {
 
 	/**
 	 * Configuration for each field type: the subobject type name used in
-	 * "Has subobject type", the reference property, and namespace prefix.
+	 * the @category value, the reference property, and namespace prefix.
 	 */
 	private const FIELD_CONFIG = [
 		self::TYPE_PROPERTY => [
-			'subobjectType' => 'Has property field',
-			'referenceProperty' => 'Has property reference',
+			'category' => 'Field',
+			'referenceProperty' => 'For property',
 			'namespacePrefix' => 'Property',
 		],
 		self::TYPE_SUBOBJECT => [
-			'subobjectType' => 'Has subobject field',
-			'referenceProperty' => 'Has subobject reference',
-			'namespacePrefix' => 'Subobject',
+			'category' => 'Field',
+			'referenceProperty' => 'For property',
+			'namespacePrefix' => 'Category',
 		],
 	];
 
@@ -234,7 +234,7 @@ class FieldDeclaration {
 
 		$lines = [];
 		$lines[] = '{{#subobject:';
-		$lines[] = ' | Has subobject type = Subobject:' . $config['subobjectType'];
+		$lines[] = ' |@category=' . $config['category'];
 		$lines[] = ' | ' . $config['referenceProperty'] . ' = ' . $config['namespacePrefix'] . ':' . $this->name;
 		$lines[] = ' | Is required = ' . ( $this->required ? 'true' : 'false' );
 		$lines[] = ' | Has sort order = ' . $index;

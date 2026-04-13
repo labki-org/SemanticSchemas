@@ -7,7 +7,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Util;
  * -----------------
  * Shared trait for extracting values from SMW SemanticData objects.
  *
- * Used by WikiCategoryStore and WikiSubobjectStore to avoid code duplication
+ * Used by WikiCategoryStore to avoid code duplication
  * in SMW data extraction logic.
  */
 trait SMWDataExtractor {
@@ -17,7 +17,7 @@ trait SMWDataExtractor {
 	 *
 	 * @param \SMW\SemanticData $semanticData
 	 * @param string $propName Property label
-	 * @param string $type Value type: 'text', 'property', 'category', 'subobject', 'page'
+	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null
 	 */
 	protected function smwFetchOne( $semanticData, string $propName, string $type = 'text' ): ?string {
@@ -30,7 +30,7 @@ trait SMWDataExtractor {
 	 *
 	 * @param \SMW\SemanticData $semanticData
 	 * @param string $propName Property label
-	 * @param string $type Value type: 'text', 'property', 'category', 'subobject', 'page'
+	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return array
 	 */
 	protected function smwFetchMany( $semanticData, string $propName, string $type = 'text' ): array {
@@ -87,27 +87,36 @@ trait SMWDataExtractor {
 	/**
 	 * Read ordered, tagged field references from SMW subobjects attached to a page.
 	 *
-	 * Iterates sub-semantic-data, filters by subobject type, extracts the
+	 * Iterates sub-semantic-data, filters by @category membership, extracts the
 	 * reference property value and the "Is required" boolean, and sorts by
 	 * the "Has sort order" property to preserve declaration order.
 	 *
 	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
-	 * @param string $subobjectType Subobject type to match (e.g. "Has property field")
-	 * @param string $referenceProperty Property holding the reference (e.g. "Has property reference")
-	 * @param string $referenceType Value type for extraction (e.g. "property", "subobject")
+	 * @param string $categoryName Category the subobject must belong to (e.g. "Field")
+	 * @param string $referenceProperty Property holding the reference (e.g. "For property")
+	 * @param string $referenceType Value type for extraction (e.g. "property", "category")
 	 * @return array<array{name:string, required:bool}> Ordered list of tagged references
 	 */
 	protected function smwFetchTaggedFieldReferences(
 		$semanticData,
-		string $subobjectType,
+		string $categoryName,
 		string $referenceProperty,
 		string $referenceType
 	): array {
 		$entries = [];
+		$instProp = new \SMW\DIProperty( '_INST' );
+		$expectedKey = str_replace( ' ', '_', $categoryName );
 
 		foreach ( $semanticData->getSubSemanticData() as $subData ) {
-			$type = $this->smwFetchOne( $subData, 'Has subobject type', 'subobject' );
-			if ( $type !== $subobjectType ) {
+			$categories = $subData->getPropertyValues( $instProp );
+			$matchesCategory = false;
+			foreach ( $categories as $cat ) {
+				if ( $cat instanceof \SMW\DIWikiPage && $cat->getDBKey() === $expectedKey ) {
+					$matchesCategory = true;
+					break;
+				}
+			}
+			if ( !$matchesCategory ) {
 				continue;
 			}
 
@@ -138,11 +147,10 @@ trait SMWDataExtractor {
 	 *   - 'text'      — returns the page text (no namespace check)
 	 *   - 'property'  — requires SMW_NS_PROPERTY
 	 *   - 'category'  — requires NS_CATEGORY
-	 *   - 'subobject' — requires NS_SUBOBJECT
 	 *   - 'page'      — returns prefixed text (no namespace check)
 	 *
 	 * @param \SMW\DataItem $di
-	 * @param string $type Value type: 'text', 'property', 'category', 'subobject', 'page'
+	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null The extracted value, or null if the DataItem type or namespace doesn't match
 	 */
 	protected function smwExtractValue( $di, string $type ): ?string {
@@ -168,9 +176,6 @@ trait SMWDataExtractor {
 
 				case 'category':
 					return $t->getNamespace() === NS_CATEGORY ? $text : null;
-
-				case 'subobject':
-					return $t->getNamespace() === NS_SUBOBJECT ? $text : null;
 
 				case 'page':
 					return $t->getPrefixedText();

@@ -4,10 +4,11 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
+use MediaWiki\Language\Language;
 
 /**
  * Generates static display templates for Categories.
@@ -31,25 +32,32 @@ class DisplayStubGenerator {
 
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
+	private Language $language;
 
 	public function __construct(
 		PageCreator $pageCreator,
-		WikiPropertyStore $propertyStore
+		WikiPropertyStore $propertyStore,
+		Language $language
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->propertyStore = $propertyStore;
+		$this->language = $language;
 	}
 
 	/**
 	 * Generate and save the display template stub.
 	 *
 	 * @param EffectiveCategoryModel $category
+	 * @param ?InheritanceResolver $resolver For resolving subobject category properties
 	 * @return array Result array with keys: 'created' (bool), 'updated' (bool), 'message' (string)
 	 */
-	public function generateOrUpdateDisplayStub( EffectiveCategoryModel $category ): array {
+	public function generateOrUpdateDisplayStub(
+		EffectiveCategoryModel $category,
+		?InheritanceResolver $resolver = null
+	): array {
 		$existed = $this->displayStubExists( $category->getName() );
 
-		$titleText = $this->generateDisplayContent( $category );
+		$titleText = $this->generateDisplayContent( $category, $resolver );
 		if ( $titleText === '' ) {
 			return [
 				'created' => false,
@@ -69,31 +77,13 @@ class DisplayStubGenerator {
 
 	/**
 	 * @param CategoryModel $category
-	 * @return string The prefixed title string of the generated page, or empty string on failure.
-	 */
-	private function generateDisplayContent( CategoryModel $category ): string {
-		$categoryName = $category->getName();
-		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
-		if ( !$title ) {
-			return '';
-		}
-
-		$content = $this->generateWikitext( $category );
-
-		$this->pageCreator->createOrUpdatePage(
-			$title,
-			$content,
-			"SemanticSchemas: Update static display template for $categoryName"
-		);
-
-		return $title->getPrefixedText();
-	}
-
-	/**
-	 * @param CategoryModel $category
+	 * @param ?InheritanceResolver $resolver For resolving subobject category properties
 	 * @return string
 	 */
-	private function generateWikitext( CategoryModel $category ): string {
+	public function generateWikitext(
+		CategoryModel $category,
+		?InheritanceResolver $resolver = null
+	): string {
 		$format = $category->getDisplayFormat();
 
 		if ( $format === 'sidebox' ) {
@@ -102,12 +92,42 @@ class DisplayStubGenerator {
 			$body = $this->generateTableBody( $category );
 		}
 
-		return self::AUTO_REGENERATE_MARKER . "\n"
+		$body .= $this->generateSubobjectSections( $category, $resolver );
+
+		$categoryPrefix = $this->language->getFormattedNsText( NS_CATEGORY );
+
+		$body = self::AUTO_REGENERATE_MARKER . "\n"
 			. "<includeonly>\n"
 			. $body
-			. '[[Category:' . $category->getName() . "]]" . "\n"
-			. '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' . "\n"
-			. "</includeonly><noinclude>[[Category:SemanticSchemas-managed-display]]</noinclude>";
+			. "</includeonly><noinclude>[[" . $categoryPrefix . ":SemanticSchemas-managed-display]]</noinclude>";
+
+		return $body;
+	}
+
+	/**
+	 * @param CategoryModel $category
+	 * @param ?InheritanceResolver $resolver
+	 * @return string The prefixed title string of the generated page, or empty string on failure.
+	 */
+	private function generateDisplayContent(
+		CategoryModel $category,
+		?InheritanceResolver $resolver = null
+	): string {
+		$categoryName = $category->getName();
+		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
+		if ( !$title ) {
+			return '';
+		}
+
+		$content = $this->generateWikitext( $category, $resolver );
+
+		$this->pageCreator->createOrUpdatePage(
+			$title,
+			$content,
+			"SemanticSchemas: Update static display template for $categoryName"
+		);
+
+		return $title->getPrefixedText();
 	}
 
 	private function generateTableBody( CategoryModel $category ): string {
@@ -231,9 +251,13 @@ class DisplayStubGenerator {
 	 * - If it exists but NO marker, preserve it (user customized)
 	 *
 	 * @param EffectiveCategoryModel $category
+	 * @param ?InheritanceResolver $resolver For resolving subobject category properties
 	 * @return array{status: string, message: string}
 	 */
-	public function generateIfAllowed( EffectiveCategoryModel $category ): array {
+	public function generateIfAllowed(
+		EffectiveCategoryModel $category,
+		?InheritanceResolver $resolver = null
+	): array {
 		$categoryName = $category->getName();
 		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
 
@@ -246,7 +270,7 @@ class DisplayStubGenerator {
 
 		// Template doesn't exist - create it
 		if ( !$this->pageCreator->pageExists( $title ) ) {
-			$this->generateDisplayContent( $category );
+			$this->generateDisplayContent( $category, $resolver );
 			return [
 				'status' => 'created',
 				'message' => "Display template created: {$title->getPrefixedText()}"
@@ -255,7 +279,7 @@ class DisplayStubGenerator {
 
 		// Template exists and has marker - safe to regenerate
 		if ( $this->hasAutoRegenerateMarker( $title ) ) {
-			$this->generateDisplayContent( $category );
+			$this->generateDisplayContent( $category, $resolver );
 			return [
 				'status' => 'updated',
 				'message' => "Display template updated: {$title->getPrefixedText()}"
@@ -327,6 +351,58 @@ class DisplayStubGenerator {
 		return "|-\n"
 			. '! colspan="2" style="background-color: #eaecf0; text-align: center; '
 			. 'font-size: 0.9em;" | Backlinks' . "\n";
+	}
+
+	/**
+	 * Generate #ask sections for subobject categories, using their display templates.
+	 */
+	private function generateSubobjectSections(
+		CategoryModel $category,
+		?InheritanceResolver $resolver
+	): string {
+		if ( $resolver === null ) {
+			return '';
+		}
+
+		$tagged = $category->getAnnotatedSubobjects();
+		if ( empty( $tagged ) ) {
+			return '';
+		}
+
+		$sections = '';
+		$catNs = $this->language->getFormattedNsText( NS_CATEGORY );
+
+		foreach ( $tagged as $entry ) {
+			$subName = $entry['name'];
+			if ( !$resolver->hasCategory( $subName ) ) {
+				continue;
+			}
+
+			$sub = $resolver->getEffectiveCategory( $subName );
+
+			$props = $sub->getAllProperties();
+			if ( empty( $props ) ) {
+				continue;
+			}
+
+			$label = $sub->getLabel() ?: $sub->getName();
+			$sections .= '=== ' . $label . " ===\n";
+			$sections .= '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]]'
+				. ' [[' . $catNs . ':' . $subName . ']]' . "\n";
+
+			foreach ( $props as $p ) {
+				$param = NamingHelper::propertyToParameter( $p );
+				$sections .= ' | ?' . $p . ' = ' . $param . "\n";
+			}
+
+			$sections .= ' | format=template' . "\n";
+			$sections .= ' | template=' . $subName . '/display' . "\n";
+			$sections .= ' | named args=yes' . "\n";
+			$sections .= ' | mainlabel=-' . "\n";
+			$sections .= '}}' . "\n";
+		}
+
+		return $sections;
 	}
 
 	/**

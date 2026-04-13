@@ -86,7 +86,7 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertTrue( $result );
 		$title = $this->pageCreator->makeTitle( $childName, NS_CATEGORY );
 		$content = $this->pageCreator->getPageContent( $title );
-		$this->assertStringContainsString( "[[Has parent category::Category:$parentName]]", $content );
+		$this->assertStringContainsString( "[[Category:$parentName]]", $content );
 	}
 
 	public function testWriteCategoryWithRequiredProperties(): void {
@@ -106,14 +106,14 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 		// Assert complete subobject blocks (not just individual lines)
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has property field',
-			'Has property reference = Property:Has name',
+			'@category=Field',
+			'For property = Property:Has name',
 			'Is required = true',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has property field',
-			'Has property reference = Property:Has email',
+			'@category=Field',
+			'For property = Property:Has email',
 			'Is required = true',
 			'Has sort order = 2',
 		] );
@@ -135,14 +135,14 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$content = $this->pageCreator->getPageContent( $title );
 
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has property field',
-			'Has property reference = Property:Has phone',
+			'@category=Field',
+			'For property = Property:Has phone',
 			'Is required = false',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has property field',
-			'Has property reference = Property:Has address',
+			'@category=Field',
+			'For property = Property:Has address',
 			'Is required = false',
 			'Has sort order = 2',
 		] );
@@ -266,14 +266,14 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$content = $this->pageCreator->getPageContent( $title );
 
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has subobject field',
-			'Has subobject reference = Subobject:Author',
+			'@category=Field',
+			'For property = Category:Author',
 			'Is required = true',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has subobject field',
-			'Has subobject reference = Subobject:Publication',
+			'@category=Field',
+			'For property = Category:Publication',
 			'Is required = true',
 			'Has sort order = 2',
 		] );
@@ -295,14 +295,14 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$content = $this->pageCreator->getPageContent( $title );
 
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has subobject field',
-			'Has subobject reference = Subobject:Funding',
+			'@category=Field',
+			'For property = Category:Funding',
 			'Is required = false',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has subobject field',
-			'Has subobject reference = Subobject:Award',
+			'@category=Field',
+			'For property = Category:Award',
 			'Is required = false',
 			'Has sort order = 2',
 		] );
@@ -343,35 +343,35 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 		// Property fields
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has property field',
-			'Has property reference = Property:Has name',
+			'@category=Field',
+			'For property = Property:Has name',
 			'Is required = true',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has property field',
-			'Has property reference = Property:Has email',
+			'@category=Field',
+			'For property = Property:Has email',
 			'Is required = false',
 			'Has sort order = 2',
 		] );
 
 		// Subobject fields
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has subobject field',
-			'Has subobject reference = Subobject:Author',
+			'@category=Field',
+			'For property = Category:Author',
 			'Is required = true',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'Has subobject type = Subobject:Has subobject field',
-			'Has subobject reference = Subobject:Funding',
+			'@category=Field',
+			'For property = Category:Funding',
 			'Is required = false',
 			'Has sort order = 2',
 		] );
 	}
 
 	/* =========================================================================
-	  * Managed Parents
+	  * Parents
 	  * ========================================================================= */
 
 	public static function parentsProvider(): array {
@@ -399,6 +399,22 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 		$managed = $this->categoryStore->getManagedParents( $testcat );
 		$this->assertArrayEquals( $expected, $managed );
+	}
+
+	public function testNamespaceStrippedFromParents() {
+		$category = new CategoryModel( "ChildCategory", [
+			'parents' => [ 'ParentCategory' ]
+		] );
+
+		$this->categoryStore->writeCategory( $category );
+
+		$this->runJobs();
+
+		$cats = $this->categoryStore->getAllCategories();
+		$this->assertArrayEquals(
+			$cats['ChildCategory']->getParents(),
+			[ Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY, 'ParentCategory' ]
+		);
 	}
 
 	/**

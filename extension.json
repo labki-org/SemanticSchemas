@@ -29,26 +29,6 @@
 		"SemanticSchemasAlias": "SemanticSchemas.alias.php",
 		"SemanticSchemasMagic": "SemanticSchemas.i18n.magic.php"
 	},
-	"namespaces": [
-		{
-			"id": 3300,
-			"constant": "NS_SUBOBJECT",
-			"name": "Subobject",
-			"content": true
-		},
-		{
-			"id": 3301,
-			"constant": "NS_SUBOBJECT_TALK",
-			"name": "Subobject_talk"
-		}
-	],
-	"namespaceAliases": {
-		"Subobject": "NS_SUBOBJECT",
-		"Subobject_talk": "NS_SUBOBJECT_TALK"
-	},
-	"contentNamespaces": [
-		"NS_SUBOBJECT"
-	],
 	"HookHandlers": {
 		"CategoryPageHooks": {
 			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\CategoryPageHooks",
@@ -104,15 +84,16 @@
 				"semanticschemas-hierarchy-no-category",
 				"semanticschemas-hierarchy-tree-title",
 				"semanticschemas-hierarchy-props-title",
-				"semanticschemas-hierarchy-subobjects-title",
 				"semanticschemas-hierarchy-source-category",
 				"semanticschemas-hierarchy-properties",
-				"semanticschemas-hierarchy-subobject-name",
 				"semanticschemas-hierarchy-required-state",
 				"semanticschemas-hierarchy-unknown-category",
 				"semanticschemas-hierarchy-unnamed-property",
 				"semanticschemas-hierarchy-required",
-				"semanticschemas-hierarchy-optional"
+				"semanticschemas-hierarchy-optional",
+				"semanticschemas-hierarchy-no-subobjects",
+				"semanticschemas-hierarchy-subobject-name",
+				"semanticschemas-hierarchy-subobjects-title"
 			],
 			"localBasePath": "",
 			"remoteExtPath": "SemanticSchemas",
@@ -174,7 +155,6 @@
 			"services": [
 				"SemanticSchemas.WikiCategoryStore",
 				"SemanticSchemas.WikiPropertyStore",
-				"SemanticSchemas.WikiSubobjectStore",
 				"SemanticSchemas.TemplateGenerator",
 				"SemanticSchemas.FormGenerator",
 				"SemanticSchemas.DisplayStubGenerator",

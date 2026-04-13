@@ -1,7 +1,0 @@
-<!-- SemanticSchemas Start -->
-[[Has type::Page]]
-[[Has description::References a single property in an ordered property list.]]
-[[Display label::Property reference]]
-[[Allows value from namespace::Property]]
-<!-- SemanticSchemas End -->
-[[Category:SemanticSchemas-managed-property]]

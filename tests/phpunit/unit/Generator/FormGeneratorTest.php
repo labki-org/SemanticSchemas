@@ -4,11 +4,12 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
+use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
+use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -17,7 +18,6 @@ use PHPUnit\Framework\TestCase;
 class FormGeneratorTest extends TestCase {
 
 	private FormGenerator $generator;
-	private WikiSubobjectStore $subobjectStore;
 	private WikiPropertyStore $propertyStore;
 
 	protected function setUp(): void {
@@ -25,8 +25,6 @@ class FormGeneratorTest extends TestCase {
 
 		$this->propertyStore = $this->createMock( WikiPropertyStore::class );
 		$this->propertyStore->method( 'readProperty' )->willReturn( null );
-
-		$this->subobjectStore = $this->createMock( WikiSubobjectStore::class );
 
 		$inputMapper = $this->createMock( PropertyInputMapper::class );
 		$inputMapper->method( 'generateInputDefinition' )
@@ -36,7 +34,7 @@ class FormGeneratorTest extends TestCase {
 			$this->createMock( PageCreator::class ),
 			$this->propertyStore,
 			$inputMapper,
-			$this->subobjectStore
+			$this->createMock( WikiCategoryStore::class )
 		);
 	}
 
@@ -53,7 +51,7 @@ class FormGeneratorTest extends TestCase {
 			],
 		] );
 
-		$result = $this->generator->generateCompositeForm( $category );
+		$result = $this->generator->generateCompositeForm( $category, new InheritanceResolver( [] ) );
 
 		// {{{for template|...}}} and {{{end template}}} should be wrapped
 		$this->assertStringContainsString( '<nowiki>{{{for template|Person}}}</nowiki>', $result );
@@ -75,37 +73,6 @@ class FormGeneratorTest extends TestCase {
 	 * COMPOSITE SLOT — heading conversion
 	 * ========================================================================= */
 
-	public function testCompositeFormConvertsSubobjectHeadingsToHtml(): void {
-		$subobject = new SubobjectModel( 'Address', [
-			'label' => 'Address',
-			'properties' => [
-				'required' => [ 'Has street' ],
-				'optional' => [],
-			],
-		] );
-
-		$this->subobjectStore->method( 'readSubobject' )
-			->willReturn( $subobject );
-
-		$category = new EffectiveCategoryModel( 'Person', [
-			'label' => 'Person',
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
-			'subobjects' => [
-				'required' => [ 'Address' ],
-				'optional' => [],
-			],
-		] );
-
-		$result = $this->generator->generateCompositeForm( $category );
-
-		// Subobject heading should be converted from === to <h3>
-		$this->assertStringContainsString( '<h3>Address</h3>', $result );
-		$this->assertStringNotContainsString( '=== Address ===', $result );
-	}
-
 	public function testCompositeFormCategoryHeadingIsHtmlH2(): void {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
@@ -115,7 +82,7 @@ class FormGeneratorTest extends TestCase {
 			],
 		] );
 
-		$result = $this->generator->generateCompositeForm( $category );
+		$result = $this->generator->generateCompositeForm( $category, new InheritanceResolver( [] ) );
 
 		$this->assertStringContainsString( '<h2>Person</h2>', $result );
 	}
@@ -133,7 +100,7 @@ class FormGeneratorTest extends TestCase {
 			],
 		] );
 
-		$result = $this->generator->generateCompositeForm( $category );
+		$result = $this->generator->generateCompositeForm( $category, new InheritanceResolver( [] ) );
 
 		$this->assertStringContainsString( '{{{for template|Animal}}}', $result );
 		$this->assertStringContainsString( '{{{end template}}}', $result );
@@ -148,7 +115,7 @@ class FormGeneratorTest extends TestCase {
 			],
 		] );
 
-		$result = $this->generator->generateCompositeForm( $category );
+		$result = $this->generator->generateCompositeForm( $category, new InheritanceResolver( [] ) );
 
 		$this->assertStringContainsString( 'field|has_color', $result );
 		$this->assertStringContainsString( 'field|has_weight', $result );
@@ -163,7 +130,7 @@ class FormGeneratorTest extends TestCase {
 			],
 		] );
 
-		$result = $this->generator->generateCompositeForm( $category );
+		$result = $this->generator->generateCompositeForm( $category, new InheritanceResolver( [] ) );
 
 		$this->assertStringContainsString( '<noinclude>', $result );
 		$this->assertStringContainsString( '</noinclude><includeonly>', $result );
@@ -224,34 +191,54 @@ class FormGeneratorTest extends TestCase {
 	 * COMPOSITE SLOT — subobject sections
 	 * ========================================================================= */
 
+	public function testCompositeFormConvertsSubobjectHeadingsToHtml(): void {
+		$subCategory = new CategoryModel( 'Address', [
+			'properties' => [
+				'required' => [ 'Has street' ],
+				'optional' => [ 'Has city' ],
+			],
+		] );
+
+		$category = new EffectiveCategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+		] );
+
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person', $category->toArray() ),
+			'Address' => $subCategory,
+		] );
+
+		$result = $this->generator->generateCompositeForm( $category, $resolver );
+
+		// Wiki === headings should be converted to <h3> for transclusion
+		$this->assertStringContainsString( '<h3>Address</h3>', $result );
+		$this->assertStringNotContainsString( '=== Address ===', $result );
+	}
+
 	public function testCompositeFormIncludesSubobjectFields(): void {
-		$subobject = new SubobjectModel( 'Phone', [
-			'label' => 'Phone',
+		$subCategory = new CategoryModel( 'Phone', [
+			'label' => 'Phone Numbers',
 			'properties' => [
 				'required' => [ 'Has phone number' ],
 				'optional' => [ 'Has phone type' ],
 			],
 		] );
 
-		$this->subobjectStore->method( 'readSubobject' )
-			->willReturn( $subobject );
-
-		$category = new EffectiveCategoryModel( 'Contact', [
-			'label' => 'Contact',
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
-			'subobjects' => [
-				'required' => [ 'Phone' ],
-				'optional' => [],
-			],
+		$category = new EffectiveCategoryModel( 'Person', [
+			'properties' => [ 'required' => [], 'optional' => [] ],
+			'subobjects' => [ 'required' => [], 'optional' => [ 'Phone' ] ],
 		] );
 
-		$result = $this->generator->generateCompositeForm( $category );
+		$resolver = new InheritanceResolver( [
+			'Person' => new CategoryModel( 'Person', $category->toArray() ),
+			'Phone' => $subCategory,
+		] );
 
-		$this->assertStringContainsString( 'field|has_phone_number', $result );
-		$this->assertStringContainsString( 'field|has_phone_type', $result );
+		$result = $this->generator->generateCompositeForm( $category, $resolver );
+
+		$this->assertStringContainsString( 'Phone/subobject', $result );
+		$this->assertStringContainsString( 'has_phone_number', $result );
 	}
 
 	/* =========================================================================

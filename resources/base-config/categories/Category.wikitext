@@ -2,52 +2,40 @@
 [[Has description::Defines the schema metadata for categories managed by SemanticSchemas.]]
 [[Has target namespace::Category]]
 {{#subobject:
- | Has subobject type = Subobject:Has property field
- | Has property reference = Property:Has description
+ |@category=Field
+ | For property = Property:Has description
  | Is required = true
  | Has sort order = 1
 }}
 {{#subobject:
- | Has subobject type = Subobject:Has property field
- | Has property reference = Property:Display label
+ |@category=Field
+ | For property = Property:Display label
  | Is required = false
  | Has sort order = 2
 }}
 {{#subobject:
- | Has subobject type = Subobject:Has property field
- | Has property reference = Property:Has target namespace
+ |@category=Field
+ | For property = Property:Has target namespace
  | Is required = false
  | Has sort order = 3
 }}
 {{#subobject:
- | Has subobject type = Subobject:Has property field
- | Has property reference = Property:Has parent category
+ |@category=Field
+ | For property = Property:Has display format
  | Is required = false
  | Has sort order = 4
 }}
 {{#subobject:
- | Has subobject type = Subobject:Has property field
- | Has property reference = Property:Has display format
+ |@category=Field
+ | For property = Property:Show backlinks for
  | Is required = false
  | Has sort order = 5
 }}
 {{#subobject:
- | Has subobject type = Subobject:Has property field
- | Has property reference = Property:Show backlinks for
+ |@category=Field
+ | For property = Category:Field
  | Is required = false
  | Has sort order = 6
-}}
-{{#subobject:
- | Has subobject type = Subobject:Has subobject field
- | Has subobject reference = Subobject:Has property field
- | Is required = false
- | Has sort order = 1
-}}
-{{#subobject:
- | Has subobject type = Subobject:Has subobject field
- | Has subobject reference = Subobject:Has subobject field
- | Is required = false
- | Has sort order = 2
 }}
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

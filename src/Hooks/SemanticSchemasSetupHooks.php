@@ -11,15 +11,10 @@ class SemanticSchemasSetupHooks {
 	/**
 	 * Hook: SetupAfterCache
 	 *
-	 * Enable semantic annotations in the Subobject namespace and register
-	 * the base-config directory with SMW's content importer.
+	 * Register the base-config directory with SMW's content importer.
 	 */
 	public function onSetupAfterCache() {
-		global $smwgNamespacesWithSemanticLinks, $smwgImportFileDirs;
-
-		if ( defined( 'NS_SUBOBJECT' ) ) {
-			$smwgNamespacesWithSemanticLinks[NS_SUBOBJECT] = true;
-		}
+		global $smwgImportFileDirs;
 
 		if ( defined( 'SMW_EXTENSION_LOADED' ) ) {
 			$smwgImportFileDirs['semanticschemas'] = __DIR__ . '/../../resources/base-config';
