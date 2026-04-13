@@ -11,6 +11,7 @@ use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Language\Language;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -27,10 +28,15 @@ class TemplateGeneratorTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
+		$language = $this->createMock( Language::class );
+		$language->method( 'getFormattedNsText' )
+			->willReturn( 'Category' );
+
 		$this->generator = new TemplateGenerator(
 			$this->createMock( PageCreator::class ),
 			$this->createMock( WikiCategoryStore::class ),
-			$this->createMock( WikiPropertyStore::class )
+			$this->createMock( WikiPropertyStore::class ),
+			$language
 		);
 	}
 
@@ -102,11 +108,11 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringNotContainsString( '[[Category:', $result );
 	}
 
-	public function testDispatcherTemplateDoesNotContainCategoryStamp(): void {
+	public function testDispatcherTemplateContainsCategoryStamp(): void {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringNotContainsString( '[[Category:', $result );
+		$this->assertStringContainsString( '[[Category:Person]]', $result );
 	}
 
 	public function testGenerateSemanticTemplateWithEmptyNameThrowsException(): void {
@@ -312,10 +318,15 @@ class TemplateGeneratorTest extends TestCase {
 		$propStore->method( 'readProperty' )
 			->willReturnCallback( static fn ( string $name ) => $propertyMap[$name] ?? null );
 
+		$language = $this->createMock( Language::class );
+		$language->method( 'getFormattedNsText' )
+			->willReturn( 'Category' );
+
 		return new TemplateGenerator(
 			$this->createMock( PageCreator::class ),
 			$this->createMock( WikiCategoryStore::class ),
-			$propStore
+			$propStore,
+			$language
 		);
 	}
 
@@ -452,8 +463,8 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( 'name', $result );
 		$this->assertStringContainsString( 'student_id', $result );
 		$this->assertStringContainsString( 'email', $result );
-		// No category stamp in dispatcher
-		$this->assertStringNotContainsString( '[[Category:', $result );
+		// Category membership in dispatcher
+		$this->assertStringContainsString( '[[Category:Student]]', $result );
 	}
 
 	public function testSemanticTemplateForEachAncestorHasOwnPropertiesOnly(): void {
@@ -512,6 +523,26 @@ class TemplateGeneratorTest extends TestCase {
 	/* =========================================================================
 	 * SUBOBJECT TEMPLATE GENERATION
 	 * ========================================================================= */
+
+	public function testDispatcherContainsCategoryMembership(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+		] );
+
+		$dispatcher = $this->generateDispatcher( $category );
+
+		$this->assertStringContainsString( '[[Category:Person]]', $dispatcher );
+		$this->assertStringContainsString( '[[Category:SemanticSchemas-managed]]', $dispatcher );
+	}
+
+	public function testDispatcherExcludesSelfMembershipForMetacategory(): void {
+		$category = new CategoryModel( 'Category' );
+
+		$dispatcher = $this->generateDispatcher( $category );
+
+		$this->assertStringNotContainsString( '[[Category:Category]]', $dispatcher );
+		$this->assertStringContainsString( '[[Category:SemanticSchemas-managed]]', $dispatcher );
+	}
 
 	public function testDispatcherDoesNotContainSubobjectDisplay(): void {
 		$subCategory = new CategoryModel( 'Address', [

@@ -29,23 +29,11 @@ class DisplayStubGeneratorTest extends TestCase {
 		$this->generator = new DisplayStubGenerator( $pageCreator, $propertyStore, $language );
 	}
 
-	public function testNormalCategoryIncludesCategoryTag() {
+	public function testDisplayTemplateDoesNotContainCategoryTags() {
 		$cat = new CategoryModel( "TestCategory" );
 		$generated = $this->generator->generateWikitext( $cat );
-		$this->assertStringContainsString( '[[Category:TestCategory]]', $generated );
-	}
-
-	public function testCategoryCategoryExcludesCategoryTag() {
-		$cat = new CategoryModel( "Category" );
-		$generated = $this->generator->generateWikitext( $cat );
-		$this->assertStringNotContainsString( '[[Category:Category]]', $generated );
-	}
-
-	public function testCategoryTagsWrappedInUserparamConditional() {
-		$cat = new CategoryModel( "TestCategory" );
-		$generated = $this->generator->generateWikitext( $cat );
-		$this->assertStringContainsString( '{{#ifeq:{{{#userparam|}}}|nocat||', $generated );
-		$this->assertStringContainsString( '[[Category:TestCategory]]', $generated );
+		// Category membership is declared in the dispatcher, not the display template
+		$this->assertStringNotContainsString( '[[Category:TestCategory]]', $generated );
 	}
 
 	public function testSubobjectSectionsUseDisplayTemplate() {
@@ -77,7 +65,6 @@ class DisplayStubGeneratorTest extends TestCase {
 		// Uses the subobject's display template
 		$this->assertStringContainsString( 'template=Address/display', $generated );
 		$this->assertStringContainsString( 'named args=yes', $generated );
-		$this->assertStringContainsString( 'userparam=nocat', $generated );
 	}
 
 	public function testSubobjectDisplayIncludesInheritedProperties() {
@@ -114,34 +101,6 @@ class DisplayStubGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '?Has city', $generated );
 		// Own property from MailingAddress
 		$this->assertStringContainsString( '?Has zip', $generated );
-	}
-
-	public function testSubobjectSectionsWrappedInUserparamConditional() {
-		$address = new CategoryModel( 'Address', [
-			'properties' => [
-				'required' => [ 'Has street' ],
-				'optional' => [],
-			],
-		] );
-
-		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
-		] );
-
-		$resolver = new InheritanceResolver( [
-			'Person' => $person,
-			'Address' => $address,
-		] );
-
-		$generated = $this->generator->generateWikitext( $person, $resolver );
-
-		// Subobject #ask sections are wrapped so they are suppressed when
-		// the display template is used as a subobject display from a parent
-		$this->assertMatchesRegularExpression(
-			'/\{\{#ifeq:\{\{\{#userparam\|\}\}\}\|nocat\|\|.*#ask/s',
-			$generated
-		);
 	}
 
 	public function testNoSubobjectSectionsWithoutResolver() {

@@ -10,7 +10,9 @@ use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
+use MediaWiki\Language\Language;
 
 /**
  * Generates core templates for proper Semantic MediaWiki functioning.
@@ -25,15 +27,18 @@ class TemplateGenerator {
 	private PageCreator $pageCreator;
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
+	private Language $language;
 
 	public function __construct(
 		PageCreator $pageCreator,
 		WikiCategoryStore $categoryStore,
-		WikiPropertyStore $propertyStore
+		WikiPropertyStore $propertyStore,
+		Language $language
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
+		$this->language = $language;
 	}
 
 	/* =====================================================================
@@ -196,6 +201,17 @@ class TemplateGenerator {
 		/* Display template */
 		$out = array_merge( $out, $this->generateTemplateCall( $name . '/display', $allProps ) );
 		$out[] = '';
+
+		/* Category membership */
+		// FIXME: Temporary special-case hack to exclude Category:Category membership -
+		// prevent categories from inheriting the metacategory fields.
+		// To be resolved in #122 after removing the need for generation,
+		// where this will become part of the pre-packaged Template:Category template
+		$categoryPrefix = $this->language->getFormattedNsText( NS_CATEGORY );
+		if ( $name !== $categoryPrefix ) {
+			$out[] = '[[' . $categoryPrefix . ':' . $name . ']]';
+		}
+		$out[] = '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]';
 
 		$out[] = '</includeonly>';
 

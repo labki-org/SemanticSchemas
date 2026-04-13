@@ -7,7 +7,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\Language\Language;
 
@@ -95,24 +94,11 @@ class DisplayStubGenerator {
 
 		$body .= $this->generateSubobjectSections( $category, $resolver );
 
+		$categoryPrefix = $this->language->getFormattedNsText( NS_CATEGORY );
+
 		$body = self::AUTO_REGENERATE_MARKER . "\n"
 			. "<includeonly>\n"
-			. $body;
-
-		// Category tags are wrapped in #ifeq so they can be suppressed when
-		// the display template is transcluded from an #ask query (e.g. to
-		// show subobject data on a parent page via userparam=nocat).
-		$categoryPrefix = $this->language->getFormattedNsText( NS_CATEGORY );
-		$catTags = '';
-		// FIXME: Temporary special-case hack to exclude Category:Category membership -
-		// prevent categories from inheriting the metacategory fields.
-		// To be resolved in #122 after removing the need for generation,
-		// where this will become part of the pre-packaged Template:Category template
-		if ( $category->getName() !== $categoryPrefix ) {
-			$catTags .= '[[' . $categoryPrefix . ':' . $category->getName() . ']]' . "\n";
-		}
-		$catTags .= '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' . "\n";
-		$body .= '{{#ifeq:{{{#userparam|}}}|nocat||' . $catTags . '}}' . "\n"
+			. $body
 			. "</includeonly><noinclude>[[" . $categoryPrefix . ":SemanticSchemas-managed-display]]</noinclude>";
 
 		return $body;
@@ -369,11 +355,6 @@ class DisplayStubGenerator {
 
 	/**
 	 * Generate #ask sections for subobject categories, using their display templates.
-	 *
-	 * Wrapped in {{#ifeq:userparam|nocat}} so these sections are suppressed
-	 * when the display template is itself being rendered as a subobject display
-	 * from a parent's #ask query. Nested subobject queries can't resolve
-	 * correctly (SMW subobjects are flat, page-level entities).
 	 */
 	private function generateSubobjectSections(
 		CategoryModel $category,
@@ -389,6 +370,7 @@ class DisplayStubGenerator {
 		}
 
 		$sections = '';
+		$catNs = $this->language->getFormattedNsText( NS_CATEGORY );
 
 		foreach ( $tagged as $entry ) {
 			$subName = $entry['name'];
@@ -405,7 +387,6 @@ class DisplayStubGenerator {
 
 			$label = $sub->getLabel() ?: $sub->getName();
 			$sections .= '=== ' . $label . " ===\n";
-			$catNs = $this->language->getFormattedNsText( NS_CATEGORY );
 			$sections .= '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]]'
 				. ' [[' . $catNs . ':' . $subName . ']]' . "\n";
 
@@ -417,16 +398,11 @@ class DisplayStubGenerator {
 			$sections .= ' | format=template' . "\n";
 			$sections .= ' | template=' . $subName . '/display' . "\n";
 			$sections .= ' | named args=yes' . "\n";
-			$sections .= ' | userparam=nocat' . "\n";
 			$sections .= ' | mainlabel=-' . "\n";
 			$sections .= '}}' . "\n";
 		}
 
-		if ( $sections === '' ) {
-			return '';
-		}
-
-		return '{{#ifeq:{{{#userparam|}}}|nocat||' . "\n" . $sections . '}}' . "\n";
+		return $sections;
 	}
 
 	/**
