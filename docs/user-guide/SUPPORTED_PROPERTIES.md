@@ -35,24 +35,31 @@ Category pages support the following semantic properties to define their schema:
 
 ### Field Declarations
 
-Fields are declared using `@category=Field` subobjects on the category page. Each declaration references a property or category and indicates whether it is required.
+Fields are declared using subobjects on the category page. Property fields use `@category=Property field` and subobject fields use `@category=Subobject field`.
 
 #### `Property:For property`
-- **Type:** Page
-- **Purpose:** References the property or category a field declaration is for
+- **Type:** Page (Property namespace)
+- **Purpose:** References the property a field declaration is for
 - **Example:**
   ```wiki
   {{#subobject:
-   |@category=Field
+   |@category=Property field
    | For property = Property:Has full name
    | Is required = true
    | Has sort order = 1
   }}
+  ```
+
+#### `Property:For category`
+- **Type:** Page (Category namespace)
+- **Purpose:** References the category a subobject field declaration is for
+- **Example:**
+  ```wiki
   {{#subobject:
-   |@category=Field
-   | For property = Category:Publication
+   |@category=Subobject field
+   | For category = Category:Publication
    | Is required = false
-   | Has sort order = 2
+   | Has sort order = 1
   }}
   ```
 

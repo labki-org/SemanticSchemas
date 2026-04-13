@@ -238,11 +238,11 @@ class WikiCategoryStore {
 			'parents' => $parents,
 
 			'properties' => $this->smwFetchTaggedFieldReferences(
-				$sdata, 'Field', 'For property', 'property'
+				$sdata, 'Property field', 'For property', 'property'
 			),
 
 			'subobjects' => $this->smwFetchTaggedFieldReferences(
-				$sdata, 'Field', 'For property', 'category'
+				$sdata, 'Subobject field', 'For category', 'category'
 			),
 
 			'backlinksFor' => $this->smwFetchMany( $sdata, 'Show backlinks for', 'property' ),

@@ -142,6 +142,16 @@
 			}
 		},
 		{
+			"page": "For category",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/For_category.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Has section separator",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
@@ -262,10 +272,20 @@
 			}
 		},
 		{
-			"page": "Field",
+			"page": "Property field",
 			"namespace": "NS_CATEGORY",
 			"contents": {
-				"importFrom": "categories/Field.wikitext"
+				"importFrom": "categories/Property_field.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Subobject field",
+			"namespace": "NS_CATEGORY",
+			"contents": {
+				"importFrom": "categories/Subobject_field.wikitext"
 			},
 			"options": {
 				"replaceable": true

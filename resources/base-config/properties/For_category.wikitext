@@ -1,0 +1,7 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::The category this subobject field declaration references.]]
+[[Display label::For category]]
+[[Allows value from namespace::Category]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

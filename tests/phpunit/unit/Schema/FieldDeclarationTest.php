@@ -63,7 +63,7 @@ class FieldDeclarationTest extends TestCase {
 
 		$expected = implode( "\n", [
 			'{{#subobject:',
-			' |@category=Field',
+			' |@category=Property field',
 			' | For property = Property:Has name',
 			' | Is required = true',
 			' | Has sort order = 1',
@@ -79,7 +79,7 @@ class FieldDeclarationTest extends TestCase {
 
 		$expected = implode( "\n", [
 			'{{#subobject:',
-			' |@category=Field',
+			' |@category=Property field',
 			' | For property = Property:Has email',
 			' | Is required = false',
 			' | Has sort order = 2',
@@ -99,8 +99,8 @@ class FieldDeclarationTest extends TestCase {
 
 		$expected = implode( "\n", [
 			'{{#subobject:',
-			' |@category=Field',
-			' | For property = Category:Author',
+			' |@category=Subobject field',
+			' | For category = Category:Author',
 			' | Is required = true',
 			' | Has sort order = 1',
 			'}}',
@@ -164,7 +164,7 @@ class FieldDeclarationTest extends TestCase {
 		$this->assertStringEndsWith( '}}', $block );
 
 		// The block must contain the category, reference, required flag, and sort order
-		$this->assertStringContainsString( '@category=Field', $block );
+		$this->assertStringContainsString( '@category=Property field', $block );
 		$this->assertStringContainsString( 'For property = Property:Has name', $block );
 		$this->assertStringContainsString( 'Is required = true', $block );
 		$this->assertStringContainsString( 'Has sort order = 1', $block );
@@ -177,8 +177,8 @@ class FieldDeclarationTest extends TestCase {
 		$this->assertStringStartsWith( '{{#subobject:', $block );
 		$this->assertStringEndsWith( '}}', $block );
 
-		$this->assertStringContainsString( '@category=Field', $block );
-		$this->assertStringContainsString( 'For property = Category:Funding', $block );
+		$this->assertStringContainsString( '@category=Subobject field', $block );
+		$this->assertStringContainsString( 'For category = Category:Funding', $block );
 		$this->assertStringContainsString( 'Is required = false', $block );
 		$this->assertStringContainsString( 'Has sort order = 3', $block );
 	}

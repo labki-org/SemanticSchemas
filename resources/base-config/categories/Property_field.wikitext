@@ -1,14 +1,14 @@
 <!-- SemanticSchemas Start -->
-[[Has description::A field declaration entry in a category schema. Preserves insertion order.]]
-[[Display label::Field]]
+[[Has description::A property field declaration in a category schema. Declares which properties a category has.]]
+[[Display label::Property field]]
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:For property
  | Is required = true
  | Has sort order = 1
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Is required
  | Is required = false
  | Has sort order = 2

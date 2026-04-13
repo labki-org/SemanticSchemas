@@ -2,67 +2,67 @@
 [[Has description::Defines a semantic property for storing data on wiki pages.]]
 [[Has target namespace::Property]]
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Has description
  | Is required = true
  | Has sort order = 1
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Has type
  | Is required = true
  | Has sort order = 2
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Display label
  | Is required = false
  | Has sort order = 3
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Allows multiple values
  | Is required = false
  | Has sort order = 4
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Allows value
  | Is required = false
  | Has sort order = 5
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Subproperty of
  | Is required = false
  | Has sort order = 6
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Allows value from category
  | Is required = false
  | Has sort order = 7
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Allows value from namespace
  | Is required = false
  | Has sort order = 8
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Has template
  | Is required = false
  | Has sort order = 9
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Has input type
  | Is required = false
  | Has sort order = 10
 }}
 {{#subobject:
- |@category=Field
+ |@category=Property field
  | For property = Property:Inverse property label
  | Is required = false
  | Has sort order = 11

@@ -1,0 +1,17 @@
+<!-- SemanticSchemas Start -->
+[[Has description::A subobject field declaration in a category schema. Declares which subobject types a category can have.]]
+[[Display label::Subobject field]]
+{{#subobject:
+ |@category=Property field
+ | For property = Property:For category
+ | Is required = true
+ | Has sort order = 1
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Is required
+ | Is required = false
+ | Has sort order = 2
+}}
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed]]

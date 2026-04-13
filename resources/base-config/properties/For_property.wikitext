@@ -1,6 +1,7 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Page]]
-[[Has description::The property or category this field declaration references.]]
+[[Has description::The property this field declaration references.]]
 [[Display label::For property]]
+[[Allows value from namespace::Property]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]

@@ -142,7 +142,8 @@ Subobjects live in the `Subobject:` namespace. They define structured, repeatabl
 
 SemanticSchemas uses these SMW properties to store schema metadata on wiki pages:
 
-- **For property** (Type: Page) - References the property or category a field declaration is for
+- **For property** (Type: Page) - References the property a field declaration is for
+- **For category** (Type: Page) - References the category a subobject field declaration is for
 - **Is required** (Type: Boolean) - Whether a field is required
 - **Has sort order** (Type: Number) - Ordering of field declarations
 - **Has form section name** (Type: Text) - Name of a form section

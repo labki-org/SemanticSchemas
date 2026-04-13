@@ -25,13 +25,13 @@ class FieldDeclaration {
 	 */
 	private const FIELD_CONFIG = [
 		self::TYPE_PROPERTY => [
-			'category' => 'Field',
+			'category' => 'Property field',
 			'referenceProperty' => 'For property',
 			'namespacePrefix' => 'Property',
 		],
 		self::TYPE_SUBOBJECT => [
-			'category' => 'Field',
-			'referenceProperty' => 'For property',
+			'category' => 'Subobject field',
+			'referenceProperty' => 'For category',
 			'namespacePrefix' => 'Category',
 		],
 	];

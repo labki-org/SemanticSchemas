@@ -106,13 +106,13 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 		// Assert complete subobject blocks (not just individual lines)
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
+			'@category=Property field',
 			'For property = Property:Has name',
 			'Is required = true',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
+			'@category=Property field',
 			'For property = Property:Has email',
 			'Is required = true',
 			'Has sort order = 2',
@@ -135,13 +135,13 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$content = $this->pageCreator->getPageContent( $title );
 
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
+			'@category=Property field',
 			'For property = Property:Has phone',
 			'Is required = false',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
+			'@category=Property field',
 			'For property = Property:Has address',
 			'Is required = false',
 			'Has sort order = 2',
@@ -266,14 +266,14 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$content = $this->pageCreator->getPageContent( $title );
 
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
-			'For property = Category:Author',
+			'@category=Subobject field',
+			'For category = Category:Author',
 			'Is required = true',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
-			'For property = Category:Publication',
+			'@category=Subobject field',
+			'For category = Category:Publication',
 			'Is required = true',
 			'Has sort order = 2',
 		] );
@@ -295,14 +295,14 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$content = $this->pageCreator->getPageContent( $title );
 
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
-			'For property = Category:Funding',
+			'@category=Subobject field',
+			'For category = Category:Funding',
 			'Is required = false',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
-			'For property = Category:Award',
+			'@category=Subobject field',
+			'For category = Category:Award',
 			'Is required = false',
 			'Has sort order = 2',
 		] );
@@ -343,13 +343,13 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 		// Property fields
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
+			'@category=Property field',
 			'For property = Property:Has name',
 			'Is required = true',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
+			'@category=Property field',
 			'For property = Property:Has email',
 			'Is required = false',
 			'Has sort order = 2',
@@ -357,14 +357,14 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 		// Subobject fields
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
-			'For property = Category:Author',
+			'@category=Subobject field',
+			'For category = Category:Author',
 			'Is required = true',
 			'Has sort order = 1',
 		] );
 		$this->assertSubobjectBlock( $content, [
-			'@category=Field',
-			'For property = Category:Funding',
+			'@category=Subobject field',
+			'For category = Category:Funding',
 			'Is required = false',
 			'Has sort order = 2',
 		] );
