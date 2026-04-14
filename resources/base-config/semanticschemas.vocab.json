@@ -272,6 +272,16 @@
 			}
 		},
 		{
+			"page": "Field",
+			"namespace": "NS_CATEGORY",
+			"contents": {
+				"importFrom": "categories/Field.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Property field",
 			"namespace": "NS_CATEGORY",
 			"contents": {

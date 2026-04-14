@@ -7,11 +7,6 @@
  | Is required = true
  | Has sort order = 1
 }}
-{{#subobject:
- |@category=Property field
- | For property = Property:Is required
- | Is required = false
- | Has sort order = 2
-}}
 <!-- SemanticSchemas End -->
+[[Category:Field]]
 [[Category:SemanticSchemas-managed]]
