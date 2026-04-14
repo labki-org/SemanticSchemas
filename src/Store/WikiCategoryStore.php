@@ -231,24 +231,22 @@ class WikiCategoryStore {
 			array_keys( $title->getParentCategories() )
 		);
 
-		return [
-			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
-			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
-			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
-			'parents' => $parents,
+		$out = $this->smwLoadProperties( $sdata, CategoryModel::SMW_PROPERTIES );
 
-			'properties' => $this->smwFetchFieldDeclarations(
-				$sdata, FieldDeclaration::TYPE_PROPERTY
-			),
+		$out['label'] = $out['label'] ?? $categoryName;
+		$out['description'] = $out['description'] ?? '';
+		$out['parents'] = $parents;
 
-			'subobjects' => $this->smwFetchFieldDeclarations(
-				$sdata, FieldDeclaration::TYPE_SUBOBJECT
-			),
+		$out['properties'] = $this->smwFetchFieldDeclarations(
+			$sdata, FieldDeclaration::TYPE_PROPERTY
+		);
+		$out['subobjects'] = $this->smwFetchFieldDeclarations(
+			$sdata, FieldDeclaration::TYPE_SUBOBJECT
+		);
 
-			'backlinksFor' => $this->smwFetchMany( $sdata, 'Show backlinks for', 'property' ),
+		$out['display'] = $this->loadDisplayConfig( $sdata );
 
-			'display' => $this->loadDisplayConfig( $sdata ),
-		];
+		return $out;
 	}
 
 	/**

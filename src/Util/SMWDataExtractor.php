@@ -85,6 +85,33 @@ trait SMWDataExtractor {
 	}
 
 	/**
+	 * Load properties declaratively from a model's SMW_PROPERTIES map.
+	 *
+	 * Each entry maps: fieldName => [smwPropertyLabel, type]
+	 * Types: 'text', 'property', 'category', 'page' (single value),
+	 *        'boolean', 'text[]', 'property[]' etc. (multi-value with [] suffix).
+	 *
+	 * @param \SMW\SemanticData $semanticData
+	 * @param array $propertyMap fieldName => [smwLabel, type]
+	 * @return array fieldName => value
+	 */
+	protected function smwLoadProperties( $semanticData, array $propertyMap ): array {
+		$out = [];
+		foreach ( $propertyMap as $field => [ $smwLabel, $type ] ) {
+			if ( str_ends_with( $type, '[]' ) ) {
+				$out[$field] = $this->smwFetchMany(
+					$semanticData, $smwLabel, substr( $type, 0, -2 )
+				);
+			} elseif ( $type === 'boolean' ) {
+				$out[$field] = $this->smwFetchBoolean( $semanticData, $smwLabel );
+			} else {
+				$out[$field] = $this->smwFetchOne( $semanticData, $smwLabel, $type );
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * Read ordered, annotated field references from SMW subobjects attached to a page.
 	 *
 	 * Iterates sub-semantic-data, filters by @category membership, extracts the
