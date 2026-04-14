@@ -34,12 +34,12 @@ class FieldDeclarationTest extends TestCase {
 		new FieldDeclaration( 'Foo', true, 'invalid' );
 	}
 
-	public function testFromTaggedArray(): void {
-		$tagged = [
+	public function testFromAnnotatedArray(): void {
+		$entries = [
 			[ 'name' => 'Has name', 'required' => true ],
 			[ 'name' => 'Has email', 'required' => false ],
 		];
-		$fields = FieldDeclaration::fromTaggedArray( $tagged, FieldDeclaration::TYPE_PROPERTY );
+		$fields = FieldDeclaration::fromAnnotatedArray( $entries, FieldDeclaration::TYPE_PROPERTY );
 
 		$this->assertCount( 2, $fields );
 		$this->assertSame( 'Has name', $fields[0]->getName() );
@@ -48,8 +48,8 @@ class FieldDeclarationTest extends TestCase {
 		$this->assertFalse( $fields[1]->isRequired() );
 	}
 
-	public function testFromTaggedArrayEmpty(): void {
-		$fields = FieldDeclaration::fromTaggedArray( [], FieldDeclaration::TYPE_PROPERTY );
+	public function testFromAnnotatedArrayEmpty(): void {
+		$fields = FieldDeclaration::fromAnnotatedArray( [], FieldDeclaration::TYPE_PROPERTY );
 		$this->assertSame( [], $fields );
 	}
 

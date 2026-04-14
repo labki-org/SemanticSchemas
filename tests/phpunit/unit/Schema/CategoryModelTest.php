@@ -41,13 +41,13 @@ class CategoryModelTest extends TestCase {
 		] );
 	}
 
-	public function testDuplicateRequiredOptionalPropertyThrowsException(): void {
+	public function testDuplicatePropertyThrowsException(): void {
 		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'both required and optional' );
+		$this->expectExceptionMessage( 'duplicate field declaration' );
 		new CategoryModel( 'TestCategory', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has name' ],
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has name', 'required' => false ],
 			],
 		] );
 	}
@@ -59,13 +59,13 @@ class CategoryModelTest extends TestCase {
 		] );
 	}
 
-	public function testDuplicateRequiredOptionalSubobjectThrowsException(): void {
+	public function testDuplicateSubobjectThrowsException(): void {
 		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'both required and optional' );
+		$this->expectExceptionMessage( 'duplicate field declaration' );
 		new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [ 'Address' ],
-				'optional' => [ 'Address' ],
+				[ 'name' => 'Address', 'required' => true ],
+				[ 'name' => 'Address', 'required' => false ],
 			],
 		] );
 	}
@@ -131,8 +131,8 @@ class CategoryModelTest extends TestCase {
 	public function testGetRequiredProperties(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
-				'required' => [ 'Has name', 'Has email' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has email', 'required' => true ],
 			],
 		] );
 		$this->assertEquals( [ 'Has name', 'Has email' ], $model->getRequiredProperties() );
@@ -141,8 +141,8 @@ class CategoryModelTest extends TestCase {
 	public function testGetOptionalProperties(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
-				'required' => [],
-				'optional' => [ 'Has phone', 'Has address' ],
+				[ 'name' => 'Has phone', 'required' => false ],
+				[ 'name' => 'Has address', 'required' => false ],
 			],
 		] );
 		$this->assertEquals( [ 'Has phone', 'Has address' ], $model->getOptionalProperties() );
@@ -151,8 +151,8 @@ class CategoryModelTest extends TestCase {
 	public function testGetAllPropertiesCombinesBoth(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has email' ],
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has email', 'required' => false ],
 			],
 		] );
 		$allProps = $model->getAllProperties();
@@ -164,14 +164,14 @@ class CategoryModelTest extends TestCase {
 	public function testGetAnnotatedPropertiesReturnsBothWithFlags(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has email' ],
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has email', 'required' => false ],
 			],
 		] );
-		$tagged = $model->getAnnotatedProperties();
-		$this->assertCount( 2, $tagged );
-		$this->assertSame( [ 'name' => 'Has name', 'required' => true ], $tagged[0] );
-		$this->assertSame( [ 'name' => 'Has email', 'required' => false ], $tagged[1] );
+		$annotated = $model->getAnnotatedProperties();
+		$this->assertCount( 2, $annotated );
+		$this->assertSame( [ 'name' => 'Has name', 'required' => true ], $annotated[0] );
+		$this->assertSame( [ 'name' => 'Has email', 'required' => false ], $annotated[1] );
 	}
 
 	public function testGetAnnotatedPropertiesReturnsEmptyWhenNone(): void {
@@ -186,8 +186,7 @@ class CategoryModelTest extends TestCase {
 	public function testGetRequiredSubobjects(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [],
+				[ 'name' => 'Author', 'required' => true ],
 			],
 		] );
 		$this->assertEquals( [ 'Author' ], $model->getRequiredSubobjects() );
@@ -196,8 +195,7 @@ class CategoryModelTest extends TestCase {
 	public function testGetOptionalSubobjects(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [],
-				'optional' => [ 'Funding' ],
+				[ 'name' => 'Funding', 'required' => false ],
 			],
 		] );
 		$this->assertEquals( [ 'Funding' ], $model->getOptionalSubobjects() );
@@ -205,7 +203,9 @@ class CategoryModelTest extends TestCase {
 
 	public function testHasSubobjectsReturnsTrue(): void {
 		$model = new CategoryModel( 'TestCategory', [
-			'subobjects' => [ 'required' => [ 'Author' ], 'optional' => [] ],
+			'subobjects' => [
+				[ 'name' => 'Author', 'required' => true ],
+			],
 		] );
 		$this->assertTrue( $model->hasSubobjects() );
 	}
@@ -218,14 +218,14 @@ class CategoryModelTest extends TestCase {
 	public function testGetAnnotatedSubobjectsReturnsBothWithFlags(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [ 'Funding' ],
+				[ 'name' => 'Author', 'required' => true ],
+				[ 'name' => 'Funding', 'required' => false ],
 			],
 		] );
-		$tagged = $model->getAnnotatedSubobjects();
-		$this->assertCount( 2, $tagged );
-		$this->assertSame( [ 'name' => 'Author', 'required' => true ], $tagged[0] );
-		$this->assertSame( [ 'name' => 'Funding', 'required' => false ], $tagged[1] );
+		$annotated = $model->getAnnotatedSubobjects();
+		$this->assertCount( 2, $annotated );
+		$this->assertSame( [ 'name' => 'Author', 'required' => true ], $annotated[0] );
+		$this->assertSame( [ 'name' => 'Funding', 'required' => false ], $annotated[1] );
 	}
 
 	public function testGetAnnotatedSubobjectsReturnsEmptyWhenNone(): void {
@@ -266,15 +266,13 @@ class CategoryModelTest extends TestCase {
 	public function testMergeWithParentInheritsProperties(): void {
 		$parent = new CategoryModel( 'Parent', [
 			'properties' => [
-				'required' => [ 'Has parent prop' ],
-				'optional' => [],
+				[ 'name' => 'Has parent prop', 'required' => true ],
 			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
 			'properties' => [
-				'required' => [ 'Has child prop' ],
-				'optional' => [],
+				[ 'name' => 'Has child prop', 'required' => true ],
 			],
 		] );
 
@@ -295,15 +293,13 @@ class CategoryModelTest extends TestCase {
 	public function testMergeWithParentPromotesOptionalToRequired(): void {
 		$parent = new CategoryModel( 'Parent', [
 			'properties' => [
-				'required' => [],
-				'optional' => [ 'Has prop' ],
+				[ 'name' => 'Has prop', 'required' => false ],
 			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
 			'properties' => [
-				'required' => [ 'Has prop' ],
-				'optional' => [],
+				[ 'name' => 'Has prop', 'required' => true ],
 			],
 		] );
 
@@ -333,11 +329,11 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergeWithParentMergesSubobjects(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'subobjects' => [ 'required' => [ 'ParentSub' ], 'optional' => [] ],
+			'subobjects' => [ [ 'name' => 'ParentSub', 'required' => true ] ],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'subobjects' => [ 'required' => [ 'ChildSub' ], 'optional' => [] ],
+			'subobjects' => [ [ 'name' => 'ChildSub', 'required' => true ] ],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
@@ -347,11 +343,11 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergePromotesOptionalSubobjectToRequired(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'subobjects' => [ 'required' => [], 'optional' => [ 'Address' ] ],
+			'subobjects' => [ [ 'name' => 'Address', 'required' => false ] ],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+			'subobjects' => [ [ 'name' => 'Address', 'required' => true ] ],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
@@ -361,11 +357,14 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergeDeduplicatesProperties(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [ [ 'name' => 'Has name', 'required' => true ] ],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'properties' => [ 'required' => [ 'Has name', 'Has age' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has age', 'required' => true ],
+			],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
@@ -376,11 +375,16 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergeKeepsOptionalWhenNotPromoted(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [ 'Has email' ] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has email', 'required' => false ],
+			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'properties' => [ 'required' => [], 'optional' => [ 'Has phone' ] ],
+			'properties' => [
+				[ 'name' => 'Has phone', 'required' => false ],
+			],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
@@ -402,14 +406,17 @@ class CategoryModelTest extends TestCase {
 	public function testToArrayIncludesSubobjectsWhenPresent(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [ 'Funding' ],
+				[ 'name' => 'Author', 'required' => true ],
+				[ 'name' => 'Funding', 'required' => false ],
 			],
 		] );
 		$arr = $model->toArray();
 		$this->assertArrayHasKey( 'subobjects', $arr );
-		$this->assertEquals( [ 'Author' ], $arr['subobjects']['required'] );
-		$this->assertEquals( [ 'Funding' ], $arr['subobjects']['optional'] );
+		$this->assertCount( 2, $arr['subobjects'] );
+		$this->assertSame( 'Author', $arr['subobjects'][0]['name'] );
+		$this->assertTrue( $arr['subobjects'][0]['required'] );
+		$this->assertSame( 'Funding', $arr['subobjects'][1]['name'] );
+		$this->assertFalse( $arr['subobjects'][1]['required'] );
 	}
 
 	public function testToArrayContainsAllFields(): void {
@@ -418,8 +425,8 @@ class CategoryModelTest extends TestCase {
 			'description' => 'Test description',
 			'parents' => [ 'Parent1' ],
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has email' ],
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has email', 'required' => false ],
 			],
 			'display' => [ 'header' => [ 'Has name' ] ],
 			'forms' => [ 'sections' => [] ],
@@ -449,10 +456,10 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergeDoesNotModifyOriginalChild(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+			'properties' => [ [ 'name' => 'Has parent prop', 'required' => true ] ],
 		] );
 		$child = new CategoryModel( 'Child', [
-			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+			'properties' => [ [ 'name' => 'Has child prop', 'required' => true ] ],
 		] );
 
 		$originalChildProps = $child->getRequiredProperties();
@@ -463,10 +470,10 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergeDoesNotModifyOriginalParent(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+			'properties' => [ [ 'name' => 'Has parent prop', 'required' => true ] ],
 		] );
 		$child = new CategoryModel( 'Child', [
-			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+			'properties' => [ [ 'name' => 'Has child prop', 'required' => true ] ],
 		] );
 
 		$originalParentProps = $parent->getRequiredProperties();
@@ -481,10 +488,10 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergeWithParentReturnsEffectiveCategoryModel(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+			'properties' => [ [ 'name' => 'Has parent prop', 'required' => true ] ],
 		] );
 		$child = new CategoryModel( 'Child', [
-			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+			'properties' => [ [ 'name' => 'Has child prop', 'required' => true ] ],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );

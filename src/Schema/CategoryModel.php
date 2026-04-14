@@ -17,8 +17,8 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   targetNamespace: string|null
  *   renderAs: string|null - TemplateFormat category reference
  *
- *   properties: FieldDeclaration[] (or legacy split format for backward compat)
- *   subobjects: FieldDeclaration[] (or legacy split format for backward compat)
+ *   properties: array<array{name:string, required:bool}>
+ *   subobjects: array<array{name:string, required:bool}>
  *
  *   display:
  *     format: string|null
@@ -187,7 +187,7 @@ class CategoryModel {
 	 * @return array<array{name:string, required:bool}>
 	 */
 	public function getAnnotatedProperties(): array {
-		return FieldDeclaration::tagged( $this->propertyFields );
+		return FieldDeclaration::annotated( $this->propertyFields );
 	}
 
 	/* -------------------- Subobject Fields -------------------- */
@@ -213,7 +213,7 @@ class CategoryModel {
 	 * @return array<array{name:string, required:bool}>
 	 */
 	public function getAnnotatedSubobjects(): array {
-		return FieldDeclaration::tagged( $this->subobjectFields );
+		return FieldDeclaration::annotated( $this->subobjectFields );
 	}
 
 	/* -------------------- Backlinks -------------------- */
@@ -287,8 +287,8 @@ class CategoryModel {
 				'description' => $this->description,
 				'targetNamespace' => $this->targetNamespace,
 				'renderAs' => $this->renderAs ?? $parent->getRenderAs(),
-				'properties' => FieldDeclaration::tagged( $mergedProps ),
-				'subobjects' => FieldDeclaration::tagged( $mergedSubs ),
+				'properties' => FieldDeclaration::annotated( $mergedProps ),
+				'subobjects' => FieldDeclaration::annotated( $mergedSubs ),
 				'backlinksFor' => $mergedBacklinksFor,
 				'display' => $mergedDisplay,
 				'forms' => $mergedForms,
@@ -374,17 +374,11 @@ class CategoryModel {
 			'parents' => $this->parents,
 			'label' => $this->label,
 			'description' => $this->description,
-			'properties' => [
-				'required' => $this->getRequiredProperties(),
-				'optional' => $this->getOptionalProperties(),
-			],
+			'properties' => FieldDeclaration::annotated( $this->propertyFields ),
 		];
 
 		if ( $this->hasSubobjects() ) {
-			$out['subobjects'] = [
-				'required' => $this->getRequiredSubobjects(),
-				'optional' => $this->getOptionalSubobjects(),
-			];
+			$out['subobjects'] = FieldDeclaration::annotated( $this->subobjectFields );
 		}
 
 		if ( $this->backlinksFor !== [] ) {

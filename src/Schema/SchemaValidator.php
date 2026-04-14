@@ -250,65 +250,40 @@ class SchemaValidator {
 	}
 
 	/**
-	 * Validate required/optional bucket structure.
+	 * Validate annotated field entries.
 	 *
-	 * This pattern is used for properties and subobjects in categories,
-	 * and for properties in subobjects.
+	 * Entries are [{name, required}, ...] — the canonical format for field
+	 * declarations in categories (properties and subobjects).
 	 *
 	 * @param string $entityType
 	 * @param string $entityName
-	 * @param array $buckets Array with 'required' and/or 'optional' keys
+	 * @param array $entries Annotated field entries
 	 * @param array $lookup Valid items to reference
-	 * @param string $referenceType 'property' or 'subobject'
+	 * @param string $referenceType 'property' or 'category'
 	 * @param string $fieldPrefix Field path prefix for error messages
 	 * @return array ['errors' => [...], 'warnings' => [...]]
 	 */
-	private function validateRequiredOptionalBuckets(
+	private function validateAnnotatedEntries(
 		string $entityType,
 		string $entityName,
-		array $buckets,
+		array $entries,
 		array $lookup,
 		string $referenceType,
 		string $fieldPrefix = ''
 	): array {
 		$errors = [];
 		$warnings = [];
-		$prefix = $fieldPrefix ? "$fieldPrefix." : '';
 
-		foreach ( [ 'required', 'optional' ] as $bucket ) {
-			$error = $this->requireArrayField(
-				$entityType,
-				$entityName,
-				$buckets,
-				$bucket,
-				"Use an array like [\"Item1\", \"Item2\"]"
-			);
-			if ( $error ) {
-				$errors[] = str_replace( "$bucket must be", "{$prefix}$bucket must be", $error );
-			}
-		}
-
-		$required = is_array( $buckets['required'] ?? null ) ? $buckets['required'] : [];
-		$optional = is_array( $buckets['optional'] ?? null ) ? $buckets['optional'] : [];
-
-		$duplicates = array_intersect(
-			array_map( 'strval', $required ),
-			array_map( 'strval', $optional )
+		$names = array_map(
+			static fn ( $e ) => is_array( $e ) ? ( $e['name'] ?? '' ) : (string)$e,
+			$entries
 		);
-		if ( !empty( $duplicates ) ) {
-			$itemType = ucfirst( $referenceType ) . 's';
-			$errors[] = $this->formatError(
-				$entityType,
-				$entityName,
-				"$itemType cannot be both required and optional: " . implode( ', ', $duplicates ),
-				'Remove duplicates from either list'
-			);
-		}
 
 		$errors = array_merge(
 			$errors,
-			$this->validateReferences( $entityType, $entityName, $required, $lookup, $referenceType, 'required' ),
-			$this->validateReferences( $entityType, $entityName, $optional, $lookup, $referenceType, 'optional' )
+			$this->validateReferences(
+				$entityType, $entityName, $names, $lookup, $referenceType, $fieldPrefix
+			)
 		);
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];
@@ -415,7 +390,7 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateRequiredOptionalBuckets(
+				$this->validateAnnotatedEntries(
 					'category',
 					$categoryName,
 					$categoryData['properties'],
@@ -430,7 +405,7 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateRequiredOptionalBuckets(
+				$this->validateAnnotatedEntries(
 					'category',
 					$categoryName,
 					$categoryData['subobjects'],
@@ -609,10 +584,7 @@ class SchemaValidator {
 				continue;
 			}
 
-			$req = $data['properties']['required'] ?? [];
-			$opt = $data['properties']['optional'] ?? [];
-
-			if ( empty( $req ) && empty( $opt ) ) {
+			if ( empty( $data['properties'] ?? [] ) ) {
 				$warnings[] = "Category '$name': no properties defined";
 			}
 

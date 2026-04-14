@@ -3,7 +3,6 @@
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
-use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
  * Immutable value object representing a field declaration on a category page.
@@ -67,31 +66,29 @@ class FieldDeclaration {
 	}
 
 	/**
-	 * Build FieldDeclaration[] from an array of tagged entries.
+	 * Build FieldDeclaration[] from an annotated array.
 	 *
-	 * @param array<array{name:string, required:bool}> $tagged
+	 * @param array<array{name:string, required:bool}> $entries
 	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
 	 * @return self[]
 	 */
-	public static function fromTaggedArray( array $tagged, string $fieldType ): array {
+	public static function fromAnnotatedArray( array $entries, string $fieldType ): array {
 		return array_map(
 			static fn ( array $entry ) => new self( $entry['name'], $entry['required'], $fieldType ),
-			$tagged
+			$entries
 		);
 	}
 
 	/* -------------------------------------------------------------------------
 	 * PARSING
 	 *
-	 * Accepts two formats:
-	 *   Tagged: [ ['name'=>..., 'required'=>bool], ... ]
-	 *   Split:  ['required'=>string[], 'optional'=>string[]]
+	 * Accepts annotated format: [ ['name'=>..., 'required'=>bool], ... ]
 	 * ---------------------------------------------------------------------- */
 
 	/**
 	 * Parse raw field data into FieldDeclaration[].
 	 *
-	 * @param array $input Raw field data in tagged or split format
+	 * @param array<array{name:string, required:bool}> $input Annotated field entries
 	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
 	 * @param string $contextLabel For error messages (e.g. "Category 'Person'")
 	 * @return self[]
@@ -101,45 +98,9 @@ class FieldDeclaration {
 			return [];
 		}
 
-		// Tagged format: sequential array of {name, required} entries
-		if ( array_is_list( $input ) && isset( $input[0]['name'] ) ) {
-			$fields = self::fromTaggedArray( $input, $fieldType );
-			self::validateNoDuplicates( $fields, $contextLabel );
-			return $fields;
-		}
-
-		// Split format: {required: string[], optional: string[]}
-		$req = $input['required'] ?? [];
-		$opt = $input['optional'] ?? [];
-
-		if ( !is_array( $req ) || !is_array( $opt ) ) {
-			throw new InvalidArgumentException(
-				"$contextLabel: 'required' and 'optional' must be arrays."
-			);
-		}
-
-		$req = NamingHelper::normalizeList( $req );
-		$opt = NamingHelper::normalizeList( $opt );
-
-		$dup = array_intersect( $req, $opt );
-		if ( $dup !== [] ) {
-			$kind = $fieldType === self::TYPE_PROPERTY ? 'properties' : 'subobjects';
-			throw new InvalidArgumentException(
-				"$contextLabel has $kind listed as both required and optional: "
-				. implode( ', ', $dup )
-			);
-		}
-
-		return array_merge(
-			array_map(
-				static fn ( string $n ) => new self( $n, true, $fieldType ),
-				$req
-			),
-			array_map(
-				static fn ( string $n ) => new self( $n, false, $fieldType ),
-				$opt
-			)
-		);
+		$fields = self::fromAnnotatedArray( $input, $fieldType );
+		self::validateNoDuplicates( $fields, $contextLabel );
+		return $fields;
 	}
 
 	private static function validateNoDuplicates( array $fields, string $contextLabel ): void {
@@ -190,12 +151,12 @@ class FieldDeclaration {
 	}
 
 	/**
-	 * Convert field declarations to tagged array format.
+	 * Convert field declarations to annotated array format.
 	 *
 	 * @param self[] $fields
 	 * @return array<array{name:string, required:bool}>
 	 */
-	public static function tagged( array $fields ): array {
+	public static function annotated( array $fields ): array {
 		return array_map(
 			static fn ( self $f ) => [ 'name' => $f->getName(), 'required' => $f->isRequired() ],
 			$fields

@@ -85,7 +85,7 @@ trait SMWDataExtractor {
 	}
 
 	/**
-	 * Read ordered, tagged field references from SMW subobjects attached to a page.
+	 * Read ordered, annotated field references from SMW subobjects attached to a page.
 	 *
 	 * Iterates sub-semantic-data, filters by @category membership, extracts the
 	 * reference property value and the "Is required" boolean, and sorts by
@@ -95,7 +95,7 @@ trait SMWDataExtractor {
 	 * @param string $categoryName Category the subobject must belong to (e.g. "Field")
 	 * @param string $referenceProperty Property holding the reference (e.g. "For property")
 	 * @param string $referenceType Value type for extraction (e.g. "property", "category")
-	 * @return array<array{name:string, required:bool}> Ordered list of tagged references
+	 * @return array<array{name:string, required:bool}> Ordered list of annotated references
 	 */
 	protected function smwFetchTaggedFieldReferences(
 		$semanticData,
