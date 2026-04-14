@@ -183,13 +183,6 @@ class CategoryModel {
 		return FieldDeclaration::names( $this->propertyFields );
 	}
 
-	/**
-	 * @return array<array{name:string, required:bool}>
-	 */
-	public function getAnnotatedProperties(): array {
-		return FieldDeclaration::annotated( $this->propertyFields );
-	}
-
 	/* -------------------- Subobject Fields -------------------- */
 
 	/** @return FieldDeclaration[] */
@@ -207,13 +200,6 @@ class CategoryModel {
 
 	public function hasSubobjects(): bool {
 		return $this->subobjectFields !== [];
-	}
-
-	/**
-	 * @return array<array{name:string, required:bool}>
-	 */
-	public function getAnnotatedSubobjects(): array {
-		return FieldDeclaration::annotated( $this->subobjectFields );
 	}
 
 	/* -------------------- Backlinks -------------------- */

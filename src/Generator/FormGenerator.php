@@ -256,16 +256,15 @@ class FormGenerator {
 		CategoryModel $category,
 		InheritanceResolver $resolver
 	): array {
-		$tagged = $category->getAnnotatedSubobjects();
-		if ( empty( $tagged ) ) {
+		$subFields = $category->getSubobjectFields();
+		if ( empty( $subFields ) ) {
 			return [];
 		}
 
 		$out = [];
 
-		foreach ( $tagged as $entry ) {
-			$subName = $entry['name'];
-			$isRequired = $entry['required'];
+		foreach ( $subFields as $field ) {
+			$subName = $field->getName();
 
 			if ( !$resolver->hasCategory( $subName ) ) {
 				// Category page doesn't exist yet — nothing to generate
@@ -282,7 +281,7 @@ class FormGenerator {
 			$templateName = $this->s( $model->getName() ) . '/subobject';
 
 			$for = [ $templateName, 'multiple' ];
-			if ( $isRequired ) {
+			if ( $field->isRequired() ) {
 				$for[] = 'minimum instances=1';
 			}
 
@@ -290,12 +289,12 @@ class FormGenerator {
 			$out[] = '';
 
 			// Generate table for subobject properties
-			$taggedProps = $model->getAnnotatedProperties();
-			if ( !empty( $taggedProps ) ) {
+			$propFields = $model->getPropertyFields();
+			if ( !empty( $propFields ) ) {
 				$out[] = '{| class="formtable"';
 
-				foreach ( $taggedProps as $prop ) {
-					$out = array_merge( $out, $this->generateTableField( $prop['name'], $prop['required'] ) );
+				foreach ( $propFields as $prop ) {
+					$out = array_merge( $out, $this->generateTableField( $prop->getName(), $prop->isRequired() ) );
 				}
 
 				$out[] = '|}';

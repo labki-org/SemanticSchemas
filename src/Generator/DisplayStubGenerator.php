@@ -366,16 +366,16 @@ class DisplayStubGenerator {
 			return '';
 		}
 
-		$tagged = $category->getAnnotatedSubobjects();
-		if ( empty( $tagged ) ) {
+		$subFields = $category->getSubobjectFields();
+		if ( empty( $subFields ) ) {
 			return '';
 		}
 
 		$sections = '';
 		$catNs = $this->language->getFormattedNsText( NS_CATEGORY );
 
-		foreach ( $tagged as $entry ) {
-			$subName = $entry['name'];
+		foreach ( $subFields as $field ) {
+			$subName = $field->getName();
 			if ( !$resolver->hasCategory( $subName ) ) {
 				continue;
 			}

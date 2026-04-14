@@ -150,19 +150,6 @@ class FieldDeclaration {
 		) );
 	}
 
-	/**
-	 * Convert field declarations to annotated array format.
-	 *
-	 * @param self[] $fields
-	 * @return array<array{name:string, required:bool}>
-	 */
-	public static function annotated( array $fields ): array {
-		return array_map(
-			static fn ( self $f ) => [ 'name' => $f->getName(), 'required' => $f->isRequired() ],
-			$fields
-		);
-	}
-
 	/* -------------------------------------------------------------------------
 	 * ACCESSORS
 	 * ---------------------------------------------------------------------- */

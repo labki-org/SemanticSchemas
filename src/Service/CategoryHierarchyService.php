@@ -307,14 +307,14 @@ class CategoryHierarchyService {
 
 			$source = "Category:$ancestor";
 
-			foreach ( $model->getAnnotatedProperties() as $tagged ) {
-				if ( !isset( $seen[$tagged['name']] ) ) {
+			foreach ( $model->getPropertyFields() as $field ) {
+				if ( !isset( $seen[$field->getName()] ) ) {
 					$output[] = [
-						'propertyTitle' => 'Property:' . $tagged['name'],
+						'propertyTitle' => 'Property:' . $field->getName(),
 						'sourceCategory' => $source,
-						'required' => $tagged['required'],
+						'required' => $field->isRequired(),
 					];
-					$seen[$tagged['name']] = true;
+					$seen[$field->getName()] = true;
 				}
 			}
 		}
@@ -342,14 +342,14 @@ class CategoryHierarchyService {
 
 			$source = "Category:$ancestor";
 
-			foreach ( $model->getAnnotatedSubobjects() as $tagged ) {
-				if ( !isset( $seen[$tagged['name']] ) ) {
+			foreach ( $model->getSubobjectFields() as $field ) {
+				if ( !isset( $seen[$field->getName()] ) ) {
 					$output[] = [
-						'subobjectTitle' => 'Category:' . $tagged['name'],
+						'subobjectTitle' => 'Category:' . $field->getName(),
 						'sourceCategory' => $source,
-						'required' => $tagged['required'],
+						'required' => $field->isRequired(),
 					];
-					$seen[$tagged['name']] = true;
+					$seen[$field->getName()] = true;
 				}
 			}
 		}

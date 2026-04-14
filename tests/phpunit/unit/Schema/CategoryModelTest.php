@@ -161,22 +161,24 @@ class CategoryModelTest extends TestCase {
 		$this->assertCount( 2, $allProps );
 	}
 
-	public function testGetAnnotatedPropertiesReturnsBothWithFlags(): void {
+	public function testGetPropertyFieldsReturnsBothWithFlags(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
 				[ 'name' => 'Has name', 'required' => true ],
 				[ 'name' => 'Has email', 'required' => false ],
 			],
 		] );
-		$annotated = $model->getAnnotatedProperties();
-		$this->assertCount( 2, $annotated );
-		$this->assertSame( [ 'name' => 'Has name', 'required' => true ], $annotated[0] );
-		$this->assertSame( [ 'name' => 'Has email', 'required' => false ], $annotated[1] );
+		$fields = $model->getPropertyFields();
+		$this->assertCount( 2, $fields );
+		$this->assertSame( 'Has name', $fields[0]->getName() );
+		$this->assertTrue( $fields[0]->isRequired() );
+		$this->assertSame( 'Has email', $fields[1]->getName() );
+		$this->assertFalse( $fields[1]->isRequired() );
 	}
 
-	public function testGetAnnotatedPropertiesReturnsEmptyWhenNone(): void {
+	public function testGetPropertyFieldsReturnsEmptyWhenNone(): void {
 		$model = new CategoryModel( 'TestCategory' );
-		$this->assertSame( [], $model->getAnnotatedProperties() );
+		$this->assertSame( [], $model->getPropertyFields() );
 	}
 
 	/* =========================================================================
@@ -215,22 +217,24 @@ class CategoryModelTest extends TestCase {
 		$this->assertFalse( $model->hasSubobjects() );
 	}
 
-	public function testGetAnnotatedSubobjectsReturnsBothWithFlags(): void {
+	public function testGetSubobjectFieldsReturnsBothWithFlags(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
 				[ 'name' => 'Author', 'required' => true ],
 				[ 'name' => 'Funding', 'required' => false ],
 			],
 		] );
-		$annotated = $model->getAnnotatedSubobjects();
-		$this->assertCount( 2, $annotated );
-		$this->assertSame( [ 'name' => 'Author', 'required' => true ], $annotated[0] );
-		$this->assertSame( [ 'name' => 'Funding', 'required' => false ], $annotated[1] );
+		$fields = $model->getSubobjectFields();
+		$this->assertCount( 2, $fields );
+		$this->assertSame( 'Author', $fields[0]->getName() );
+		$this->assertTrue( $fields[0]->isRequired() );
+		$this->assertSame( 'Funding', $fields[1]->getName() );
+		$this->assertFalse( $fields[1]->isRequired() );
 	}
 
-	public function testGetAnnotatedSubobjectsReturnsEmptyWhenNone(): void {
+	public function testGetSubobjectFieldsReturnsEmptyWhenNone(): void {
 		$model = new CategoryModel( 'TestCategory' );
-		$this->assertSame( [], $model->getAnnotatedSubobjects() );
+		$this->assertSame( [], $model->getSubobjectFields() );
 	}
 
 	/* =========================================================================
