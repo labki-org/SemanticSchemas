@@ -189,15 +189,14 @@ class InheritanceResolverTest extends TestCase {
 		$map = [
 			'Person' => new CategoryModel( 'Person', [
 				'properties' => [
-					'required' => [ 'Has name' ],
-					'optional' => [ 'Has email' ],
+					[ 'name' => 'Has name', 'required' => true ],
+					[ 'name' => 'Has email', 'required' => false ],
 				],
 			] ),
 			'Student' => new CategoryModel( 'Student', [
 				'parents' => [ 'Person' ],
 				'properties' => [
-					'required' => [ 'Has student ID' ],
-					'optional' => [],
+					[ 'name' => 'Has student ID', 'required' => true ],
 				],
 			] ),
 		];
@@ -264,7 +263,9 @@ class InheritanceResolverTest extends TestCase {
 
 	public function testGetInheritanceChainRootReturnsSelf(): void {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
 		] );
 		$resolver = new InheritanceResolver( [ 'Person' => $person ] );
 
@@ -276,11 +277,15 @@ class InheritanceResolverTest extends TestCase {
 
 	public function testGetInheritanceChainSingleParent(): void {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has student ID', 'required' => true ],
+			],
 		] );
 		$resolver = new InheritanceResolver( [
 			'Person' => $person,
@@ -301,14 +306,20 @@ class InheritanceResolverTest extends TestCase {
 
 	public function testGetInheritanceChainMultiParent(): void {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
 		] );
 		$labMember = new CategoryModel( 'LabMember', [
-			'properties' => [ 'required' => [ 'Has lab role' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has lab role', 'required' => true ],
+			],
 		] );
 		$gradStudent = new CategoryModel( 'GradStudent', [
 			'parents' => [ 'Person', 'LabMember' ],
-			'properties' => [ 'required' => [ 'Has advisor' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has advisor', 'required' => true ],
+			],
 		] );
 		$resolver = new InheritanceResolver( [
 			'Person' => $person,
@@ -373,11 +384,15 @@ class InheritanceResolverTest extends TestCase {
 
 	public function testGetEffectiveCategoryMergesInheritedProperties(): void {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has student ID', 'required' => true ],
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
@@ -394,15 +409,21 @@ class InheritanceResolverTest extends TestCase {
 
 	public function testGetParentEffectiveModelsReturnsEffectiveParents(): void {
 		$grandparent = new CategoryModel( 'Grandparent', [
-			'properties' => [ 'required' => [ 'Has gp prop' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has gp prop', 'required' => true ],
+			],
 		] );
 		$parent = new CategoryModel( 'Parent', [
 			'parents' => [ 'Grandparent' ],
-			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has parent prop', 'required' => true ],
+			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has child prop', 'required' => true ],
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [

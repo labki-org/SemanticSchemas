@@ -93,8 +93,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'PropsCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'properties' => [
-				'required' => [ 'Has name', 'Has email' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has email', 'required' => true ],
 			],
 		] );
 
@@ -123,8 +123,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'OptPropsCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'properties' => [
-				'required' => [],
-				'optional' => [ 'Has phone', 'Has address' ],
+				[ 'name' => 'Has phone', 'required' => false ],
+				[ 'name' => 'Has address', 'required' => false ],
 			],
 		] );
 
@@ -254,8 +254,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'SubobjCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'subobjects' => [
-				'required' => [ 'Author', 'Publication' ],
-				'optional' => [],
+				[ 'name' => 'Author', 'required' => true ],
+				[ 'name' => 'Publication', 'required' => true ],
 			],
 		] );
 
@@ -283,8 +283,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'OptSubobjCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'subobjects' => [
-				'required' => [],
-				'optional' => [ 'Funding', 'Award' ],
+				[ 'name' => 'Funding', 'required' => false ],
+				[ 'name' => 'Award', 'required' => false ],
 			],
 		] );
 
@@ -326,12 +326,12 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'MixedCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has email' ],
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has email', 'required' => false ],
 			],
 			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [ 'Funding' ],
+				[ 'name' => 'Author', 'required' => true ],
+				[ 'name' => 'Funding', 'required' => false ],
 			],
 		] );
 

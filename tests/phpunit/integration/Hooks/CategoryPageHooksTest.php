@@ -297,8 +297,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	private function createManagedCategory( string $name ): void {
 		$category = new CategoryModel( $name, [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
 			],
 		] );
 		$this->categoryStore->writeCategory( $category );
