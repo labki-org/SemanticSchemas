@@ -23,8 +23,11 @@ class FieldDeclaration {
 	/**
 	 * Configuration for each field type: @category value, reference
 	 * property name, and namespace prefix for the referenced page.
+	 *
+	 * Used for both serialization (toWikitext) and deserialization
+	 * (reading from SMW via fieldTypeConfigs()).
 	 */
-	private const FIELD_CONFIG = [
+	public const FIELD_CONFIG = [
 		self::TYPE_PROPERTY => [
 			'category' => 'Property field',
 			'referenceProperty' => 'For property',

@@ -237,18 +237,36 @@ class WikiCategoryStore {
 			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
 			'parents' => $parents,
 
-			'properties' => $this->smwFetchTaggedFieldReferences(
-				$sdata, 'Property field', 'For property', 'property'
+			'properties' => $this->smwFetchFieldDeclarations(
+				$sdata, FieldDeclaration::TYPE_PROPERTY
 			),
 
-			'subobjects' => $this->smwFetchTaggedFieldReferences(
-				$sdata, 'Subobject field', 'For category', 'category'
+			'subobjects' => $this->smwFetchFieldDeclarations(
+				$sdata, FieldDeclaration::TYPE_SUBOBJECT
 			),
 
 			'backlinksFor' => $this->smwFetchMany( $sdata, 'Show backlinks for', 'property' ),
 
 			'display' => $this->loadDisplayConfig( $sdata ),
 		];
+	}
+
+	/**
+	 * Read field declarations from SMW subobjects using FieldDeclaration::FIELD_CONFIG.
+	 *
+	 * @param \SMW\SemanticData $semanticData
+	 * @param string $fieldType FieldDeclaration::TYPE_PROPERTY or TYPE_SUBOBJECT
+	 * @return array Annotated entries for CategoryModel construction
+	 */
+	private function smwFetchFieldDeclarations( $semanticData, string $fieldType ): array {
+		$config = FieldDeclaration::FIELD_CONFIG[$fieldType];
+		$refType = strtolower( $config['namespacePrefix'] );
+		return $this->smwFetchFieldReferences(
+			$semanticData,
+			$config['category'],
+			$config['referenceProperty'],
+			$refType
+		);
 	}
 
 	private function loadDisplayConfig( $semanticData ): array {

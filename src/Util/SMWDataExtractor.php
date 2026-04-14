@@ -97,7 +97,7 @@ trait SMWDataExtractor {
 	 * @param string $referenceType Value type for extraction (e.g. "property", "category")
 	 * @return array<array{name:string, required:bool}> Ordered list of annotated references
 	 */
-	protected function smwFetchTaggedFieldReferences(
+	protected function smwFetchFieldReferences(
 		$semanticData,
 		string $categoryName,
 		string $referenceProperty,

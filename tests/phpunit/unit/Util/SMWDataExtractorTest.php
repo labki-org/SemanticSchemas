@@ -15,10 +15,9 @@ class SMWDataExtractorHarness {
 /**
  * @covers \MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor
  *
- * Note: splitTaggedFields and buildFieldSubobjectLines have been moved out of
- * this trait. Field serialization is now handled by FieldDeclaration::toWikitext()
+ * Note: Field serialization is now handled by FieldDeclaration::toWikitext()
  * (see FieldDeclarationTest). The remaining SMW extraction methods
- * (smwFetchTaggedFieldReferences, smwFetchBoolean, etc.) require SMW mocks
+ * (smwFetchFieldReferences, smwFetchBoolean, etc.) require SMW mocks
  * and are covered by the integration tests in WikiCategoryStoreTest.
  */
 class SMWDataExtractorTest extends TestCase {
