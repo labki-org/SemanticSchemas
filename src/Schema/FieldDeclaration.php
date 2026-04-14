@@ -6,13 +6,15 @@ use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
- * Immutable value object representing a field declaration on a category or subobject.
+ * Immutable value object representing a field declaration on a category page.
  *
- * A field declaration records that a category (or subobject) includes a specific
- * property or subobject reference, along with whether that field is required.
+ * A field declaration records that a category includes a specific property
+ * (TYPE_PROPERTY) or subobject category reference (TYPE_SUBOBJECT), along
+ * with whether that field is required.
  *
- * Each FieldDeclaration knows how to serialize itself to the wikitext subobject
- * block that SMW stores on the category/subobject page.
+ * Each FieldDeclaration serializes to a {{#subobject:}} block on the
+ * category page, using @category to distinguish property fields from
+ * subobject fields.
  */
 class FieldDeclaration {
 
@@ -20,8 +22,8 @@ class FieldDeclaration {
 	public const TYPE_SUBOBJECT = 'subobject';
 
 	/**
-	 * Configuration for each field type: the subobject type name used in
-	 * the @category value, the reference property, and namespace prefix.
+	 * Configuration for each field type: @category value, reference
+	 * property name, and namespace prefix for the referenced page.
 	 */
 	private const FIELD_CONFIG = [
 		self::TYPE_PROPERTY => [
@@ -91,7 +93,7 @@ class FieldDeclaration {
 	 *
 	 * @param array $input Raw field data in tagged or split format
 	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
-	 * @param string $contextLabel For error messages (e.g. "Category 'Foo'")
+	 * @param string $contextLabel For error messages (e.g. "Category 'Person'")
 	 * @return self[]
 	 */
 	public static function parseInput( array $input, string $fieldType, string $contextLabel ): array {
