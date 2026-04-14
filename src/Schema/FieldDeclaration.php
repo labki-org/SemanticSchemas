@@ -103,7 +103,7 @@ class FieldDeclaration {
 		return $fields;
 	}
 
-	private static function validateNoDuplicates( array $fields, string $contextLabel ): void {
+	public static function validateNoDuplicates( array $fields, string $contextLabel ): void {
 		$names = [];
 		foreach ( $fields as $field ) {
 			$n = $field->getName();

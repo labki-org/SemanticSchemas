@@ -413,10 +413,10 @@ class CategoryModelTest extends TestCase {
 		$arr = $model->toArray();
 		$this->assertArrayHasKey( 'subobjects', $arr );
 		$this->assertCount( 2, $arr['subobjects'] );
-		$this->assertSame( 'Author', $arr['subobjects'][0]['name'] );
-		$this->assertTrue( $arr['subobjects'][0]['required'] );
-		$this->assertSame( 'Funding', $arr['subobjects'][1]['name'] );
-		$this->assertFalse( $arr['subobjects'][1]['required'] );
+		$this->assertSame( 'Author', $arr['subobjects'][0]->getName() );
+		$this->assertTrue( $arr['subobjects'][0]->isRequired() );
+		$this->assertSame( 'Funding', $arr['subobjects'][1]->getName() );
+		$this->assertFalse( $arr['subobjects'][1]->isRequired() );
 	}
 
 	public function testToArrayContainsAllFields(): void {

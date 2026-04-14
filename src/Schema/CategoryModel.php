@@ -101,7 +101,7 @@ class CategoryModel {
 		if ( !is_array( $props ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'properties' must be an array." );
 		}
-		$this->propertyFields = FieldDeclaration::parseInput(
+		$this->propertyFields = self::resolveFields(
 			$props, FieldDeclaration::TYPE_PROPERTY, "Category '{$name}'"
 		);
 
@@ -111,7 +111,7 @@ class CategoryModel {
 		if ( !is_array( $subs ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'subobjects' must be an array." );
 		}
-		$this->subobjectFields = FieldDeclaration::parseInput(
+		$this->subobjectFields = self::resolveFields(
 			$subs, FieldDeclaration::TYPE_SUBOBJECT, "Category '{$name}'"
 		);
 
@@ -237,6 +237,29 @@ class CategoryModel {
 		return $this->formConfig;
 	}
 
+	/**
+	 * Accept FieldDeclaration[] directly or annotated arrays [{name, required}, ...].
+	 *
+	 * @param array $input FieldDeclaration[] or annotated array
+	 * @param string $fieldType
+	 * @param string $contextLabel
+	 * @return FieldDeclaration[]
+	 */
+	private static function resolveFields( array $input, string $fieldType, string $contextLabel ): array {
+		if ( $input === [] ) {
+			return [];
+		}
+
+		// Already FieldDeclaration objects — validate and return
+		if ( $input[0] instanceof FieldDeclaration ) {
+			FieldDeclaration::validateNoDuplicates( $input, $contextLabel );
+			return $input;
+		}
+
+		// Annotated array from SMW or external sources
+		return FieldDeclaration::parseInput( $input, $fieldType, $contextLabel );
+	}
+
 	/* -------------------------------------------------------------------------
 	 * MERGING (CATEGORY + PARENT)
 	 * ------------------------------------------------------------------------- */
@@ -287,8 +310,8 @@ class CategoryModel {
 				'description' => $this->description,
 				'targetNamespace' => $this->targetNamespace,
 				'renderAs' => $this->renderAs ?? $parent->getRenderAs(),
-				'properties' => FieldDeclaration::annotated( $mergedProps ),
-				'subobjects' => FieldDeclaration::annotated( $mergedSubs ),
+				'properties' => $mergedProps,
+				'subobjects' => $mergedSubs,
 				'backlinksFor' => $mergedBacklinksFor,
 				'display' => $mergedDisplay,
 				'forms' => $mergedForms,
@@ -374,11 +397,11 @@ class CategoryModel {
 			'parents' => $this->parents,
 			'label' => $this->label,
 			'description' => $this->description,
-			'properties' => FieldDeclaration::annotated( $this->propertyFields ),
+			'properties' => $this->propertyFields,
 		];
 
 		if ( $this->hasSubobjects() ) {
-			$out['subobjects'] = FieldDeclaration::annotated( $this->subobjectFields );
+			$out['subobjects'] = $this->subobjectFields;
 		}
 
 		if ( $this->backlinksFor !== [] ) {

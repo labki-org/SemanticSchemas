@@ -250,14 +250,13 @@ class SchemaValidator {
 	}
 
 	/**
-	 * Validate annotated field entries.
+	 * Validate field declaration entries.
 	 *
-	 * Entries are [{name, required}, ...] — the canonical format for field
-	 * declarations in categories (properties and subobjects).
+	 * Accepts FieldDeclaration[] or annotated arrays [{name, required}, ...].
 	 *
 	 * @param string $entityType
 	 * @param string $entityName
-	 * @param array $entries Annotated field entries
+	 * @param array $entries FieldDeclaration[] or annotated arrays
 	 * @param array $lookup Valid items to reference
 	 * @param string $referenceType 'property' or 'category'
 	 * @param string $fieldPrefix Field path prefix for error messages
@@ -275,7 +274,12 @@ class SchemaValidator {
 		$warnings = [];
 
 		$names = array_map(
-			static fn ( $e ) => is_array( $e ) ? ( $e['name'] ?? '' ) : (string)$e,
+			static function ( $e ) {
+				if ( $e instanceof \MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration ) {
+					return $e->getName();
+				}
+				return is_array( $e ) ? ( $e['name'] ?? '' ) : (string)$e;
+			},
 			$entries
 		);
 
