@@ -46,8 +46,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
 			],
 		] );
 
@@ -76,10 +75,7 @@ class FormGeneratorTest extends TestCase {
 	public function testCompositeFormCategoryHeadingIsHtmlH2(): void {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
+			'properties' => [],
 		] );
 
 		$result = $this->generator->generateCompositeForm( $category, new InheritanceResolver( [] ) );
@@ -95,8 +91,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Animal', [
 			'label' => 'Animal',
 			'properties' => [
-				'required' => [ 'Has species' ],
-				'optional' => [],
+				[ 'name' => 'Has species', 'required' => true ],
 			],
 		] );
 
@@ -110,8 +105,8 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				'required' => [ 'Has color' ],
-				'optional' => [ 'Has weight' ],
+				[ 'name' => 'Has color', 'required' => true ],
+				[ 'name' => 'Has weight', 'required' => false ],
 			],
 		] );
 
@@ -124,10 +119,7 @@ class FormGeneratorTest extends TestCase {
 	public function testCompositeFormWrappedInNoincludeAndIncludeonly(): void {
 		$category = new EffectiveCategoryModel( 'Item', [
 			'label' => 'Item',
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
+			'properties' => [],
 		] );
 
 		$result = $this->generator->generateCompositeForm( $category, new InheritanceResolver( [] ) );
@@ -145,8 +137,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
 			],
 		] );
 
@@ -158,10 +149,7 @@ class FormGeneratorTest extends TestCase {
 	public function testRegularFormIncludesStandardInputs(): void {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
-			'properties' => [
-				'required' => [],
-				'optional' => [],
-			],
+			'properties' => [],
 		] );
 
 		$result = $this->generator->generateForm( $category );
@@ -175,8 +163,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
 			],
 		] );
 
@@ -194,14 +181,18 @@ class FormGeneratorTest extends TestCase {
 	public function testCompositeFormConvertsSubobjectHeadingsToHtml(): void {
 		$subCategory = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street' ],
-				'optional' => [ 'Has city' ],
+				[ 'name' => 'Has street', 'required' => true ],
+				[ 'name' => 'Has city', 'required' => false ],
 			],
 		] );
 
 		$category = new EffectiveCategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
+			'subobjects' => [
+				[ 'name' => 'Address', 'required' => true ],
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [
@@ -220,14 +211,16 @@ class FormGeneratorTest extends TestCase {
 		$subCategory = new CategoryModel( 'Phone', [
 			'label' => 'Phone Numbers',
 			'properties' => [
-				'required' => [ 'Has phone number' ],
-				'optional' => [ 'Has phone type' ],
+				[ 'name' => 'Has phone number', 'required' => true ],
+				[ 'name' => 'Has phone type', 'required' => false ],
 			],
 		] );
 
 		$category = new EffectiveCategoryModel( 'Person', [
-			'properties' => [ 'required' => [], 'optional' => [] ],
-			'subobjects' => [ 'required' => [], 'optional' => [ 'Phone' ] ],
+			'properties' => [],
+			'subobjects' => [
+				[ 'name' => 'Phone', 'required' => false ],
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [

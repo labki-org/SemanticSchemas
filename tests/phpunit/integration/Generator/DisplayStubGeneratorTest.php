@@ -53,11 +53,15 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		array $propertyMap = []
 	): string {
 		$gen = $this->makeGenerator( $propertyMap );
+		$props = [];
+		foreach ( $requiredProps as $name ) {
+			$props[] = [ 'name' => $name, 'required' => true ];
+		}
+		foreach ( $optionalProps as $name ) {
+			$props[] = [ 'name' => $name, 'required' => false ];
+		}
 		$category = new EffectiveCategoryModel( $categoryName, [
-			'properties' => [
-				'required' => $requiredProps,
-				'optional' => $optionalProps,
-			],
+			'properties' => $props,
 		] );
 
 		$gen->generateOrUpdateDisplayStub( $category );
@@ -219,7 +223,9 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		$catName = 'Project';
 		$category = new EffectiveCategoryModel( $catName, [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
 			'backlinksFor' => [ 'Has project' ],
 		] );
 
@@ -249,7 +255,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		$catName = 'Project';
 		$category = new EffectiveCategoryModel( $catName, [
-			'properties' => [ 'required' => [], 'optional' => [] ],
+			'properties' => [],
 			'backlinksFor' => [ 'Has project' ],
 		] );
 
@@ -275,7 +281,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		// Category does NOT declare backlinksFor — no rows should appear
 		$catName = 'Project';
 		$category = new EffectiveCategoryModel( $catName, [
-			'properties' => [ 'required' => [], 'optional' => [] ],
+			'properties' => [],
 		] );
 
 		$gen->generateOrUpdateDisplayStub( $category );
@@ -299,7 +305,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		$catName = 'SomeTarget_' . uniqid();
 		$category = new EffectiveCategoryModel( $catName, [
-			'properties' => [ 'required' => [], 'optional' => [] ],
+			'properties' => [],
 			'backlinksFor' => [ 'Has tag' ],
 		] );
 

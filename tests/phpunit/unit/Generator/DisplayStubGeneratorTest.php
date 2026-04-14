@@ -39,14 +39,18 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testSubobjectSectionsUseDisplayTemplate() {
 		$address = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				[ 'name' => 'Has street', 'required' => true ],
+				[ 'name' => 'Has city', 'required' => true ],
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
+			'subobjects' => [
+				[ 'name' => 'Address', 'required' => true ],
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [
@@ -70,22 +74,25 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testSubobjectDisplayIncludesInheritedProperties() {
 		$baseAddress = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				[ 'name' => 'Has street', 'required' => true ],
+				[ 'name' => 'Has city', 'required' => true ],
 			],
 		] );
 
 		$mailingAddress = new CategoryModel( 'MailingAddress', [
 			'parents' => [ 'Address' ],
 			'properties' => [
-				'required' => [ 'Has zip' ],
-				'optional' => [],
+				[ 'name' => 'Has zip', 'required' => true ],
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'MailingAddress' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
+			'subobjects' => [
+				[ 'name' => 'MailingAddress', 'required' => true ],
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [
@@ -105,8 +112,12 @@ class DisplayStubGeneratorTest extends TestCase {
 
 	public function testNoSubobjectSectionsWithoutResolver() {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
+			'subobjects' => [
+				[ 'name' => 'Address', 'required' => true ],
+			],
 		] );
 
 		$generated = $this->generator->generateWikitext( $person );

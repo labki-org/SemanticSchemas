@@ -47,8 +47,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplateReturnsString(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
 			],
 		] );
 
@@ -75,8 +74,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplateContainsSetParser(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
 			],
 		] );
 
@@ -88,8 +86,8 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplateContainsPropertyMappings(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name', 'Has email' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has email', 'required' => true ],
 			],
 		] );
 
@@ -129,8 +127,9 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplatePropertiesAreSorted(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has zoo', 'Has apple', 'Has middle' ],
-				'optional' => [],
+				[ 'name' => 'Has zoo', 'required' => true ],
+				[ 'name' => 'Has apple', 'required' => true ],
+				[ 'name' => 'Has middle', 'required' => true ],
 			],
 		] );
 
@@ -188,8 +187,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
 			],
 		] );
 
@@ -214,8 +212,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testPropertyToParameterConversionInTemplate(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has full name' ],
-				'optional' => [],
+				[ 'name' => 'Has full name', 'required' => true ],
 			],
 		] );
 
@@ -228,8 +225,9 @@ class TemplateGeneratorTest extends TestCase {
 	public function testMultiplePropertiesConvertedCorrectly(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has first name', 'Has last name', 'Has email address' ],
-				'optional' => [],
+				[ 'name' => 'Has first name', 'required' => true ],
+				[ 'name' => 'Has last name', 'required' => true ],
+				[ 'name' => 'Has email address', 'required' => true ],
 			],
 		] );
 
@@ -340,8 +338,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has tags' ],
-				'optional' => [],
+				[ 'name' => 'Has tags', 'required' => true ],
 			],
 		] );
 
@@ -359,8 +356,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has title' ],
-				'optional' => [],
+				[ 'name' => 'Has title', 'required' => true ],
 			],
 		] );
 
@@ -379,8 +375,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has related' ],
-				'optional' => [],
+				[ 'name' => 'Has related', 'required' => true ],
 			],
 		] );
 
@@ -399,8 +394,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has author' ],
-				'optional' => [],
+				[ 'name' => 'Has author', 'required' => true ],
 			],
 		] );
 
@@ -421,8 +415,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has homepage' ],
-				'optional' => [],
+				[ 'name' => 'Has homepage', 'required' => true ],
 			],
 		] );
 
@@ -438,15 +431,14 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherCallsOnlyLeafSemanticTemplate(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has email' ],
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has email', 'required' => false ],
 			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
 			'properties' => [
-				'required' => [ 'Has student ID' ],
-				'optional' => [],
+				[ 'name' => 'Has student ID', 'required' => true ],
 			],
 		] );
 
@@ -469,11 +461,15 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testSemanticTemplateForEachAncestorHasOwnPropertiesOnly(): void {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has student ID', 'required' => true ],
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
@@ -500,11 +496,15 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testSemanticTemplateForwardsOnlyParentEffectiveParams(): void {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has student ID', 'required' => true ],
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
@@ -526,7 +526,9 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testDispatcherContainsCategoryMembership(): void {
 		$category = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
 		] );
 
 		$dispatcher = $this->generateDispatcher( $category );
@@ -547,14 +549,18 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherDoesNotContainSubobjectDisplay(): void {
 		$subCategory = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				[ 'name' => 'Has street', 'required' => true ],
+				[ 'name' => 'Has city', 'required' => true ],
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+			],
+			'subobjects' => [
+				[ 'name' => 'Address', 'required' => true ],
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [
@@ -582,8 +588,8 @@ class TemplateGeneratorTest extends TestCase {
 	public function testSubobjectTemplateUsesAtCategory(): void {
 		$address = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				[ 'name' => 'Has street', 'required' => true ],
+				[ 'name' => 'Has city', 'required' => true ],
 			],
 		] );
 
@@ -600,15 +606,14 @@ class TemplateGeneratorTest extends TestCase {
 	public function testSubobjectTemplateIncludesInheritedProperties(): void {
 		$base = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				[ 'name' => 'Has street', 'required' => true ],
+				[ 'name' => 'Has city', 'required' => true ],
 			],
 		] );
 		$child = new CategoryModel( 'MailingAddress', [
 			'parents' => [ 'Address' ],
 			'properties' => [
-				'required' => [ 'Has zip' ],
-				'optional' => [],
+				[ 'name' => 'Has zip', 'required' => true ],
 			],
 		] );
 
