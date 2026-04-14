@@ -171,14 +171,6 @@ class CategoryModel {
 		return $this->propertyFields;
 	}
 
-	public function getRequiredProperties(): array {
-		return FieldDeclaration::filterNames( $this->propertyFields, true );
-	}
-
-	public function getOptionalProperties(): array {
-		return FieldDeclaration::filterNames( $this->propertyFields, false );
-	}
-
 	public function getAllProperties(): array {
 		return FieldDeclaration::names( $this->propertyFields );
 	}
@@ -188,14 +180,6 @@ class CategoryModel {
 	/** @return FieldDeclaration[] */
 	public function getSubobjectFields(): array {
 		return $this->subobjectFields;
-	}
-
-	public function getRequiredSubobjects(): array {
-		return FieldDeclaration::filterNames( $this->subobjectFields, true );
-	}
-
-	public function getOptionalSubobjects(): array {
-		return FieldDeclaration::filterNames( $this->subobjectFields, false );
 	}
 
 	public function hasSubobjects(): bool {

@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -139,8 +140,8 @@ class FormGenerator {
 	 * Separates required and optional properties into distinct sections.
 	 */
 	private function generatePropertyTable( CategoryModel $category ): array {
-		$required = $category->getRequiredProperties();
-		$optional = $category->getOptionalProperties();
+		$required = FieldDeclaration::filterNames( $category->getPropertyFields(), true );
+		$optional = FieldDeclaration::filterNames( $category->getPropertyFields(), false );
 
 		$out = [];
 		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields', true ) );
