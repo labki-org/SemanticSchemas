@@ -444,14 +444,14 @@ class FormGenerator {
 	 * Find the parent category property in a category's schema.
 	 */
 	private function findParentCategoryProperty( CategoryModel $category ): ?string {
-		foreach ( $category->getAllProperties() as $p ) {
-			$lc = strtolower( $p );
+		foreach ( $category->getPropertyFields() as $field ) {
+			$lc = strtolower( $field->getName() );
 
 			if (
 				str_contains( $lc, 'parent' ) &&
 				str_contains( $lc, 'category' )
 			) {
-				return $p;
+				return $field->getName();
 			}
 		}
 

@@ -119,7 +119,7 @@ class TemplateGeneratorTest extends TestCase {
 		// Create a mock that returns empty name
 		$category = $this->createMock( CategoryModel::class );
 		$category->method( 'getName' )->willReturn( '' );
-		$category->method( 'getAllProperties' )->willReturn( [] );
+		$category->method( 'getPropertyFields' )->willReturn( [] );
 
 		$this->generator->generateSemanticTemplate( $category );
 	}

@@ -164,14 +164,13 @@ class DisplayStubGenerator {
 	}
 
 	/**
-	 * Generate table rows for a list of properties.
-	 * Default to all category properties if $properties is null.
+	 * Generate table rows for all properties in a category.
 	 */
-	private function generatePropertyRows( CategoryModel $category, ?array $properties = null ): string {
+	private function generatePropertyRows( CategoryModel $category ): string {
 		$out = "";
-		$targetProperties = $properties ?? $category->getAllProperties();
 
-		foreach ( $targetProperties as $propName ) {
+		foreach ( $category->getPropertyFields() as $field ) {
+			$propName = $field->getName();
 			$property = $this->propertyStore->readProperty( $propName );
 			$paramName = NamingHelper::propertyToParameter( $propName );
 
@@ -382,8 +381,8 @@ class DisplayStubGenerator {
 
 			$sub = $resolver->getEffectiveCategory( $subName );
 
-			$props = $sub->getAllProperties();
-			if ( empty( $props ) ) {
+			$fields = $sub->getPropertyFields();
+			if ( $fields === [] ) {
 				continue;
 			}
 
@@ -392,7 +391,8 @@ class DisplayStubGenerator {
 			$sections .= '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]]'
 				. ' [[' . $catNs . ':' . $subName . ']]' . "\n";
 
-			foreach ( $props as $p ) {
+			foreach ( $fields as $f ) {
+				$p = $f->getName();
 				$param = NamingHelper::propertyToParameter( $p );
 				$sections .= ' | ?' . $p . ' = ' . $param . "\n";
 			}

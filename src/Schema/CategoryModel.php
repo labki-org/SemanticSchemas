@@ -171,10 +171,6 @@ class CategoryModel {
 		return $this->propertyFields;
 	}
 
-	public function getAllProperties(): array {
-		return FieldDeclaration::names( $this->propertyFields );
-	}
-
 	/* -------------------- Subobject Fields -------------------- */
 
 	/** @return FieldDeclaration[] */
