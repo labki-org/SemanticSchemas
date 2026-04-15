@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -112,7 +113,7 @@ class TemplateGenerator {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$props = $category->getAllProperties();
+		$props = FieldDeclaration::names( $category->getPropertyFields() );
 		sort( $props );
 
 		$out = [];
@@ -123,7 +124,7 @@ class TemplateGenerator {
 
 		/* Embed parent semantic templates */
 		foreach ( $parentEffectives as $parentName => $parentEffective ) {
-			$parentProps = $parentEffective->getAllProperties();
+			$parentProps = FieldDeclaration::names( $parentEffective->getPropertyFields() );
 			sort( $parentProps );
 			$out = array_merge(
 				$out,
@@ -183,7 +184,7 @@ class TemplateGenerator {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$allProps = $effective->getAllProperties();
+		$allProps = FieldDeclaration::names( $effective->getPropertyFields() );
 		sort( $allProps );
 
 		$out = [];
@@ -240,7 +241,7 @@ class TemplateGenerator {
 		$out[] = ' |@category=' . $name;
 		$out[] = ' | Has sort order = {{#s2counter:' . $idPrefix . '}}';
 
-		$props = $sub->getAllProperties();
+		$props = FieldDeclaration::names( $sub->getPropertyFields() );
 
 		foreach ( $props as $p ) {
 			$param = NamingHelper::propertyToParameter( $p );

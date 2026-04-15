@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -204,10 +205,10 @@ class InheritanceResolverTest extends TestCase {
 
 		$effective = $resolver->getEffectiveCategory( 'Student' );
 
-		$allProps = $effective->getAllProperties();
-		$this->assertContains( 'Has name', $allProps );
-		$this->assertContains( 'Has student ID', $allProps );
-		$this->assertContains( 'Has email', $allProps );
+		$allNames = FieldDeclaration::names( $effective->getPropertyFields() );
+		$this->assertContains( 'Has name', $allNames );
+		$this->assertContains( 'Has student ID', $allNames );
+		$this->assertContains( 'Has email', $allNames );
 	}
 
 	public function testGetEffectiveCategoryForUnknownThrows(): void {
@@ -272,7 +273,7 @@ class InheritanceResolverTest extends TestCase {
 		$chain = $resolver->getInheritanceChain( 'Person' );
 		$this->assertCount( 1, $chain );
 		$this->assertEquals( 'Person', $chain[0]->getName() );
-		$this->assertContains( 'Has name', $chain[0]->getAllProperties() );
+		$this->assertContains( 'Has name', FieldDeclaration::names( $chain[0]->getPropertyFields() ) );
 	}
 
 	public function testGetInheritanceChainSingleParent(): void {
@@ -298,10 +299,12 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertEquals( 'Person', $chain[1]->getName() );
 
 		// Each model should have only its own properties
-		$this->assertContains( 'Has student ID', $chain[0]->getAllProperties() );
-		$this->assertNotContains( 'Has name', $chain[0]->getAllProperties() );
-		$this->assertContains( 'Has name', $chain[1]->getAllProperties() );
-		$this->assertNotContains( 'Has student ID', $chain[1]->getAllProperties() );
+		$studentNames = FieldDeclaration::names( $chain[0]->getPropertyFields() );
+		$personNames = FieldDeclaration::names( $chain[1]->getPropertyFields() );
+		$this->assertContains( 'Has student ID', $studentNames );
+		$this->assertNotContains( 'Has name', $studentNames );
+		$this->assertContains( 'Has name', $personNames );
+		$this->assertNotContains( 'Has student ID', $personNames );
 	}
 
 	public function testGetInheritanceChainMultiParent(): void {
@@ -334,9 +337,9 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertEquals( [ 'GradStudent', 'Person', 'LabMember' ], $names );
 
 		// Each model in the chain carries only its own declared properties
-		$this->assertEquals( [ 'Has advisor' ], $chain[0]->getAllProperties() );
-		$this->assertEquals( [ 'Has name' ], $chain[1]->getAllProperties() );
-		$this->assertEquals( [ 'Has lab role' ], $chain[2]->getAllProperties() );
+		$this->assertEquals( [ 'Has advisor' ], FieldDeclaration::names( $chain[0]->getPropertyFields() ) );
+		$this->assertEquals( [ 'Has name' ], FieldDeclaration::names( $chain[1]->getPropertyFields() ) );
+		$this->assertEquals( [ 'Has lab role' ], FieldDeclaration::names( $chain[2]->getPropertyFields() ) );
 	}
 
 	public function testGetInheritanceChainForUnknownThrows(): void {
@@ -399,8 +402,9 @@ class InheritanceResolverTest extends TestCase {
 		$effective = $resolver->getEffectiveCategory( 'Student' );
 
 		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
-		$this->assertContains( 'Has name', $effective->getAllProperties() );
-		$this->assertContains( 'Has student ID', $effective->getAllProperties() );
+		$allNames = FieldDeclaration::names( $effective->getPropertyFields() );
+		$this->assertContains( 'Has name', $allNames );
+		$this->assertContains( 'Has student ID', $allNames );
 	}
 
 	/* =========================================================================
@@ -436,8 +440,9 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertArrayHasKey( 'Parent', $parentModels );
 		$this->assertCount( 1, $parentModels );
 		$this->assertInstanceOf( EffectiveCategoryModel::class, $parentModels['Parent'] );
-		$this->assertContains( 'Has gp prop', $parentModels['Parent']->getAllProperties() );
-		$this->assertContains( 'Has parent prop', $parentModels['Parent']->getAllProperties() );
+		$parentNames = FieldDeclaration::names( $parentModels['Parent']->getPropertyFields() );
+		$this->assertContains( 'Has gp prop', $parentNames );
+		$this->assertContains( 'Has parent prop', $parentNames );
 	}
 
 	public function testGetParentEffectiveModelsForUnknownThrows(): void {

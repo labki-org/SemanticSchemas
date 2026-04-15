@@ -740,7 +740,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 				$modifiedPages[$pageName] = true;
 			}
 
-			foreach ( $category->getAllProperties() as $propertyName ) {
+			foreach ( $category->getPropertyFields() as $field ) {
+				$propertyName = $field->getName();
 				$propPageName = "Property:$propertyName";
 				if ( isset( $modifiedPages[$propPageName] ) ) {
 					continue;
@@ -776,8 +777,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return true;
 		}
 
-		foreach ( $category->getAllProperties() as $propName ) {
-			if ( isset( $modifiedPages["Property:$propName"] ) ) {
+		foreach ( $category->getPropertyFields() as $field ) {
+			if ( isset( $modifiedPages["Property:" . $field->getName()] ) ) {
 				return true;
 			}
 		}
@@ -841,7 +842,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$html .= Html::openElement( 'tr' );
 			$html .= Html::element( 'td', [], $name );
 			$html .= Html::element( 'td', [], (string)count( $category->getParents() ) );
-			$html .= Html::element( 'td', [], (string)count( $category->getAllProperties() ) );
+			$html .= Html::element( 'td', [], (string)count( $category->getPropertyFields() ) );
 			$html .= Html::rawElement(
 				'td',
 				[],

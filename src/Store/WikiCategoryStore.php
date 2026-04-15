@@ -237,34 +237,16 @@ class WikiCategoryStore {
 		$out['description'] = $out['description'] ?? '';
 		$out['parents'] = $parents;
 
-		$out['properties'] = $this->smwFetchFieldDeclarations(
+		$out['properties'] = $this->smwFetchFieldReferences(
 			$sdata, FieldDeclaration::TYPE_PROPERTY
 		);
-		$out['subobjects'] = $this->smwFetchFieldDeclarations(
+		$out['subobjects'] = $this->smwFetchFieldReferences(
 			$sdata, FieldDeclaration::TYPE_SUBOBJECT
 		);
 
 		$out['display'] = $this->loadDisplayConfig( $sdata );
 
 		return $out;
-	}
-
-	/**
-	 * Read field declarations from SMW subobjects using FieldDeclaration::FIELD_CONFIG.
-	 *
-	 * @param \SMW\SemanticData $semanticData
-	 * @param string $fieldType FieldDeclaration::TYPE_PROPERTY or TYPE_SUBOBJECT
-	 * @return array Annotated entries for CategoryModel construction
-	 */
-	private function smwFetchFieldDeclarations( $semanticData, string $fieldType ): array {
-		$config = FieldDeclaration::FIELD_CONFIG[$fieldType];
-		$refType = strtolower( $config['namespacePrefix'] );
-		return $this->smwFetchFieldReferences(
-			$semanticData,
-			$config['category'],
-			$config['referenceProperty'],
-			$refType
-		);
 	}
 
 	private function loadDisplayConfig( $semanticData ): array {

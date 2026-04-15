@@ -2,6 +2,8 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Util;
 
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+
 /**
  * SMWDataExtractor
  * -----------------
@@ -112,24 +114,25 @@ trait SMWDataExtractor {
 	}
 
 	/**
-	 * Read ordered, annotated field references from SMW subobjects attached to a page.
+	 * Read ordered FieldDeclaration[] from SMW subobjects attached to a page.
 	 *
 	 * Iterates sub-semantic-data, filters by @category membership, extracts the
 	 * reference property value and the "Is required" boolean, and sorts by
 	 * the "Has sort order" property to preserve declaration order.
 	 *
 	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
-	 * @param string $categoryName Category the subobject must belong to (e.g. "Field")
-	 * @param string $referenceProperty Property holding the reference (e.g. "For property")
-	 * @param string $referenceType Value type for extraction (e.g. "property", "category")
-	 * @return array<array{name:string, required:bool}> Ordered list of annotated references
+	 * @param string $fieldType FieldDeclaration type constant (TYPE_PROPERTY or TYPE_SUBOBJECT)
+	 * @return FieldDeclaration[] Ordered list of field declarations
 	 */
 	protected function smwFetchFieldReferences(
 		$semanticData,
-		string $categoryName,
-		string $referenceProperty,
-		string $referenceType
+		string $fieldType
 	): array {
+		$config = FieldDeclaration::FIELD_CONFIG[$fieldType];
+		$categoryName = $config['category'];
+		$referenceProperty = $config['referenceProperty'];
+		$referenceType = strtolower( $config['namespacePrefix'] );
+
 		$entries = [];
 		$instProp = new \SMW\DIProperty( '_INST' );
 		$expectedKey = str_replace( ' ', '_', $categoryName );
@@ -151,16 +154,16 @@ trait SMWDataExtractor {
 			if ( $ref !== null ) {
 				$required = $this->smwFetchBoolean( $subData, 'Is required' );
 				$sortOrder = (int)( $this->smwFetchOne( $subData, 'Has sort order' ) ?? 0 );
-				$entries[] = [ 'name' => $ref, 'required' => $required, 'sort' => $sortOrder ];
+				$entries[] = [
+					'field' => new FieldDeclaration( $ref, $required, $fieldType ),
+					'sort' => $sortOrder,
+				];
 			}
 		}
 
 		usort( $entries, static fn ( $a, $b ) => $a['sort'] <=> $b['sort'] );
 
-		return array_map(
-			static fn ( $e ) => [ 'name' => $e['name'], 'required' => $e['required'] ],
-			$entries
-		);
+		return array_map( static fn ( $e ) => $e['field'], $entries );
 	}
 
 	/**
