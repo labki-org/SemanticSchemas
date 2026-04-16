@@ -5,7 +5,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
-use MediaWiki\Language\Language;
 use MediaWiki\Title\Title;
 use Wikimedia\Rdbms\IConnectionProvider;
 
@@ -22,7 +21,6 @@ class WikiPropertyStore {
 
 	private PageCreator $pageCreator;
 	private IConnectionProvider $connectionProvider;
-	private Language $contentLanguage;
 
 	public function __construct(
 		PageCreator $pageCreator,
