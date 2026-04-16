@@ -129,7 +129,31 @@ class FieldModel implements JsonSerializable {
 	 * ---------------------------------------------------------------------- */
 
 	/**
-	 * Extract names from a list of field declarations.
+	 * Filter field models by attribute values.
+	 *
+	 * All parameters are optional; only supplied criteria are applied.
+	 *
+	 * @param self[] $fields
+	 * @param ?bool $required Filter by required status
+	 * @return self[]
+	 */
+	public static function filter(
+		array $fields,
+		?bool $required = null
+	): array {
+		return array_values( array_filter(
+			$fields,
+			static function ( self $f ) use ( $required ) {
+				if ( $required !== null && $f->isRequired() !== $required ) {
+					return false;
+				}
+				return true;
+			}
+		) );
+	}
+
+	/**
+	 * Extract names from a list of field models.
 	 *
 	 * @param self[] $fields
 	 * @return string[]
@@ -139,23 +163,6 @@ class FieldModel implements JsonSerializable {
 			static fn ( self $f ) => $f->getName(),
 			$fields
 		);
-	}
-
-	/**
-	 * Extract names filtered by required status.
-	 *
-	 * @param self[] $fields
-	 * @param bool $required
-	 * @return string[]
-	 */
-	public static function filterNames( array $fields, bool $required ): array {
-		return array_values( array_map(
-			static fn ( self $f ) => $f->getName(),
-			array_filter(
-				$fields,
-				static fn ( self $f ) => $f->isRequired() === $required
-			)
-		) );
 	}
 
 	/* -------------------------------------------------------------------------
