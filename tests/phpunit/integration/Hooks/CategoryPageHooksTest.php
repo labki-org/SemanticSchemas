@@ -5,10 +5,10 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Hooks;
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Extension\SemanticSchemas\Hooks\CategoryPageHooks;
-use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
 use MediaWikiIntegrationTestCase;
@@ -295,13 +295,10 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	}
 
 	private function createManagedCategory( string $name ): void {
-		$category = new CategoryModel( $name, [
-			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
-			],
-		] );
-		$this->categoryStore->writeCategory( $category );
+		$title = Title::makeTitle( NS_CATEGORY, $name );
+		$this->pageCreator->createOrUpdatePage( $title,
+			"[[Has required property::Property:Has name]]" .
+			"[[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . "]]", '' );
 	}
 
 	private function savePage( Title $title, string $content ): void {

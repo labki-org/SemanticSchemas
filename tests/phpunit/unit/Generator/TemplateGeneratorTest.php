@@ -9,7 +9,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Language\Language;
 use PHPUnit\Framework\TestCase;
@@ -34,7 +33,6 @@ class TemplateGeneratorTest extends TestCase {
 
 		$this->generator = new TemplateGenerator(
 			$this->createMock( PageCreator::class ),
-			$this->createMock( WikiCategoryStore::class ),
 			$this->createMock( WikiPropertyStore::class ),
 			$language
 		);
@@ -324,7 +322,6 @@ class TemplateGeneratorTest extends TestCase {
 
 		return new TemplateGenerator(
 			$this->createMock( PageCreator::class ),
-			$this->createMock( WikiCategoryStore::class ),
 			$propStore,
 			$language
 		);

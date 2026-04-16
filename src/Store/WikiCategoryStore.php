@@ -68,38 +68,6 @@ class WikiCategoryStore {
 	}
 
 	/* -------------------------------------------------------------------------
-	 * WRITE PUBLIC
-	 * ------------------------------------------------------------------------- */
-
-	public function writeCategory( CategoryModel $category ): bool {
-		$title = $this->pageCreator->makeTitle( $category->getName(), NS_CATEGORY );
-		if ( !$title ) {
-			return false;
-		}
-
-		$existing = $this->pageCreator->getPageContent( $title ) ?? '';
-
-		$metadata = $this->generateSemanticBlock( $category );
-
-		$newContent = $this->pageCreator->updateWithinMarkers(
-			$existing,
-			$metadata,
-			self::MARKER_START,
-			self::MARKER_END
-		);
-
-		if ( !str_contains( $newContent, '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' ) ) {
-			$newContent .= "\n[[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]';
-		}
-
-		return $this->pageCreator->createOrUpdatePage(
-			$title,
-			$newContent,
-			'SemanticSchemas: Update category schema metadata'
-		);
-	}
-
-	/* -------------------------------------------------------------------------
 	 * ENUMERATION
 	 * ------------------------------------------------------------------------- */
 

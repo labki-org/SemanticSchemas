@@ -272,22 +272,6 @@ class SchemaValidatorTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * CUSTOM VALIDATORS
-	 * ========================================================================= */
-
-	public function testCustomValidatorIsInvoked(): void {
-		$customCalled = false;
-		$this->validator->registerCustomValidator( static function ( $schema ) use ( &$customCalled ) {
-			$customCalled = true;
-			return [ 'errors' => [ 'Custom error' ], 'warnings' => [] ];
-		} );
-
-		$result = $this->validator->validateSchemaWithSeverity( $this->getValidSchema() );
-		$this->assertTrue( $customCalled, 'Custom validator should be called' );
-		$this->assertContains( 'Custom error', $result['errors'] );
-	}
-
-	/* =========================================================================
 	 * META-CATEGORY WARNING SUPPRESSION
 	 * ========================================================================= */
 
