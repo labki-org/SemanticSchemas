@@ -6,7 +6,9 @@ use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
+use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -46,7 +48,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 
@@ -86,7 +88,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Animal', [
 			'label' => 'Animal',
 			'properties' => [
-				[ 'name' => 'Has species', 'required' => true ],
+				FieldDeclaration::property( 'Has species', true ),
 			],
 		] );
 
@@ -100,8 +102,8 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				[ 'name' => 'Has color', 'required' => true ],
-				[ 'name' => 'Has weight', 'required' => false ],
+				FieldDeclaration::property( 'Has color', true ),
+				FieldDeclaration::property( 'Has weight', false ),
 			],
 		] );
 
@@ -132,7 +134,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 
@@ -158,7 +160,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 
@@ -176,16 +178,16 @@ class FormGeneratorTest extends TestCase {
 	public function testCompositeFormTranscludesRequiredSubobjectComposite(): void {
 		$subCategory = new CategoryModel( 'Address', [
 			'properties' => [
-				[ 'name' => 'Has street', 'required' => true ],
+				FieldDeclaration::property( 'Has street', true ),
 			],
 		] );
 
 		$category = new EffectiveCategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 			'subobjects' => [
-				[ 'name' => 'Address', 'required' => true ],
+				FieldDeclaration::subobject( 'Address', true ),
 			],
 		] );
 
@@ -208,14 +210,14 @@ class FormGeneratorTest extends TestCase {
 	public function testCompositeFormTranscludesOptionalSubobjectComposite(): void {
 		$subCategory = new CategoryModel( 'Phone', [
 			'properties' => [
-				[ 'name' => 'Has phone number', 'required' => true ],
+				FieldDeclaration::property( 'Has phone number', true ),
 			],
 		] );
 
 		$category = new EffectiveCategoryModel( 'Person', [
 			'properties' => [],
 			'subobjects' => [
-				[ 'name' => 'Phone', 'required' => false ],
+				FieldDeclaration::subobject( 'Phone', false ),
 			],
 		] );
 
@@ -238,7 +240,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Shape', [
 			'label' => 'Shape',
 			'properties' => [
-				[ 'name' => 'Has width', 'required' => true ],
+				FieldDeclaration::property( 'Has width', true ),
 			],
 		] );
 
@@ -296,8 +298,8 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
-				[ 'name' => 'Has sort order', 'required' => false ],
+				FieldDeclaration::property( 'Has name', true ),
+				FieldDeclaration::property( 'Has sort order', false ),
 			],
 		] );
 
@@ -320,7 +322,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				[ 'name' => 'Has weight', 'required' => true ],
+				FieldDeclaration::property( 'Has weight', true ),
 			],
 		] );
 

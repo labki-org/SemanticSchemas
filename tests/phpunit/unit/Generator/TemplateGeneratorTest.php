@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -47,7 +48,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplateReturnsString(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 
@@ -74,7 +75,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplateContainsSetParser(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 
@@ -86,8 +87,8 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplateContainsPropertyMappings(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
-				[ 'name' => 'Has email', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
+				FieldDeclaration::property( 'Has email', true ),
 			],
 		] );
 
@@ -127,9 +128,9 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplatePropertiesAreSorted(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has zoo', 'required' => true ],
-				[ 'name' => 'Has apple', 'required' => true ],
-				[ 'name' => 'Has middle', 'required' => true ],
+				FieldDeclaration::property( 'Has zoo', true ),
+				FieldDeclaration::property( 'Has apple', true ),
+				FieldDeclaration::property( 'Has middle', true ),
 			],
 		] );
 
@@ -187,7 +188,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 
@@ -212,7 +213,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testPropertyToParameterConversionInTemplate(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has full name', 'required' => true ],
+				FieldDeclaration::property( 'Has full name', true ),
 			],
 		] );
 
@@ -225,9 +226,9 @@ class TemplateGeneratorTest extends TestCase {
 	public function testMultiplePropertiesConvertedCorrectly(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has first name', 'required' => true ],
-				[ 'name' => 'Has last name', 'required' => true ],
-				[ 'name' => 'Has email address', 'required' => true ],
+				FieldDeclaration::property( 'Has first name', true ),
+				FieldDeclaration::property( 'Has last name', true ),
+				FieldDeclaration::property( 'Has email address', true ),
 			],
 		] );
 
@@ -338,7 +339,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				[ 'name' => 'Has tags', 'required' => true ],
+				FieldDeclaration::property( 'Has tags', true ),
 			],
 		] );
 
@@ -356,7 +357,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				[ 'name' => 'Has title', 'required' => true ],
+				FieldDeclaration::property( 'Has title', true ),
 			],
 		] );
 
@@ -375,7 +376,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				[ 'name' => 'Has related', 'required' => true ],
+				FieldDeclaration::property( 'Has related', true ),
 			],
 		] );
 
@@ -394,7 +395,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				[ 'name' => 'Has author', 'required' => true ],
+				FieldDeclaration::property( 'Has author', true ),
 			],
 		] );
 
@@ -418,7 +419,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				[ 'name' => 'Has location', 'required' => true ],
+				FieldDeclaration::property( 'Has location', true ),
 			],
 		] );
 
@@ -439,7 +440,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				[ 'name' => 'Has homepage', 'required' => true ],
+				FieldDeclaration::property( 'Has homepage', true ),
 			],
 		] );
 
@@ -455,14 +456,14 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherCallsOnlyLeafSemanticTemplate(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
-				[ 'name' => 'Has email', 'required' => false ],
+				FieldDeclaration::property( 'Has name', true ),
+				FieldDeclaration::property( 'Has email', false ),
 			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
 			'properties' => [
-				[ 'name' => 'Has student ID', 'required' => true ],
+				FieldDeclaration::property( 'Has student ID', true ),
 			],
 		] );
 
@@ -486,13 +487,13 @@ class TemplateGeneratorTest extends TestCase {
 	public function testSemanticTemplateForEachAncestorHasOwnPropertiesOnly(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
 			'properties' => [
-				[ 'name' => 'Has student ID', 'required' => true ],
+				FieldDeclaration::property( 'Has student ID', true ),
 			],
 		] );
 
@@ -521,13 +522,13 @@ class TemplateGeneratorTest extends TestCase {
 	public function testSemanticTemplateForwardsOnlyParentEffectiveParams(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
 			'properties' => [
-				[ 'name' => 'Has student ID', 'required' => true ],
+				FieldDeclaration::property( 'Has student ID', true ),
 			],
 		] );
 
@@ -551,7 +552,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherContainsCategoryMembership(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 
@@ -573,17 +574,17 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherDoesNotContainSubobjectDisplay(): void {
 		$subCategory = new CategoryModel( 'Address', [
 			'properties' => [
-				[ 'name' => 'Has street', 'required' => true ],
-				[ 'name' => 'Has city', 'required' => true ],
+				FieldDeclaration::property( 'Has street', true ),
+				FieldDeclaration::property( 'Has city', true ),
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 			'subobjects' => [
-				[ 'name' => 'Address', 'required' => true ],
+				FieldDeclaration::subobject( 'Address', true ),
 			],
 		] );
 
@@ -612,8 +613,8 @@ class TemplateGeneratorTest extends TestCase {
 	public function testSubobjectTemplateUsesAtCategory(): void {
 		$address = new CategoryModel( 'Address', [
 			'properties' => [
-				[ 'name' => 'Has street', 'required' => true ],
-				[ 'name' => 'Has city', 'required' => true ],
+				FieldDeclaration::property( 'Has street', true ),
+				FieldDeclaration::property( 'Has city', true ),
 			],
 		] );
 
@@ -630,14 +631,14 @@ class TemplateGeneratorTest extends TestCase {
 	public function testSubobjectTemplateIncludesInheritedProperties(): void {
 		$base = new CategoryModel( 'Address', [
 			'properties' => [
-				[ 'name' => 'Has street', 'required' => true ],
-				[ 'name' => 'Has city', 'required' => true ],
+				FieldDeclaration::property( 'Has street', true ),
+				FieldDeclaration::property( 'Has city', true ),
 			],
 		] );
 		$child = new CategoryModel( 'MailingAddress', [
 			'parents' => [ 'Address' ],
 			'properties' => [
-				[ 'name' => 'Has zip', 'required' => true ],
+				FieldDeclaration::property( 'Has zip', true ),
 			],
 		] );
 

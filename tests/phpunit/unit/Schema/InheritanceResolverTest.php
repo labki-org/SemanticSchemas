@@ -190,14 +190,14 @@ class InheritanceResolverTest extends TestCase {
 		$map = [
 			'Person' => new CategoryModel( 'Person', [
 				'properties' => [
-					[ 'name' => 'Has name', 'required' => true ],
-					[ 'name' => 'Has email', 'required' => false ],
+					FieldDeclaration::property( 'Has name', true ),
+					FieldDeclaration::property( 'Has email', false ),
 				],
 			] ),
 			'Student' => new CategoryModel( 'Student', [
 				'parents' => [ 'Person' ],
 				'properties' => [
-					[ 'name' => 'Has student ID', 'required' => true ],
+					FieldDeclaration::property( 'Has student ID', true ),
 				],
 			] ),
 		];
@@ -265,7 +265,7 @@ class InheritanceResolverTest extends TestCase {
 	public function testGetInheritanceChainRootReturnsSelf(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 		$resolver = new InheritanceResolver( [ 'Person' => $person ] );
@@ -279,13 +279,13 @@ class InheritanceResolverTest extends TestCase {
 	public function testGetInheritanceChainSingleParent(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
 			'properties' => [
-				[ 'name' => 'Has student ID', 'required' => true ],
+				FieldDeclaration::property( 'Has student ID', true ),
 			],
 		] );
 		$resolver = new InheritanceResolver( [
@@ -310,18 +310,18 @@ class InheritanceResolverTest extends TestCase {
 	public function testGetInheritanceChainMultiParent(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 		$labMember = new CategoryModel( 'LabMember', [
 			'properties' => [
-				[ 'name' => 'Has lab role', 'required' => true ],
+				FieldDeclaration::property( 'Has lab role', true ),
 			],
 		] );
 		$gradStudent = new CategoryModel( 'GradStudent', [
 			'parents' => [ 'Person', 'LabMember' ],
 			'properties' => [
-				[ 'name' => 'Has advisor', 'required' => true ],
+				FieldDeclaration::property( 'Has advisor', true ),
 			],
 		] );
 		$resolver = new InheritanceResolver( [
@@ -388,13 +388,13 @@ class InheritanceResolverTest extends TestCase {
 	public function testGetEffectiveCategoryMergesInheritedProperties(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
 			'properties' => [
-				[ 'name' => 'Has student ID', 'required' => true ],
+				FieldDeclaration::property( 'Has student ID', true ),
 			],
 		] );
 
@@ -414,19 +414,19 @@ class InheritanceResolverTest extends TestCase {
 	public function testGetParentEffectiveModelsReturnsEffectiveParents(): void {
 		$grandparent = new CategoryModel( 'Grandparent', [
 			'properties' => [
-				[ 'name' => 'Has gp prop', 'required' => true ],
+				FieldDeclaration::property( 'Has gp prop', true ),
 			],
 		] );
 		$parent = new CategoryModel( 'Parent', [
 			'parents' => [ 'Grandparent' ],
 			'properties' => [
-				[ 'name' => 'Has parent prop', 'required' => true ],
+				FieldDeclaration::property( 'Has parent prop', true ),
 			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
 			'properties' => [
-				[ 'name' => 'Has child prop', 'required' => true ],
+				FieldDeclaration::property( 'Has child prop', true ),
 			],
 		] );
 

@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
+use JsonSerializable;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
@@ -15,8 +16,11 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  * Each FieldDeclaration serializes to a {{#subobject:}} block on the
  * category page, using @category to distinguish property fields from
  * subobject fields.
+ *
+ * Implements JsonSerializable so that arrays containing FieldDeclaration
+ * objects can be passed directly to json_encode (used by PageHashComputer).
  */
-class FieldDeclaration {
+class FieldDeclaration implements JsonSerializable {
 
 	public const TYPE_PROPERTY = 'property';
 	public const TYPE_SUBOBJECT = 'subobject';
@@ -177,6 +181,14 @@ class FieldDeclaration {
 	/* -------------------------------------------------------------------------
 	 * SERIALIZATION
 	 * ---------------------------------------------------------------------- */
+
+	/** @return array{name:string, required:bool} */
+	public function jsonSerialize(): array {
+		return [
+			'name' => $this->name,
+			'required' => $this->required,
+		];
+	}
 
 	/**
 	 * Generate the wikitext subobject block for this field declaration.

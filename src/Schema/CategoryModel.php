@@ -101,9 +101,8 @@ class CategoryModel {
 		if ( !is_array( $props ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'properties' must be an array." );
 		}
-		$this->propertyFields = self::resolveFields(
-			$props, FieldDeclaration::TYPE_PROPERTY, "Category '{$name}'"
-		);
+		FieldDeclaration::validateNoDuplicates( $props, "Category '{$name}'" );
+		$this->propertyFields = $props;
 
 		/* -------------------- Subobjects -------------------- */
 
@@ -111,9 +110,8 @@ class CategoryModel {
 		if ( !is_array( $subs ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'subobjects' must be an array." );
 		}
-		$this->subobjectFields = self::resolveFields(
-			$subs, FieldDeclaration::TYPE_SUBOBJECT, "Category '{$name}'"
-		);
+		FieldDeclaration::validateNoDuplicates( $subs, "Category '{$name}'" );
+		$this->subobjectFields = $subs;
 
 		/* -------------------- Backlinks -------------------- */
 
@@ -201,29 +199,6 @@ class CategoryModel {
 
 	public function getFormConfig(): array {
 		return $this->formConfig;
-	}
-
-	/**
-	 * Accept FieldDeclaration[] directly or annotated arrays [{name, required}, ...].
-	 *
-	 * @param array $input FieldDeclaration[] or annotated array
-	 * @param string $fieldType
-	 * @param string $contextLabel
-	 * @return FieldDeclaration[]
-	 */
-	private static function resolveFields( array $input, string $fieldType, string $contextLabel ): array {
-		if ( $input === [] ) {
-			return [];
-		}
-
-		// Already FieldDeclaration objects — validate and return
-		if ( $input[0] instanceof FieldDeclaration ) {
-			FieldDeclaration::validateNoDuplicates( $input, $contextLabel );
-			return $input;
-		}
-
-		// Annotated array from SMW or external sources
-		return FieldDeclaration::parseInput( $input, $fieldType, $contextLabel );
 	}
 
 	/* -------------------------------------------------------------------------
@@ -358,32 +333,16 @@ class CategoryModel {
 	 * EXPORT
 	 * ------------------------------------------------------------------------- */
 
-	/**
-	 * Convert FieldDeclaration[] to annotated arrays for serialization.
-	 *
-	 * @param FieldDeclaration[] $fields
-	 * @return array<array{name:string, required:bool}>
-	 */
-	private static function fieldsToArray( array $fields ): array {
-		return array_map(
-			static fn ( FieldDeclaration $f ) => [
-				'name' => $f->getName(),
-				'required' => $f->isRequired(),
-			],
-			$fields
-		);
-	}
-
 	public function toArray(): array {
 		$out = [
 			'parents' => $this->parents,
 			'label' => $this->label,
 			'description' => $this->description,
-			'properties' => self::fieldsToArray( $this->propertyFields ),
+			'properties' => $this->propertyFields,
 		];
 
 		if ( $this->hasSubobjects() ) {
-			$out['subobjects'] = self::fieldsToArray( $this->subobjectFields );
+			$out['subobjects'] = $this->subobjectFields;
 		}
 
 		if ( $this->backlinksFor !== [] ) {

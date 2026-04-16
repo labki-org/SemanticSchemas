@@ -6,6 +6,7 @@ use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Extension\SemanticSchemas\Hooks\CategoryPageHooks;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -297,7 +298,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	private function createManagedCategory( string $name ): void {
 		$category = new CategoryModel( $name, [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 		] );
 		$this->categoryStore->writeCategory( $category );

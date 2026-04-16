@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -55,10 +56,10 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$gen = $this->makeGenerator( $propertyMap );
 		$props = [];
 		foreach ( $requiredProps as $name ) {
-			$props[] = [ 'name' => $name, 'required' => true ];
+			$props[] = FieldDeclaration::property( $name, true );
 		}
 		foreach ( $optionalProps as $name ) {
-			$props[] = [ 'name' => $name, 'required' => false ];
+			$props[] = FieldDeclaration::property( $name, false );
 		}
 		$category = new EffectiveCategoryModel( $categoryName, [
 			'properties' => $props,
@@ -224,7 +225,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$catName = 'Project';
 		$category = new EffectiveCategoryModel( $catName, [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				FieldDeclaration::property( 'Has name', true ),
 			],
 			'backlinksFor' => [ 'Has project' ],
 		] );
