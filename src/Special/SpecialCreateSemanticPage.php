@@ -552,7 +552,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 					$childrenOf[$name], $childrenOf, $categoryMap,
 					$resolver, $existingCategories, $depth + 1
 				);
-				$html = Html::openElement( 'div', [ 'class' => 's2-create-cat-children' ] ) .
+				$html .= Html::openElement( 'div', [ 'class' => 's2-create-cat-children' ] ) .
 					$childrenHtml .
 					Html::closeElement( 'div' );
 			}
