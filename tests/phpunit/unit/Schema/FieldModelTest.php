@@ -34,25 +34,6 @@ class FieldModelTest extends TestCase {
 		new FieldModel( 'Foo', true, 'invalid' );
 	}
 
-	public function testFromAnnotatedArray(): void {
-		$entries = [
-			[ 'name' => 'Has name', 'required' => true ],
-			[ 'name' => 'Has email', 'required' => false ],
-		];
-		$fields = FieldModel::fromAnnotatedArray( $entries, FieldModel::TYPE_PROPERTY );
-
-		$this->assertCount( 2, $fields );
-		$this->assertSame( 'Has name', $fields[0]->getName() );
-		$this->assertTrue( $fields[0]->isRequired() );
-		$this->assertSame( 'Has email', $fields[1]->getName() );
-		$this->assertFalse( $fields[1]->isRequired() );
-	}
-
-	public function testFromAnnotatedArrayEmpty(): void {
-		$fields = FieldModel::fromAnnotatedArray( [], FieldModel::TYPE_PROPERTY );
-		$this->assertSame( [], $fields );
-	}
-
 	/* =========================================================================
 	 * toWikitext — PROPERTY FIELDS
 	 * ========================================================================= */

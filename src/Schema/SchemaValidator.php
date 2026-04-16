@@ -551,11 +551,13 @@ class SchemaValidator {
 		$categoryModels = [];
 		foreach ( $categories as $name => $data ) {
 			try {
-				$data['properties'] = FieldModel::parseInput(
-					$data['properties'] ?? [], FieldModel::TYPE_PROPERTY, "Category '{$name}'"
+				$data['properties'] = array_map(
+					static fn ( array $e ) => new FieldModel( $e['name'], $e['required'], FieldModel::TYPE_PROPERTY ),
+					$data['properties'] ?? []
 				);
-				$data['subobjects'] = FieldModel::parseInput(
-					$data['subobjects'] ?? [], FieldModel::TYPE_SUBOBJECT, "Category '{$name}'"
+				$data['subobjects'] = array_map(
+					static fn ( array $e ) => new FieldModel( $e['name'], $e['required'], FieldModel::TYPE_SUBOBJECT ),
+					$data['subobjects'] ?? []
 				);
 				$categoryModels[$name] = new CategoryModel( $name, $data );
 			} catch ( \InvalidArgumentException | \TypeError $e ) {

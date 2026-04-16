@@ -175,44 +175,6 @@ class FieldModel implements JsonSerializable {
 		return false;
 	}
 
-	/**
-	 * Build FieldModel[] from an annotated array.
-	 *
-	 * @param array<array{name:string, required:bool}> $entries
-	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
-	 * @return self[]
-	 */
-	public static function fromAnnotatedArray( array $entries, string $fieldType ): array {
-		return array_map(
-			static fn ( array $entry ) => new self( $entry['name'], $entry['required'], $fieldType ),
-			$entries
-		);
-	}
-
-	/* -------------------------------------------------------------------------
-	 * PARSING
-	 *
-	 * Accepts annotated format: [ ['name'=>..., 'required'=>bool], ... ]
-	 * ---------------------------------------------------------------------- */
-
-	/**
-	 * Parse raw field data into FieldModel[].
-	 *
-	 * @param array<array{name:string, required:bool}> $input Annotated field entries
-	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
-	 * @param string $contextLabel For error messages (e.g. "Category 'Person'")
-	 * @return self[]
-	 */
-	public static function parseInput( array $input, string $fieldType, string $contextLabel ): array {
-		if ( $input === [] ) {
-			return [];
-		}
-
-		$fields = self::fromAnnotatedArray( $input, $fieldType );
-		self::validateNoDuplicates( $fields, $contextLabel );
-		return $fields;
-	}
-
 	public static function validateNoDuplicates( array $fields, string $contextLabel ): void {
 		$names = [];
 		foreach ( $fields as $field ) {
