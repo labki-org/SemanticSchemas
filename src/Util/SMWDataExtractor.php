@@ -89,31 +89,26 @@ trait SMWDataExtractor {
 	/**
 	 * Read ordered FieldModel[] from SMW subobjects attached to a page.
 	 *
-	 * Iterates sub-semantic-data, filters by @category membership, extracts the
-	 * reference property value and the "Is required" boolean, and sorts by
-	 * the "Has sort order" property to preserve declaration order.
+	 * Iterates sub-semantic-data, filters by @category membership, and
+	 * delegates per-subobject extraction to FieldModel::fromSMWSubobject().
 	 *
 	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
 	 * @param string $fieldType FieldModel type constant (TYPE_PROPERTY or TYPE_SUBOBJECT)
-	 * @return FieldModel[] Ordered list of field declarations
+	 * @return FieldModel[] Ordered list of field models
 	 */
 	protected function smwFetchFieldReferences(
 		$semanticData,
 		string $fieldType
 	): array {
-		$config = FieldModel::FIELD_CONFIG[$fieldType];
-		$categoryName = $config['category'];
-		$referenceProperty = $config['referenceProperty'];
-		$referenceType = strtolower( $config['namespacePrefix'] );
+		$categoryName = FieldModel::FIELD_CONFIG[$fieldType]['category'];
+		$expectedKey = str_replace( ' ', '_', $categoryName );
+		$instProp = new \SMW\DIProperty( '_INST' );
 
 		$entries = [];
-		$instProp = new \SMW\DIProperty( '_INST' );
-		$expectedKey = str_replace( ' ', '_', $categoryName );
 
 		foreach ( $semanticData->getSubSemanticData() as $subData ) {
-			$categories = $subData->getPropertyValues( $instProp );
 			$matchesCategory = false;
-			foreach ( $categories as $cat ) {
+			foreach ( $subData->getPropertyValues( $instProp ) as $cat ) {
 				if ( $cat instanceof \SMW\DIWikiPage && $cat->getDBKey() === $expectedKey ) {
 					$matchesCategory = true;
 					break;
@@ -123,14 +118,9 @@ trait SMWDataExtractor {
 				continue;
 			}
 
-			$ref = $this->smwFetchOne( $subData, $referenceProperty, $referenceType );
-			if ( $ref !== null ) {
-				$required = $this->smwFetchBoolean( $subData, 'Is required' );
-				$sortOrder = (int)( $this->smwFetchOne( $subData, 'Has sort order' ) ?? 0 );
-				$entries[] = [
-					'field' => new FieldModel( $ref, $required, $fieldType ),
-					'sort' => $sortOrder,
-				];
+			$entry = FieldModel::fromSMWSubobject( $subData, $fieldType );
+			if ( $entry !== null ) {
+				$entries[] = $entry;
 			}
 		}
 

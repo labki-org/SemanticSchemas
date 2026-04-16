@@ -74,6 +74,108 @@ class FieldModel implements JsonSerializable {
 	}
 
 	/**
+	 * Construct a FieldModel from an SMW subobject's semantic data.
+	 *
+	 * Reads the reference property, required flag, and sort order
+	 * from the subobject. Returns null if the reference property is missing.
+	 *
+	 * @param \SMW\SemanticData $subData A single subobject's semantic data
+	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
+	 * @return ?array{field: self, sort: int} Field model with sort order, or null
+	 */
+	public static function fromSMWSubobject( $subData, string $fieldType ): ?array {
+		$config = self::FIELD_CONFIG[$fieldType];
+		$refPropName = $config['referenceProperty'];
+		$nsType = strtolower( $config['namespacePrefix'] );
+
+		$ref = self::smwReadOne( $subData, $refPropName, $nsType );
+		if ( $ref === null ) {
+			return null;
+		}
+
+		$required = self::smwReadBoolean( $subData, 'Is required' );
+		$sortRaw = self::smwReadOne( $subData, 'Has sort order' );
+		$sort = (int)( $sortRaw ?? 0 );
+
+		return [
+			'field' => new self( $ref, $required, $fieldType ),
+			'sort' => $sort,
+		];
+	}
+
+	/**
+	 * Read a single text/page value from semantic data.
+	 *
+	 * @param \SMW\SemanticData $sdata
+	 * @param string $propName Property label
+	 * @param string $type 'text', 'property', or 'category'
+	 * @return ?string
+	 */
+	private static function smwReadOne( $sdata, string $propName, string $type = 'text' ): ?string {
+		try {
+			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
+			$items = $sdata->getPropertyValues( $prop );
+		} catch ( \Throwable $e ) {
+			return null;
+		}
+
+		foreach ( $items as $di ) {
+			if ( $di instanceof \SMW\DIWikiPage ) {
+				$t = $di->getTitle();
+				if ( !$t ) {
+					continue;
+				}
+				$text = str_replace( '_', ' ', $t->getText() );
+				switch ( $type ) {
+					case 'property':
+						return $t->getNamespace() === SMW_NS_PROPERTY ? $text : null;
+					case 'category':
+						return $t->getNamespace() === NS_CATEGORY ? $text : null;
+					default:
+						return $text;
+				}
+			}
+			if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
+				return trim( $di->getString() );
+			}
+			if ( $di instanceof \SMWDINumber ) {
+				return (string)$di->getNumber();
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Read a boolean value from semantic data.
+	 *
+	 * @param \SMW\SemanticData $sdata
+	 * @param string $propName Property label
+	 * @return bool
+	 */
+	private static function smwReadBoolean( $sdata, string $propName ): bool {
+		try {
+			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
+			$items = $sdata->getPropertyValues( $prop );
+		} catch ( \Throwable $e ) {
+			return false;
+		}
+
+		foreach ( $items as $di ) {
+			if ( $di instanceof \SMWDIBoolean ) {
+				return $di->getBoolean();
+			}
+			if ( $di instanceof \SMWDINumber ) {
+				return $di->getNumber() > 0;
+			}
+			if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
+				$v = strtolower( trim( $di->getString() ) );
+				return in_array( $v, [ '1', 'true', 'yes', 'y', 't' ], true );
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Build FieldModel[] from an annotated array.
 	 *
 	 * @param array<array{name:string, required:bool}> $entries
