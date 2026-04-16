@@ -20,9 +20,6 @@ class WikiPropertyStore {
 
 	use SMWDataExtractor;
 
-	private const MARKER_START = '<!-- SemanticSchemas Start -->';
-	private const MARKER_END = '<!-- SemanticSchemas End -->';
-
 	private PageCreator $pageCreator;
 	private IConnectionProvider $connectionProvider;
 	private Language $contentLanguage;
@@ -30,11 +27,9 @@ class WikiPropertyStore {
 	public function __construct(
 		PageCreator $pageCreator,
 		IConnectionProvider $connectionProvider,
-		Language $contentLanguage
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->connectionProvider = $connectionProvider;
-		$this->contentLanguage = $contentLanguage;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -160,62 +155,6 @@ class WikiPropertyStore {
 			$out,
 			static fn ( $v ) => $v !== null && $v !== []
 		);
-	}
-
-	/* -------------------------------------------------------------------------
-	 * INTERNAL — WRITE SEMANTIC BLOCK
-	 * ------------------------------------------------------------------------- */
-
-	private function buildSemanticBlock( PropertyModel $p ): string {
-		$lines = [];
-
-		// Datatype (required)
-		$lines[] = '[[Has type::' . $p->getDatatype() . ']]';
-
-		if ( $p->getDescription() !== '' ) {
-			$lines[] = '[[Has description::' . $p->getDescription() . ']]';
-		}
-
-		if ( $p->allowsMultipleValues() ) {
-			$lines[] = '[[Allows multiple values::true]]';
-		}
-
-		// Display label only if differs from canonical name
-		if ( $p->getLabel() !== $p->getName() ) {
-			$lines[] = '[[Display label::' . $p->getLabel() . ']]';
-		}
-
-		foreach ( $p->getAllowedValues() as $v ) {
-			$lines[] = '[[Allows value::' . str_replace( '|', ' ', $v ) . ']]';
-		}
-
-		if ( $p->getSubpropertyOf() !== null ) {
-			$lines[] = '[[Subproperty of::' . $p->getSubpropertyOf() . ']]';
-		}
-
-		if ( $p->getAllowedCategory() !== null ) {
-			$categoryPrefix = $this->contentLanguage->getFormattedNsText( NS_CATEGORY );
-			$lines[] = '[[Allows value from category::' . $categoryPrefix . ':' . $p->getAllowedCategory() . ']]';
-		}
-
-		if ( $p->getAllowedNamespace() !== null ) {
-			$lines[] = '[[Allows value from namespace::' . $p->getAllowedNamespace() . ']]';
-		}
-
-		// Template reference (or source)
-		if ( $p->getHasTemplate() !== null ) {
-			$lines[] = '[[Has template::' . $p->getHasTemplate() . ']]';
-		}
-
-		if ( $p->getInputType() !== null ) {
-			$lines[] = '[[Has input type::' . $p->getInputType() . ']]';
-		}
-
-		if ( $p->getInverseLabel() !== null ) {
-			$lines[] = '[[Inverse property label::' . $p->getInverseLabel() . ']]';
-		}
-
-		return implode( "\n", $lines );
 	}
 
 	/* -------------------------------------------------------------------------

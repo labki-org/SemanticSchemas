@@ -24,18 +24,15 @@ class WikiCategoryStore {
 	use SMWDataExtractor;
 
 	private PageCreator $pageCreator;
-	private WikiPropertyStore $propertyStore;
 	private IConnectionProvider $connectionProvider;
 	private Config $mainConfig;
 
 	public function __construct(
 		PageCreator $pageCreator,
-		WikiPropertyStore $propertyStore,
 		IConnectionProvider $connectionProvider,
 		Config $mainConfig
 	) {
 		$this->pageCreator = $pageCreator;
-		$this->propertyStore = $propertyStore;
 		$this->connectionProvider = $connectionProvider;
 		$this->mainConfig = $mainConfig;
 	}

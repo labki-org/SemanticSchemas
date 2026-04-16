@@ -59,11 +59,6 @@ class CategoryModel {
 	private array $displayConfig;
 	private array $formConfig;
 
-	/* -------------------- New Display System -------------------- */
-
-	/** @var ?PropertyModel Property defining the display format */
-	private ?PropertyModel $displayTemplateProperty = null;
-
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
 	 * ------------------------------------------------------------------------- */

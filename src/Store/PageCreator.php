@@ -169,33 +169,4 @@ class PageCreator {
 			return false;
 		}
 	}
-
-	/* =====================================================================
-	 * MARKER-BASED CONTENT UPDATES
-	 * ===================================================================== */
-
-	public function updateWithinMarkers(
-		string $content,
-		string $newText,
-		string $startMarker,
-		string $endMarker
-	): string {
-		$startPos = strpos( $content, $startMarker );
-		$endPos = strpos( $content, $endMarker );
-
-		if ( $startPos !== false && $endPos !== false && $endPos > $startPos ) {
-			$before = substr( $content, 0, $startPos + strlen( $startMarker ) );
-			$after = substr( $content, $endPos );
-
-			return rtrim( $before ) . "\n\n" . trim( $newText ) . "\n\n" . ltrim( $after );
-		}
-
-		// Append markers
-		$out = rtrim( $content ) . "\n\n";
-		$out .= $startMarker . "\n";
-		$out .= trim( $newText ) . "\n";
-		$out .= $endMarker . "\n";
-
-		return $out;
-	}
 }
