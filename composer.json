@@ -47,6 +47,7 @@
 			"phpcbf"
 		],
 		"phan": "phan -d . --long-progress-bar",
+		"phan-fix": "phan -d . --long-progress-bar --automatic-fix --force-polyfill-parser",
 		"phpcs": "phpcs -sp --cache"
 	},
 	"config": {
