@@ -42,7 +42,6 @@ return [
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.PropertyInputMapper' ),
-			$services->get( 'SemanticSchemas.WikiCategoryStore' )
 		);
 	},
 

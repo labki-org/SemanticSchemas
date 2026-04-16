@@ -616,11 +616,11 @@ class SchemaValidator {
 				$warnings[] = "Category '$name': no properties defined";
 			}
 
-			if ( !$data['display'] ?? [] ) {
+			if ( !isset( $data['display'] ) ) {
 				$warnings[] = "Category '$name': missing display configuration";
 			}
 
-			if ( !$data['forms'] ?? [] ) {
+			if ( !isset( $data['forms'] ) ) {
 				$warnings[] = "Category '$name': missing form configuration";
 			}
 		}

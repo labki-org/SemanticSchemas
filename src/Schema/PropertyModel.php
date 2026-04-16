@@ -57,7 +57,7 @@ class PropertyModel {
 		$this->name = $name;
 
 		/* -------------------- Datatype -------------------- */
-		if ( !$data['datatype'] ) {
+		if ( !isset( $data['datatype'] ) ) {
 			throw new InvalidArgumentException(
 				"Property '{$name}' must define a 'datatype' field."
 			);

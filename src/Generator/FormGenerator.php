@@ -7,7 +7,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
@@ -28,18 +27,15 @@ class FormGenerator {
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
 	private PropertyInputMapper $inputMapper;
-	private WikiCategoryStore $categoryStore;
 
 	public function __construct(
 		PageCreator $pageCreator,
 		WikiPropertyStore $propertyStore,
 		PropertyInputMapper $inputMapper,
-		WikiCategoryStore $categoryStore
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->propertyStore = $propertyStore;
 		$this->inputMapper = $inputMapper;
-		$this->categoryStore = $categoryStore;
 	}
 
 	private function s( ?string $v ): string {
