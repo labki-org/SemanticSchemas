@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -94,8 +94,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'PropsCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'properties' => [
-				FieldDeclaration::property( 'Has name', true ),
-				FieldDeclaration::property( 'Has email', true ),
+				FieldModel::property( 'Has name', true ),
+				FieldModel::property( 'Has email', true ),
 			],
 		] );
 
@@ -124,8 +124,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'OptPropsCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'properties' => [
-				FieldDeclaration::property( 'Has phone', false ),
-				FieldDeclaration::property( 'Has address', false ),
+				FieldModel::property( 'Has phone', false ),
+				FieldModel::property( 'Has address', false ),
 			],
 		] );
 
@@ -255,8 +255,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'SubobjCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'subobjects' => [
-				FieldDeclaration::subobject( 'Author', true ),
-				FieldDeclaration::subobject( 'Publication', true ),
+				FieldModel::subobject( 'Author', true ),
+				FieldModel::subobject( 'Publication', true ),
 			],
 		] );
 
@@ -284,8 +284,8 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'OptSubobjCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'subobjects' => [
-				FieldDeclaration::subobject( 'Funding', false ),
-				FieldDeclaration::subobject( 'Award', false ),
+				FieldModel::subobject( 'Funding', false ),
+				FieldModel::subobject( 'Award', false ),
 			],
 		] );
 
@@ -327,12 +327,12 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$name = 'MixedCat ' . uniqid();
 		$category = new CategoryModel( $name, [
 			'properties' => [
-				FieldDeclaration::property( 'Has name', true ),
-				FieldDeclaration::property( 'Has email', false ),
+				FieldModel::property( 'Has name', true ),
+				FieldModel::property( 'Has email', false ),
 			],
 			'subobjects' => [
-				FieldDeclaration::subobject( 'Author', true ),
-				FieldDeclaration::subobject( 'Funding', false ),
+				FieldModel::subobject( 'Author', true ),
+				FieldModel::subobject( 'Funding', false ),
 			],
 		] );
 

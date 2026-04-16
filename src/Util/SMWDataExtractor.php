@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Util;
 
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 
 /**
  * SMWDataExtractor
@@ -87,21 +87,21 @@ trait SMWDataExtractor {
 	}
 
 	/**
-	 * Read ordered FieldDeclaration[] from SMW subobjects attached to a page.
+	 * Read ordered FieldModel[] from SMW subobjects attached to a page.
 	 *
 	 * Iterates sub-semantic-data, filters by @category membership, extracts the
 	 * reference property value and the "Is required" boolean, and sorts by
 	 * the "Has sort order" property to preserve declaration order.
 	 *
 	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
-	 * @param string $fieldType FieldDeclaration type constant (TYPE_PROPERTY or TYPE_SUBOBJECT)
-	 * @return FieldDeclaration[] Ordered list of field declarations
+	 * @param string $fieldType FieldModel type constant (TYPE_PROPERTY or TYPE_SUBOBJECT)
+	 * @return FieldModel[] Ordered list of field declarations
 	 */
 	protected function smwFetchFieldReferences(
 		$semanticData,
 		string $fieldType
 	): array {
-		$config = FieldDeclaration::FIELD_CONFIG[$fieldType];
+		$config = FieldModel::FIELD_CONFIG[$fieldType];
 		$categoryName = $config['category'];
 		$referenceProperty = $config['referenceProperty'];
 		$referenceType = strtolower( $config['namespacePrefix'] );
@@ -128,7 +128,7 @@ trait SMWDataExtractor {
 				$required = $this->smwFetchBoolean( $subData, 'Is required' );
 				$sortOrder = (int)( $this->smwFetchOne( $subData, 'Has sort order' ) ?? 0 );
 				$entries[] = [
-					'field' => new FieldDeclaration( $ref, $required, $fieldType ),
+					'field' => new FieldModel( $ref, $required, $fieldType ),
 					'sort' => $sortOrder,
 				];
 			}

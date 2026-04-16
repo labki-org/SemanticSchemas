@@ -252,11 +252,11 @@ class SchemaValidator {
 	/**
 	 * Validate field declaration entries.
 	 *
-	 * Accepts FieldDeclaration[] or annotated arrays [{name, required}, ...].
+	 * Accepts FieldModel[] or annotated arrays [{name, required}, ...].
 	 *
 	 * @param string $entityType
 	 * @param string $entityName
-	 * @param array $entries FieldDeclaration[] or annotated arrays
+	 * @param array $entries FieldModel[] or annotated arrays
 	 * @param array $lookup Valid items to reference
 	 * @param string $referenceType 'property' or 'category'
 	 * @param string $fieldPrefix Field path prefix for error messages
@@ -275,7 +275,7 @@ class SchemaValidator {
 
 		$names = array_map(
 			static function ( $e ) {
-				if ( $e instanceof \MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration ) {
+				if ( $e instanceof \MediaWiki\Extension\SemanticSchemas\Schema\FieldModel ) {
 					return $e->getName();
 				}
 				return is_array( $e ) ? ( $e['name'] ?? '' ) : (string)$e;
@@ -551,11 +551,11 @@ class SchemaValidator {
 		$categoryModels = [];
 		foreach ( $categories as $name => $data ) {
 			try {
-				$data['properties'] = FieldDeclaration::parseInput(
-					$data['properties'] ?? [], FieldDeclaration::TYPE_PROPERTY, "Category '{$name}'"
+				$data['properties'] = FieldModel::parseInput(
+					$data['properties'] ?? [], FieldModel::TYPE_PROPERTY, "Category '{$name}'"
 				);
-				$data['subobjects'] = FieldDeclaration::parseInput(
-					$data['subobjects'] ?? [], FieldDeclaration::TYPE_SUBOBJECT, "Category '{$name}'"
+				$data['subobjects'] = FieldModel::parseInput(
+					$data['subobjects'] ?? [], FieldModel::TYPE_SUBOBJECT, "Category '{$name}'"
 				);
 				$categoryModels[$name] = new CategoryModel( $name, $data );
 			} catch ( \InvalidArgumentException | \TypeError $e ) {

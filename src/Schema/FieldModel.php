@@ -13,14 +13,14 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  * (TYPE_PROPERTY) or subobject category reference (TYPE_SUBOBJECT), along
  * with whether that field is required.
  *
- * Each FieldDeclaration serializes to a {{#subobject:}} block on the
+ * Each FieldModel serializes to a {{#subobject:}} block on the
  * category page, using @category to distinguish property fields from
  * subobject fields.
  *
- * Implements JsonSerializable so that arrays containing FieldDeclaration
+ * Implements JsonSerializable so that arrays containing FieldModel
  * objects can be passed directly to json_encode (used by PageHashComputer).
  */
-class FieldDeclaration implements JsonSerializable {
+class FieldModel implements JsonSerializable {
 
 	public const TYPE_PROPERTY = 'property';
 	public const TYPE_SUBOBJECT = 'subobject';
@@ -74,7 +74,7 @@ class FieldDeclaration implements JsonSerializable {
 	}
 
 	/**
-	 * Build FieldDeclaration[] from an annotated array.
+	 * Build FieldModel[] from an annotated array.
 	 *
 	 * @param array<array{name:string, required:bool}> $entries
 	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
@@ -94,7 +94,7 @@ class FieldDeclaration implements JsonSerializable {
 	 * ---------------------------------------------------------------------- */
 
 	/**
-	 * Parse raw field data into FieldDeclaration[].
+	 * Parse raw field data into FieldModel[].
 	 *
 	 * @param array<array{name:string, required:bool}> $input Annotated field entries
 	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT

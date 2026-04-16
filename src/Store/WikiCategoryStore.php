@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\MainConfigNames;
@@ -238,11 +238,11 @@ class WikiCategoryStore {
 			'parents' => $parents,
 
 			'properties' => $this->smwFetchFieldReferences(
-				$sdata, FieldDeclaration::TYPE_PROPERTY
+				$sdata, FieldModel::TYPE_PROPERTY
 			),
 
 			'subobjects' => $this->smwFetchFieldReferences(
-				$sdata, FieldDeclaration::TYPE_SUBOBJECT
+				$sdata, FieldModel::TYPE_SUBOBJECT
 			),
 
 			'backlinksFor' => $this->smwFetchMany( $sdata, 'Show backlinks for', 'property' ),
@@ -302,13 +302,13 @@ class WikiCategoryStore {
 		}
 
 		// Property fields
-		$propWikitext = FieldDeclaration::toWikitextAll( $cat->getPropertyFields() );
+		$propWikitext = FieldModel::toWikitextAll( $cat->getPropertyFields() );
 		if ( $propWikitext !== '' ) {
 			$lines[] = $propWikitext;
 		}
 
 		// Subobject fields
-		$subWikitext = FieldDeclaration::toWikitextAll( $cat->getSubobjectFields() );
+		$subWikitext = FieldModel::toWikitextAll( $cat->getSubobjectFields() );
 		if ( $subWikitext !== '' ) {
 			$lines[] = $subWikitext;
 		}

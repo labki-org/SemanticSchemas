@@ -3,35 +3,35 @@
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
 use InvalidArgumentException;
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration
+ * @covers \MediaWiki\Extension\SemanticSchemas\Schema\FieldModel
  */
-class FieldDeclarationTest extends TestCase {
+class FieldModelTest extends TestCase {
 
 	/* =========================================================================
 	 * CONSTRUCTION
 	 * ========================================================================= */
 
 	public function testPropertyFactory(): void {
-		$field = FieldDeclaration::property( 'Has name', true );
+		$field = FieldModel::property( 'Has name', true );
 		$this->assertSame( 'Has name', $field->getName() );
 		$this->assertTrue( $field->isRequired() );
-		$this->assertSame( FieldDeclaration::TYPE_PROPERTY, $field->getFieldType() );
+		$this->assertSame( FieldModel::TYPE_PROPERTY, $field->getFieldType() );
 	}
 
 	public function testSubobjectFactory(): void {
-		$field = FieldDeclaration::subobject( 'Author', false );
+		$field = FieldModel::subobject( 'Author', false );
 		$this->assertSame( 'Author', $field->getName() );
 		$this->assertFalse( $field->isRequired() );
-		$this->assertSame( FieldDeclaration::TYPE_SUBOBJECT, $field->getFieldType() );
+		$this->assertSame( FieldModel::TYPE_SUBOBJECT, $field->getFieldType() );
 	}
 
 	public function testInvalidFieldTypeThrowsException(): void {
 		$this->expectException( InvalidArgumentException::class );
-		new FieldDeclaration( 'Foo', true, 'invalid' );
+		new FieldModel( 'Foo', true, 'invalid' );
 	}
 
 	public function testFromAnnotatedArray(): void {
@@ -39,7 +39,7 @@ class FieldDeclarationTest extends TestCase {
 			[ 'name' => 'Has name', 'required' => true ],
 			[ 'name' => 'Has email', 'required' => false ],
 		];
-		$fields = FieldDeclaration::fromAnnotatedArray( $entries, FieldDeclaration::TYPE_PROPERTY );
+		$fields = FieldModel::fromAnnotatedArray( $entries, FieldModel::TYPE_PROPERTY );
 
 		$this->assertCount( 2, $fields );
 		$this->assertSame( 'Has name', $fields[0]->getName() );
@@ -49,7 +49,7 @@ class FieldDeclarationTest extends TestCase {
 	}
 
 	public function testFromAnnotatedArrayEmpty(): void {
-		$fields = FieldDeclaration::fromAnnotatedArray( [], FieldDeclaration::TYPE_PROPERTY );
+		$fields = FieldModel::fromAnnotatedArray( [], FieldModel::TYPE_PROPERTY );
 		$this->assertSame( [], $fields );
 	}
 
@@ -58,7 +58,7 @@ class FieldDeclarationTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testToWikitextPropertyField(): void {
-		$field = FieldDeclaration::property( 'Has name', true );
+		$field = FieldModel::property( 'Has name', true );
 		$wikitext = $field->toWikitext( 1 );
 
 		$expected = implode( "\n", [
@@ -74,7 +74,7 @@ class FieldDeclarationTest extends TestCase {
 	}
 
 	public function testToWikitextOptionalPropertyField(): void {
-		$field = FieldDeclaration::property( 'Has email', false );
+		$field = FieldModel::property( 'Has email', false );
 		$wikitext = $field->toWikitext( 2 );
 
 		$expected = implode( "\n", [
@@ -94,7 +94,7 @@ class FieldDeclarationTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testToWikitextSubobjectField(): void {
-		$field = FieldDeclaration::subobject( 'Author', true );
+		$field = FieldModel::subobject( 'Author', true );
 		$wikitext = $field->toWikitext( 1 );
 
 		$expected = implode( "\n", [
@@ -115,11 +115,11 @@ class FieldDeclarationTest extends TestCase {
 
 	public function testToWikitextAllMultipleFields(): void {
 		$fields = [
-			FieldDeclaration::property( 'Has name', true ),
-			FieldDeclaration::property( 'Has email', false ),
+			FieldModel::property( 'Has name', true ),
+			FieldModel::property( 'Has email', false ),
 		];
 
-		$wikitext = FieldDeclaration::toWikitextAll( $fields );
+		$wikitext = FieldModel::toWikitextAll( $fields );
 
 		$this->assertStringContainsString( 'For property = Property:Has name', $wikitext );
 		$this->assertStringContainsString( 'Is required = true', $wikitext );
@@ -132,12 +132,12 @@ class FieldDeclarationTest extends TestCase {
 
 	public function testToWikitextAllSequentialSortOrder(): void {
 		$fields = [
-			FieldDeclaration::property( 'A', true ),
-			FieldDeclaration::property( 'B', false ),
-			FieldDeclaration::property( 'C', true ),
+			FieldModel::property( 'A', true ),
+			FieldModel::property( 'B', false ),
+			FieldModel::property( 'C', true ),
 		];
 
-		$wikitext = FieldDeclaration::toWikitextAll( $fields );
+		$wikitext = FieldModel::toWikitextAll( $fields );
 
 		$this->assertStringContainsString( 'Has sort order = 1', $wikitext );
 		$this->assertStringContainsString( 'Has sort order = 2', $wikitext );
@@ -145,7 +145,7 @@ class FieldDeclarationTest extends TestCase {
 	}
 
 	public function testToWikitextAllEmpty(): void {
-		$this->assertSame( '', FieldDeclaration::toWikitextAll( [] ) );
+		$this->assertSame( '', FieldModel::toWikitextAll( [] ) );
 	}
 
 	/* =========================================================================
@@ -156,7 +156,7 @@ class FieldDeclarationTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testToWikitextBlockContainsAllFieldsForProperty(): void {
-		$field = FieldDeclaration::property( 'Has name', true );
+		$field = FieldModel::property( 'Has name', true );
 		$block = $field->toWikitext( 1 );
 
 		// All lines must be within a single subobject block
@@ -171,7 +171,7 @@ class FieldDeclarationTest extends TestCase {
 	}
 
 	public function testToWikitextBlockContainsAllFieldsForSubobject(): void {
-		$field = FieldDeclaration::subobject( 'Funding', false );
+		$field = FieldModel::subobject( 'Funding', false );
 		$block = $field->toWikitext( 3 );
 
 		$this->assertStringStartsWith( '{{#subobject:', $block );

@@ -6,7 +6,7 @@ use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -48,7 +48,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				FieldDeclaration::property( 'Has name', true ),
+				FieldModel::property( 'Has name', true ),
 			],
 		] );
 
@@ -88,7 +88,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Animal', [
 			'label' => 'Animal',
 			'properties' => [
-				FieldDeclaration::property( 'Has species', true ),
+				FieldModel::property( 'Has species', true ),
 			],
 		] );
 
@@ -102,8 +102,8 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				FieldDeclaration::property( 'Has color', true ),
-				FieldDeclaration::property( 'Has weight', false ),
+				FieldModel::property( 'Has color', true ),
+				FieldModel::property( 'Has weight', false ),
 			],
 		] );
 
@@ -134,7 +134,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				FieldDeclaration::property( 'Has name', true ),
+				FieldModel::property( 'Has name', true ),
 			],
 		] );
 
@@ -160,7 +160,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				FieldDeclaration::property( 'Has name', true ),
+				FieldModel::property( 'Has name', true ),
 			],
 		] );
 
@@ -178,16 +178,16 @@ class FormGeneratorTest extends TestCase {
 	public function testCompositeFormTranscludesRequiredSubobjectComposite(): void {
 		$subCategory = new CategoryModel( 'Address', [
 			'properties' => [
-				FieldDeclaration::property( 'Has street', true ),
+				FieldModel::property( 'Has street', true ),
 			],
 		] );
 
 		$category = new EffectiveCategoryModel( 'Person', [
 			'properties' => [
-				FieldDeclaration::property( 'Has name', true ),
+				FieldModel::property( 'Has name', true ),
 			],
 			'subobjects' => [
-				FieldDeclaration::subobject( 'Address', true ),
+				FieldModel::subobject( 'Address', true ),
 			],
 		] );
 
@@ -210,14 +210,14 @@ class FormGeneratorTest extends TestCase {
 	public function testCompositeFormTranscludesOptionalSubobjectComposite(): void {
 		$subCategory = new CategoryModel( 'Phone', [
 			'properties' => [
-				FieldDeclaration::property( 'Has phone number', true ),
+				FieldModel::property( 'Has phone number', true ),
 			],
 		] );
 
 		$category = new EffectiveCategoryModel( 'Person', [
 			'properties' => [],
 			'subobjects' => [
-				FieldDeclaration::subobject( 'Phone', false ),
+				FieldModel::subobject( 'Phone', false ),
 			],
 		] );
 
@@ -240,7 +240,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Shape', [
 			'label' => 'Shape',
 			'properties' => [
-				FieldDeclaration::property( 'Has width', true ),
+				FieldModel::property( 'Has width', true ),
 			],
 		] );
 
@@ -298,8 +298,8 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				FieldDeclaration::property( 'Has name', true ),
-				FieldDeclaration::property( 'Has sort order', false ),
+				FieldModel::property( 'Has name', true ),
+				FieldModel::property( 'Has sort order', false ),
 			],
 		] );
 
@@ -322,7 +322,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				FieldDeclaration::property( 'Has weight', true ),
+				FieldModel::property( 'Has weight', true ),
 			],
 		] );
 

@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -143,11 +143,11 @@ class FormGenerator {
 		$fields = $category->getPropertyFields();
 		$required = array_values( array_filter(
 			$fields,
-			static fn ( FieldDeclaration $f ) => $f->isRequired()
+			static fn ( FieldModel $f ) => $f->isRequired()
 		) );
 		$optional = array_values( array_filter(
 			$fields,
-			static fn ( FieldDeclaration $f ) => !$f->isRequired()
+			static fn ( FieldModel $f ) => !$f->isRequired()
 		) );
 
 		$out = [];
@@ -160,7 +160,7 @@ class FormGenerator {
 	/**
 	 * Generate a property section with label and table.
 	 *
-	 * @param FieldDeclaration[] $fields
+	 * @param FieldModel[] $fields
 	 * @param string $label Section label
 	 * @return array Lines of wikitext
 	 */
@@ -190,10 +190,10 @@ class FormGenerator {
 	/**
 	 * Generate a table row for a property field with label and description.
 	 *
-	 * @param FieldDeclaration $field
+	 * @param FieldModel $field
 	 * @return array Lines of wikitext
 	 */
-	private function generateTableField( FieldDeclaration $field ): array {
+	private function generateTableField( FieldModel $field ): array {
 		$propertyName = $field->getName();
 		$isRequired = $field->isRequired();
 

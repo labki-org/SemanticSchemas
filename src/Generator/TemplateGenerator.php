@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -161,7 +161,7 @@ class TemplateGenerator {
 	 * Generate a template call with property parameter passthrough.
 	 *
 	 * @param string $templateName Template name to call
-	 * @param FieldDeclaration[] $fields
+	 * @param FieldModel[] $fields
 	 * @return array Lines of wikitext
 	 */
 	private function generateTemplateCall( string $templateName, array $fields ): array {
@@ -309,12 +309,12 @@ class TemplateGenerator {
 	}
 
 	/**
-	 * Sort FieldDeclaration[] alphabetically by name (in place).
+	 * Sort FieldModel[] alphabetically by name (in place).
 	 *
-	 * @param FieldDeclaration[] &$fields
+	 * @param FieldModel[] &$fields
 	 */
 	private static function sortFieldsByName( array &$fields ): void {
-		usort( $fields, static fn ( FieldDeclaration $a, FieldDeclaration $b ) =>
+		usort( $fields, static fn ( FieldModel $a, FieldModel $b ) =>
 			strcmp( $a->getName(), $b->getName() )
 		);
 	}

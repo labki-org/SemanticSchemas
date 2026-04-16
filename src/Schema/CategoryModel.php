@@ -42,10 +42,10 @@ class CategoryModel {
 	private ?string $targetNamespace;
 	private ?string $renderAs;
 
-	/** @var FieldDeclaration[] */
+	/** @var FieldModel[] */
 	private array $propertyFields;
 
-	/** @var FieldDeclaration[] */
+	/** @var FieldModel[] */
 	private array $subobjectFields;
 
 	/** @var string[] Property names whose incoming links to show as backlinks. */
@@ -101,7 +101,7 @@ class CategoryModel {
 		if ( !is_array( $props ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'properties' must be an array." );
 		}
-		FieldDeclaration::validateNoDuplicates( $props, "Category '{$name}'" );
+		FieldModel::validateNoDuplicates( $props, "Category '{$name}'" );
 		$this->propertyFields = $props;
 
 		/* -------------------- Subobjects -------------------- */
@@ -110,7 +110,7 @@ class CategoryModel {
 		if ( !is_array( $subs ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'subobjects' must be an array." );
 		}
-		FieldDeclaration::validateNoDuplicates( $subs, "Category '{$name}'" );
+		FieldModel::validateNoDuplicates( $subs, "Category '{$name}'" );
 		$this->subobjectFields = $subs;
 
 		/* -------------------- Backlinks -------------------- */
@@ -164,14 +164,14 @@ class CategoryModel {
 
 	/* -------------------- Property Fields -------------------- */
 
-	/** @return FieldDeclaration[] */
+	/** @return FieldModel[] */
 	public function getPropertyFields(): array {
 		return $this->propertyFields;
 	}
 
 	/* -------------------- Subobject Fields -------------------- */
 
-	/** @return FieldDeclaration[] */
+	/** @return FieldModel[] */
 	public function getSubobjectFields(): array {
 		return $this->subobjectFields;
 	}
@@ -208,14 +208,14 @@ class CategoryModel {
 	public function mergeWithParent( CategoryModel $parent ): EffectiveCategoryModel {
 		/* -------------------- Properties -------------------- */
 
-		$mergedProps = self::mergeFieldDeclarations(
+		$mergedProps = self::mergeFieldModels(
 			$parent->getPropertyFields(),
 			$this->propertyFields
 		);
 
 		/* -------------------- Subobjects -------------------- */
 
-		$mergedSubs = self::mergeFieldDeclarations(
+		$mergedSubs = self::mergeFieldModels(
 			$parent->getSubobjectFields(),
 			$this->subobjectFields
 		);
@@ -266,11 +266,11 @@ class CategoryModel {
 	 * If a field appears in both, required wins (child can promote optional to required).
 	 * Order: required fields first, then optional.
 	 *
-	 * @param FieldDeclaration[] $parentFields
-	 * @param FieldDeclaration[] $childFields
-	 * @return FieldDeclaration[]
+	 * @param FieldModel[] $parentFields
+	 * @param FieldModel[] $childFields
+	 * @return FieldModel[]
 	 */
-	private static function mergeFieldDeclarations( array $parentFields, array $childFields ): array {
+	private static function mergeFieldModels( array $parentFields, array $childFields ): array {
 		$required = [];
 		$optional = [];
 
