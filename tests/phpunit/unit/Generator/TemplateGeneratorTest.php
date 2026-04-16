@@ -399,10 +399,34 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 
 		$result = $gen->generateSemanticTemplate( $category );
+		$this->assertStringContainsString( '{{#arraymap:', $result );
+		$this->assertStringContainsString( '|+sep=,', $result );
+		// Only prefixes when value has no namespace (FULLPAGENAME == PAGENAME)
 		$this->assertStringContainsString(
-			'Has author = {{#arraymap:{{{has_author|}}}|,|@@item@@|User:@@item@@|,}} |+sep=,',
+			'{{#ifeq:{{FULLPAGENAME:@@item@@}}|{{PAGENAME:@@item@@}}|User:}}@@item@@',
 			$result
 		);
+	}
+
+	public function testSingleValuePagePropertyWithNamespaceConditionallyPrefixes(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has location' => new PropertyModel( 'Has location', [
+				'datatype' => 'Page',
+				'allowedNamespace' => 'Project',
+			] ),
+		] );
+
+		$category = new CategoryModel( 'Article', [
+			'properties' => [
+				[ 'name' => 'Has location', 'required' => true ],
+			],
+		] );
+
+		$result = $gen->generateSemanticTemplate( $category );
+		// Only prefixes when value has no namespace (FULLPAGENAME == PAGENAME)
+		$expected = '{{#ifeq:{{FULLPAGENAME:{{{has_location|}}}}}'
+			. '|{{PAGENAME:{{{has_location|}}}}}|Project:}}{{{has_location|}}}';
+		$this->assertStringContainsString( $expected, $result );
 	}
 
 	public function testSingleValuePagePropertyWithoutNamespaceDoesNotUseSep(): void {

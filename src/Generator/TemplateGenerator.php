@@ -80,14 +80,18 @@ class TemplateGenerator {
 		}
 
 		if ( $propModel->allowsMultipleValues() ) {
-			// Multi-value Page property with namespace: prefix each value via #arraymap inside #set
+			// Multi-value Page property with namespace: prefix each value via #arraymap.
+			// Only add namespace when the value has none (FULLPAGENAME == PAGENAME).
 			return ' | ' . $propertyName . ' = {{#arraymap:{{{' . $param .
-				'|}}}|,|@@item@@|' . $allowedNamespace . ':@@item@@|,}} |+sep=,';
+				'|}}}|,|@@item@@|{{#ifeq:{{FULLPAGENAME:@@item@@}}|{{PAGENAME:@@item@@}}|'
+				. $allowedNamespace . ':}}@@item@@|,}} |+sep=,';
 		}
 
-		// Single value: conditional prefix
-		return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|' .
-			$allowedNamespace . ':{{{' . $param . '|}}}|}}';
+		// Single value: add namespace only when the value has none.
+		// If the user typed a namespace explicitly, preserve it as-is.
+		return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|'
+			. '{{#ifeq:{{FULLPAGENAME:{{{' . $param . '|}}}}}|{{PAGENAME:{{{' . $param . '|}}}}}'
+			. '|' . $allowedNamespace . ':}}{{{' . $param . '|}}}|}}';
 	}
 
 	/* =====================================================================
