@@ -143,7 +143,7 @@ class CategoryModelTest extends TestCase {
 		$this->assertEquals( [ 'Has phone' ], $optional );
 	}
 
-	public function testGetPropertyFieldsReturnsBothWithFlags(): void {
+	public function testGetPropertyFields(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
 				[ 'name' => 'Has name', 'required' => true ],
