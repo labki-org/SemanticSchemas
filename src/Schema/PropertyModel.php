@@ -44,6 +44,8 @@ class PropertyModel {
 
 	private ?string $inverseLabel;
 
+	private bool $hidden;
+
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
 	 * ---------------------------------------------------------------------- */
@@ -133,6 +135,9 @@ class PropertyModel {
 		$invLabel = $data['inverseLabel'] ?? null;
 		$this->inverseLabel = ( $invLabel !== null && trim( (string)$invLabel ) !== '' )
 			? trim( (string)$invLabel ) : null;
+
+		/* -------------------- Hidden -------------------- */
+		$this->hidden = !empty( $data['hidden'] );
 	}
 
 	/* -------------------------------------------------------------------------
@@ -277,6 +282,10 @@ class PropertyModel {
 		return $this->inverseLabel;
 	}
 
+	public function isHidden(): bool {
+		return $this->hidden;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */
@@ -294,6 +303,7 @@ class PropertyModel {
 			'allowsMultipleValues' => $this->allowsMultipleValues,
 			'inputType' => $this->inputType,
 			'inverseLabel' => $this->inverseLabel,
+			'hidden' => $this->hidden ?: null,
 		];
 
 		// Remove nulls + empty arrays, but preserve boolean false

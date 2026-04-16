@@ -200,7 +200,11 @@ class FormGenerator {
 		$prop = $this->propertyStore->readProperty( $propertyName )
 			?: new PropertyModel( $propertyName, [ 'datatype' => 'Page' ] );
 
-		$param = NamingHelper::propertyToParameter( $propertyName );
+		if ( $prop->isHidden() ) {
+			return [];
+		}
+
+		$param = $field->getParameterName();
 		$label = $this->s( $prop->getLabel() );
 		$description = $this->s( $prop->getDescription() );
 

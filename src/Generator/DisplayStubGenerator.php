@@ -172,7 +172,7 @@ class DisplayStubGenerator {
 		foreach ( $category->getPropertyFields() as $field ) {
 			$propName = $field->getName();
 			$property = $this->propertyStore->readProperty( $propName );
-			$paramName = NamingHelper::propertyToParameter( $propName );
+			$paramName = $field->getParameterName();
 
 			if ( $property ) {
 				$label = $property->getLabel();
@@ -392,9 +392,7 @@ class DisplayStubGenerator {
 				. ' [[' . $catNs . ':' . $subName . ']]' . "\n";
 
 			foreach ( $fields as $f ) {
-				$p = $f->getName();
-				$param = NamingHelper::propertyToParameter( $p );
-				$sections .= ' | ?' . $p . ' = ' . $param . "\n";
+				$sections .= ' | ?' . $f->getName() . ' = ' . $f->getParameterName() . "\n";
 			}
 
 			$sections .= ' | format=template' . "\n";

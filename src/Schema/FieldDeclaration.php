@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\SemanticSchemas\Schema;
 
 use InvalidArgumentException;
+use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 
 /**
  * Immutable value object representing a field declaration on a category page.
@@ -167,6 +168,10 @@ class FieldDeclaration {
 
 	public function getFieldType(): string {
 		return $this->fieldType;
+	}
+
+	public function getParameterName(): string {
+		return NamingHelper::propertyToParameter( $this->name );
 	}
 
 	/* -------------------------------------------------------------------------

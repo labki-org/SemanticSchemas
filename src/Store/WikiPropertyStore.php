@@ -65,6 +65,7 @@ class WikiPropertyStore {
 			'hasTemplate' => null,
 			'inputType' => null,
 			'inverseLabel' => null,
+			'hidden' => false,
 		];
 
 		return new PropertyModel( $canonical, $data );
@@ -182,6 +183,9 @@ class WikiPropertyStore {
 
 		/* -------------------- Backlink label -------------------- */
 		$out['inverseLabel'] = $this->smwFetchOne( $sdata, 'Inverse property label' );
+
+		/* -------------------- Hidden -------------------- */
+		$out['hidden'] = $this->smwFetchBoolean( $sdata, 'Is hidden' );
 
 		// Clean null/empty
 		return array_filter(

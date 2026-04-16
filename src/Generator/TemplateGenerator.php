@@ -141,9 +141,9 @@ class TemplateGenerator {
 		$out[] = '{{#set:';
 
 		foreach ( $fields as $field ) {
-			$p = $field->getName();
-			$param = NamingHelper::propertyToParameter( $p );
-			$out[] = $this->generatePropertyLine( $p, $param );
+			$out[] = $this->generatePropertyLine(
+				$field->getName(), $field->getParameterName()
+			);
 		}
 
 		$out[] = '}}';
@@ -168,7 +168,7 @@ class TemplateGenerator {
 		$out = [];
 		$out[] = '{{' . $templateName;
 		foreach ( $fields as $field ) {
-			$param = NamingHelper::propertyToParameter( $field->getName() );
+			$param = $field->getParameterName();
 			$out[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
 		}
 		$out[] = '}}';
@@ -247,9 +247,9 @@ class TemplateGenerator {
 		$out[] = ' | Has sort order = {{#s2counter:' . $idPrefix . '}}';
 
 		foreach ( $sub->getPropertyFields() as $field ) {
-			$p = $field->getName();
-			$param = NamingHelper::propertyToParameter( $p );
-			$out[] = $this->generatePropertyLine( $p, $param );
+			$out[] = $this->generatePropertyLine(
+				$field->getName(), $field->getParameterName()
+			);
 		}
 
 		$out[] = '}}';

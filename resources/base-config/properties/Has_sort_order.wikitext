@@ -2,5 +2,6 @@
 [[Has type::Number]]
 [[Has description::Numeric sort order for preserving subobject ordering in queries.]]
 [[Display label::Sort order]]
+[[Is hidden::true]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]

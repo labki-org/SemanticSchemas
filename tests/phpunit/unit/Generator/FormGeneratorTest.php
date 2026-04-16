@@ -260,6 +260,78 @@ class FormGeneratorTest extends TestCase {
 	}
 
 	/* =========================================================================
+	 * HIDDEN PROPERTIES
+	 * ========================================================================= */
+
+	/**
+	 * Build a FormGenerator whose property store returns specific PropertyModel instances.
+	 */
+	private function generatorWithProperties( array $propertyMap ): FormGenerator {
+		$propStore = $this->createMock( WikiPropertyStore::class );
+		$propStore->method( 'readProperty' )
+			->willReturnCallback(
+				static fn ( string $name ) => $propertyMap[$name] ?? null
+			);
+
+		$inputMapper = $this->createMock( PropertyInputMapper::class );
+		$inputMapper->method( 'generateInputDefinition' )
+			->willReturn( 'input type=text' );
+
+		return new FormGenerator(
+			$this->createMock( PageCreator::class ),
+			$propStore,
+			$inputMapper,
+			$this->createMock( WikiCategoryStore::class )
+		);
+	}
+
+	public function testHiddenPropertyExcludedFromCompositeForm(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has sort order' => new PropertyModel( 'Has sort order', [
+				'datatype' => 'Number',
+				'hidden' => true,
+			] ),
+		] );
+
+		$category = new EffectiveCategoryModel( 'Thing', [
+			'label' => 'Thing',
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
+				[ 'name' => 'Has sort order', 'required' => false ],
+			],
+		] );
+
+		$result = $gen->generateCompositeForm(
+			$category, new InheritanceResolver( [] )
+		);
+
+		$this->assertStringContainsString( 'has_name', $result );
+		$this->assertStringNotContainsString( 'has_sort_order', $result );
+	}
+
+	public function testNonHiddenPropertyIncludedInCompositeForm(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has weight' => new PropertyModel( 'Has weight', [
+				'datatype' => 'Number',
+				'hidden' => false,
+			] ),
+		] );
+
+		$category = new EffectiveCategoryModel( 'Thing', [
+			'label' => 'Thing',
+			'properties' => [
+				[ 'name' => 'Has weight', 'required' => true ],
+			],
+		] );
+
+		$result = $gen->generateCompositeForm(
+			$category, new InheritanceResolver( [] )
+		);
+
+		$this->assertStringContainsString( 'has_weight', $result );
+	}
+
+	/* =========================================================================
 	 * Helpers
 	 * ========================================================================= */
 
