@@ -239,31 +239,26 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			return;
 		}
 
-		// Single category: redirect directly to FormEdit
-		if ( count( $selectedCategories ) === 1 ) {
-			$catName = $selectedCategories[0];
-			$targetPage = $pageName;
-			$cat = $this->categoryStore->readCategory( $catName );
-			$targetNamespace = $cat->getTargetNamespace();
-			if ( $cat && $targetNamespace !== null ) {
-				$nsIndex = $this->namespaceInfo->getCanonicalIndex( strtolower( $targetNamespace ) );
-				if ( $nsIndex !== null ) {
-					$targetPage = $targetNamespace . ':' . $pageName;
-				}
-			}
-			$formEditTitle = Title::makeTitleSafe( NS_SPECIAL, 'FormEdit/' . $catName . '/' . $targetPage );
-			if ( $formEditTitle ) {
-				$output->redirect( $formEditTitle->getFullURL() );
+		$cats = [];
+		foreach ( $selectedCategories as $categoryName ) {
+			$cat = $this->categoryStore->readCategory( $categoryName );
+			if ( !$cat ) {
+				$output->addHTML( Html::errorBox(
+					htmlspecialchars( $this->msg( 'semanticschemas-error-missing-category' )
+						->params( $categoryName )
+						->text()
+					)
+				) );
 				return;
 			}
+			$cats[] = $cat;
 		}
 
 		// Determine namespace: find the selected category with a target namespace (at most one)
 		$ns = NS_MAIN;
-		foreach ( $selectedCategories as $sc ) {
-			$scModel = $this->categoryStore->readCategory( $sc );
-			$targetNamespace = $scModel->getTargetNamespace();
-			if ( $scModel && $targetNamespace !== null ) {
+		foreach ( $cats as $cat ) {
+			$targetNamespace = $cat->getTargetNamespace();
+			if ( $targetNamespace !== null ) {
 				$nsIndex = $this->namespaceInfo
 					->getCanonicalIndex( strtolower( $targetNamespace ) );
 				if ( $nsIndex !== null ) {
@@ -279,6 +274,17 @@ class SpecialCreateSemanticPage extends SpecialPage {
 				htmlspecialchars( $this->msg( 'semanticschemas-create-invalid-title' )->text(), ENT_QUOTES )
 			) );
 			return;
+		}
+
+		// Single category: redirect directly to FormEdit
+		if ( count( $cats ) === 1 ) {
+			$formEditTitle = Title::makeTitleSafe(
+				NS_SPECIAL, 'FormEdit/' . $cats[0]->getName() . '/' . $pageTitle->getPrefixedText()
+			);
+			if ( $formEditTitle ) {
+				$output->redirect( $formEditTitle->getFullURL() );
+				return;
+			}
 		}
 
 		// Build inheritance resolver for parent detection
