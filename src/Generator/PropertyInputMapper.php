@@ -26,7 +26,7 @@ class PropertyInputMapper {
 	 * ===================================================================== */
 
 	/** @var array<string,string> */
-	private const datatypeMap = [
+	private const DATATYPE_MAP = [
 		'Text' => 'text',
 		'URL' => 'text',
 		'Email' => 'text',
@@ -76,7 +76,7 @@ class PropertyInputMapper {
 
 		// (5) Fallback to datatype mapping
 		$datatype = $property->getDatatype();
-		return self::datatypeMap[$datatype] ?? 'text';
+		return self::DATATYPE_MAP[$datatype] ?? 'text';
 	}
 
 	/* =====================================================================

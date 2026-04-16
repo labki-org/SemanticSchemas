@@ -105,7 +105,13 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$descMsg = $isAddMode
 			? $this->msg( 'semanticschemas-create-add-description' )->params( $prefilledPageName )->text()
 			: $this->msg( 'semanticschemas-create-description' )->text();
-		$output->addHTML( Html::rawElement( 'p', [ 'class' => 'mw-body-content' ], htmlspecialchars( $descMsg, ENT_QUOTES ) ) );
+		$output->addHTML(
+			Html::rawElement(
+				'p',
+				[ 'class' => 'mw-body-content' ],
+				htmlspecialchars( $descMsg, ENT_QUOTES )
+			)
+		);
 
 		$formHtml = '';
 
@@ -170,14 +176,17 @@ class SpecialCreateSemanticPage extends SpecialPage {
 					'href' => $formTitle->getLocalURL(),
 				], $meta->getLabel() );
 			}
-			$formHtml .= Html::openElement( 'div', [ 'class' => 'semanticschemas-form-group s2-create-meta-categories' ] ) .
-			 Html::element( 'label', [],
+			$formHtml .= Html::openElement(
+				'div',
+				[ 'class' => 'semanticschemas-form-group s2-create-meta-categories' ]
+			) .
+				Html::element( 'label', [],
 					$this->msg( 'semanticschemas-create-meta-categories' )->text()
 				) .
-			 Html::openElement( 'div', [ 'class' => 's2-create-meta-buttons' ] ) .
-			 $buttonHtml .
-			 Html::closeElement( 'div' ) .
-			 Html::closeElement( 'div' );
+				Html::openElement( 'div', [ 'class' => 's2-create-meta-buttons' ] ) .
+				$buttonHtml .
+				Html::closeElement( 'div' ) .
+				Html::closeElement( 'div' );
 		}
 
 		// Submit
@@ -235,11 +244,11 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			$catName = $selectedCategories[0];
 			$targetPage = $pageName;
 			$cat = $this->categoryStore->readCategory( $catName );
-			if ( $cat && $cat->getTargetNamespace() !== null ) {
-				$nsName = $cat->getTargetNamespace();
-				$nsIndex = $this->namespaceInfo->getCanonicalIndex( strtolower( $nsName ) );
+			$targetNamespace = $cat->getTargetNamespace();
+			if ( $cat && $targetNamespace !== null ) {
+				$nsIndex = $this->namespaceInfo->getCanonicalIndex( strtolower( $targetNamespace ) );
 				if ( $nsIndex !== null ) {
-					$targetPage = $nsName . ':' . $pageName;
+					$targetPage = $targetNamespace . ':' . $pageName;
 				}
 			}
 			$formEditTitle = Title::makeTitleSafe( NS_SPECIAL, 'FormEdit/' . $catName . '/' . $targetPage );
@@ -253,9 +262,10 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$ns = NS_MAIN;
 		foreach ( $selectedCategories as $sc ) {
 			$scModel = $this->categoryStore->readCategory( $sc );
-			if ( $scModel && $scModel->getTargetNamespace() !== null ) {
+			$targetNamespace = $scModel->getTargetNamespace();
+			if ( $scModel && $targetNamespace !== null ) {
 				$nsIndex = $this->namespaceInfo
-					->getCanonicalIndex( strtolower( $scModel->getTargetNamespace() ) );
+					->getCanonicalIndex( strtolower( $targetNamespace ) );
 				if ( $nsIndex !== null ) {
 					$ns = $nsIndex;
 				}
@@ -383,7 +393,11 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		if ( !$success ) {
 			$output->addHTML( Html::errorBox(
-				htmlspecialchars( $this->msg( 'semanticschemas-create-failed' )->params( $pageName )->text(), ENT_QUOTES )
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-create-failed' )
+						->params( $pageName )->text(),
+					ENT_QUOTES
+				)
 			) );
 			return;
 		}

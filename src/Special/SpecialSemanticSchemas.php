@@ -240,7 +240,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		if ( $category === null ) {
 			$output->addHTML( Html::errorBox(
-				htmlspecialchars( $this->msg( 'semanticschemas-generate-form-no-schema' )->params( $categoryName )->text(), ENT_QUOTES )
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-generate-form-no-schema' )
+						->params( $categoryName )->text(),
+				ENT_QUOTES
+				)
 			) );
 			return;
 		}
@@ -294,7 +298,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 			}
 
 			$output->addHTML( Html::successBox(
-				htmlspecialchars( $this->msg( 'semanticschemas-form-generated' )->params( $categoryName )->text(), ENT_QUOTES )
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-form-generated' )
+						->params( $categoryName )->text(),
+					ENT_QUOTES
+				)
 			) );
 
 			// Show warning if display template was preserved
@@ -894,7 +902,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 		);
 
 		if ( !$result['errors'] ) {
-			$body .= Html::successBox( htmlspecialchars( $this->msg( 'semanticschemas-validate-success' )->text(), ENT_QUOTES ) );
+			$body .= Html::successBox(
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-validate-success' )->text(),
+					ENT_QUOTES
+				)
+			);
 		} else {
 			$body .= Html::element( 'h3', [], $this->msg( 'semanticschemas-validate-errors' )->text() );
 			$body .= $this->renderList( $result['errors'] );
@@ -1189,11 +1202,15 @@ class SpecialSemanticSchemas extends SpecialPage {
 		} catch ( \Exception $e ) {
 			$this->logOperation( 'generate', 'Generation exception: ' . $e->getMessage(), [
 				'exception' => get_class( $e ),
-				'categoryFilter' => $categoryName ?? '',
+				'categoryFilter' => $categoryName,
 			] );
 
 			$output->addHTML( Html::errorBox(
-				htmlspecialchars( $this->msg( 'semanticschemas-generate-error' )->params( $e->getMessage() )->text(), ENT_QUOTES )
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-generate-error' )
+						->params( $e->getMessage() )->text(),
+					ENT_QUOTES
+				)
 			) );
 		} finally {
 			$this->closeProgressContainer();

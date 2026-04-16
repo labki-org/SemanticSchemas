@@ -73,11 +73,12 @@ class DisplayParserFunctions {
 
 		if ( !$category ) {
 			// Fallback: Infer from current page title if in Category namespace
-			$title = $parser->getTitle();
-			if ( !$title || $title->getNamespace() !== NS_CATEGORY ) {
+			$page = $parser->getPage();
+
+			if ( !$page || $page->getNamespace() !== NS_CATEGORY ) {
 				return '';
 			}
-			$category = $title->getText();
+			$category = (string)$page;
 		}
 
 		$output = $parser->getOutput();

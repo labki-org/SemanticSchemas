@@ -59,7 +59,7 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateProperty( $propertyName, $propertyData, $categories )
+				$this->validateProperty( $propertyName, $propertyData )
 			);
 		}
 
@@ -541,7 +541,7 @@ class SchemaValidator {
 		foreach ( $categories as $name => $data ) {
 			try {
 				$categoryModels[$name] = new CategoryModel( $name, $data );
-			} catch ( \InvalidArgumentException | \TypeError $e ) {
+			} catch ( \InvalidArgumentException | \TypeError ) {
 				continue;
 			}
 		}

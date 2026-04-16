@@ -187,7 +187,7 @@ class WikiCategoryStore {
 		return [
 			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
 			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
-			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
+			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ),
 			'parents' => $parents,
 			'properties' => [
 				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),

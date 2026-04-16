@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Content\TextContent;
+use MediaWiki\Exception\UserNotLoggedIn;
 use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
@@ -21,12 +22,23 @@ class PageCreator {
 	private User $user;
 	private WikiPageFactory $wikiPageFactory;
 
+	/**
+	 * @throws UserNotLoggedIn if no user provided and system user can't be created
+	 */
 	public function __construct(
 		WikiPageFactory $wikiPageFactory,
 		?User $user = null
 	) {
 		$this->wikiPageFactory = $wikiPageFactory;
-		$this->user = $user ?? User::newSystemUser( 'SemanticSchemas', [ 'steal' => true ] );
+		if ( $user !== null ) {
+			$this->user = $user;
+		} else {
+			$user = User::newSystemUser( 'SemanticSchemas', [ 'steal' => true ] );
+			if ( $user === null ) {
+				throw new UserNotLoggedIn( "No user logged in and system user not created" );
+			}
+			$this->user = $user;
+		}
 	}
 
 	/* =====================================================================
@@ -110,7 +122,7 @@ class PageCreator {
 				return $contentObj->getText();
 			}
 
-			return $contentObj?->serialize() ?? null;
+			return $contentObj?->serialize();
 
 		} catch ( \Exception $e ) {
 			wfLogWarning( "SemanticSchemas: Failed reading page '{$title->getPrefixedText()}': " . $e->getMessage() );

@@ -1,4 +1,7 @@
 <?php
+/**
+ * @phan-file-suppress PhanUnreferencedPublicMethod
+ */
 
 namespace MediaWiki\Extension\SemanticSchemas;
 
@@ -28,7 +31,6 @@ use MediaWiki\MediaWikiServices;
  * GrowthExperimentsServices for reference implementations.
  *
  * @see src/ServiceWiring.php for service definitions
- * @phan-file-suppress PhanUnreferencedPublicMethod
  */
 class SemanticSchemasServices {
 

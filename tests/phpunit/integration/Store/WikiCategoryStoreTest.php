@@ -79,7 +79,12 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 
 	public function testNamespaceStrippedFromParents() {
 		$title = Title::makeTitleSafe( NS_CATEGORY, "ChildCategory" );
-		$this->pageCreator->createOrUpdatePage( $title, "[[Category:ParentCategory]][[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . "]]", '' );
+		$this->pageCreator->createOrUpdatePage(
+			$title,
+			"[[Category:ParentCategory]][[Category:" .
+			Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY .
+			"]]",
+			'' );
 
 		$this->runJobs();
 
