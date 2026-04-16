@@ -46,23 +46,20 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 	/**
 	 * Generate and retrieve display template content for a category.
+	 *
+	 * @param string $categoryName
+	 * @param FieldModel[] $fields
+	 * @param array<string, PropertyModel> $propertyMap
+	 * @return string
 	 */
 	private function generateAndRead(
 		string $categoryName,
-		array $requiredProps,
-		array $optionalProps = [],
+		array $fields,
 		array $propertyMap = []
 	): string {
 		$gen = $this->makeGenerator( $propertyMap );
-		$props = [];
-		foreach ( $requiredProps as $name ) {
-			$props[] = FieldModel::property( $name, true );
-		}
-		foreach ( $optionalProps as $name ) {
-			$props[] = FieldModel::property( $name, false );
-		}
 		$category = new EffectiveCategoryModel( $categoryName, [
-			'properties' => $props,
+			'properties' => $fields,
 		] );
 
 		$gen->generateOrUpdateDisplayStub( $category );
@@ -80,13 +77,13 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * ========================================================================= */
 
 	public function testPropertyRowsWrappedInIfCondition(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ FieldModel::property( 'Has name', true ) ] );
 
 		$this->assertStringContainsString( '{{#if: {{{has_name|}}} |', $content );
 	}
 
 	public function testPropertyRowUsesMagicWordPipeEscape(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ FieldModel::property( 'Has name', true ) ] );
 
 		$this->assertStringContainsString( '{{!}}-', $content );
 		$this->assertStringContainsString( '{{!}} ', $content );
@@ -95,7 +92,11 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testMultiplePropertiesEachHaveIfCondition(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[ 'Has name', 'Has email', 'Has phone' ]
+			[
+				FieldModel::property( 'Has name', true ),
+				FieldModel::property( 'Has email', true ),
+				FieldModel::property( 'Has phone', true ),
+			]
 		);
 
 		$this->assertStringContainsString( '{{#if: {{{has_name|}}} |', $content );
@@ -106,8 +107,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testOptionalPropertiesAlsoHaveIfCondition(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[],
-			[ 'Has nickname' ]
+			[ FieldModel::property( 'Has nickname', false ) ]
 		);
 
 		$this->assertStringContainsString( '{{#if: {{{has_nickname|}}} |', $content );
@@ -118,7 +118,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * ========================================================================= */
 
 	public function testDefaultRenderTemplateUsedForUnknownProperties(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ FieldModel::property( 'Has name', true ) ] );
 
 		$this->assertStringContainsString( 'Property/Default', $content );
 	}
@@ -126,8 +126,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testCustomRenderTemplateUsedWhenPropertyHasOne(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[ 'Has email' ],
-			[],
+			[ FieldModel::property( 'Has email', true ) ],
 			[
 				'Has email' => new PropertyModel( 'Has email', [
 					'datatype' => 'Text',
@@ -143,8 +142,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testPageTypePropertyUsesPageRenderTemplate(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[ 'Has lead' ],
-			[],
+			[ FieldModel::property( 'Has lead', true ) ],
 			[
 				'Has lead' => new PropertyModel( 'Has lead', [
 					'datatype' => 'Page',
@@ -158,8 +156,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testCustomRenderTemplateStillWrappedInIf(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[ 'Has email' ],
-			[],
+			[ FieldModel::property( 'Has email', true ) ],
 			[
 				'Has email' => new PropertyModel( 'Has email', [
 					'datatype' => 'Text',
@@ -177,7 +174,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * ========================================================================= */
 
 	public function testContainsAutoRegenerateMarker(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ FieldModel::property( 'Has name', true ) ] );
 
 		$this->assertStringContainsString(
 			DisplayStubGenerator::AUTO_REGENERATE_MARKER,
@@ -186,7 +183,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public function testContainsManagedDisplayCategory(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ FieldModel::property( 'Has name', true ) ] );
 
 		$this->assertStringContainsString(
 			'[[Category:SemanticSchemas-managed-display]]',
@@ -195,14 +192,14 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public function testContainsWikitableMarkup(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ FieldModel::property( 'Has name', true ) ] );
 
 		$this->assertStringContainsString( '{| class="wikitable', $content );
 		$this->assertStringContainsString( '|}', $content );
 	}
 
 	public function testValueExpressionPassedToRenderTemplate(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ FieldModel::property( 'Has name', true ) ] );
 
 		$this->assertStringContainsString( 'value={{{has_name|}}}', $content );
 	}
