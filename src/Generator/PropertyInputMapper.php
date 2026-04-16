@@ -49,8 +49,9 @@ class PropertyInputMapper {
 	 */
 	public function getInputType( PropertyModel $property ): string {
 		// (0) Explicit input type override
-		if ( $property->getInputType() !== null ) {
-			return $property->getInputType();
+		$explicitInputType = $property->getInputType();
+		if ( $explicitInputType !== null ) {
+			return $explicitInputType;
 		}
 
 		// (1) Multiple values → tokens
@@ -115,14 +116,14 @@ class PropertyInputMapper {
 
 			$allowedCategory = $property->getAllowedCategory();
 			if ( $allowedCategory !== null && $allowedCategory !== '' ) {
-				$params['values from category'] = (string)$allowedCategory;
+				$params['values from category'] = $allowedCategory;
 				$params['autocomplete'] = 'on';
 				return $params;
 			}
 
 			$allowedNamespace = $property->getAllowedNamespace();
 			if ( $allowedNamespace !== null && $allowedNamespace !== '' ) {
-				$params['values from namespace'] = (string)$allowedNamespace;
+				$params['values from namespace'] = $allowedNamespace;
 				$params['autocomplete'] = 'on';
 				return $params;
 			}
