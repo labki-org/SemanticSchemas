@@ -102,7 +102,7 @@ class PropertyInputMapper {
 		if ( $property->hasAllowedValues() ) {
 			$clean = array_map( static fn ( $v ) => trim( (string)$v ), $property->getAllowedValues() );
 			$clean = array_filter( $clean, static fn ( $v ) => $v !== '' );
-			if ( !$clean ) {
+			if ( $clean ) {
 				$params['values'] = implode( ',', $clean );
 			}
 			return $params;
