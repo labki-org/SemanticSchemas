@@ -296,7 +296,7 @@ class TemplateGenerator {
 		}
 
 		return [
-			'success' => empty( $errors ),
+			'success' => !$errors,
 			'errors' => $errors
 		];
 	}

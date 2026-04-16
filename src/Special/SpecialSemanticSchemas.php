@@ -450,7 +450,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return string
 	 */
 	private function renderList( array $items ): string {
-		if ( empty( $items ) ) {
+		if ( !$items ) {
 			return '';
 		}
 
@@ -809,7 +809,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function getCategoryStatusTable(): string {
 		$categories = $this->categoryStore->getAllCategories();
 
-		if ( empty( $categories ) ) {
+		if ( !$categories ) {
 			return Html::rawElement(
 				'div',
 				[ 'class' => 'semanticschemas-empty-state' ],
@@ -899,20 +899,20 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$this->msg( 'semanticschemas-validate-description' )->text()
 		);
 
-		if ( empty( $result['errors'] ) ) {
+		if ( !$result['errors'] ) {
 			$body .= Html::successBox( $this->msg( 'semanticschemas-validate-success' )->text() );
 		} else {
 			$body .= Html::element( 'h3', [], $this->msg( 'semanticschemas-validate-errors' )->text() );
 			$body .= $this->renderList( $result['errors'] );
 		}
 
-		if ( !empty( $result['warnings'] ) ) {
+		if ( $result['warnings'] ) {
 			$body .= Html::element( 'h3', [], $this->msg( 'semanticschemas-validate-warnings' )->text() );
 			$body .= $this->renderList( $result['warnings'] );
 		}
 
 		$modifiedPages = $result['modifiedPages'] ?? [];
-		if ( !empty( $modifiedPages ) ) {
+		if ( $modifiedPages ) {
 			$body .= Html::element(
 				'h3',
 				[],
@@ -1107,7 +1107,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$categories = $this->getTargetCategories( $categoryName );
 
-		if ( empty( $categories ) ) {
+		if ( !$categories ) {
 			$output->addHTML( Html::errorBox(
 				$this->msg( 'semanticschemas-generate-no-categories' )->text()
 			) );
@@ -1171,7 +1171,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			$pageHashes = $this->computeAllSchemaHashes();
 
-			if ( !empty( $pageHashes ) ) {
+			if ( $pageHashes ) {
 				$this->stateManager->setPageHashes( $pageHashes );
 				$this->stateManager->clearDirty();
 			}

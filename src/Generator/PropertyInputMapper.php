@@ -102,7 +102,7 @@ class PropertyInputMapper {
 		if ( $property->hasAllowedValues() ) {
 			$clean = array_map( static fn ( $v ) => trim( (string)$v ), $property->getAllowedValues() );
 			$clean = array_filter( $clean, static fn ( $v ) => $v !== '' );
-			if ( !empty( $clean ) ) {
+			if ( !$clean ) {
 				$params['values'] = implode( ',', $clean );
 			}
 			return $params;
@@ -194,6 +194,6 @@ class PropertyInputMapper {
 		}
 
 		return 'input type=' . $inputType
-			. ( empty( $segments ) ? '' : '|' . implode( '|', $segments ) );
+			. ( !$segments ? '' : '|' . implode( '|', $segments ) );
 	}
 }

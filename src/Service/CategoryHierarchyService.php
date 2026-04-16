@@ -47,7 +47,7 @@ class CategoryHierarchyService {
 		];
 
 		$allCategories = $this->categoryStore->getAllCategories();
-		if ( empty( $allCategories ) ) {
+		if ( !$allCategories ) {
 			return $result;
 		}
 
@@ -103,7 +103,7 @@ class CategoryHierarchyService {
 		];
 
 		$allCategories = $this->categoryStore->getAllCategories();
-		if ( empty( $allCategories ) ) {
+		if ( !$allCategories ) {
 			// No existing categories → standalone root
 			$result['nodes'][$fullName] = [
 				'title' => $fullName,
@@ -236,7 +236,7 @@ class CategoryHierarchyService {
 		array $parents,
 		array $all
 	): array {
-		if ( empty( $parents ) ) {
+		if ( !$parents ) {
 			return [];
 		}
 
@@ -264,7 +264,7 @@ class CategoryHierarchyService {
 		array $parents,
 		array $all
 	): array {
-		if ( empty( $parents ) ) {
+		if ( !$parents ) {
 			return [];
 		}
 

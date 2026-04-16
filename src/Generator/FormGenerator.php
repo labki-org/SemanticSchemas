@@ -164,7 +164,7 @@ class FormGenerator {
 		string $label,
 		bool $isRequired
 	): array {
-		if ( empty( $props ) ) {
+		if ( !$props ) {
 			return [];
 		}
 
@@ -259,7 +259,7 @@ class FormGenerator {
 		InheritanceResolver $resolver
 	): array {
 		$tagged = $category->getAnnotatedSubobjects();
-		if ( empty( $tagged ) ) {
+		if ( !$tagged ) {
 			return [];
 		}
 
@@ -293,7 +293,7 @@ class FormGenerator {
 
 			// Generate table for subobject properties
 			$taggedProps = $model->getAnnotatedProperties();
-			if ( !empty( $taggedProps ) ) {
+			if ( $taggedProps ) {
 				$out[] = '{| class="formtable"';
 
 				foreach ( $taggedProps as $prop ) {

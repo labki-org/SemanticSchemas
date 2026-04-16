@@ -57,7 +57,7 @@ class SchemaValidator {
 		$warnings = [];
 
 		$structureErrors = $this->validateSchemaStructure( $schema );
-		if ( !empty( $structureErrors ) ) {
+		if ( $structureErrors ) {
 			return [ 'errors' => $structureErrors, 'warnings' => [] ];
 		}
 
@@ -295,7 +295,7 @@ class SchemaValidator {
 			array_map( 'strval', $required ),
 			array_map( 'strval', $optional )
 		);
-		if ( !empty( $duplicates ) ) {
+		if ( $duplicates ) {
 			$itemType = ucfirst( $referenceType ) . 's';
 			$errors[] = $this->formatError(
 				$entityType,
@@ -578,7 +578,7 @@ class SchemaValidator {
 			}
 		}
 
-		if ( empty( $categoryModels ) ) {
+		if ( !$categoryModels ) {
 			return [];
 		}
 
@@ -612,15 +612,15 @@ class SchemaValidator {
 			$req = $data['properties']['required'] ?? [];
 			$opt = $data['properties']['optional'] ?? [];
 
-			if ( empty( $req ) && empty( $opt ) ) {
+			if ( !$req && !$opt ) {
 				$warnings[] = "Category '$name': no properties defined";
 			}
 
-			if ( empty( $data['display'] ?? [] ) ) {
+			if ( !$data['display'] ?? [] ) {
 				$warnings[] = "Category '$name': missing display configuration";
 			}
 
-			if ( empty( $data['forms'] ?? [] ) ) {
+			if ( !$data['forms'] ?? [] ) {
 				$warnings[] = "Category '$name': missing form configuration";
 			}
 		}

@@ -83,7 +83,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$request = $this->getRequest();
 
 		$categories = $this->categoryStore->getAllCategories();
-		if ( empty( $categories ) ) {
+		if ( !$categories ) {
 			$output->addHTML( Html::rawElement( 'div', [ 'class' => 'semanticschemas-shell' ],
 				Html::element( 'p', [],
 					$this->msg( 'semanticschemas-create-no-categories' )->text()
@@ -161,7 +161,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		);
 
 		// Meta-category quick-create buttons
-		if ( !$isAddMode && !empty( $metaCategories ) ) {
+		if ( !$isAddMode && $metaCategories ) {
 			$buttonHtml = '';
 			foreach ( $metaCategories as $meta ) {
 				$formTitle = Title::makeTitleSafe( PF_NS_FORM, $meta->getName() );
@@ -220,7 +220,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			return;
 		}
 
-		if ( empty( $selectedCategories ) ) {
+		if ( !$selectedCategories ) {
 			$output->addHTML( Html::errorBox(
 				$this->msg( 'semanticschemas-create-no-selection' )->text()
 			) );
@@ -502,7 +502,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		foreach ( $categories as $cat ) {
 			$parents = $cat->getParents();
 			$managedParents = array_filter( $parents, static fn ( $p ) => isset( $categoryMap[$p] ) );
-			if ( empty( $managedParents ) ) {
+			if ( !$managedParents ) {
 				$roots[] = $cat->getName();
 			}
 			foreach ( $managedParents as $parent ) {

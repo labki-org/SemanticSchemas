@@ -57,7 +57,7 @@ class WikiCategoryStore {
 		$cat = new CategoryModel( $categoryName, $data );
 
 		// Resolve display template
-		if ( !empty( $data['display']['templateProperty'] ) ) {
+		if ( $data['display']['templateProperty'] ) {
 			$p = $this->propertyStore->readProperty( $data['display']['templateProperty'] );
 			if ( $p ) {
 				$cat->setDisplayTemplateProperty( $p );
