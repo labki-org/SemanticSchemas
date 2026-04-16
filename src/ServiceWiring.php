@@ -103,7 +103,6 @@ return [
 	): TemplateGenerator {
 		return new TemplateGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->getContentLanguage()
 		);

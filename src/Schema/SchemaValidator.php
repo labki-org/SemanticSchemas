@@ -29,9 +29,6 @@ class SchemaValidator {
 
 	public const SCHEMA_VERSION = '1.0';
 
-	/** @var array Custom validation rules registered by extensions */
-	private $customValidators = [];
-
 	/**
 	 * Validate entire schema with severity levels.
 	 *
@@ -68,11 +65,6 @@ class SchemaValidator {
 
 		$errors = array_merge( $errors, $this->checkCircularDependencies( $categories ) );
 		$warnings = array_merge( $warnings, $this->generateWarnings( $schema ) );
-
-		foreach ( $this->customValidators as $validator ) {
-			$customResult = call_user_func( $validator, $schema );
-			$this->mergeResults( $errors, $warnings, $customResult );
-		}
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}
@@ -162,15 +154,6 @@ class SchemaValidator {
 	private function formatWarning( string $entityType, string $entityName, string $issue ): string {
 		$prefix = $entityType === 'schema' ? 'Schema' : ucfirst( $entityType ) . " '$entityName'";
 		return "$prefix: $issue";
-	}
-
-	/**
-	 * Register a custom validation rule.
-	 *
-	 * @param callable $validator Takes schema array, returns ['errors' => [...], 'warnings' => [...]]
-	 */
-	public function registerCustomValidator( callable $validator ): void {
-		$this->customValidators[] = $validator;
 	}
 
 	/* ======================================================================

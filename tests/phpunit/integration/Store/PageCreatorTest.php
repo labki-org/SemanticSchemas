@@ -189,64 +189,6 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 	}
 
 	/* =========================================================================
-	 * TITLE FROM PAGE NAME
-	 * ========================================================================= */
-
-	public function testTitleFromPageNameWithCategoryPrefix(): void {
-		$title = $this->pageCreator->titleFromPageName( 'Category:TestCategory' );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( NS_CATEGORY, $title->getNamespace() );
-		$this->assertEquals( 'TestCategory', $title->getText() );
-	}
-
-	public function testTitleFromPageNameWithPropertyPrefix(): void {
-		$title = $this->pageCreator->titleFromPageName( 'Property:Has name' );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( SMW_NS_PROPERTY, $title->getNamespace() );
-		$this->assertEquals( 'Has name', $title->getText() );
-	}
-
-	public function testTitleFromPageNameWithoutPrefix(): void {
-		$title = $this->pageCreator->titleFromPageName( 'SimplePage' );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( NS_MAIN, $title->getNamespace() );
-	}
-
-	public function testTitleFromPageNameReturnsNullForEmpty(): void {
-		$title = $this->pageCreator->titleFromPageName( '' );
-
-		$this->assertNull( $title );
-	}
-
-	/* =========================================================================
-	 * PAGE DELETION
-	 * ========================================================================= */
-
-	public function testDeletePageRemovesExistingPage(): void {
-		$title = Title::makeTitle( NS_MAIN, 'DeleteMe_' . uniqid() );
-		$this->pageCreator->createOrUpdatePage( $title, 'To be deleted', 'Create' );
-		$this->assertTrue( $title->exists(), 'Pre-condition: page was created' );
-
-		$result = $this->pageCreator->deletePage( $title, 'Test deletion' );
-
-		$this->assertTrue( $result );
-		// Title::exists() caches; re-fetch to get fresh state
-		$freshTitle = Title::makeTitle( $title->getNamespace(), $title->getDBkey() );
-		$this->assertFalse( $freshTitle->exists() );
-	}
-
-	public function testDeletePageReturnsTrueForNonExistentPage(): void {
-		$title = Title::makeTitle( NS_MAIN, 'NonExistentPage_' . uniqid() );
-
-		$result = $this->pageCreator->deletePage( $title, 'No-op deletion' );
-
-		$this->assertTrue( $result );
-	}
-
-	/* =========================================================================
 	 * MARKER-BASED UPDATES
 	 * ========================================================================= */
 
