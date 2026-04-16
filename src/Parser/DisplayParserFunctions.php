@@ -30,6 +30,7 @@ class DisplayParserFunctions {
 	/* =====================================================================
 	 * REGISTRATION
 	 * ===================================================================== */
+
 	/**
 	 * @suppress PhanUnreferencedPublicMethod
 	 */
