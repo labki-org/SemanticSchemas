@@ -113,8 +113,8 @@ class TemplateGenerator {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$props = FieldDeclaration::names( $category->getPropertyFields() );
-		sort( $props );
+		$fields = $category->getPropertyFields();
+		self::sortFieldsByName( $fields );
 
 		$out = [];
 		$out[] = '<noinclude>';
@@ -124,11 +124,11 @@ class TemplateGenerator {
 
 		/* Embed parent semantic templates */
 		foreach ( $parentEffectives as $parentName => $parentEffective ) {
-			$parentProps = FieldDeclaration::names( $parentEffective->getPropertyFields() );
-			sort( $parentProps );
+			$parentFields = $parentEffective->getPropertyFields();
+			self::sortFieldsByName( $parentFields );
 			$out = array_merge(
 				$out,
-				$this->generateTemplateCall( $parentName . '/semantic', $parentProps )
+				$this->generateTemplateCall( $parentName . '/semantic', $parentFields )
 			);
 			$out[] = '';
 		}
@@ -136,7 +136,8 @@ class TemplateGenerator {
 		/* Own property storage */
 		$out[] = '{{#set:';
 
-		foreach ( $props as $p ) {
+		foreach ( $fields as $field ) {
+			$p = $field->getName();
 			$param = NamingHelper::propertyToParameter( $p );
 			$out[] = $this->generatePropertyLine( $p, $param );
 		}
@@ -156,14 +157,14 @@ class TemplateGenerator {
 	 * Generate a template call with property parameter passthrough.
 	 *
 	 * @param string $templateName Template name to call
-	 * @param array $props List of property names
+	 * @param FieldDeclaration[] $fields
 	 * @return array Lines of wikitext
 	 */
-	private function generateTemplateCall( string $templateName, array $props ): array {
+	private function generateTemplateCall( string $templateName, array $fields ): array {
 		$out = [];
 		$out[] = '{{' . $templateName;
-		foreach ( $props as $p ) {
-			$param = NamingHelper::propertyToParameter( $p );
+		foreach ( $fields as $field ) {
+			$param = NamingHelper::propertyToParameter( $field->getName() );
 			$out[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
 		}
 		$out[] = '}}';
@@ -184,8 +185,8 @@ class TemplateGenerator {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$allProps = FieldDeclaration::names( $effective->getPropertyFields() );
-		sort( $allProps );
+		$allFields = $effective->getPropertyFields();
+		self::sortFieldsByName( $allFields );
 
 		$out = [];
 		$out[] = '<noinclude>';
@@ -196,11 +197,11 @@ class TemplateGenerator {
 		$out[] = '';
 
 		/* Semantic storage */
-		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allProps ) );
+		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allFields ) );
 		$out[] = '';
 
 		/* Display template */
-		$out = array_merge( $out, $this->generateTemplateCall( $name . '/display', $allProps ) );
+		$out = array_merge( $out, $this->generateTemplateCall( $name . '/display', $allFields ) );
 		$out[] = '';
 
 		/* Category membership */
@@ -241,9 +242,8 @@ class TemplateGenerator {
 		$out[] = ' |@category=' . $name;
 		$out[] = ' | Has sort order = {{#s2counter:' . $idPrefix . '}}';
 
-		$props = FieldDeclaration::names( $sub->getPropertyFields() );
-
-		foreach ( $props as $p ) {
+		foreach ( $sub->getPropertyFields() as $field ) {
+			$p = $field->getName();
 			$param = NamingHelper::propertyToParameter( $p );
 			$out[] = $this->generatePropertyLine( $p, $param );
 		}
@@ -302,6 +302,17 @@ class TemplateGenerator {
 			'success' => empty( $errors ),
 			'errors' => $errors
 		];
+	}
+
+	/**
+	 * Sort FieldDeclaration[] alphabetically by name (in place).
+	 *
+	 * @param FieldDeclaration[] &$fields
+	 */
+	private static function sortFieldsByName( array &$fields ): void {
+		usort( $fields, static fn ( FieldDeclaration $a, FieldDeclaration $b ) =>
+			strcmp( $a->getName(), $b->getName() )
+		);
 	}
 
 	/* =====================================================================

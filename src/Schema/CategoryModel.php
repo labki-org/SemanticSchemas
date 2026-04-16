@@ -358,16 +358,32 @@ class CategoryModel {
 	 * EXPORT
 	 * ------------------------------------------------------------------------- */
 
+	/**
+	 * Convert FieldDeclaration[] to annotated arrays for serialization.
+	 *
+	 * @param FieldDeclaration[] $fields
+	 * @return array<array{name:string, required:bool}>
+	 */
+	private static function fieldsToArray( array $fields ): array {
+		return array_map(
+			static fn ( FieldDeclaration $f ) => [
+				'name' => $f->getName(),
+				'required' => $f->isRequired(),
+			],
+			$fields
+		);
+	}
+
 	public function toArray(): array {
 		$out = [
 			'parents' => $this->parents,
 			'label' => $this->label,
 			'description' => $this->description,
-			'properties' => $this->propertyFields,
+			'properties' => self::fieldsToArray( $this->propertyFields ),
 		];
 
 		if ( $this->hasSubobjects() ) {
-			$out['subobjects'] = $this->subobjectFields;
+			$out['subobjects'] = self::fieldsToArray( $this->subobjectFields );
 		}
 
 		if ( $this->backlinksFor !== [] ) {

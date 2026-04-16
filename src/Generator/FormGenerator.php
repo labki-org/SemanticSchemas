@@ -140,12 +140,19 @@ class FormGenerator {
 	 * Separates required and optional properties into distinct sections.
 	 */
 	private function generatePropertyTable( CategoryModel $category ): array {
-		$required = FieldDeclaration::filterNames( $category->getPropertyFields(), true );
-		$optional = FieldDeclaration::filterNames( $category->getPropertyFields(), false );
+		$fields = $category->getPropertyFields();
+		$required = array_values( array_filter(
+			$fields,
+			static fn ( FieldDeclaration $f ) => $f->isRequired()
+		) );
+		$optional = array_values( array_filter(
+			$fields,
+			static fn ( FieldDeclaration $f ) => !$f->isRequired()
+		) );
 
 		$out = [];
-		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields', true ) );
-		$out = array_merge( $out, $this->generatePropertySection( $optional, 'Optional fields', false ) );
+		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields' ) );
+		$out = array_merge( $out, $this->generatePropertySection( $optional, 'Optional fields' ) );
 
 		return $out;
 	}
@@ -153,17 +160,15 @@ class FormGenerator {
 	/**
 	 * Generate a property section with label and table.
 	 *
-	 * @param string[] $props List of property names
+	 * @param FieldDeclaration[] $fields
 	 * @param string $label Section label
-	 * @param bool $isRequired Whether properties in this section are required
 	 * @return array Lines of wikitext
 	 */
 	private function generatePropertySection(
-		array $props,
-		string $label,
-		bool $isRequired
+		array $fields,
+		string $label
 	): array {
-		if ( empty( $props ) ) {
+		if ( $fields === [] ) {
 			return [];
 		}
 
@@ -172,8 +177,8 @@ class FormGenerator {
 		$out[] = '';
 		$out[] = '{| class="formtable"';
 
-		foreach ( $props as $prop ) {
-			$out = array_merge( $out, $this->generateTableField( $prop, $isRequired ) );
+		foreach ( $fields as $field ) {
+			$out = array_merge( $out, $this->generateTableField( $field ) );
 		}
 
 		$out[] = '|}';
@@ -185,18 +190,15 @@ class FormGenerator {
 	/**
 	 * Generate a table row for a property field with label and description.
 	 *
-	 * @param string $propertyName
-	 * @param bool $isRequired
+	 * @param FieldDeclaration $field
 	 * @return array Lines of wikitext
 	 */
-	private function generateTableField(
-		string $propertyName,
-		bool $isRequired
-	): array {
+	private function generateTableField( FieldDeclaration $field ): array {
+		$propertyName = $field->getName();
+		$isRequired = $field->isRequired();
+
 		$prop = $this->propertyStore->readProperty( $propertyName )
 			?: new PropertyModel( $propertyName, [ 'datatype' => 'Page' ] );
-
-		$isReq = $isRequired;
 
 		$param = NamingHelper::propertyToParameter( $propertyName );
 		$label = $this->s( $prop->getLabel() );
@@ -204,16 +206,16 @@ class FormGenerator {
 
 		// Special handling for "Has Type" property
 		if ( strcasecmp( $propertyName, 'Has type' ) === 0 ) {
-			$input = $this->generateHasTypeInput( $isReq );
+			$input = $this->generateHasTypeInput( $isRequired );
 		} else {
-			$input = $this->inputMapper->generateInputDefinition( $prop, $isReq );
+			$input = $this->inputMapper->generateInputDefinition( $prop, $isRequired );
 		}
 
 		$out = [];
 		$out[] = '|-';
 
 		$labelLine = '! ' . $label;
-		if ( $isReq ) {
+		if ( $isRequired ) {
 			$labelLine .= '<span style="color:red;"> *</span>';
 		}
 		$labelLine .= ':';
