@@ -33,20 +33,6 @@ class SchemaValidator {
 	private $customValidators = [];
 
 	/**
-	 * Validate entire schema (errors only).
-	 *
-	 * This method returns only errors for compatibility with existing code.
-	 * Use validateSchemaWithSeverity() to get both errors and warnings.
-	 *
-	 * @param array $schema
-	 * @return array List of error messages
-	 */
-	public function validateSchema( array $schema ): array {
-		$result = $this->validateSchemaWithSeverity( $schema );
-		return $result['errors'];
-	}
-
-	/**
 	 * Validate entire schema with severity levels.
 	 *
 	 * @param array $schema
