@@ -50,7 +50,7 @@ class ApiSemanticSchemasHierarchy extends ApiBase {
 		$categoryName = $this->stripPrefix( $params['category'] );
 		$parentList = $params['parents'] ?? [];
 
-		if ( !$parentList ) {
+		if ( $parentList ) {
 			// Virtual mode: form preview request
 			$cleanParents = $this->sanitizeParentList( $parentList );
 			$data = $this->hierarchyService->getVirtualHierarchyData( $categoryName, $cleanParents );
