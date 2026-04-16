@@ -275,7 +275,7 @@ class SchemaValidator {
 
 		$names = array_map(
 			static function ( $e ) {
-				if ( $e instanceof \MediaWiki\Extension\SemanticSchemas\Schema\FieldModel ) {
+				if ( $e instanceof FieldModel ) {
 					return $e->getName();
 				}
 				return is_array( $e ) ? ( $e['name'] ?? '' ) : (string)$e;
