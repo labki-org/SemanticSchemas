@@ -74,34 +74,6 @@ class WikiPropertyStore {
 	 * PUBLIC API — WRITE
 	 * ------------------------------------------------------------------------- */
 
-	public function writeProperty( PropertyModel $property ): bool {
-		$title = $this->pageCreator->makeTitle( $property->getName(), SMW_NS_PROPERTY );
-		if ( !$title ) {
-			return false;
-		}
-
-		$existing = $this->pageCreator->getPageContent( $title ) ?? '';
-
-		$semanticBlock = $this->buildSemanticBlock( $property );
-
-		$newContent = $this->pageCreator->updateWithinMarkers(
-			$existing,
-			$semanticBlock,
-			self::MARKER_START,
-			self::MARKER_END
-		);
-
-		if ( !str_contains( $newContent, '[[Category:SemanticSchemas-managed-property]]' ) ) {
-			$newContent .= "\n[[Category:SemanticSchemas-managed-property]]";
-		}
-
-		return $this->pageCreator->createOrUpdatePage(
-			$title,
-			$newContent,
-			"SemanticSchemas: Update property metadata"
-		);
-	}
-
 	public function getAllProperties(): array {
 		$out = [];
 

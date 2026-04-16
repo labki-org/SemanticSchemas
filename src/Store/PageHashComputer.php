@@ -35,17 +35,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
  */
 class PageHashComputer {
 
-	private WikiCategoryStore $categoryStore;
-	private WikiPropertyStore $propertyStore;
-
-	public function __construct(
-		WikiCategoryStore $categoryStore,
-		WikiPropertyStore $propertyStore
-	) {
-		$this->categoryStore = $categoryStore;
-		$this->propertyStore = $propertyStore;
-	}
-
 	/**
 	 * Compute hash for a CategoryModel based on canonical schema fields.
 	 *

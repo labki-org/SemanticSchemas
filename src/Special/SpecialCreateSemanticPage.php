@@ -271,17 +271,6 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			return;
 		}
 
-		// Build page content: preserve existing content, replace parent→child
-		// template calls where applicable, and append genuinely new ones.
-		$existingContent = '';
-		if ( $pageTitle->exists() ) {
-			$wikiPage = $this->wikiPageFactory->newFromTitle( $pageTitle );
-			$content = $wikiPage->getContent();
-			if ( $content ) {
-				$existingContent = $content->serialize();
-			}
-		}
-
 		// Build inheritance resolver for parent detection
 		$allCategories = $this->categoryStore->getAllCategories();
 		$categoryMap = [];
@@ -290,9 +279,17 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		}
 		$resolver = new InheritanceResolver( $categoryMap );
 
+		// Build page content: preserve existing content, replace parent→child
+		// template calls where applicable, and append genuinely new ones.
 		// Build set of templates already used on the page via parser output
 		$existingTemplates = [];
+		$existingContent = '';
 		if ( $pageTitle->exists() ) {
+			$wikiPage = $this->wikiPageFactory->newFromTitle( $pageTitle );
+			$content = $wikiPage->getContent();
+			if ( $content ) {
+				$existingContent = $content->serialize();
+			}
 			$parserOutput = $wikiPage->getParserOutput();
 			if ( $parserOutput ) {
 				foreach ( $parserOutput->getLinkList( ParserOutputLinkTypes::TEMPLATE ) as $link ) {

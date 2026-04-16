@@ -23,9 +23,6 @@ class WikiCategoryStore {
 
 	use SMWDataExtractor;
 
-	private const MARKER_START = '<!-- SemanticSchemas Start -->';
-	private const MARKER_END = '<!-- SemanticSchemas End -->';
-
 	private PageCreator $pageCreator;
 	private WikiPropertyStore $propertyStore;
 	private IConnectionProvider $connectionProvider;
@@ -55,14 +52,6 @@ class WikiCategoryStore {
 
 		$data = $this->loadFromSMW( $title, $categoryName );
 		$cat = new CategoryModel( $categoryName, $data );
-
-		// Resolve display template
-		if ( isset( $data['display']['templateProperty'] ) ) {
-			$p = $this->propertyStore->readProperty( $data['display']['templateProperty'] );
-			if ( $p ) {
-				$cat->setDisplayTemplateProperty( $p );
-			}
-		}
 
 		return $cat;
 	}
@@ -231,61 +220,5 @@ class WikiCategoryStore {
 		}
 
 		return $out;
-	}
-
-	/* -------------------------------------------------------------------------
-	 * WRITE: semantic block
-	 * ------------------------------------------------------------------------- */
-
-	private function generateSemanticBlock( CategoryModel $cat ): string {
-		$lines = [];
-
-		if ( $cat->getDescription() !== '' ) {
-			$lines[] = '[[Has description::' . $cat->getDescription() . ']]';
-		}
-
-		if ( $cat->getTargetNamespace() !== null ) {
-			$lines[] = '[[Has target namespace::' . $cat->getTargetNamespace() . ']]';
-		}
-
-		// Parent categories
-		foreach ( $cat->getParents() as $p ) {
-			$lines[] = "[[Category:$p]]";
-		}
-
-		// Display format
-		if ( $cat->getDisplayFormat() !== null ) {
-			$lines[] = '[[Has display format::' . $cat->getDisplayFormat() . ']]';
-		}
-
-		// Display template
-		if ( $cat->getDisplayTemplateProperty() !== null ) {
-			$lines[] = '[[Has display template::' . $cat->getDisplayTemplateProperty()->getName() . ']]';
-		}
-
-		// Backlink properties
-		foreach ( $cat->getBacklinksFor() as $prop ) {
-			$lines[] = "[[Show backlinks for::Property:$prop]]";
-		}
-
-		// Required/optional properties
-		foreach ( $cat->getRequiredProperties() as $prop ) {
-			$lines[] = "[[Has required property::Property:$prop]]";
-		}
-
-		foreach ( $cat->getOptionalProperties() as $prop ) {
-			$lines[] = "[[Has optional property::Property:$prop]]";
-		}
-
-		// Subobjects (categories used as subobject types)
-		foreach ( $cat->getRequiredSubobjects() as $sg ) {
-			$lines[] = "[[Has required subobject::Category:$sg]]";
-		}
-
-		foreach ( $cat->getOptionalSubobjects() as $sg ) {
-			$lines[] = "[[Has optional subobject::Category:$sg]]";
-		}
-
-		return implode( "\n", $lines );
 	}
 }

@@ -20,7 +20,6 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 		$services = $this->getServiceContainer();
 		$this->pageCreator = new PageCreator(
 			$services->getWikiPageFactory(),
-			$services->getDeletePageFactory()
 		);
 	}
 
@@ -246,31 +245,5 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 		// Content before and after markers should be preserved
 		$this->assertStringStartsWith( 'Before', $result );
 		$this->assertStringEndsWith( "After\n", trim( $result ) . "\n" );
-	}
-
-	/* =========================================================================
-	 * ERROR HANDLING
-	 * ========================================================================= */
-
-	public function testGetLastErrorReturnsNullOnSuccess(): void {
-		$title = Title::makeTitle( NS_MAIN, 'SuccessPage_' . uniqid() );
-
-		$this->pageCreator->createOrUpdatePage( $title, 'Content', 'Create' );
-
-		$this->assertNull( $this->pageCreator->getLastError() );
-	}
-
-	public function testGetLastErrorReturnsMessageOnFailure(): void {
-		// NS_SPECIAL pages cannot be created — this should trigger an error
-		$title = Title::makeTitle( NS_SPECIAL, 'CannotCreate_' . uniqid() );
-
-		// Suppress the E_USER_WARNING from wfLogWarning so PHPUnit doesn't treat it as an error
-		set_error_handler( static function () {
-		}, E_USER_WARNING );
-		$result = $this->pageCreator->createOrUpdatePage( $title, 'Content', 'Create' );
-		restore_error_handler();
-
-		$this->assertFalse( $result );
-		$this->assertNotNull( $this->pageCreator->getLastError() );
 	}
 }

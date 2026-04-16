@@ -438,16 +438,4 @@ class CategoryModel {
 
 		return $out;
 	}
-
-	/* -------------------------------------------------------------------------
-	 * NEW DISPLAY SYSTEM ACCESSORS
-	 * ------------------------------------------------------------------------- */
-
-	public function setDisplayTemplateProperty( ?PropertyModel $property ): void {
-		$this->displayTemplateProperty = $property;
-	}
-
-	public function getDisplayTemplateProperty(): ?PropertyModel {
-		return $this->displayTemplateProperty;
-	}
 }

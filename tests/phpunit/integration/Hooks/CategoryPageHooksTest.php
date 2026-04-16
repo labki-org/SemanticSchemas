@@ -49,7 +49,6 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 
 		$this->pageCreator = new PageCreator(
 			$wikiPageFactory,
-			$services->getDeletePageFactory()
 		);
 		$propertyStore = new WikiPropertyStore(
 			$this->pageCreator,

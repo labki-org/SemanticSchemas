@@ -5,7 +5,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Content\TextContent;
-use MediaWiki\Page\DeletePageFactory;
 use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
@@ -21,31 +20,18 @@ class PageCreator {
 
 	private User $user;
 	private WikiPageFactory $wikiPageFactory;
-	private DeletePageFactory $deletePageFactory;
 
 	public function __construct(
 		WikiPageFactory $wikiPageFactory,
-		DeletePageFactory $deletePageFactory,
 		?User $user = null
 	) {
 		$this->wikiPageFactory = $wikiPageFactory;
-		$this->deletePageFactory = $deletePageFactory;
 		$this->user = $user ?? User::newSystemUser( 'SemanticSchemas', [ 'steal' => true ] );
 	}
 
 	/* =====================================================================
 	 * PAGE CREATION / UPDATE
 	 * ===================================================================== */
-
-	/** @var string|null Last error message */
-	private ?string $lastError = null;
-
-	/**
-	 * Get the last error message from a failed operation.
-	 */
-	public function getLastError(): ?string {
-		return $this->lastError;
-	}
 
 	/**
 	 * Create or update a wiki page with new content.
@@ -58,7 +44,6 @@ class PageCreator {
 	 * @return bool
 	 */
 	public function createOrUpdatePage( Title $title, string $content, string $summary, int $flags = 0 ): bool {
-		$this->lastError = null;
 		try {
 			$wikiPage = $this->wikiPageFactory->newFromTitle( $title );
 			$updater = $wikiPage->newPageUpdater( $this->user );
@@ -83,7 +68,6 @@ class PageCreator {
 					return true;
 				}
 
-				$this->lastError = $errorMsg;
 				wfLogWarning( "SemanticSchemas: Failed to save '{$title->getPrefixedText()}': {$errorMsg}" );
 				wfDebugLog( 'semanticschemas', "SAVE RETURNED NULL: " . $title->getPrefixedText() . " - " . $errorMsg );
 				return false;
@@ -93,7 +77,6 @@ class PageCreator {
 			return true;
 
 		} catch ( \Exception $e ) {
-			$this->lastError = $e->getMessage();
 			wfLogWarning(
 				"SemanticSchemas: Exception saving '{$title->getPrefixedText()}': " . $e->getMessage()
 			);

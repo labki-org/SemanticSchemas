@@ -30,7 +30,6 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 		$services = $this->getServiceContainer();
 		$this->pageCreator = new PageCreator(
 			$services->getWikiPageFactory(),
-			$services->getDeletePageFactory()
 		);
 		$propertyStore = new WikiPropertyStore(
 			$this->pageCreator,

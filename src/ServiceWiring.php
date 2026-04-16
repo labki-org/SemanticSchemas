@@ -8,7 +8,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -55,7 +54,6 @@ return [
 			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.StateManager' ),
-			$services->get( 'SemanticSchemas.PageHashComputer' ),
 			$services->get( 'SemanticSchemas.SchemaValidator' )
 		);
 	},
@@ -65,16 +63,6 @@ return [
 	): PageCreator {
 		return new PageCreator(
 			$services->getWikiPageFactory(),
-			$services->getDeletePageFactory()
-		);
-	},
-
-	'SemanticSchemas.PageHashComputer' => static function (
-		MediaWikiServices $services
-	): PageHashComputer {
-		return new PageHashComputer(
-			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' )
 		);
 	},
 

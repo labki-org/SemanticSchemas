@@ -71,7 +71,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		DisplayStubGenerator $displayGenerator,
 		OntologyInspector $inspector,
 		StateManager $stateManager,
-		PageHashComputer $hashComputer,
 		ObjectCacheFactory $objectCacheFactory
 	) {
 		parent::__construct( 'SemanticSchemas', 'editinterface' );
@@ -82,7 +81,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$this->displayGenerator = $displayGenerator;
 		$this->inspector = $inspector;
 		$this->stateManager = $stateManager;
-		$this->hashComputer = $hashComputer;
+		$this->hashComputer = new PageHashComputer();
 		$this->objectCacheFactory = $objectCacheFactory;
 	}
 

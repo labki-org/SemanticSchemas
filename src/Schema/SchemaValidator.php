@@ -497,7 +497,6 @@ class SchemaValidator {
 	private function validateProperty(
 		string $propertyName,
 		array $propertyData,
-		array $allCategories
 	): array {
 		$errors = [];
 		$warnings = [];
