@@ -250,17 +250,15 @@ class FormGenerator {
 	}
 
 	/**
-	 * Subobject repeatable blocks.
-	 *
-	 * Subobject types are categories resolved through InheritanceResolver
-	 * to include inherited properties from parent categories.
+	 * Subobject sections: transclude each subobject category's composite form
+	 * in subobject mode instead of duplicating its field definitions.
 	 */
 	private function generateSubobjectSections(
 		CategoryModel $category,
 		InheritanceResolver $resolver
 	): array {
 		$subFields = $category->getSubobjectFields();
-		if ( empty( $subFields ) ) {
+		if ( $subFields === [] ) {
 			return [];
 		}
 
@@ -270,41 +268,16 @@ class FormGenerator {
 			$subName = $field->getName();
 
 			if ( !$resolver->hasCategory( $subName ) ) {
-				// Category page doesn't exist yet — nothing to generate
 				continue;
 			}
 
-			$model = $resolver->getEffectiveCategory( $subName );
-
-			$label = $this->s( $model->getLabel() ?: $model->getName() );
-
-			$out[] = '=== ' . $label . ' ===';
-			$out[] = '';
-
-			$templateName = $this->s( $model->getName() ) . '/subobject';
-
-			$for = [ $templateName, 'multiple' ];
+			$params = [ 'subobject=true' ];
 			if ( $field->isRequired() ) {
-				$for[] = 'minimum instances=1';
+				$params[] = 'required=true';
 			}
 
-			$out[] = '{{{for template|' . implode( '|', $for ) . '}}}';
-			$out[] = '';
-
-			// Generate table for subobject properties
-			$propFields = $model->getPropertyFields();
-			if ( !empty( $propFields ) ) {
-				$out[] = '{| class="formtable"';
-
-				foreach ( $propFields as $prop ) {
-					$out = array_merge( $out, $this->generateTableField( $prop->getName(), $prop->isRequired() ) );
-				}
-
-				$out[] = '|}';
-				$out[] = '';
-			}
-
-			$out[] = '{{{end template}}}';
+			$out[] = '{{Form:' . $this->s( $subName )
+				. '/composite|' . implode( '|', $params ) . '}}';
 			$out[] = '';
 		}
 
@@ -359,7 +332,16 @@ class FormGenerator {
 	 * Generate a composite form slot for a category.
 	 *
 	 * Produces a form fragment with nowiki-wrapped field directives,
-	 * designed to be transcluded by Form:CompositeForm via {{Form:Category/composite}}.
+	 * designed to be transcluded via {{Form:Category/composite}}.
+	 *
+	 * Supports two modes via template parameters:
+	 *   - Standalone (default): {{{for template|Category}}} with <h2> heading
+	 *   - Subobject ({{{subobject|}}}): {{{for template|Category/subobject|multiple}}}
+	 *     with <h3> heading; {{{required|}}} adds |minimum instances=1
+	 *
+	 * This means a parent form's subobject section can simply transclude
+	 * {{Form:SubobjectCategory/composite|subobject=true|required=true}}
+	 * instead of duplicating the subobject's field definitions.
 	 */
 	public function generateCompositeForm(
 		EffectiveCategoryModel $category,
@@ -367,6 +349,7 @@ class FormGenerator {
 	): string {
 		$name = trim( $category->getName() );
 		$label = trim( $category->getLabel() );
+		$escapedLabel = htmlspecialchars( $label, ENT_QUOTES );
 
 		$lines = [];
 
@@ -375,11 +358,24 @@ class FormGenerator {
 		$lines[] = '<!-- Composite form slot for ' . $name . ' -->';
 		$lines[] = '</noinclude><includeonly>';
 
-		// HTML heading (wiki == headings don't parse through transclusion)
-		$lines[] = '<h2>' . htmlspecialchars( $label, ENT_QUOTES ) . '</h2>';
+		// Heading: <h3> in subobject mode, <h2> in standalone mode
+		$lines[] = '{{#if:{{{subobject|}}}|<h3>' . $escapedLabel
+			. '</h3>|<h2>' . $escapedLabel . '</h2>}}';
 		$lines[] = '';
 
-		$lines[] = '<nowiki>{{{for template|' . $this->s( $name ) . '}}}</nowiki>';
+		// For-template directive: subobject mode switches to /subobject|multiple,
+		// with optional minimum instances for required subobjects.
+		// {{{subobject|}}} and {{{required|}}} are resolved during transclusion;
+		// the <nowiki> tags protect the PageForms {{{...}}} directives from
+		// being parsed as template parameters.
+		$subFor = $this->s( $name ) . '/subobject|multiple';
+		$lines[] = '{{#if:{{{subobject|}}}';
+		$lines[] = '|{{#if:{{{required|}}}';
+		$lines[] = '|<nowiki>{{{for template|' . $subFor . '|minimum instances=1}}}</nowiki>';
+		$lines[] = '|<nowiki>{{{for template|' . $subFor . '}}}</nowiki>';
+		$lines[] = '}}';
+		$lines[] = '|<nowiki>{{{for template|' . $this->s( $name ) . '}}}</nowiki>';
+		$lines[] = '}}';
 		$lines[] = '';
 
 		$fieldLines = $this->generatePropertyTable( $category );
