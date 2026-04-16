@@ -14,7 +14,10 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\MediaWikiServices;
 
-/** @phpcs-require-sorted-array */
+/**
+ * @phpcs-require-sorted-array
+ * @phan-file-suppress PhanUnreferencedClosure
+ */
 return [
 
 	'SemanticSchemas.CategoryHierarchyService' => static function (

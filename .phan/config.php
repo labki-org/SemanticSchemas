@@ -24,6 +24,7 @@ $cfg['directory_list'] = array_merge(
 		__DIR__ . '/../core/includes/',
 		__DIR__ . '/../core/maintenance/',
 		__DIR__ . '/../extensions/SemanticMediaWiki/includes/',
+		__DIR__ . '/../extensions/SemanticMediaWiki/src/',
 		__DIR__ . '/../vendor/',
 	]
 );

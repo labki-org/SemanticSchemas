@@ -22,13 +22,17 @@ use PPFrame;
  *   - Inject hierarchy widget
  *   - Load form preview modules
  *   - Provide clean HTML-safe outputs
+ *
+ * @suppress PhanUnreferencedClass
  */
 class DisplayParserFunctions {
 
 	/* =====================================================================
 	 * REGISTRATION
 	 * ===================================================================== */
-
+	/**
+	 * @suppress PhanUnreferencedPublicMethod
+	 */
 	public function onParserFirstCallInit( Parser $parser ): void {
 		// Category hierarchy UI
 		$parser->setFunctionHook(
