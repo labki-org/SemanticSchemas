@@ -141,14 +141,8 @@ class FormGenerator {
 	 */
 	private function generatePropertyTable( CategoryModel $category ): array {
 		$fields = $category->getPropertyFields();
-		$required = array_values( array_filter(
-			$fields,
-			static fn ( FieldModel $f ) => $f->isRequired()
-		) );
-		$optional = array_values( array_filter(
-			$fields,
-			static fn ( FieldModel $f ) => !$f->isRequired()
-		) );
+		$required = FieldModel::filter( $fields, required: true );
+		$optional = FieldModel::filter( $fields, required: false );
 
 		$out = [];
 		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields' ) );

@@ -35,6 +35,47 @@ class FieldModelTest extends TestCase {
 	}
 
 	/* =========================================================================
+	 * ACCESSORS
+	 * ========================================================================= */
+
+	public function testGetParameterName(): void {
+		$field = FieldModel::property( 'Has full name', true );
+		$this->assertSame( 'has_full_name', $field->getParameterName() );
+	}
+
+	public function testJsonSerialize(): void {
+		$field = FieldModel::property( 'Has name', true );
+		$this->assertSame(
+			[ 'name' => 'Has name', 'required' => true ],
+			$field->jsonSerialize()
+		);
+	}
+
+	/* =========================================================================
+	 * filter()
+	 * ========================================================================= */
+
+	public function testFilterWithNoParametersReturnsAll(): void {
+		$fields = [
+			FieldModel::property( 'A', true ),
+			FieldModel::property( 'B', false ),
+		];
+		$this->assertCount( 2, FieldModel::filter( $fields ) );
+	}
+
+	public function testFilterByRequired(): void {
+		$fields = [
+			FieldModel::property( 'A', true ),
+			FieldModel::property( 'B', false ),
+			FieldModel::property( 'C', true ),
+		];
+		$required = FieldModel::filter( $fields, required: true );
+		$this->assertCount( 2, $required );
+		$this->assertSame( 'A', $required[0]->getName() );
+		$this->assertSame( 'C', $required[1]->getName() );
+	}
+
+	/* =========================================================================
 	 * toWikitext — PROPERTY FIELDS
 	 * ========================================================================= */
 

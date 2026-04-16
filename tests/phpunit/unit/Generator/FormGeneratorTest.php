@@ -333,14 +333,4 @@ class FormGeneratorTest extends TestCase {
 		$this->assertStringContainsString( 'has_weight', $result );
 	}
 
-	/* =========================================================================
-	 * Helpers
-	 * ========================================================================= */
-
-	private function extractIncludeOnly( string $wikitext ): string {
-		if ( preg_match( '/<includeonly>(.*?)<\/includeonly>/s', $wikitext, $m ) ) {
-			return $m[1];
-		}
-		return '';
-	}
 }

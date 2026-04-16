@@ -71,6 +71,7 @@ class NamespacePrefixingTest extends MediaWikiIntegrationTestCase {
 
 		// Strip " | PropertyName = " prefix — find first " = "
 		$eqPos = strpos( $line, ' = ' );
+		$this->assertNotFalse( $eqPos, "generatePropertyLine must contain ' = '" );
 		$expr = substr( $line, $eqPos + 3 );
 
 		// Strip " |+sep=," suffix ({{#set:}} multi-value separator)

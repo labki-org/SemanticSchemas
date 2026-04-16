@@ -17,8 +17,8 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   targetNamespace: string|null
  *   renderAs: string|null - TemplateFormat category reference
  *
- *   properties: array<array{name:string, required:bool}>
- *   subobjects: array<array{name:string, required:bool}>
+ *   properties: FieldModel[]
+ *   subobjects: FieldModel[]
  *
  *   display:
  *     format: string|null

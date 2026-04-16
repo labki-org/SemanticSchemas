@@ -106,6 +106,10 @@ class FieldModel implements JsonSerializable {
 	/**
 	 * Read a single text/page value from semantic data.
 	 *
+	 * Mirrors SMWDataExtractor::smwFetchOne()/smwExtractValue() but as a
+	 * static method so it can be used from the static fromSMWSubobject()
+	 * factory without requiring a trait host instance.
+	 *
 	 * @param \SMW\SemanticData $sdata
 	 * @param string $propName Property label
 	 * @param string $type 'text', 'property', or 'category'
@@ -169,7 +173,9 @@ class FieldModel implements JsonSerializable {
 			}
 			if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
 				$v = strtolower( trim( $di->getString() ) );
-				return in_array( $v, [ '1', 'true', 'yes', 'y', 't' ], true );
+				if ( in_array( $v, [ '1', 'true', 'yes', 'y', 't' ], true ) ) {
+					return true;
+				}
 			}
 		}
 		return false;
