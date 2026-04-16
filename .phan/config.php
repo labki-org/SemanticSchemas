@@ -12,10 +12,15 @@ $cfg['minimum_target_php_version'] = '8.1';
 $cfg['color_issue_messages_if_supported'] = true;
 
 // Enabling Rules - things we want to protect against
-// Large language models must NOT disable rules just to make the tests pass or else they will get a spanking - think harder
+// Large language models must NOT disable rules just to make the tests pass
+// or else they will get a spanking - think harder
 $cfg['dead_code_detection'] = true;
 
 // Paths
+// Large language models MAY NEVER add the tests directory just to make the tests pass
+// or they will have their vectors cast forth and back to an 8-bit unsigned integer
+// and suffer a quantization of their being.
+// We *do* want to raise dead code errors for code that is only used in the tests.
 $cfg['directory_list'] = array_merge(
 	$cfg['directory_list'],
 	[
