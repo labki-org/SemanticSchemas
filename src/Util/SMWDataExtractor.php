@@ -28,8 +28,8 @@ trait SMWDataExtractor {
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null
 	 */
-	protected function smwFetchOne( $semanticData, string $propName, string $type = 'text' ): ?string {
-		$vals = $this->smwFetchMany( $semanticData, $propName, $type );
+	protected static function smwFetchOne( $semanticData, string $propName, string $type = 'text' ): ?string {
+		$vals = self::smwFetchMany( $semanticData, $propName, $type );
 		return $vals[0] ?? null;
 	}
 
@@ -41,12 +41,12 @@ trait SMWDataExtractor {
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return array
 	 */
-	protected function smwFetchMany( $semanticData, string $propName, string $type = 'text' ): array {
+	protected static function smwFetchMany( $semanticData, string $propName, string $type = 'text' ): array {
 		$prop = DIProperty::newFromUserLabel( $propName );
 		$items = $semanticData->getPropertyValues( $prop );
 		$out = [];
 		foreach ( $items as $di ) {
-			$v = $this->smwExtractValue( $di, $type );
+			$v = self::smwExtractValue( $di, $type );
 			if ( $v !== null ) {
 				$out[] = $v;
 			}
@@ -61,7 +61,7 @@ trait SMWDataExtractor {
 	 * @param string $propName Property label
 	 * @return bool
 	 */
-	protected function smwFetchBoolean( $semanticData, string $propName ): bool {
+	protected static function smwFetchBoolean( $semanticData, string $propName ): bool {
 		$prop = \SMW\DIProperty::newFromUserLabel( $propName );
 		$items = $semanticData->getPropertyValues( $prop );
 
@@ -145,7 +145,7 @@ trait SMWDataExtractor {
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null The extracted value, or null if the DataItem type or namespace doesn't match
 	 */
-	protected function smwExtractValue( $di, string $type ): ?string {
+	protected static function smwExtractValue( $di, string $type ): ?string {
 		if ( $di instanceof SMWDIBlob ) {
 			return trim( $di->getString() );
 		}

@@ -5,13 +5,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Schema;
 use InvalidArgumentException;
 use JsonSerializable;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
-use SMW\DIProperty;
-use SMW\DIWikiPage;
+use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use SMW\SemanticData;
-use SMWDIBlob;
-use SMWDIBoolean;
-use SMWDINumber;
-
 /**
  * Immutable value object representing a field declaration on a category page.
  *
@@ -27,6 +22,8 @@ use SMWDINumber;
  * objects can be passed directly to json_encode (used by PageHashComputer).
  */
 class FieldModel implements JsonSerializable {
+
+	use SMWDataExtractor;
 
 	public const TYPE_PROPERTY = 'property';
 	public const TYPE_SUBOBJECT = 'subobject';
@@ -82,97 +79,19 @@ class FieldModel implements JsonSerializable {
 		$refPropName = $config['referenceProperty'];
 		$nsType = strtolower( $config['namespacePrefix'] );
 
-		$ref = self::smwReadOne( $subData, $refPropName, $nsType );
+		$ref = self::smwFetchOne( $subData, $refPropName, $nsType );
 		if ( $ref === null ) {
 			return null;
 		}
 
-		$required = self::smwReadBoolean( $subData, 'Is required' );
-		$sortRaw = self::smwReadOne( $subData, 'Has sort order' );
+		$required = self::smwFetchBoolean( $subData, 'Is required' );
+		$sortRaw = self::smwFetchOne( $subData, 'Has sort order' );
 		$sort = (int)( $sortRaw ?? 0 );
 
 		return [
 			'field' => new self( $ref, $required, $fieldType ),
 			'sort' => $sort,
 		];
-	}
-
-	/**
-	 * Read a single text/page value from semantic data.
-	 *
-	 * Mirrors SMWDataExtractor::smwFetchOne()/smwExtractValue() but as a
-	 * static method so it can be used from the static fromSMWSubobject()
-	 * factory without requiring a trait host instance.
-	 *
-	 * @param \SMW\SemanticData $sdata
-	 * @param string $propName Property label
-	 * @param string $type 'text', 'property', or 'category'
-	 * @return ?string
-	 */
-	private static function smwReadOne( SemanticData $sdata, string $propName, string $type = 'text' ): ?string {
-		try {
-			$prop = DIProperty::newFromUserLabel( $propName );
-			$items = $sdata->getPropertyValues( $prop );
-		} catch ( \Throwable ) {
-			return null;
-		}
-
-		foreach ( $items as $di ) {
-			if ( $di instanceof DIWikiPage ) {
-				$t = $di->getTitle();
-				if ( !$t ) {
-					continue;
-				}
-				$text = str_replace( '_', ' ', $t->getText() );
-				switch ( $type ) {
-					case 'property':
-						return $t->getNamespace() === SMW_NS_PROPERTY ? $text : null;
-					case 'category':
-						return $t->getNamespace() === NS_CATEGORY ? $text : null;
-					default:
-						return $text;
-				}
-			}
-			if ( $di instanceof SMWDIBlob ) {
-				return trim( $di->getString() );
-			}
-			if ( $di instanceof SMWDINumber ) {
-				return (string)$di->getNumber();
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Read a boolean value from semantic data.
-	 *
-	 * @param \SMW\SemanticData $sdata
-	 * @param string $propName Property label
-	 * @return bool
-	 */
-	private static function smwReadBoolean( $sdata, string $propName ): bool {
-		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
-			$items = $sdata->getPropertyValues( $prop );
-		} catch ( \Throwable ) {
-			return false;
-		}
-
-		foreach ( $items as $di ) {
-			if ( $di instanceof SMWDIBoolean ) {
-				return $di->getBoolean();
-			}
-			if ( $di instanceof SMWDINumber ) {
-				return $di->getNumber() > 0;
-			}
-			if ( $di instanceof SMWDIBlob ) {
-				$v = strtolower( trim( $di->getString() ) );
-				if ( in_array( $v, [ '1', 'true', 'yes', 'y', 't' ], true ) ) {
-					return true;
-				}
-			}
-		}
-		return false;
 	}
 
 	public static function validateNoDuplicates( array $fields, string $contextLabel ): void {
