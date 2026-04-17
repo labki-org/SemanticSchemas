@@ -368,7 +368,7 @@ class DisplayStubGenerator {
 		}
 
 		$subFields = $category->getSubobjectFields();
-		if ( empty( $subFields ) ) {
+		if ( !$subFields ) {
 			return '';
 		}
 
@@ -384,7 +384,7 @@ class DisplayStubGenerator {
 			$sub = $resolver->getEffectiveCategory( $subName );
 
 			$fields = $sub->getPropertyFields();
-			if ( $fields === [] ) {
+			if ( !$fields ) {
 				continue;
 			}
 

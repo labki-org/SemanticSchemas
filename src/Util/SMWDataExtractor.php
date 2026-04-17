@@ -3,6 +3,12 @@
 namespace MediaWiki\Extension\SemanticSchemas\Util;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
+use SMW\DIProperty;
+use SMW\DIWikiPage;
+use SMWDataItem;
+use SMWDIBlob;
+use SMWDIBoolean;
+use SMWDINumber;
 
 /**
  * SMWDataExtractor
@@ -36,13 +42,8 @@ trait SMWDataExtractor {
 	 * @return array
 	 */
 	protected function smwFetchMany( $semanticData, string $propName, string $type = 'text' ): array {
-		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
-			$items = $semanticData->getPropertyValues( $prop );
-		} catch ( \Throwable $e ) {
-			return [];
-		}
-
+		$prop = DIProperty::newFromUserLabel( $propName );
+		$items = $semanticData->getPropertyValues( $prop );
 		$out = [];
 		foreach ( $items as $di ) {
 			$v = $this->smwExtractValue( $di, $type );
@@ -61,21 +62,17 @@ trait SMWDataExtractor {
 	 * @return bool
 	 */
 	protected function smwFetchBoolean( $semanticData, string $propName ): bool {
-		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
-			$items = $semanticData->getPropertyValues( $prop );
-		} catch ( \Throwable $e ) {
-			return false;
-		}
+		$prop = \SMW\DIProperty::newFromUserLabel( $propName );
+		$items = $semanticData->getPropertyValues( $prop );
 
 		foreach ( $items as $di ) {
-			if ( $di instanceof \SMWDIBoolean ) {
+			if ( $di instanceof SMWDIBoolean ) {
 				return $di->getBoolean();
 			}
-			if ( $di instanceof \SMWDINumber ) {
+			if ( $di instanceof SMWDINumber ) {
 				return $di->getNumber() > 0;
 			}
-			if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
+			if ( $di instanceof SMWDIBlob ) {
 				$v = strtolower( trim( $di->getString() ) );
 				if ( in_array( $v, [ '1', 'true', 'yes', 'y', 't' ], true ) ) {
 					return true;
@@ -144,12 +141,12 @@ trait SMWDataExtractor {
 	 *   - 'category'  — requires NS_CATEGORY
 	 *   - 'page'      — returns prefixed text (no namespace check)
 	 *
-	 * @param \SMW\DataItem $di
+	 * @param SMWDataItem $di
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null The extracted value, or null if the DataItem type or namespace doesn't match
 	 */
 	protected function smwExtractValue( $di, string $type ): ?string {
-		if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
+		if ( $di instanceof SMWDIBlob ) {
 			return trim( $di->getString() );
 		}
 
@@ -157,7 +154,7 @@ trait SMWDataExtractor {
 			return (string)$di->getNumber();
 		}
 
-		if ( $di instanceof \SMW\DIWikiPage ) {
+		if ( $di instanceof DIWikiPage ) {
 			$t = $di->getTitle();
 			if ( !$t ) {
 				return null;

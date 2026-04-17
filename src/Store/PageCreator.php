@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Content\TextContent;
-use MediaWiki\Page\DeletePageFactory;
+use MediaWiki\Exception\UserNotLoggedIn;
 use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
@@ -21,31 +21,29 @@ class PageCreator {
 
 	private User $user;
 	private WikiPageFactory $wikiPageFactory;
-	private DeletePageFactory $deletePageFactory;
 
+	/**
+	 * @throws UserNotLoggedIn if no user provided and system user can't be created
+	 */
 	public function __construct(
 		WikiPageFactory $wikiPageFactory,
-		DeletePageFactory $deletePageFactory,
 		?User $user = null
 	) {
 		$this->wikiPageFactory = $wikiPageFactory;
-		$this->deletePageFactory = $deletePageFactory;
-		$this->user = $user ?? User::newSystemUser( 'SemanticSchemas', [ 'steal' => true ] );
+		if ( $user !== null ) {
+			$this->user = $user;
+		} else {
+			$user = User::newSystemUser( 'SemanticSchemas', [ 'steal' => true ] );
+			if ( $user === null ) {
+				throw new UserNotLoggedIn( "No user logged in and system user not created" );
+			}
+			$this->user = $user;
+		}
 	}
 
 	/* =====================================================================
 	 * PAGE CREATION / UPDATE
 	 * ===================================================================== */
-
-	/** @var string|null Last error message */
-	private ?string $lastError = null;
-
-	/**
-	 * Get the last error message from a failed operation.
-	 */
-	public function getLastError(): ?string {
-		return $this->lastError;
-	}
 
 	/**
 	 * Create or update a wiki page with new content.
@@ -58,7 +56,6 @@ class PageCreator {
 	 * @return bool
 	 */
 	public function createOrUpdatePage( Title $title, string $content, string $summary, int $flags = 0 ): bool {
-		$this->lastError = null;
 		try {
 			$wikiPage = $this->wikiPageFactory->newFromTitle( $title );
 			$updater = $wikiPage->newPageUpdater( $this->user );
@@ -83,7 +80,6 @@ class PageCreator {
 					return true;
 				}
 
-				$this->lastError = $errorMsg;
 				wfLogWarning( "SemanticSchemas: Failed to save '{$title->getPrefixedText()}': {$errorMsg}" );
 				wfDebugLog( 'semanticschemas', "SAVE RETURNED NULL: " . $title->getPrefixedText() . " - " . $errorMsg );
 				return false;
@@ -93,7 +89,6 @@ class PageCreator {
 			return true;
 
 		} catch ( \Exception $e ) {
-			$this->lastError = $e->getMessage();
 			wfLogWarning(
 				"SemanticSchemas: Exception saving '{$title->getPrefixedText()}': " . $e->getMessage()
 			);
@@ -127,7 +122,7 @@ class PageCreator {
 				return $contentObj->getText();
 			}
 
-			return $contentObj?->serialize() ?? null;
+			return $contentObj?->serialize();
 
 		} catch ( \Exception $e ) {
 			wfLogWarning( "SemanticSchemas: Failed reading page '{$title->getPrefixedText()}': " . $e->getMessage() );
@@ -153,79 +148,6 @@ class PageCreator {
 		} catch ( \Exception $e ) {
 			wfLogWarning( "SemanticSchemas: Title creation failed for '$text': " . $e->getMessage() );
 			return null;
-		}
-	}
-
-	/**
-	 * Parse a prefixed page name (e.g., "Category:Name", "Property:Name", "Subobject:Name")
-	 * and return a Title object.
-	 *
-	 * @param string $pageName Prefixed page name (e.g., "Category:Something")
-	 * @return Title|null
-	 */
-	public function titleFromPageName( string $pageName ): ?Title {
-		$pageName = trim( $pageName );
-		if ( $pageName === '' ) {
-			return null;
-		}
-
-		// Handle prefixed names like "Category:Name", "Property:Name"
-		if ( preg_match( '/^([^:]+):(.+)$/', $pageName, $matches ) ) {
-			$prefix = $matches[1];
-			$name = $matches[2];
-
-			// Map prefix to namespace
-			$namespace = null;
-			switch ( strtolower( $prefix ) ) {
-				case 'category':
-					$namespace = NS_CATEGORY;
-					break;
-				case 'property':
-					$namespace = defined( 'SMW_NS_PROPERTY' ) ? constant( 'SMW_NS_PROPERTY' ) : NS_MAIN;
-					break;
-				default:
-					// Unknown prefix, try to parse as a regular title
-					return Title::newFromText( $pageName );
-			}
-
-			return $this->makeTitle( $name, $namespace );
-		}
-
-		// No prefix, try parsing as a regular title
-		return Title::newFromText( $pageName );
-	}
-
-	/* =====================================================================
-	 * DELETE
-	 * ===================================================================== */
-
-	/**
-	 * Delete a page if it exists.
-	 */
-	public function deletePage( Title $title, string $reason ): bool {
-		if ( !$title->exists() ) {
-			return true;
-		}
-
-		try {
-			$wikiPage = $this->wikiPageFactory->newFromTitle( $title );
-			$deletePage = $this->deletePageFactory->newDeletePage( $wikiPage, $this->user );
-
-			$status = $deletePage->deleteUnsafe( $reason );
-
-			if ( !$status->isOK() ) {
-				wfLogWarning(
-					"SemanticSchemas: Failed deleting '{$title->getPrefixedText()}': "
-						. $status->getMessage( false )
-				);
-				return false;
-			}
-
-			return true;
-
-		} catch ( \Exception $e ) {
-			wfLogWarning( "SemanticSchemas: Exception deleting '{$title->getPrefixedText()}': " . $e->getMessage() );
-			return false;
 		}
 	}
 
@@ -258,34 +180,5 @@ class PageCreator {
 			);
 			return false;
 		}
-	}
-
-	/* =====================================================================
-	 * MARKER-BASED CONTENT UPDATES
-	 * ===================================================================== */
-
-	public function updateWithinMarkers(
-		string $content,
-		string $newText,
-		string $startMarker,
-		string $endMarker
-	): string {
-		$startPos = strpos( $content, $startMarker );
-		$endPos = strpos( $content, $endMarker );
-
-		if ( $startPos !== false && $endPos !== false && $endPos > $startPos ) {
-			$before = substr( $content, 0, $startPos + strlen( $startMarker ) );
-			$after = substr( $content, $endPos );
-
-			return rtrim( $before ) . "\n\n" . trim( $newText ) . "\n\n" . ltrim( $after );
-		}
-
-		// Append markers
-		$out = rtrim( $content ) . "\n\n";
-		$out .= $startMarker . "\n";
-		$out .= trim( $newText ) . "\n";
-		$out .= $endMarker . "\n";
-
-		return $out;
 	}
 }

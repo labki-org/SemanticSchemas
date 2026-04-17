@@ -1,4 +1,7 @@
 <?php
+/**
+ * @phan-file-suppress PhanUnreferencedPublicMethod
+ */
 
 namespace MediaWiki\Extension\SemanticSchemas;
 
@@ -9,7 +12,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -46,10 +48,6 @@ class SemanticSchemasServices {
 
 	public static function getStateManager( MediaWikiServices $services ): StateManager {
 		return $services->get( 'SemanticSchemas.StateManager' );
-	}
-
-	public static function getPageHashComputer( MediaWikiServices $services ): PageHashComputer {
-		return $services->get( 'SemanticSchemas.PageHashComputer' );
 	}
 
 	public static function getTemplateGenerator( MediaWikiServices $services ): TemplateGenerator {

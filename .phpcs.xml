@@ -21,5 +21,6 @@
 	<exclude-pattern type="relative">^cache</exclude-pattern>
 	<exclude-pattern>core</exclude-pattern>
 	<exclude-pattern>tests/docker</exclude-pattern>
+	<exclude-pattern>extensions</exclude-pattern>
 </ruleset>
 

@@ -5,7 +5,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
-use MediaWiki\Language\Language;
 use MediaWiki\Title\Title;
 use Wikimedia\Rdbms\IConnectionProvider;
 
@@ -20,21 +19,15 @@ class WikiPropertyStore {
 
 	use SMWDataExtractor;
 
-	private const MARKER_START = '<!-- SemanticSchemas Start -->';
-	private const MARKER_END = '<!-- SemanticSchemas End -->';
-
 	private PageCreator $pageCreator;
 	private IConnectionProvider $connectionProvider;
-	private Language $contentLanguage;
 
 	public function __construct(
 		PageCreator $pageCreator,
 		IConnectionProvider $connectionProvider,
-		Language $contentLanguage
 	) {
 		$this->pageCreator = $pageCreator;
 		$this->connectionProvider = $connectionProvider;
-		$this->contentLanguage = $contentLanguage;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -75,34 +68,6 @@ class WikiPropertyStore {
 	 * PUBLIC API — WRITE
 	 * ------------------------------------------------------------------------- */
 
-	public function writeProperty( PropertyModel $property ): bool {
-		$title = $this->pageCreator->makeTitle( $property->getName(), SMW_NS_PROPERTY );
-		if ( !$title ) {
-			return false;
-		}
-
-		$existing = $this->pageCreator->getPageContent( $title ) ?? '';
-
-		$semanticBlock = $this->buildSemanticBlock( $property );
-
-		$newContent = $this->pageCreator->updateWithinMarkers(
-			$existing,
-			$semanticBlock,
-			self::MARKER_START,
-			self::MARKER_END
-		);
-
-		if ( !str_contains( $newContent, '[[Category:SemanticSchemas-managed-property]]' ) ) {
-			$newContent .= "\n[[Category:SemanticSchemas-managed-property]]";
-		}
-
-		return $this->pageCreator->createOrUpdatePage(
-			$title,
-			$newContent,
-			"SemanticSchemas: Update property metadata"
-		);
-	}
-
 	public function getAllProperties(): array {
 		$out = [];
 
@@ -137,20 +102,6 @@ class WikiPropertyStore {
 		$sdata = $store->getSemanticData( $subject );
 
 		$out = [];
-
-		// Get datatype from SMW's internal property type API
-		// Note: SMW stores datatypes internally, not as semantic annotations
-		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $title->getText() );
-			if ( $prop !== null ) {
-				$internalTypeId = $prop->findPropertyTypeID();
-				if ( $internalTypeId !== null ) {
-					$out['datatype'] = $this->convertSMWTypeIdToCanonical( $internalTypeId );
-				}
-			}
-		} catch ( \Throwable $e ) {
-			// If property creation fails, datatype will default to 'Text' in readProperty()
-		}
 
 		$out['label'] = $this->smwFetchOne( $sdata, 'Display label' );
 		$out['description'] = $this->smwFetchOne( $sdata, 'Has description' );
@@ -192,103 +143,6 @@ class WikiPropertyStore {
 			$out,
 			static fn ( $v ) => $v !== null && $v !== []
 		);
-	}
-
-	/* -------------------------------------------------------------------------
-	 * INTERNAL — WRITE SEMANTIC BLOCK
-	 * ------------------------------------------------------------------------- */
-
-	private function buildSemanticBlock( PropertyModel $p ): string {
-		$lines = [];
-
-		// Datatype (required)
-		$lines[] = '[[Has type::' . $p->getDatatype() . ']]';
-
-		if ( $p->getDescription() !== '' ) {
-			$lines[] = '[[Has description::' . $p->getDescription() . ']]';
-		}
-
-		if ( $p->allowsMultipleValues() ) {
-			$lines[] = '[[Allows multiple values::true]]';
-		}
-
-		// Display label only if differs from canonical name
-		if ( $p->getLabel() !== $p->getName() ) {
-			$lines[] = '[[Display label::' . $p->getLabel() . ']]';
-		}
-
-		foreach ( $p->getAllowedValues() as $v ) {
-			$lines[] = '[[Allows value::' . str_replace( '|', ' ', $v ) . ']]';
-		}
-
-		if ( $p->getSubpropertyOf() !== null ) {
-			$lines[] = '[[Subproperty of::' . $p->getSubpropertyOf() . ']]';
-		}
-
-		if ( $p->getAllowedCategory() !== null ) {
-			$categoryPrefix = $this->contentLanguage->getFormattedNsText( NS_CATEGORY );
-			$lines[] = '[[Allows value from category::' . $categoryPrefix . ':' . $p->getAllowedCategory() . ']]';
-		}
-
-		if ( $p->getAllowedNamespace() !== null ) {
-			$lines[] = '[[Allows value from namespace::' . $p->getAllowedNamespace() . ']]';
-		}
-
-		// Template reference (or source)
-		if ( $p->getHasTemplate() !== null ) {
-			$lines[] = '[[Has template::' . $p->getHasTemplate() . ']]';
-		}
-
-		if ( $p->getInputType() !== null ) {
-			$lines[] = '[[Has input type::' . $p->getInputType() . ']]';
-		}
-
-		if ( $p->getInverseLabel() !== null ) {
-			$lines[] = '[[Inverse property label::' . $p->getInverseLabel() . ']]';
-		}
-
-		return implode( "\n", $lines );
-	}
-
-	/* -------------------------------------------------------------------------
-	 * TYPE ID CONVERSION
-	 * ------------------------------------------------------------------------- */
-
-	/**
-	 * Convert SMW's internal type ID (e.g., '_txt', '_wpg') to canonical datatype name.
-	 *
-	 * @param string $typeId SMW internal type ID
-	 * @return string Canonical datatype name
-	 */
-	private function convertSMWTypeIdToCanonical( string $typeId ): string {
-		// Mapping from SMW internal type IDs to canonical names
-		static $typeMap = [
-		'_txt' => 'Text',
-		'_wpg' => 'Page',
-		'_dat' => 'Date',
-		'_num' => 'Number',
-		'_boo' => 'Boolean',
-		'_uri' => 'URL',
-		'_ema' => 'Email',
-		'_tel' => 'Telephone number',
-		'_cod' => 'Code',
-		'_geo' => 'Geographic coordinate',
-		'_qty' => 'Quantity',
-		'_tem' => 'Temperature',
-		'_anu' => 'Annotation URI',
-		'_eid' => 'External identifier',
-		'_key' => 'Keyword',
-		'_mlt_rec' => 'Monolingual text',
-		'_rec' => 'Record',
-		'_ref_rec' => 'Reference',
-		];
-
-		// If it's already a canonical name, return as-is
-		if ( substr( $typeId, 0, 1 ) !== '_' ) {
-			return $typeId;
-		}
-
-		return $typeMap[$typeId] ?? 'Text';
 	}
 
 	/* -------------------------------------------------------------------------

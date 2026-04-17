@@ -33,15 +33,11 @@ class PropertyModel {
 	private array $allowedValues;
 
 	private ?string $subpropertyOf;
-
 	private ?string $hasTemplate;
-
 	private ?string $allowedCategory;
 	private ?string $allowedNamespace;
 	private bool $allowsMultipleValues;
-
 	private ?string $inputType;
-
 	private ?string $inverseLabel;
 
 	private bool $hidden;
@@ -59,7 +55,7 @@ class PropertyModel {
 		$this->name = $name;
 
 		/* -------------------- Datatype -------------------- */
-		if ( empty( $data['datatype'] ) ) {
+		if ( !isset( $data['datatype'] ) ) {
 			throw new InvalidArgumentException(
 				"Property '{$name}' must define a 'datatype' field."
 			);
@@ -233,15 +229,6 @@ class PropertyModel {
 			( $this->allowedCategory !== null && $this->allowedCategory !== '' ) ||
 			( $this->allowedNamespace !== null && $this->allowedNamespace !== '' )
 		);
-	}
-
-	public function getSubpropertyOf(): ?string {
-		return $this->subpropertyOf;
-	}
-
-	/* Template config */
-	public function getHasTemplate(): ?string {
-		return $this->hasTemplate;
 	}
 
 	public function getRenderTemplate(): string {

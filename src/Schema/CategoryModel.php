@@ -54,11 +54,6 @@ class CategoryModel {
 	private array $displayConfig;
 	private array $formConfig;
 
-	/* -------------------- New Display System -------------------- */
-
-	/** @var ?PropertyModel Property defining the display format */
-	private ?PropertyModel $displayTemplateProperty = null;
-
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
 	 * ------------------------------------------------------------------------- */
@@ -366,17 +361,5 @@ class CategoryModel {
 		}
 
 		return $out;
-	}
-
-	/* -------------------------------------------------------------------------
-	 * NEW DISPLAY SYSTEM ACCESSORS
-	 * ------------------------------------------------------------------------- */
-
-	public function setDisplayTemplateProperty( ?PropertyModel $property ): void {
-		$this->displayTemplateProperty = $property;
-	}
-
-	public function getDisplayTemplateProperty(): ?PropertyModel {
-		return $this->displayTemplateProperty;
 	}
 }

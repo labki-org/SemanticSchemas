@@ -160,7 +160,6 @@
 				"SemanticSchemas.DisplayStubGenerator",
 				"SemanticSchemas.OntologyInspector",
 				"SemanticSchemas.StateManager",
-				"SemanticSchemas.PageHashComputer",
 				"ObjectCacheFactory"
 			]
 		}

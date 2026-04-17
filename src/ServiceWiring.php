@@ -8,13 +8,15 @@ use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\MediaWikiServices;
 
-/** @phpcs-require-sorted-array */
+/**
+ * @phpcs-require-sorted-array
+ * @phan-file-suppress PhanUnreferencedClosure
+ */
 return [
 
 	'SemanticSchemas.CategoryHierarchyService' => static function (
@@ -42,7 +44,6 @@ return [
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.PropertyInputMapper' ),
-			$services->get( 'SemanticSchemas.WikiCategoryStore' )
 		);
 	},
 
@@ -53,7 +54,6 @@ return [
 			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.StateManager' ),
-			$services->get( 'SemanticSchemas.PageHashComputer' ),
 			$services->get( 'SemanticSchemas.SchemaValidator' )
 		);
 	},
@@ -63,16 +63,6 @@ return [
 	): PageCreator {
 		return new PageCreator(
 			$services->getWikiPageFactory(),
-			$services->getDeletePageFactory()
-		);
-	},
-
-	'SemanticSchemas.PageHashComputer' => static function (
-		MediaWikiServices $services
-	): PageHashComputer {
-		return new PageHashComputer(
-			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' )
 		);
 	},
 
@@ -101,7 +91,6 @@ return [
 	): TemplateGenerator {
 		return new TemplateGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->getContentLanguage()
 		);
@@ -112,7 +101,6 @@ return [
 	): WikiCategoryStore {
 		return new WikiCategoryStore(
 			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);
@@ -124,7 +112,6 @@ return [
 		return new WikiPropertyStore(
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->getConnectionProvider(),
-			$services->getContentLanguage()
 		);
 	},
 

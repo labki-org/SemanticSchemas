@@ -5,11 +5,11 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Hooks;
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Extension\SemanticSchemas\Hooks\CategoryPageHooks;
-use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
 use MediaWikiIntegrationTestCase;
@@ -50,16 +50,13 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 
 		$this->pageCreator = new PageCreator(
 			$wikiPageFactory,
-			$services->getDeletePageFactory()
 		);
 		$propertyStore = new WikiPropertyStore(
 			$this->pageCreator,
 			$services->getConnectionProvider(),
-			$services->getContentLanguage()
 		);
 		$this->categoryStore = new WikiCategoryStore(
 			$this->pageCreator,
-			$propertyStore,
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);
@@ -296,12 +293,10 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	}
 
 	private function createManagedCategory( string $name ): void {
-		$category = new CategoryModel( $name, [
-			'properties' => [
-				FieldModel::property( 'Has name', true ),
-			],
-		] );
-		$this->categoryStore->writeCategory( $category );
+		$title = Title::makeTitle( NS_CATEGORY, $name );
+		$this->pageCreator->createOrUpdatePage( $title,
+			FieldModel::property( 'Has name', true )->toWikitext(1) .
+			"[[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . "]]", '' );
 	}
 
 	private function savePage( Title $title, string $content ): void {

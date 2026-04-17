@@ -9,7 +9,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
@@ -26,18 +25,15 @@ use MediaWiki\Language\Language;
 class TemplateGenerator {
 
 	private PageCreator $pageCreator;
-	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
 	private Language $language;
 
 	public function __construct(
 		PageCreator $pageCreator,
-		WikiCategoryStore $categoryStore,
 		WikiPropertyStore $propertyStore,
 		Language $language
 	) {
 		$this->pageCreator = $pageCreator;
-		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
 		$this->language = $language;
 	}
@@ -303,7 +299,7 @@ class TemplateGenerator {
 		}
 
 		return [
-			'success' => empty( $errors ),
+			'success' => !$errors,
 			'errors' => $errors
 		];
 	}
