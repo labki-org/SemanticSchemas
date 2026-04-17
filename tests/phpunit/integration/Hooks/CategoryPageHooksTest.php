@@ -9,7 +9,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Tests\Traits\GenerationHelper;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
@@ -28,8 +27,6 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	private Title $title;
 	private WikiCategoryStore $categoryStore;
 	private PageCreator $pageCreator;
-
-	use GenerationHelper;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -315,4 +312,17 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		);
 	}
 
+	private function fieldToWikitext( FieldModel $field, int $index ): string {
+		$config = FieldModel::FIELD_CONFIG[$field->getFieldType()];
+
+		$lines = [];
+		$lines[] = '{{#subobject:';
+		$lines[] = ' |@category=' . $config['category'];
+		$lines[] = ' | ' . $config['referenceProperty'] . ' = ' . $config['namespacePrefix'] . ':' . $field->getName();
+		$lines[] = ' | Is required = ' . ( $field->isRequired() ? 'true' : 'false' );
+		$lines[] = ' | Has sort order = ' . $index;
+		$lines[] = '}}';
+
+		return implode( "\n", $lines );
+	}
 }

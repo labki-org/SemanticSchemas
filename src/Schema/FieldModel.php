@@ -7,6 +7,7 @@ use JsonSerializable;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use SMW\SemanticData;
+
 /**
  * Immutable value object representing a field declaration on a category page.
  *
