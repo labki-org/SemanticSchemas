@@ -270,18 +270,4 @@ class FieldModel implements JsonSerializable {
 
 		return implode( "\n", $lines );
 	}
-
-	/**
-	 * Generate wikitext for a list of field declarations.
-	 *
-	 * @param self[] $fields
-	 * @return string Concatenated wikitext blocks separated by newlines
-	 */
-	public static function toWikitextAll( array $fields ): string {
-		$blocks = [];
-		foreach ( $fields as $i => $field ) {
-			$blocks[] = $field->toWikitext( $i + 1 );
-		}
-		return implode( "\n", $blocks );
-	}
 }

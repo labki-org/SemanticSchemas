@@ -132,45 +132,6 @@ class FieldModelTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * toWikitextAll — BATCH SERIALIZATION
-	 * ========================================================================= */
-
-	public function testToWikitextAllMultipleFields(): void {
-		$fields = [
-			new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
-			new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
-		];
-
-		$wikitext = FieldModel::toWikitextAll( $fields );
-
-		$this->assertStringContainsString( 'For property = Property:Has name', $wikitext );
-		$this->assertStringContainsString( 'Is required = true', $wikitext );
-		$this->assertStringContainsString( 'Has sort order = 1', $wikitext );
-
-		$this->assertStringContainsString( 'For property = Property:Has email', $wikitext );
-		$this->assertStringContainsString( 'Is required = false', $wikitext );
-		$this->assertStringContainsString( 'Has sort order = 2', $wikitext );
-	}
-
-	public function testToWikitextAllSequentialSortOrder(): void {
-		$fields = [
-			new FieldModel( 'A', true, FieldModel::TYPE_PROPERTY ),
-			new FieldModel( 'B', false, FieldModel::TYPE_PROPERTY ),
-			new FieldModel( 'C', true, FieldModel::TYPE_PROPERTY ),
-		];
-
-		$wikitext = FieldModel::toWikitextAll( $fields );
-
-		$this->assertStringContainsString( 'Has sort order = 1', $wikitext );
-		$this->assertStringContainsString( 'Has sort order = 2', $wikitext );
-		$this->assertStringContainsString( 'Has sort order = 3', $wikitext );
-	}
-
-	public function testToWikitextAllEmpty(): void {
-		$this->assertSame( '', FieldModel::toWikitextAll( [] ) );
-	}
-
-	/* =========================================================================
 	 * toWikitext — COMPLETE BLOCK INTEGRITY
 	 *
 	 * Each subobject block must be self-contained: the reference and required
