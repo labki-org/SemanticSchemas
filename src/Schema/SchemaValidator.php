@@ -29,23 +29,6 @@ class SchemaValidator {
 
 	public const SCHEMA_VERSION = '1.0';
 
-	/** @var array Custom validation rules registered by extensions */
-	private $customValidators = [];
-
-	/**
-	 * Validate entire schema (errors only).
-	 *
-	 * This method returns only errors for compatibility with existing code.
-	 * Use validateSchemaWithSeverity() to get both errors and warnings.
-	 *
-	 * @param array $schema
-	 * @return array List of error messages
-	 */
-	public function validateSchema( array $schema ): array {
-		$result = $this->validateSchemaWithSeverity( $schema );
-		return $result['errors'];
-	}
-
 	/**
 	 * Validate entire schema with severity levels.
 	 *
@@ -57,7 +40,7 @@ class SchemaValidator {
 		$warnings = [];
 
 		$structureErrors = $this->validateSchemaStructure( $schema );
-		if ( !empty( $structureErrors ) ) {
+		if ( $structureErrors ) {
 			return [ 'errors' => $structureErrors, 'warnings' => [] ];
 		}
 
@@ -76,17 +59,12 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateProperty( $propertyName, $propertyData, $categories )
+				$this->validateProperty( $propertyName, $propertyData )
 			);
 		}
 
 		$errors = array_merge( $errors, $this->checkCircularDependencies( $categories ) );
 		$warnings = array_merge( $warnings, $this->generateWarnings( $schema ) );
-
-		foreach ( $this->customValidators as $validator ) {
-			$customResult = call_user_func( $validator, $schema );
-			$this->mergeResults( $errors, $warnings, $customResult );
-		}
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}
@@ -176,15 +154,6 @@ class SchemaValidator {
 	private function formatWarning( string $entityType, string $entityName, string $issue ): string {
 		$prefix = $entityType === 'schema' ? 'Schema' : ucfirst( $entityType ) . " '$entityName'";
 		return "$prefix: $issue";
-	}
-
-	/**
-	 * Register a custom validation rule.
-	 *
-	 * @param callable $validator Takes schema array, returns ['errors' => [...], 'warnings' => [...]]
-	 */
-	public function registerCustomValidator( callable $validator ): void {
-		$this->customValidators[] = $validator;
 	}
 
 	/* ======================================================================
@@ -295,7 +264,7 @@ class SchemaValidator {
 			array_map( 'strval', $required ),
 			array_map( 'strval', $optional )
 		);
-		if ( !empty( $duplicates ) ) {
+		if ( $duplicates ) {
 			$itemType = ucfirst( $referenceType ) . 's';
 			$errors[] = $this->formatError(
 				$entityType,
@@ -528,7 +497,6 @@ class SchemaValidator {
 	private function validateProperty(
 		string $propertyName,
 		array $propertyData,
-		array $allCategories
 	): array {
 		$errors = [];
 		$warnings = [];
@@ -573,12 +541,12 @@ class SchemaValidator {
 		foreach ( $categories as $name => $data ) {
 			try {
 				$categoryModels[$name] = new CategoryModel( $name, $data );
-			} catch ( \InvalidArgumentException | \TypeError $e ) {
+			} catch ( \InvalidArgumentException | \TypeError ) {
 				continue;
 			}
 		}
 
-		if ( empty( $categoryModels ) ) {
+		if ( !$categoryModels ) {
 			return [];
 		}
 
@@ -612,15 +580,15 @@ class SchemaValidator {
 			$req = $data['properties']['required'] ?? [];
 			$opt = $data['properties']['optional'] ?? [];
 
-			if ( empty( $req ) && empty( $opt ) ) {
+			if ( !$req && !$opt ) {
 				$warnings[] = "Category '$name': no properties defined";
 			}
 
-			if ( empty( $data['display'] ?? [] ) ) {
+			if ( !isset( $data['display'] ) ) {
 				$warnings[] = "Category '$name': missing display configuration";
 			}
 
-			if ( empty( $data['forms'] ?? [] ) ) {
+			if ( !isset( $data['forms'] ) ) {
 				$warnings[] = "Category '$name': missing form configuration";
 			}
 		}

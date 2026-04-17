@@ -26,7 +26,7 @@ class PropertyInputMapper {
 	 * ===================================================================== */
 
 	/** @var array<string,string> */
-	private static array $datatypeMap = [
+	private const DATATYPE_MAP = [
 		'Text' => 'text',
 		'URL' => 'text',
 		'Email' => 'text',
@@ -49,8 +49,9 @@ class PropertyInputMapper {
 	 */
 	public function getInputType( PropertyModel $property ): string {
 		// (0) Explicit input type override
-		if ( $property->getInputType() !== null ) {
-			return $property->getInputType();
+		$explicitInputType = $property->getInputType();
+		if ( $explicitInputType !== null ) {
+			return $explicitInputType;
 		}
 
 		// (1) Multiple values → tokens
@@ -75,7 +76,7 @@ class PropertyInputMapper {
 
 		// (5) Fallback to datatype mapping
 		$datatype = $property->getDatatype();
-		return self::$datatypeMap[$datatype] ?? 'text';
+		return self::DATATYPE_MAP[$datatype] ?? 'text';
 	}
 
 	/* =====================================================================
@@ -102,7 +103,7 @@ class PropertyInputMapper {
 		if ( $property->hasAllowedValues() ) {
 			$clean = array_map( static fn ( $v ) => trim( (string)$v ), $property->getAllowedValues() );
 			$clean = array_filter( $clean, static fn ( $v ) => $v !== '' );
-			if ( !empty( $clean ) ) {
+			if ( $clean ) {
 				$params['values'] = implode( ',', $clean );
 			}
 			return $params;
@@ -115,14 +116,14 @@ class PropertyInputMapper {
 
 			$allowedCategory = $property->getAllowedCategory();
 			if ( $allowedCategory !== null && $allowedCategory !== '' ) {
-				$params['values from category'] = (string)$allowedCategory;
+				$params['values from category'] = $allowedCategory;
 				$params['autocomplete'] = 'on';
 				return $params;
 			}
 
 			$allowedNamespace = $property->getAllowedNamespace();
 			if ( $allowedNamespace !== null && $allowedNamespace !== '' ) {
-				$params['values from namespace'] = (string)$allowedNamespace;
+				$params['values from namespace'] = $allowedNamespace;
 				$params['autocomplete'] = 'on';
 				return $params;
 			}
@@ -194,6 +195,6 @@ class PropertyInputMapper {
 		}
 
 		return 'input type=' . $inputType
-			. ( empty( $segments ) ? '' : '|' . implode( '|', $segments ) );
+			. ( !$segments ? '' : '|' . implode( '|', $segments ) );
 	}
 }

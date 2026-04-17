@@ -23,9 +23,6 @@ Thumbs.db
 # PHPUnit
 phpunit.xml
 
-# Phan
-/.phan/stubs/
-
 # PHPCS
 .phpcs-cache
 
@@ -48,4 +45,4 @@ CLAUDE.md
 
 # core
 /core/
-
+/extensions/

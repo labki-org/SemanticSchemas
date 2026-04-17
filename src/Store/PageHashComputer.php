@@ -4,7 +4,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
-use MediaWiki\Title\Title;
 
 /**
  * PageHashComputer
@@ -36,17 +35,6 @@ use MediaWiki\Title\Title;
  */
 class PageHashComputer {
 
-	private WikiCategoryStore $categoryStore;
-	private WikiPropertyStore $propertyStore;
-
-	public function __construct(
-		WikiCategoryStore $categoryStore,
-		WikiPropertyStore $propertyStore
-	) {
-		$this->categoryStore = $categoryStore;
-		$this->propertyStore = $propertyStore;
-	}
-
 	/**
 	 * Compute hash for a CategoryModel based on canonical schema fields.
 	 *
@@ -65,40 +53,6 @@ class PageHashComputer {
 	 */
 	public function computePropertyModelHash( PropertyModel $property ): string {
 		return $this->computeSchemaHash( $property->toArray() );
-	}
-
-	/**
-	 * Compute hash for a schema-managed page based on its prefixed name.
-	 * Routes to the appropriate model-based hash method.
-	 *
-	 * @param string $pageName Prefixed page name (e.g., "Category:Name", "Property:Name")
-	 * @return string SHA256 hash (with "sha256:" prefix)
-	 */
-	public function computeHashForPageModel( string $pageName ): string {
-		// Extract prefix from page name
-		if ( preg_match( '/^([^:]+):/', $pageName, $matches ) ) {
-			$prefix = strtolower( $matches[1] );
-			$name = substr( $pageName, strlen( $matches[0] ) );
-
-			switch ( $prefix ) {
-				case 'category':
-					$cat = $this->categoryStore->readCategory( $name );
-					return $cat instanceof CategoryModel
-						? $this->computeCategoryModelHash( $cat )
-						: $this->hashContent( '' );
-				case 'property':
-					$prop = $this->propertyStore->readProperty( $name );
-					return $prop instanceof PropertyModel
-						? $this->computePropertyModelHash( $prop )
-						: $this->hashContent( '' );
-				default:
-					// Unknown type, fall through and hash empty
-					return $this->hashContent( '' );
-			}
-		}
-
-		// No prefix found, hash empty
-		return $this->hashContent( '' );
 	}
 
 	/**
@@ -142,26 +96,5 @@ class PageHashComputer {
 			}
 		}
 		return $array;
-	}
-
-	/**
-	 * Get page revision info (revId and touched timestamp).
-	 * Used as quick filter to skip unchanged pages.
-	 *
-	 * @param Title $title
-	 * @return array|null ['revId' => int, 'touched' => string] or null if page doesn't exist
-	 */
-	public function getPageRevisionInfo( Title $title ): ?array {
-		if ( !$title->exists() ) {
-			return null;
-		}
-
-		$revId = $title->getLatestRevID();
-		$touched = $title->getTouched();
-
-		return [
-			'revId' => $revId,
-			'touched' => $touched,
-		];
 	}
 }

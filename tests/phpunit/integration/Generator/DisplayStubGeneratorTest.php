@@ -22,7 +22,6 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$services = $this->getServiceContainer();
 		$this->pageCreator = new PageCreator(
 			$services->getWikiPageFactory(),
-			$services->getDeletePageFactory(),
 		);
 	}
 

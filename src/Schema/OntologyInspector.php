@@ -30,13 +30,12 @@ class OntologyInspector {
 		WikiCategoryStore $categoryStore,
 		WikiPropertyStore $propertyStore,
 		StateManager $stateManager,
-		PageHashComputer $hashComputer,
 		SchemaValidator $validator
 	) {
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
 		$this->stateManager = $stateManager;
-		$this->hashComputer = $hashComputer;
+		$this->hashComputer = new PageHashComputer();
 		$this->validator = $validator;
 	}
 

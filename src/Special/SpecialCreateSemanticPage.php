@@ -83,7 +83,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$request = $this->getRequest();
 
 		$categories = $this->categoryStore->getAllCategories();
-		if ( empty( $categories ) ) {
+		if ( !$categories ) {
 			$output->addHTML( Html::rawElement( 'div', [ 'class' => 'semanticschemas-shell' ],
 				Html::element( 'p', [],
 					$this->msg( 'semanticschemas-create-no-categories' )->text()
@@ -105,7 +105,13 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$descMsg = $isAddMode
 			? $this->msg( 'semanticschemas-create-add-description' )->params( $prefilledPageName )->text()
 			: $this->msg( 'semanticschemas-create-description' )->text();
-		$output->addHTML( Html::rawElement( 'p', [ 'class' => 'mw-body-content' ], $descMsg ) );
+		$output->addHTML(
+			Html::rawElement(
+				'p',
+				[ 'class' => 'mw-body-content' ],
+				htmlspecialchars( $descMsg, ENT_QUOTES )
+			)
+		);
 
 		$formHtml = '';
 
@@ -144,7 +150,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		$output->addModules( [ 'ext.semanticschemas.createpage' ] );
 
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 'semanticschemas-form-group s2-create-categories' ],
+		$formHtml .= Html::openElement( 'div', [ 'class' => 'semanticschemas-form-group s2-create-categories' ] ) .
 			Html::element( 'label', [],
 				$this->msg( 'semanticschemas-create-select-categories' )->text()
 			) .
@@ -155,13 +161,13 @@ class SpecialCreateSemanticPage extends SpecialPage {
 				'placeholder' => $this->msg( 'semanticschemas-create-search-placeholder' )->text(),
 				'autocomplete' => 'off',
 			] ) .
-			Html::rawElement( 'div', [ 'class' => 's2-create-cat-grid' ],
-				$checkboxes
-			)
-		);
+			Html::openElement( 'div', [ 'class' => 's2-create-cat-grid' ] ) .
+			$checkboxes .
+			Html::closeElement( 'div' ) .
+			Html::closeElement( 'div' );
 
 		// Meta-category quick-create buttons
-		if ( !$isAddMode && !empty( $metaCategories ) ) {
+		if ( !$isAddMode && $metaCategories ) {
 			$buttonHtml = '';
 			foreach ( $metaCategories as $meta ) {
 				$formTitle = Title::makeTitleSafe( PF_NS_FORM, $meta->getName() );
@@ -170,38 +176,44 @@ class SpecialCreateSemanticPage extends SpecialPage {
 					'href' => $formTitle->getLocalURL(),
 				], $meta->getLabel() );
 			}
-			$formHtml .= Html::rawElement( 'div',
-				[ 'class' => 'semanticschemas-form-group s2-create-meta-categories' ],
+			$formHtml .= Html::openElement(
+				'div',
+				[ 'class' => 'semanticschemas-form-group s2-create-meta-categories' ]
+			) .
 				Html::element( 'label', [],
 					$this->msg( 'semanticschemas-create-meta-categories' )->text()
 				) .
-				Html::rawElement( 'div', [ 'class' => 's2-create-meta-buttons' ],
-					$buttonHtml
-				)
-			);
+				Html::openElement( 'div', [ 'class' => 's2-create-meta-buttons' ] ) .
+				$buttonHtml .
+				Html::closeElement( 'div' ) .
+				Html::closeElement( 'div' );
 		}
 
 		// Submit
-		$formHtml .= Html::hidden( 's2-action', 'create-page' );
-		$formHtml .= Html::hidden( 'wpEditToken', $this->getUser()->getEditToken() );
-		$formHtml .= Html::rawElement( 'div', [ 'class' => 's2-create-actions' ],
+		$formHtml .= Html::hidden( 's2-action', 'create-page' ) .
+			Html::hidden( 'wpEditToken', $this->getUser()->getEditToken() ) .
+			Html::openElement( 'div', [ 'class' => 's2-create-actions' ] ) .
 			Html::submitButton(
 				$isAddMode
 					? $this->msg( 'semanticschemas-create-add-submit' )->text()
 					: $this->msg( 'semanticschemas-create-submit' )->text(),
 				[ 'class' => 'cdx-button cdx-button--action-progressive' ]
-			)
-		);
+			) .
+			Html::closeElement( 'div' );
 
-		$form = Html::rawElement( 'form', [
+		$form = Html::openElement( 'form', [
 			'method' => 'post',
 			'action' => $this->getPageTitle()->getLocalURL(),
 			'class' => 'semanticschemas-create-form',
-		], $formHtml );
+		] ) .
+			$formHtml .
+			Html::closeElement( 'form' );
 
-		$output->addHTML(
-			Html::rawElement( 'div', [ 'class' => 'semanticschemas-shell' ], $form )
-		);
+		$container = Html::openElement( 'div', [ 'class' => 'semanticschemas-shell' ] ) .
+			$form .
+			Html::closeElement( 'div' );
+
+		$output->addHTML( $container );
 	}
 
 	private function processCreatePage(): void {
@@ -215,44 +227,40 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		if ( $pageName === '' ) {
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-create-no-page-name' )->text()
+				htmlspecialchars( $this->msg( 'semanticschemas-create-no-page-name' )->text(), ENT_QUOTES )
 			) );
 			return;
 		}
 
-		if ( empty( $selectedCategories ) ) {
+		if ( !$selectedCategories ) {
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-create-no-selection' )->text()
+				htmlspecialchars( $this->msg( 'semanticschemas-create-no-selection' )->text(), ENT_QUOTES )
 			) );
 			return;
 		}
 
-		// Single category: redirect directly to FormEdit
-		if ( count( $selectedCategories ) === 1 ) {
-			$catName = $selectedCategories[0];
-			$targetPage = $pageName;
-			$cat = $this->categoryStore->readCategory( $catName );
-			if ( $cat && $cat->getTargetNamespace() !== null ) {
-				$nsName = $cat->getTargetNamespace();
-				$nsIndex = $this->namespaceInfo->getCanonicalIndex( strtolower( $nsName ) );
-				if ( $nsIndex !== null ) {
-					$targetPage = $nsName . ':' . $pageName;
-				}
-			}
-			$formEditTitle = Title::makeTitleSafe( NS_SPECIAL, 'FormEdit/' . $catName . '/' . $targetPage );
-			if ( $formEditTitle ) {
-				$output->redirect( $formEditTitle->getFullURL() );
+		$cats = [];
+		foreach ( $selectedCategories as $categoryName ) {
+			$cat = $this->categoryStore->readCategory( $categoryName );
+			if ( !$cat ) {
+				$output->addHTML( Html::errorBox(
+					htmlspecialchars( $this->msg( 'semanticschemas-error-missing-category' )
+						->params( $categoryName )
+						->text()
+					)
+				) );
 				return;
 			}
+			$cats[] = $cat;
 		}
 
 		// Determine namespace: find the selected category with a target namespace (at most one)
 		$ns = NS_MAIN;
-		foreach ( $selectedCategories as $sc ) {
-			$scModel = $this->categoryStore->readCategory( $sc );
-			if ( $scModel && $scModel->getTargetNamespace() !== null ) {
+		foreach ( $cats as $cat ) {
+			$targetNamespace = $cat->getTargetNamespace();
+			if ( $targetNamespace !== null ) {
 				$nsIndex = $this->namespaceInfo
-					->getCanonicalIndex( strtolower( $scModel->getTargetNamespace() ) );
+					->getCanonicalIndex( strtolower( $targetNamespace ) );
 				if ( $nsIndex !== null ) {
 					$ns = $nsIndex;
 				}
@@ -263,19 +271,19 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		$pageTitle = Title::makeTitleSafe( $ns, $pageName );
 		if ( !$pageTitle ) {
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-create-invalid-title' )->text()
+				htmlspecialchars( $this->msg( 'semanticschemas-create-invalid-title' )->text(), ENT_QUOTES )
 			) );
 			return;
 		}
 
-		// Build page content: preserve existing content, replace parent→child
-		// template calls where applicable, and append genuinely new ones.
-		$existingContent = '';
-		if ( $pageTitle->exists() ) {
-			$wikiPage = $this->wikiPageFactory->newFromTitle( $pageTitle );
-			$content = $wikiPage->getContent();
-			if ( $content ) {
-				$existingContent = $content->serialize();
+		// Single category: redirect directly to FormEdit
+		if ( count( $cats ) === 1 ) {
+			$formEditTitle = Title::makeTitleSafe(
+				NS_SPECIAL, 'FormEdit/' . $cats[0]->getName() . '/' . $pageTitle->getPrefixedText()
+			);
+			if ( $formEditTitle ) {
+				$output->redirect( $formEditTitle->getFullURL() );
+				return;
 			}
 		}
 
@@ -287,9 +295,17 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		}
 		$resolver = new InheritanceResolver( $categoryMap );
 
+		// Build page content: preserve existing content, replace parent→child
+		// template calls where applicable, and append genuinely new ones.
 		// Build set of templates already used on the page via parser output
 		$existingTemplates = [];
+		$existingContent = '';
 		if ( $pageTitle->exists() ) {
+			$wikiPage = $this->wikiPageFactory->newFromTitle( $pageTitle );
+			$content = $wikiPage->getContent();
+			if ( $content ) {
+				$existingContent = $content->serialize();
+			}
 			$parserOutput = $wikiPage->getParserOutput();
 			if ( $parserOutput ) {
 				foreach ( $parserOutput->getLinkList( ParserOutputLinkTypes::TEMPLATE ) as $link ) {
@@ -383,7 +399,11 @@ class SpecialCreateSemanticPage extends SpecialPage {
 
 		if ( !$success ) {
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-create-failed' )->params( $pageName )->text()
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-create-failed' )
+						->params( $pageName )->text(),
+					ENT_QUOTES
+				)
 			) );
 			return;
 		}
@@ -502,7 +522,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		foreach ( $categories as $cat ) {
 			$parents = $cat->getParents();
 			$managedParents = array_filter( $parents, static fn ( $p ) => isset( $categoryMap[$p] ) );
-			if ( empty( $managedParents ) ) {
+			if ( !$managedParents ) {
 				$roots[] = $cat->getName();
 			}
 			foreach ( $managedParents as $parent ) {
@@ -538,10 +558,9 @@ class SpecialCreateSemanticPage extends SpecialPage {
 					$childrenOf[$name], $childrenOf, $categoryMap,
 					$resolver, $existingCategories, $depth + 1
 				);
-				$html .= Html::rawElement( 'div',
-					[ 'class' => 's2-create-cat-children' ],
-					$childrenHtml
-				);
+				$html .= Html::openElement( 'div', [ 'class' => 's2-create-cat-children' ] ) .
+					$childrenHtml .
+					Html::closeElement( 'div' );
 			}
 		}
 		return $html;
@@ -590,7 +609,7 @@ class SpecialCreateSemanticPage extends SpecialPage {
 			);
 		}
 		if ( $isExisting ) {
-			$labelHtml .= Html::rawElement( 'span',
+			$labelHtml .= Html::element( 'span',
 				[ 'class' => 'semanticschemas-badge is-ok s2-create-cat-badge' ],
 				$this->msg( 'semanticschemas-create-on-page' )->text()
 			);
@@ -611,20 +630,22 @@ class SpecialCreateSemanticPage extends SpecialPage {
 		}
 
 		$toggleHtml = $hasChildren
-			? Html::rawElement( 'span', [ 'class' => 's2-create-cat-toggle' ], '▸' )
-			: Html::rawElement( 'span', [ 'class' => 's2-create-cat-toggle-spacer' ] );
+			? Html::element( 'span', [ 'class' => 's2-create-cat-toggle' ], '▸' )
+			: Html::element( 'span', [ 'class' => 's2-create-cat-toggle-spacer' ] );
 
-		return Html::rawElement( 'div', [
+		return Html::openElement( 'div', [
 			'class' => $rowClass,
 			'style' => $depth > 0 ? '--depth: ' . $depth : '',
-		],
+		] ) .
 			$toggleHtml .
-			Html::rawElement( 'label', [ 'for' => $instanceId, 'class' => 's2-create-cat-label-wrap' ],
-				Html::check( 's2-categories[]', $isExisting, $attrs ) .
-				( $isExisting ? Html::hidden( 's2-categories[]', $catName ) : '' ) .
-				Html::rawElement( 'span', [ 'class' => 's2-create-cat-label' ], $labelHtml )
-			)
-		);
+			Html::openElement( 'label', [ 'for' => $instanceId, 'class' => 's2-create-cat-label-wrap' ] ) .
+			Html::check( 's2-categories[]', $isExisting, $attrs ) .
+			( $isExisting ? Html::hidden( 's2-categories[]', $catName ) : '' ) .
+			Html::openElement( 'span', [ 'class' => 's2-create-cat-label' ] ) .
+			$labelHtml .
+			Html::closeElement( 'span' ) .
+			Html::closeElement( 'label' ) .
+			Html::closeElement( 'div' );
 	}
 
 	protected function getGroupName() {

@@ -365,7 +365,7 @@ class DisplayStubGenerator {
 		}
 
 		$tagged = $category->getAnnotatedSubobjects();
-		if ( empty( $tagged ) ) {
+		if ( !$tagged ) {
 			return '';
 		}
 
@@ -381,7 +381,7 @@ class DisplayStubGenerator {
 			$sub = $resolver->getEffectiveCategory( $subName );
 
 			$props = $sub->getAllProperties();
-			if ( empty( $props ) ) {
+			if ( !$props ) {
 				continue;
 			}
 

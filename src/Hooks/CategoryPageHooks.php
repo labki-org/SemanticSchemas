@@ -15,6 +15,8 @@ use Skin;
  * Hook handler for adding "New page" and "Generate Form" actions to Category pages,
  * composite form editing on multi-category content pages, and
  * rendering hierarchy footers.
+ *
+ * @suppress PhanUnreferencedClass,
  */
 class CategoryPageHooks {
 
@@ -30,6 +32,8 @@ class CategoryPageHooks {
 	 * Adds "New page" and "Generate form" action links to the dropdown menu on Category pages.
 	 * For content pages with managed categories, rewrites "Edit with form"
 	 * to use CompositeForm for multi-category pages.
+	 *
+	 * @suppress PhanUnreferencedPublicMethod
 	 */
 	// phpcs:ignore MediaWiki.NamingConventions.LowerCamelFunctionsName.FunctionName
 	public function onSkinTemplateNavigation__Universal( Skin $skin, array &$links ): void {
@@ -117,6 +121,8 @@ class CategoryPageHooks {
 
 	/**
 	 * Displays the inheritance hierarchy in the footer of category pages
+	 *
+	 * @suppress PhanUnreferencedPublicMethod
 	 */
 	public function onArticleViewFooter( Article $article, bool $patrolFooterShown ): bool {
 		$title = $article->getTitle();
