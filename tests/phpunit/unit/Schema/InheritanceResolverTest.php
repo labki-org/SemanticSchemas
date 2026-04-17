@@ -190,14 +190,14 @@ class InheritanceResolverTest extends TestCase {
 		$map = [
 			'Person' => new CategoryModel( 'Person', [
 				'properties' => [
-					FieldModel::property( 'Has name', true ),
-					FieldModel::property( 'Has email', false ),
+					new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+					new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
 				],
 			] ),
 			'Student' => new CategoryModel( 'Student', [
 				'parents' => [ 'Person' ],
 				'properties' => [
-					FieldModel::property( 'Has student ID', true ),
+					new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
 				],
 			] ),
 		];
@@ -294,13 +294,13 @@ class InheritanceResolverTest extends TestCase {
 	public function testGetEffectiveCategoryMergesInheritedProperties(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				FieldModel::property( 'Has name', true ),
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
 			'properties' => [
-				FieldModel::property( 'Has student ID', true ),
+				new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -320,19 +320,19 @@ class InheritanceResolverTest extends TestCase {
 	public function testGetParentEffectiveModelsReturnsEffectiveParents(): void {
 		$grandparent = new CategoryModel( 'Grandparent', [
 			'properties' => [
-				FieldModel::property( 'Has gp prop', true ),
+				new FieldModel( 'Has gp prop', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$parent = new CategoryModel( 'Parent', [
 			'parents' => [ 'Grandparent' ],
 			'properties' => [
-				FieldModel::property( 'Has parent prop', true ),
+				new FieldModel( 'Has parent prop', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
 			'properties' => [
-				FieldModel::property( 'Has child prop', true ),
+				new FieldModel( 'Has child prop', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 

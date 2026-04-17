@@ -40,17 +40,17 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testSubobjectSectionsUseDisplayTemplate() {
 		$address = new CategoryModel( 'Address', [
 			'properties' => [
-				FieldModel::property( 'Has street', true ),
-				FieldModel::property( 'Has city', true ),
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has city', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				FieldModel::property( 'Has name', true ),
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'subobjects' => [
-				FieldModel::subobject( 'Address', true ),
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 
@@ -75,24 +75,24 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testSubobjectDisplayIncludesInheritedProperties() {
 		$baseAddress = new CategoryModel( 'Address', [
 			'properties' => [
-				FieldModel::property( 'Has street', true ),
-				FieldModel::property( 'Has city', true ),
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has city', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$mailingAddress = new CategoryModel( 'MailingAddress', [
 			'parents' => [ 'Address' ],
 			'properties' => [
-				FieldModel::property( 'Has zip', true ),
+				new FieldModel( 'Has zip', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				FieldModel::property( 'Has name', true ),
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'subobjects' => [
-				FieldModel::subobject( 'MailingAddress', true ),
+				new FieldModel( 'MailingAddress', true, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 
@@ -114,10 +114,10 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testNoSubobjectSectionsWithoutResolver() {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				FieldModel::property( 'Has name', true ),
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'subobjects' => [
-				FieldModel::subobject( 'Address', true ),
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 

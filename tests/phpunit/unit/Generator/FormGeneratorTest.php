@@ -48,7 +48,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				FieldModel::property( 'Has name', true ),
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -88,7 +88,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Animal', [
 			'label' => 'Animal',
 			'properties' => [
-				FieldModel::property( 'Has species', true ),
+				new FieldModel( 'Has species', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -102,8 +102,8 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				FieldModel::property( 'Has color', true ),
-				FieldModel::property( 'Has weight', false ),
+				new FieldModel( 'Has color', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has weight', false, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -134,7 +134,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				FieldModel::property( 'Has name', true ),
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -160,7 +160,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Person', [
 			'label' => 'Person',
 			'properties' => [
-				FieldModel::property( 'Has name', true ),
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -178,16 +178,16 @@ class FormGeneratorTest extends TestCase {
 	public function testCompositeFormTranscludesRequiredSubobjectComposite(): void {
 		$subCategory = new CategoryModel( 'Address', [
 			'properties' => [
-				FieldModel::property( 'Has street', true ),
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$category = new EffectiveCategoryModel( 'Person', [
 			'properties' => [
-				FieldModel::property( 'Has name', true ),
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'subobjects' => [
-				FieldModel::subobject( 'Address', true ),
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 
@@ -210,14 +210,14 @@ class FormGeneratorTest extends TestCase {
 	public function testCompositeFormTranscludesOptionalSubobjectComposite(): void {
 		$subCategory = new CategoryModel( 'Phone', [
 			'properties' => [
-				FieldModel::property( 'Has phone number', true ),
+				new FieldModel( 'Has phone number', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$category = new EffectiveCategoryModel( 'Person', [
 			'properties' => [],
 			'subobjects' => [
-				FieldModel::subobject( 'Phone', false ),
+				new FieldModel( 'Phone', false, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 
@@ -240,7 +240,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Shape', [
 			'label' => 'Shape',
 			'properties' => [
-				FieldModel::property( 'Has width', true ),
+				new FieldModel( 'Has width', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -298,8 +298,8 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				FieldModel::property( 'Has name', true ),
-				FieldModel::property( 'Has sort order', false ),
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has sort order', false, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -322,7 +322,7 @@ class FormGeneratorTest extends TestCase {
 		$category = new EffectiveCategoryModel( 'Thing', [
 			'label' => 'Thing',
 			'properties' => [
-				FieldModel::property( 'Has weight', true ),
+				new FieldModel( 'Has weight', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 

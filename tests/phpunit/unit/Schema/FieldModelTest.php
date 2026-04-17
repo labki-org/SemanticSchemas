@@ -16,14 +16,14 @@ class FieldModelTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testPropertyFactory(): void {
-		$field = FieldModel::property( 'Has name', true );
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY );
 		$this->assertSame( 'Has name', $field->getName() );
 		$this->assertTrue( $field->isRequired() );
 		$this->assertSame( FieldModel::TYPE_PROPERTY, $field->getFieldType() );
 	}
 
 	public function testSubobjectFactory(): void {
-		$field = FieldModel::subobject( 'Author', false );
+		$field = new FieldModel( 'Author', false, FieldModel::TYPE_SUBOBJECT );
 		$this->assertSame( 'Author', $field->getName() );
 		$this->assertFalse( $field->isRequired() );
 		$this->assertSame( FieldModel::TYPE_SUBOBJECT, $field->getFieldType() );
@@ -39,12 +39,12 @@ class FieldModelTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testGetParameterName(): void {
-		$field = FieldModel::property( 'Has full name', true );
+		$field = new FieldModel( 'Has full name', true, FieldModel::TYPE_PROPERTY );
 		$this->assertSame( 'has_full_name', $field->getParameterName() );
 	}
 
 	public function testJsonSerialize(): void {
-		$field = FieldModel::property( 'Has name', true );
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY );
 		$this->assertSame(
 			[ 'name' => 'Has name', 'required' => true ],
 			$field->jsonSerialize()
@@ -57,17 +57,17 @@ class FieldModelTest extends TestCase {
 
 	public function testFilterWithNoParametersReturnsAll(): void {
 		$fields = [
-			FieldModel::property( 'A', true ),
-			FieldModel::property( 'B', false ),
+			new FieldModel( 'A', true, FieldModel::TYPE_PROPERTY ),
+			new FieldModel( 'B', false, FieldModel::TYPE_PROPERTY ),
 		];
 		$this->assertCount( 2, FieldModel::filter( $fields ) );
 	}
 
 	public function testFilterByRequired(): void {
 		$fields = [
-			FieldModel::property( 'A', true ),
-			FieldModel::property( 'B', false ),
-			FieldModel::property( 'C', true ),
+			new FieldModel( 'A', true, FieldModel::TYPE_PROPERTY ),
+			new FieldModel( 'B', false, FieldModel::TYPE_PROPERTY ),
+			new FieldModel( 'C', true, FieldModel::TYPE_PROPERTY ),
 		];
 		$required = FieldModel::filter( $fields, required: true );
 		$this->assertCount( 2, $required );
@@ -80,7 +80,7 @@ class FieldModelTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testToWikitextPropertyField(): void {
-		$field = FieldModel::property( 'Has name', true );
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY );
 		$wikitext = $field->toWikitext( 1 );
 
 		$expected = implode( "\n", [
@@ -96,7 +96,7 @@ class FieldModelTest extends TestCase {
 	}
 
 	public function testToWikitextOptionalPropertyField(): void {
-		$field = FieldModel::property( 'Has email', false );
+		$field = new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY );
 		$wikitext = $field->toWikitext( 2 );
 
 		$expected = implode( "\n", [
@@ -116,7 +116,7 @@ class FieldModelTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testToWikitextSubobjectField(): void {
-		$field = FieldModel::subobject( 'Author', true );
+		$field = new FieldModel( 'Author', true, FieldModel::TYPE_SUBOBJECT );
 		$wikitext = $field->toWikitext( 1 );
 
 		$expected = implode( "\n", [
@@ -137,8 +137,8 @@ class FieldModelTest extends TestCase {
 
 	public function testToWikitextAllMultipleFields(): void {
 		$fields = [
-			FieldModel::property( 'Has name', true ),
-			FieldModel::property( 'Has email', false ),
+			new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
 		];
 
 		$wikitext = FieldModel::toWikitextAll( $fields );
@@ -154,9 +154,9 @@ class FieldModelTest extends TestCase {
 
 	public function testToWikitextAllSequentialSortOrder(): void {
 		$fields = [
-			FieldModel::property( 'A', true ),
-			FieldModel::property( 'B', false ),
-			FieldModel::property( 'C', true ),
+			new FieldModel( 'A', true, FieldModel::TYPE_PROPERTY ),
+			new FieldModel( 'B', false, FieldModel::TYPE_PROPERTY ),
+			new FieldModel( 'C', true, FieldModel::TYPE_PROPERTY ),
 		];
 
 		$wikitext = FieldModel::toWikitextAll( $fields );
@@ -178,7 +178,7 @@ class FieldModelTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testToWikitextBlockContainsAllFieldsForProperty(): void {
-		$field = FieldModel::property( 'Has name', true );
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY );
 		$block = $field->toWikitext( 1 );
 
 		// All lines must be within a single subobject block
@@ -193,7 +193,7 @@ class FieldModelTest extends TestCase {
 	}
 
 	public function testToWikitextBlockContainsAllFieldsForSubobject(): void {
-		$field = FieldModel::subobject( 'Funding', false );
+		$field = new FieldModel( 'Funding', false, FieldModel::TYPE_SUBOBJECT );
 		$block = $field->toWikitext( 3 );
 
 		$this->assertStringStartsWith( '{{#subobject:', $block );

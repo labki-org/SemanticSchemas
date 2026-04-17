@@ -61,18 +61,6 @@ class FieldModel implements JsonSerializable {
 		$this->fieldType = $fieldType;
 	}
 
-	/* -------------------------------------------------------------------------
-	 * STATIC FACTORIES
-	 * ---------------------------------------------------------------------- */
-
-	public static function property( string $name, bool $required ): self {
-		return new self( $name, $required, self::TYPE_PROPERTY );
-	}
-
-	public static function subobject( string $name, bool $required ): self {
-		return new self( $name, $required, self::TYPE_SUBOBJECT );
-	}
-
 	/**
 	 * Construct a FieldModel from an SMW subobject's semantic data.
 	 *
