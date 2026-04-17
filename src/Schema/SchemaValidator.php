@@ -161,29 +161,6 @@ class SchemaValidator {
 	 * ====================================================================== */
 
 	/**
-	 * Validate that a field is an array if it exists.
-	 *
-	 * @param string $entityType
-	 * @param string $entityName
-	 * @param array $data
-	 * @param string $field
-	 * @param string $suggestion
-	 * @return string|null Error message or null if valid
-	 */
-	private function requireArrayField(
-		string $entityType,
-		string $entityName,
-		array $data,
-		string $field,
-		string $suggestion
-	): ?string {
-		if ( isset( $data[$field] ) && !is_array( $data[$field] ) ) {
-			return $this->formatError( $entityType, $entityName, "$field must be an array", $suggestion );
-		}
-		return null;
-	}
-
-	/**
 	 * Validate references to items in a lookup array.
 	 *
 	 * @param string $entityType
