@@ -5,6 +5,12 @@ namespace MediaWiki\Extension\SemanticSchemas\Schema;
 use InvalidArgumentException;
 use JsonSerializable;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
+use SMW\DIProperty;
+use SMW\DIWikiPage;
+use SMW\SemanticData;
+use SMWDIBlob;
+use SMWDIBoolean;
+use SMWDINumber;
 
 /**
  * Immutable value object representing a field declaration on a category page.
@@ -71,7 +77,7 @@ class FieldModel implements JsonSerializable {
 	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
 	 * @return ?array{field: self, sort: int} Field model with sort order, or null
 	 */
-	public static function fromSMWSubobject( $subData, string $fieldType ): ?array {
+	public static function fromSMWSubobject( SemanticData $subData, string $fieldType ): ?array {
 		$config = self::FIELD_CONFIG[$fieldType];
 		$refPropName = $config['referenceProperty'];
 		$nsType = strtolower( $config['namespacePrefix'] );
@@ -103,16 +109,16 @@ class FieldModel implements JsonSerializable {
 	 * @param string $type 'text', 'property', or 'category'
 	 * @return ?string
 	 */
-	private static function smwReadOne( $sdata, string $propName, string $type = 'text' ): ?string {
+	private static function smwReadOne( SemanticData $sdata, string $propName, string $type = 'text' ): ?string {
 		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
+			$prop = DIProperty::newFromUserLabel( $propName );
 			$items = $sdata->getPropertyValues( $prop );
-		} catch ( \Throwable $e ) {
+		} catch ( \Throwable ) {
 			return null;
 		}
 
 		foreach ( $items as $di ) {
-			if ( $di instanceof \SMW\DIWikiPage ) {
+			if ( $di instanceof DIWikiPage ) {
 				$t = $di->getTitle();
 				if ( !$t ) {
 					continue;
@@ -127,10 +133,10 @@ class FieldModel implements JsonSerializable {
 						return $text;
 				}
 			}
-			if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
+			if ( $di instanceof SMWDIBlob ) {
 				return trim( $di->getString() );
 			}
-			if ( $di instanceof \SMWDINumber ) {
+			if ( $di instanceof SMWDINumber ) {
 				return (string)$di->getNumber();
 			}
 		}
@@ -148,18 +154,18 @@ class FieldModel implements JsonSerializable {
 		try {
 			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
 			$items = $sdata->getPropertyValues( $prop );
-		} catch ( \Throwable $e ) {
+		} catch ( \Throwable ) {
 			return false;
 		}
 
 		foreach ( $items as $di ) {
-			if ( $di instanceof \SMWDIBoolean ) {
+			if ( $di instanceof SMWDIBoolean ) {
 				return $di->getBoolean();
 			}
-			if ( $di instanceof \SMWDINumber ) {
+			if ( $di instanceof SMWDINumber ) {
 				return $di->getNumber() > 0;
 			}
-			if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
+			if ( $di instanceof SMWDIBlob ) {
 				$v = strtolower( trim( $di->getString() ) );
 				if ( in_array( $v, [ '1', 'true', 'yes', 'y', 't' ], true ) ) {
 					return true;
