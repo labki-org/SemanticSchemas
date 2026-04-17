@@ -210,19 +210,6 @@ class FieldModel implements JsonSerializable {
 		) );
 	}
 
-	/**
-	 * Extract names from a list of field models.
-	 *
-	 * @param self[] $fields
-	 * @return string[]
-	 */
-	public static function names( array $fields ): array {
-		return array_map(
-			static fn ( self $f ) => $f->getName(),
-			$fields
-		);
-	}
-
 	/* -------------------------------------------------------------------------
 	 * ACCESSORS
 	 * ---------------------------------------------------------------------- */
@@ -235,6 +222,12 @@ class FieldModel implements JsonSerializable {
 		return $this->required;
 	}
 
+	/*
+	 * fieldType accessor - subobject or property
+	 *
+	 * fine to suppress as unused, as it's a no-op accessor that would be expected from the object model.
+	 * @suppress PhanUnreferencedPublicMethod
+	 */
 	public function getFieldType(): string {
 		return $this->fieldType;
 	}
