@@ -9,6 +9,8 @@
  * Run via: ./tests/scripts/run-docker-tests.sh integration
  */
 
+require_once __DIR__ . '/Traits/GenerationHelper.php';
+
 if ( defined( 'MEDIAWIKI' ) ) {
 	return;
 }
