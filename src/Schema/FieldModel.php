@@ -222,7 +222,7 @@ class FieldModel implements JsonSerializable {
 		return $this->required;
 	}
 
-	/*
+	/**
 	 * fieldType accessor - subobject or property
 	 *
 	 * fine to suppress as unused, as it's a no-op accessor that would be expected from the object model.
@@ -248,26 +248,4 @@ class FieldModel implements JsonSerializable {
 		];
 	}
 
-	/**
-	 * Generate the wikitext subobject block for this field declaration.
-	 *
-	 * Uses anonymous subobjects (SMW assigns a stable hash-based ID) with an
-	 * explicit sort order property so that #ask queries can preserve ordering.
-	 *
-	 * @param int $index 1-based position index used for sort ordering
-	 * @return string Complete {{#subobject:...}} block
-	 */
-	public function toWikitext( int $index ): string {
-		$config = self::FIELD_CONFIG[$this->fieldType];
-
-		$lines = [];
-		$lines[] = '{{#subobject:';
-		$lines[] = ' |@category=' . $config['category'];
-		$lines[] = ' | ' . $config['referenceProperty'] . ' = ' . $config['namespacePrefix'] . ':' . $this->name;
-		$lines[] = ' | Is required = ' . ( $this->required ? 'true' : 'false' );
-		$lines[] = ' | Has sort order = ' . $index;
-		$lines[] = '}}';
-
-		return implode( "\n", $lines );
-	}
 }

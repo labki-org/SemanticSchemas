@@ -9,6 +9,7 @@ use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use MediaWiki\Extension\SemanticSchemas\Tests\Traits\GenerationHelper;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
@@ -27,6 +28,8 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	private Title $title;
 	private WikiCategoryStore $categoryStore;
 	private PageCreator $pageCreator;
+
+	use GenerationHelper;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -295,7 +298,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	private function createManagedCategory( string $name ): void {
 		$title = Title::makeTitle( NS_CATEGORY, $name );
 		$this->pageCreator->createOrUpdatePage( $title,
-			( new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ) )->toWikitext( 1 ) .
+			$this->fieldToWikitext( new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ), 1 ) .
 			"[[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . "]]", '' );
 	}
 
