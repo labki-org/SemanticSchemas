@@ -499,7 +499,7 @@ class CategoryModelTest extends TestCase {
 	 */
 	private static function names( array $fields ): array {
 		return array_map(
-			static fn ( self $f ) => $f->getName(),
+			static fn ( FieldModel $f ) => $f->getName(),
 			$fields
 		);
 	}
