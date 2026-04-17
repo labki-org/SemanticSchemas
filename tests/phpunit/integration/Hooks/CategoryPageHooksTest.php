@@ -295,7 +295,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	private function createManagedCategory( string $name ): void {
 		$title = Title::makeTitle( NS_CATEGORY, $name );
 		$this->pageCreator->createOrUpdatePage( $title,
-			FieldModel::property( 'Has name', true )->toWikitext(1) .
+			FieldModel::property( 'Has name', true )->toWikitext( 1 ) .
 			"[[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . "]]", '' );
 	}
 

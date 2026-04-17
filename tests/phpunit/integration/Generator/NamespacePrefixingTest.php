@@ -7,7 +7,6 @@ use MediaWiki\Content\ContentHandler;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Language\Language;
 use MediaWiki\Revision\SlotRecord;
@@ -46,10 +45,8 @@ class NamespacePrefixingTest extends MediaWikiIntegrationTestCase {
 
 		return new TemplateGenerator(
 			new PageCreator(
-				$services->getWikiPageFactory(),
-				$services->getDeletePageFactory(),
+				$services->getWikiPageFactory()
 			),
-			$this->createMock( WikiCategoryStore::class ),
 			$propStore,
 			$this->createMock( Language::class )
 		);

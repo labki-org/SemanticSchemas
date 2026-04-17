@@ -266,7 +266,7 @@ class FormGenerator {
 				$params[] = 'required=true';
 			}
 
-			$out[] = '{{Form:' . $this->s( $subName )
+			$out[] = '{{Form:' . $subName
 				. '/composite|' . implode( '|', $params ) . '}}';
 			$out[] = '';
 		}
@@ -358,7 +358,7 @@ class FormGenerator {
 		// {{{subobject|}}} and {{{required|}}} are resolved during transclusion;
 		// the <nowiki> tags protect the PageForms {{{...}}} directives from
 		// being parsed as template parameters.
-		$subFor = $this->s( $name ) . '/subobject|multiple';
+		$subFor = $name . '/subobject|multiple';
 		$lines[] = '{{#if:{{{subobject|}}}';
 		$lines[] = '|{{#if:{{{required|}}}';
 		$lines[] = '|<nowiki>{{{for template|' . $subFor . '|minimum instances=1}}}</nowiki>';
