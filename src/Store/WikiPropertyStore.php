@@ -106,14 +106,12 @@ class WikiPropertyStore {
 		// Datatype comes from SMW's internal property type API, not semantic annotations
 		try {
 			$prop = \SMW\DIProperty::newFromUserLabel( $title->getText() );
-			if ( $prop !== null ) {
-				$internalTypeId = $prop->findPropertyTypeID();
-				if ( $internalTypeId !== null ) {
-					$out['datatype'] = $this->convertSMWTypeIdToCanonical( $internalTypeId );
-				}
+			$internalTypeId = $prop->findPropertyTypeID();
+			if ( $internalTypeId !== null ) {
+				$out['datatype'] = $this->convertSMWTypeIdToCanonical( $internalTypeId );
 			}
-		} catch ( \Throwable $e ) {
-			// If property creation fails, datatype will default to 'Text' in readProperty()
+		} catch ( \Throwable) {
+			// If property creation fails, datatype will default to 'Page' in readProperty()
 		}
 
 		$out += $this->smwLoadProperties( $sdata, PropertyModel::SMW_PROPERTIES );
@@ -127,6 +125,47 @@ class WikiPropertyStore {
 			$out,
 			static fn ( $v ) => $v !== null && $v !== []
 		);
+	}
+
+	/* -------------------------------------------------------------------------
+	 * TYPE ID CONVERSION
+	 * ------------------------------------------------------------------------- */
+
+	/**
+	 * Convert SMW's internal type ID (e.g., '_txt', '_wpg') to canonical datatype name.
+	 *
+	 * @param string $typeId SMW internal type ID
+	 * @return string Canonical datatype name
+	 */
+	private function convertSMWTypeIdToCanonical( string $typeId ): string {
+		// Mapping from SMW internal type IDs to canonical names
+		static $typeMap = [
+			'_txt' => 'Text',
+			'_wpg' => 'Page',
+			'_dat' => 'Date',
+			'_num' => 'Number',
+			'_boo' => 'Boolean',
+			'_uri' => 'URL',
+			'_ema' => 'Email',
+			'_tel' => 'Telephone number',
+			'_cod' => 'Code',
+			'_geo' => 'Geographic coordinate',
+			'_qty' => 'Quantity',
+			'_tem' => 'Temperature',
+			'_anu' => 'Annotation URI',
+			'_eid' => 'External identifier',
+			'_key' => 'Keyword',
+			'_mlt_rec' => 'Monolingual text',
+			'_rec' => 'Record',
+			'_ref_rec' => 'Reference',
+		];
+
+		// If it's already a canonical name, return as-is
+		if ( substr( $typeId, 0, 1 ) !== '_' ) {
+			return $typeId;
+		}
+
+		return $typeMap[$typeId] ?? 'Text';
 	}
 
 	/* -------------------------------------------------------------------------
