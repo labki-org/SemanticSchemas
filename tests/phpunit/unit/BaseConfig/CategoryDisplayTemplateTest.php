@@ -220,6 +220,192 @@ class CategoryDisplayTemplateTest extends TestCase {
 	}
 
 	/* =========================================================================
+	 * SUBOBJECTS: DISCOVERY QUERY
+	 * ========================================================================= */
+
+	public function testSubobjectsDiscoversTypesViaSubobjectField(): void {
+		$content = $this->loadTemplate( 'subobjects' );
+
+		$this->assertStringContainsString(
+			'[[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]]',
+			$content,
+			'subobjects must walk the ancestor chain and filter Subobject field subobjects'
+		);
+		$this->assertStringContainsString(
+			'?For category=',
+			$content,
+			'subobjects must read the For category printout with empty-label suffix'
+		);
+	}
+
+	public function testSubobjectsUsesPlainlistWithMainlabelSuppressed(): void {
+		$content = $this->loadTemplate( 'subobjects' );
+
+		$this->assertStringContainsString(
+			'mainlabel=-',
+			$content,
+			'subobjects discovery query must suppress the mainlabel so the CSV contains only For category values'
+		);
+		$this->assertStringContainsString(
+			'format=plainlist',
+			$content,
+			'subobjects query must use plainlist (format=list wraps values in <span> markup)'
+		);
+	}
+
+	/* =========================================================================
+	 * SUBOBJECTS: INSTANCE RENDERING
+	 * ========================================================================= */
+
+	public function testSubobjectsInstanceRenderingUsesTemplate(): void {
+		$content = $this->loadTemplate( 'subobjects' );
+
+		$this->assertStringContainsString(
+			'format=template',
+			$content,
+			'subobjects must render each instance via format=template'
+		);
+		$this->assertStringContainsString(
+			'template=Category/subobject-instance',
+			$content,
+			'subobjects must use Category/subobject-instance as the row template'
+		);
+		$this->assertStringContainsString(
+			'userparam={{PAGENAME:@@subcat@@}}',
+			$content,
+			'subobjects must pass the subobject category name (without Category: prefix) via userparam'
+		);
+	}
+
+	public function testSubobjectsSortsBySortOrder(): void {
+		$content = $this->loadTemplate( 'subobjects' );
+
+		$this->assertStringContainsString(
+			'sort=Has sort order',
+			$content,
+			'subobjects must sort by Has sort order so user-defined ordering is preserved'
+		);
+		$this->assertStringContainsString(
+			'order=asc',
+			$content,
+			'subobjects must sort ascending'
+		);
+	}
+
+	public function testSubobjectsUsesLiteralPipesInNestedAsk(): void {
+		$content = $this->loadTemplate( 'subobjects' );
+
+		// Inside an enclosing #arraymap, {{!}} evaluated at render time
+		// confuses arraymap's formula splitter and produces "empty condition"
+		// warnings. Literal | is safe because MW protects pipes inside {{...}}.
+		$this->assertStringNotContainsString(
+			'{{!}} format=template',
+			$content,
+			'nested #ask inside #arraymap must use literal | for its parameter separators, not {{!}}'
+		);
+	}
+
+	public function testSubobjectsPassesSubjectAsPlainText(): void {
+		$content = $this->loadTemplate( 'subobjects' );
+
+		$this->assertStringContainsString(
+			'link=none',
+			$content,
+			'subobjects must set link=none so the subobject fragment reaches subobject-instance as plain text'
+		);
+	}
+
+	public function testSubobjectsHeadingUsesHtmlTag(): void {
+		$content = $this->loadTemplate( 'subobjects' );
+
+		$this->assertStringContainsString(
+			'<h3>',
+			$content,
+			'subobjects must use an HTML <h3> tag (arraymap trims the leading newline wikitext === needs)'
+		);
+		$this->assertStringNotContainsString(
+			'=== {{#show:',
+			$content,
+			'subobjects must not use wikitext === headings (render as literal after arraymap trims newline)'
+		);
+	}
+
+	/* =========================================================================
+	 * SUBOBJECT-INSTANCE
+	 * ========================================================================= */
+
+	public function testSubobjectInstanceReinvokesTable(): void {
+		$content = $this->loadTemplate( 'subobject-instance' );
+
+		$this->assertStringContainsString(
+			'{{Category/table',
+			$content,
+			'subobject-instance must reuse Category/table so subobjects share the category-page layout'
+		);
+	}
+
+	public function testSubobjectInstanceReadsHashUserparam(): void {
+		$content = $this->loadTemplate( 'subobject-instance' );
+
+		// SMW's format=template exposes the userparam= value as {{{#userparam}}}
+		// (hash-prefixed), not {{{userparam}}}. Using the wrong name produces
+		// an empty category which triggers "Category: invalid characters".
+		$this->assertStringContainsString(
+			'{{{#userparam',
+			$content,
+			'subobject-instance must read {{{#userparam}}} (SMW\'s format=template param name is hash-prefixed)'
+		);
+	}
+
+	public function testSubobjectInstanceReadsPositionalOneAsPage(): void {
+		$content = $this->loadTemplate( 'subobject-instance' );
+
+		$this->assertStringContainsString(
+			'page={{{1|',
+			$content,
+			'subobject-instance must pass {{{1}}} (the subobject fragment) as the page parameter to Category/table'
+		);
+	}
+
+	public function testSubobjectInstanceGuardsAgainstRecursion(): void {
+		$content = $this->loadTemplate( 'subobject-instance' );
+
+		$this->assertStringContainsString(
+			'subobjects=no',
+			$content,
+			'subobject-instance must pass subobjects=no to prevent Category/table from recursing into nested subobjects'
+		);
+	}
+
+	/* =========================================================================
+	 * TABLE / SIDEBOX: RENDER-REVERSE GATING
+	 * ========================================================================= */
+
+	public function testTableGatesRenderReverseOnSubobjectsParam(): void {
+		$content = $this->loadTemplate( 'table' );
+
+		// render-reverse hardcodes {{FULLPAGENAME}} for backlink lookups, so
+		// when Category/subobject-instance re-enters table with subobjects=no,
+		// an ungated render-reverse would duplicate the parent page's
+		// Backlinks section inside every subobject mini-table.
+		$this->assertStringContainsString(
+			'{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse',
+			$content,
+			'table must gate Category/render-reverse on subobjects=yes to keep backlinks out of subobject instances'
+		);
+	}
+
+	public function testSideboxGatesRenderReverseOnSubobjectsParam(): void {
+		$content = $this->loadTemplate( 'sidebox' );
+
+		$this->assertStringContainsString(
+			'{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse',
+			$content,
+			'sidebox must gate Category/render-reverse on subobjects=yes for the same reason as table'
+		);
+	}
+
+	/* =========================================================================
 	 * COLLECT-ANCESTORS
 	 * ========================================================================= */
 
