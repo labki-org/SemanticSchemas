@@ -187,8 +187,8 @@ class WikiCategoryStore {
 
 		$out = $this->smwLoadProperties( $sdata, CategoryModel::SMW_PROPERTIES );
 
-		$out['label'] = $out['label'] ?? $categoryName;
-		$out['description'] = $out['description'] ?? '';
+		$out['label'] ??= $categoryName;
+		$out['description'] ??= '';
 		$out['parents'] = $parents;
 
 		$out['properties'] = $this->smwFetchFieldReferences(

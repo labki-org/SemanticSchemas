@@ -110,7 +110,7 @@ class WikiPropertyStore {
 			if ( $internalTypeId !== null ) {
 				$out['datatype'] = $this->convertSMWTypeIdToCanonical( $internalTypeId );
 			}
-		} catch ( \Throwable) {
+		} catch ( \Throwable ) {
 			// If property creation fails, datatype will default to 'Page' in readProperty()
 		}
 
