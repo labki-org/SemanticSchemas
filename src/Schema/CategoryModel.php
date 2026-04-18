@@ -33,6 +33,20 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  */
 class CategoryModel {
 
+	/**
+	 * Declarative map of internal field names to SMW property labels and types.
+	 * Used by WikiCategoryStore::loadFromSMW via smwLoadProperties().
+	 *
+	 * Fields loaded separately: parents (MediaWiki API), properties/subobjects
+	 * (FieldDeclaration subobjects), display config (nested structure).
+	 */
+	public const SMW_PROPERTIES = [
+		'label' => [ 'Display label', 'text' ],
+		'description' => [ 'Has description', 'text' ],
+		'targetNamespace' => [ 'Has target namespace', 'text' ],
+		'backlinksFor' => [ 'Show backlinks for', 'property[]' ],
+	];
+
 	private string $name;
 	private array $parents;
 

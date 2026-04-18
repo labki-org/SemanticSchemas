@@ -114,42 +114,13 @@ class WikiPropertyStore {
 			// If property creation fails, datatype will default to 'Page' in readProperty()
 		}
 
-		$out['label'] = $this->smwFetchOne( $sdata, 'Display label' );
-		$out['description'] = $this->smwFetchOne( $sdata, 'Has description' );
+		$out += $this->smwLoadProperties( $sdata, PropertyModel::SMW_PROPERTIES );
 
-		$out['allowedValues'] =
-			$this->smwFetchMany( $sdata, 'Allows value', 'text' );
-
-		$out['subpropertyOf'] =
-			$this->smwFetchOne( $sdata, 'Subproperty of', 'property' );
-
-		$out['allowedCategory'] =
-			$this->smwFetchOne( $sdata, 'Allows value from category', 'category' );
-
-		$out['allowedNamespace'] =
-			$this->smwFetchOne( $sdata, 'Allows value from namespace', 'text' );
-
-		$out['allowsMultipleValues'] =
-			$this->smwFetchBoolean( $sdata, 'Allows multiple values' );
-
-		/* -------------------- Template Configuration -------------------- */
-		$hasTemplate = $this->smwFetchOne( $sdata, 'Has template', 'page' );
-
-		if ( $hasTemplate ) {
-			$out['hasTemplate'] = $hasTemplate;
-			$out['templateSource'] = $hasTemplate;
+		// hasTemplate also sets templateSource for backward compat
+		if ( !empty( $out['hasTemplate'] ) ) {
+			$out['templateSource'] = $out['hasTemplate'];
 		}
 
-		/* -------------------- Input type override -------------------- */
-		$out['inputType'] = $this->smwFetchOne( $sdata, 'Has input type' );
-
-		/* -------------------- Backlink label -------------------- */
-		$out['inverseLabel'] = $this->smwFetchOne( $sdata, 'Inverse property label' );
-
-		/* -------------------- Hidden -------------------- */
-		$out['hidden'] = $this->smwFetchBoolean( $sdata, 'Is hidden' );
-
-		// Clean null/empty
 		return array_filter(
 			$out,
 			static fn ( $v ) => $v !== null && $v !== []

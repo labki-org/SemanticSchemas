@@ -185,24 +185,22 @@ class WikiCategoryStore {
 			array_keys( $title->getParentCategories() )
 		);
 
-		return [
-			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
-			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
-			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ),
-			'parents' => $parents,
+		$out = $this->smwLoadProperties( $sdata, CategoryModel::SMW_PROPERTIES );
 
-			'properties' => $this->smwFetchFieldReferences(
-				$sdata, FieldModel::TYPE_PROPERTY
-			),
+		$out['label'] ??= $categoryName;
+		$out['description'] ??= '';
+		$out['parents'] = $parents;
 
-			'subobjects' => $this->smwFetchFieldReferences(
-				$sdata, FieldModel::TYPE_SUBOBJECT
-			),
+		$out['properties'] = $this->smwFetchFieldReferences(
+			$sdata, FieldModel::TYPE_PROPERTY
+		);
+		$out['subobjects'] = $this->smwFetchFieldReferences(
+			$sdata, FieldModel::TYPE_SUBOBJECT
+		);
 
-			'backlinksFor' => $this->smwFetchMany( $sdata, 'Show backlinks for', 'property' ),
+		$out['display'] = $this->loadDisplayConfig( $sdata );
 
-			'display' => $this->loadDisplayConfig( $sdata ),
-		];
+		return $out;
 	}
 
 	private function loadDisplayConfig( $semanticData ): array {
