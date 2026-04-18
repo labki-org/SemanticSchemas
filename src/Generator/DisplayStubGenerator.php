@@ -402,6 +402,8 @@ class DisplayStubGenerator {
 			$sections .= ' | named args=yes' . "\n";
 			$sections .= ' | link=none' . "\n";
 			$sections .= ' | mainlabel=-' . "\n";
+			$sections .= ' | sort=Has sort order' . "\n";
+			$sections .= ' | order=asc' . "\n";
 			$sections .= '}}' . "\n";
 		}
 
