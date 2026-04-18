@@ -106,11 +106,9 @@ class WikiPropertyStore {
 		// Datatype comes from SMW's internal property type API, not semantic annotations
 		try {
 			$prop = \SMW\DIProperty::newFromUserLabel( $title->getText() );
-			if ( $prop !== null ) {
-				$internalTypeId = $prop->findPropertyTypeID();
-				if ( $internalTypeId !== null ) {
-					$out['datatype'] = $this->convertSMWTypeIdToCanonical( $internalTypeId );
-				}
+			$internalTypeId = $prop->findPropertyTypeID();
+			if ( $internalTypeId !== null ) {
+				$out['datatype'] = $this->convertSMWTypeIdToCanonical( $internalTypeId );
 			}
 		} catch ( \Throwable ) {
 			// If property creation fails, datatype will default to 'Page' in readProperty()
