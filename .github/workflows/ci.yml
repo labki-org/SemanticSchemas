@@ -247,4 +247,3 @@ jobs:
 
       - name: Run Phan
         run: composer run phan
-        continue-on-error: true

@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Boolean]]
+[[Has description::Whether this field is hidden from forms. Hidden fields are included in templates but not displayed to users.]]
+[[Display label::Is hidden]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

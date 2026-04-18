@@ -24,6 +24,8 @@ use PPFrame;
  *   - Load form preview modules
  *   - Page-scoped counter for ordered subobject IDs
  *   - Provide clean HTML-safe outputs
+ *
+ * @suppress PhanUnreferencedClass
  */
 class DisplayParserFunctions {
 
@@ -31,6 +33,9 @@ class DisplayParserFunctions {
 	 * REGISTRATION
 	 * ===================================================================== */
 
+	/**
+	 * @suppress PhanUnreferencedPublicMethod
+	 */
 	public function onParserFirstCallInit( Parser $parser ): void {
 		// Category hierarchy UI
 		$parser->setFunctionHook(
@@ -76,11 +81,12 @@ class DisplayParserFunctions {
 
 		if ( !$category ) {
 			// Fallback: Infer from current page title if in Category namespace
-			$title = $parser->getTitle();
-			if ( !$title || $title->getNamespace() !== NS_CATEGORY ) {
+			$page = $parser->getPage();
+
+			if ( !$page || $page->getNamespace() !== NS_CATEGORY ) {
 				return '';
 			}
-			$category = $title->getText();
+			$category = (string)$page;
 		}
 
 		$output = $parser->getOutput();

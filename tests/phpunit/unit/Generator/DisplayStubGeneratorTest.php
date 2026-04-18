@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -39,17 +40,17 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testSubobjectSectionsUseDisplayTemplate() {
 		$address = new CategoryModel( 'Address', [
 			'properties' => [
-				[ 'name' => 'Has street', 'required' => true ],
-				[ 'name' => 'Has city', 'required' => true ],
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has city', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'subobjects' => [
-				[ 'name' => 'Address', 'required' => true ],
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 
@@ -74,24 +75,24 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testSubobjectDisplayIncludesInheritedProperties() {
 		$baseAddress = new CategoryModel( 'Address', [
 			'properties' => [
-				[ 'name' => 'Has street', 'required' => true ],
-				[ 'name' => 'Has city', 'required' => true ],
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has city', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$mailingAddress = new CategoryModel( 'MailingAddress', [
 			'parents' => [ 'Address' ],
 			'properties' => [
-				[ 'name' => 'Has zip', 'required' => true ],
+				new FieldModel( 'Has zip', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'subobjects' => [
-				[ 'name' => 'MailingAddress', 'required' => true ],
+				new FieldModel( 'MailingAddress', true, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 
@@ -113,10 +114,10 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testNoSubobjectSectionsWithoutResolver() {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'subobjects' => [
-				[ 'name' => 'Address', 'required' => true ],
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 

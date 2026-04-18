@@ -2,7 +2,13 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Util;
 
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
+use SMW\DIProperty;
+use SMW\DIWikiPage;
+use SMWDataItem;
+use SMWDIBlob;
+use SMWDIBoolean;
+use SMWDINumber;
 
 /**
  * SMWDataExtractor
@@ -22,8 +28,8 @@ trait SMWDataExtractor {
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null
 	 */
-	protected function smwFetchOne( $semanticData, string $propName, string $type = 'text' ): ?string {
-		$vals = $this->smwFetchMany( $semanticData, $propName, $type );
+	protected static function smwFetchOne( $semanticData, string $propName, string $type = 'text' ): ?string {
+		$vals = self::smwFetchMany( $semanticData, $propName, $type );
 		return $vals[0] ?? null;
 	}
 
@@ -35,17 +41,12 @@ trait SMWDataExtractor {
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return array
 	 */
-	protected function smwFetchMany( $semanticData, string $propName, string $type = 'text' ): array {
-		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
-			$items = $semanticData->getPropertyValues( $prop );
-		} catch ( \Throwable $e ) {
-			return [];
-		}
-
+	protected static function smwFetchMany( $semanticData, string $propName, string $type = 'text' ): array {
+		$prop = DIProperty::newFromUserLabel( $propName );
+		$items = $semanticData->getPropertyValues( $prop );
 		$out = [];
 		foreach ( $items as $di ) {
-			$v = $this->smwExtractValue( $di, $type );
+			$v = self::smwExtractValue( $di, $type );
 			if ( $v !== null ) {
 				$out[] = $v;
 			}
@@ -60,22 +61,18 @@ trait SMWDataExtractor {
 	 * @param string $propName Property label
 	 * @return bool
 	 */
-	protected function smwFetchBoolean( $semanticData, string $propName ): bool {
-		try {
-			$prop = \SMW\DIProperty::newFromUserLabel( $propName );
-			$items = $semanticData->getPropertyValues( $prop );
-		} catch ( \Throwable $e ) {
-			return false;
-		}
+	protected static function smwFetchBoolean( $semanticData, string $propName ): bool {
+		$prop = \SMW\DIProperty::newFromUserLabel( $propName );
+		$items = $semanticData->getPropertyValues( $prop );
 
 		foreach ( $items as $di ) {
-			if ( $di instanceof \SMWDIBoolean ) {
+			if ( $di instanceof SMWDIBoolean ) {
 				return $di->getBoolean();
 			}
-			if ( $di instanceof \SMWDINumber ) {
+			if ( $di instanceof SMWDINumber ) {
 				return $di->getNumber() > 0;
 			}
-			if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
+			if ( $di instanceof SMWDIBlob ) {
 				$v = strtolower( trim( $di->getString() ) );
 				if ( in_array( $v, [ '1', 'true', 'yes', 'y', 't' ], true ) ) {
 					return true;
@@ -114,33 +111,28 @@ trait SMWDataExtractor {
 	}
 
 	/**
-	 * Read ordered FieldDeclaration[] from SMW subobjects attached to a page.
+	 * Read ordered FieldModel[] from SMW subobjects attached to a page.
 	 *
-	 * Iterates sub-semantic-data, filters by @category membership, extracts the
-	 * reference property value and the "Is required" boolean, and sorts by
-	 * the "Has sort order" property to preserve declaration order.
+	 * Iterates sub-semantic-data, filters by @category membership, and
+	 * delegates per-subobject extraction to FieldModel::fromSMWSubobject().
 	 *
 	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
-	 * @param string $fieldType FieldDeclaration type constant (TYPE_PROPERTY or TYPE_SUBOBJECT)
-	 * @return FieldDeclaration[] Ordered list of field declarations
+	 * @param string $fieldType FieldModel type constant (TYPE_PROPERTY or TYPE_SUBOBJECT)
+	 * @return FieldModel[] Ordered list of field models
 	 */
 	protected function smwFetchFieldReferences(
 		$semanticData,
 		string $fieldType
 	): array {
-		$config = FieldDeclaration::FIELD_CONFIG[$fieldType];
-		$categoryName = $config['category'];
-		$referenceProperty = $config['referenceProperty'];
-		$referenceType = strtolower( $config['namespacePrefix'] );
+		$categoryName = FieldModel::FIELD_CONFIG[$fieldType]['category'];
+		$expectedKey = str_replace( ' ', '_', $categoryName );
+		$instProp = new \SMW\DIProperty( '_INST' );
 
 		$entries = [];
-		$instProp = new \SMW\DIProperty( '_INST' );
-		$expectedKey = str_replace( ' ', '_', $categoryName );
 
 		foreach ( $semanticData->getSubSemanticData() as $subData ) {
-			$categories = $subData->getPropertyValues( $instProp );
 			$matchesCategory = false;
-			foreach ( $categories as $cat ) {
+			foreach ( $subData->getPropertyValues( $instProp ) as $cat ) {
 				if ( $cat instanceof \SMW\DIWikiPage && $cat->getDBKey() === $expectedKey ) {
 					$matchesCategory = true;
 					break;
@@ -150,14 +142,9 @@ trait SMWDataExtractor {
 				continue;
 			}
 
-			$ref = $this->smwFetchOne( $subData, $referenceProperty, $referenceType );
-			if ( $ref !== null ) {
-				$required = $this->smwFetchBoolean( $subData, 'Is required' );
-				$sortOrder = (int)( $this->smwFetchOne( $subData, 'Has sort order' ) ?? 0 );
-				$entries[] = [
-					'field' => new FieldDeclaration( $ref, $required, $fieldType ),
-					'sort' => $sortOrder,
-				];
+			$entry = FieldModel::fromSMWSubobject( $subData, $fieldType );
+			if ( $entry !== null ) {
+				$entries[] = $entry;
 			}
 		}
 
@@ -181,12 +168,12 @@ trait SMWDataExtractor {
 	 *   - 'category'  — requires NS_CATEGORY
 	 *   - 'page'      — returns prefixed text (no namespace check)
 	 *
-	 * @param \SMW\DataItem $di
+	 * @param SMWDataItem $di
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null The extracted value, or null if the DataItem type or namespace doesn't match
 	 */
-	protected function smwExtractValue( $di, string $type ): ?string {
-		if ( $di instanceof \SMWDIBlob || $di instanceof \SMWDIString ) {
+	protected static function smwExtractValue( $di, string $type ): ?string {
+		if ( $di instanceof SMWDIBlob ) {
 			return trim( $di->getString() );
 		}
 
@@ -194,7 +181,7 @@ trait SMWDataExtractor {
 			return (string)$di->getNumber();
 		}
 
-		if ( $di instanceof \SMW\DIWikiPage ) {
+		if ( $di instanceof DIWikiPage ) {
 			$t = $di->getTitle();
 			if ( !$t ) {
 				return null;

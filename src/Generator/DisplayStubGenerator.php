@@ -172,7 +172,7 @@ class DisplayStubGenerator {
 		foreach ( $category->getPropertyFields() as $field ) {
 			$propName = $field->getName();
 			$property = $this->propertyStore->readProperty( $propName );
-			$paramName = NamingHelper::propertyToParameter( $propName );
+			$paramName = $field->getParameterName();
 
 			if ( $property ) {
 				$label = $property->getLabel();
@@ -220,16 +220,18 @@ class DisplayStubGenerator {
 			return '{{{' . $paramName . '|}}}';
 		}
 
-		// Page-type with namespace restriction: prefix namespace to values.
-		// {{PAGENAME:}} strips any existing namespace prefix first, preventing
-		// double-prefixing when values arrive already namespaced from #ask queries.
+		// Page-type with namespace restriction: add namespace only when the
+		// value has none. If the user (or an #ask query) provides a value
+		// that already has a namespace, preserve it as-is.
 		if ( $property->allowsMultipleValues() ) {
-			return '{{#arraymap:{{{' . $paramName . '|}}}|,|@@item@@|' .
-				$allowedNamespace . ':{{PAGENAME:@@item@@}}|,&#32;}}';
+			return '{{#arraymap:{{{' . $paramName . '|}}}|,|@@item@@|'
+				. '{{#ifeq:{{FULLPAGENAME:@@item@@}}|{{PAGENAME:@@item@@}}|'
+				. $allowedNamespace . ':}}@@item@@|,&#32;}}';
 		}
 
-		return '{{#if:{{{' . $paramName . '|}}}|' .
-			$allowedNamespace . ':{{PAGENAME:{{{' . $paramName . '|}}}}}|}}';
+		return '{{#if:{{{' . $paramName . '|}}}|'
+			. '{{#ifeq:{{FULLPAGENAME:{{{' . $paramName . '|}}}}}|{{PAGENAME:{{{' . $paramName . '|}}}}}'
+			. '|' . $allowedNamespace . ':}}{{{' . $paramName . '|}}}|}}';
 	}
 
 	/**
@@ -366,7 +368,7 @@ class DisplayStubGenerator {
 		}
 
 		$subFields = $category->getSubobjectFields();
-		if ( empty( $subFields ) ) {
+		if ( !$subFields ) {
 			return '';
 		}
 
@@ -382,7 +384,7 @@ class DisplayStubGenerator {
 			$sub = $resolver->getEffectiveCategory( $subName );
 
 			$fields = $sub->getPropertyFields();
-			if ( $fields === [] ) {
+			if ( !$fields ) {
 				continue;
 			}
 
@@ -392,9 +394,7 @@ class DisplayStubGenerator {
 				. ' [[' . $catNs . ':' . $subName . ']]' . "\n";
 
 			foreach ( $fields as $f ) {
-				$p = $f->getName();
-				$param = NamingHelper::propertyToParameter( $p );
-				$sections .= ' | ?' . $p . ' = ' . $param . "\n";
+				$sections .= ' | ?' . $f->getName() . ' = ' . $f->getParameterName() . "\n";
 			}
 
 			$sections .= ' | format=template' . "\n";

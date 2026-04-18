@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -190,14 +190,14 @@ class InheritanceResolverTest extends TestCase {
 		$map = [
 			'Person' => new CategoryModel( 'Person', [
 				'properties' => [
-					[ 'name' => 'Has name', 'required' => true ],
-					[ 'name' => 'Has email', 'required' => false ],
+					new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+					new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
 				],
 			] ),
 			'Student' => new CategoryModel( 'Student', [
 				'parents' => [ 'Person' ],
 				'properties' => [
-					[ 'name' => 'Has student ID', 'required' => true ],
+					new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
 				],
 			] ),
 		];
@@ -205,7 +205,7 @@ class InheritanceResolverTest extends TestCase {
 
 		$effective = $resolver->getEffectiveCategory( 'Student' );
 
-		$allNames = FieldDeclaration::names( $effective->getPropertyFields() );
+		$allNames = $this->names( $effective->getPropertyFields() );
 		$this->assertContains( 'Has name', $allNames );
 		$this->assertContains( 'Has student ID', $allNames );
 		$this->assertContains( 'Has email', $allNames );
@@ -259,100 +259,6 @@ class InheritanceResolverTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * INHERITANCE CHAIN (RAW MODELS)
-	 * ========================================================================= */
-
-	public function testGetInheritanceChainRootReturnsSelf(): void {
-		$person = new CategoryModel( 'Person', [
-			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
-			],
-		] );
-		$resolver = new InheritanceResolver( [ 'Person' => $person ] );
-
-		$chain = $resolver->getInheritanceChain( 'Person' );
-		$this->assertCount( 1, $chain );
-		$this->assertEquals( 'Person', $chain[0]->getName() );
-		$this->assertContains( 'Has name', FieldDeclaration::names( $chain[0]->getPropertyFields() ) );
-	}
-
-	public function testGetInheritanceChainSingleParent(): void {
-		$person = new CategoryModel( 'Person', [
-			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
-			],
-		] );
-		$student = new CategoryModel( 'Student', [
-			'parents' => [ 'Person' ],
-			'properties' => [
-				[ 'name' => 'Has student ID', 'required' => true ],
-			],
-		] );
-		$resolver = new InheritanceResolver( [
-			'Person' => $person,
-			'Student' => $student,
-		] );
-
-		$chain = $resolver->getInheritanceChain( 'Student' );
-		$this->assertCount( 2, $chain );
-		$this->assertEquals( 'Student', $chain[0]->getName() );
-		$this->assertEquals( 'Person', $chain[1]->getName() );
-
-		// Each model should have only its own properties
-		$studentNames = FieldDeclaration::names( $chain[0]->getPropertyFields() );
-		$personNames = FieldDeclaration::names( $chain[1]->getPropertyFields() );
-		$this->assertContains( 'Has student ID', $studentNames );
-		$this->assertNotContains( 'Has name', $studentNames );
-		$this->assertContains( 'Has name', $personNames );
-		$this->assertNotContains( 'Has student ID', $personNames );
-	}
-
-	public function testGetInheritanceChainMultiParent(): void {
-		$person = new CategoryModel( 'Person', [
-			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
-			],
-		] );
-		$labMember = new CategoryModel( 'LabMember', [
-			'properties' => [
-				[ 'name' => 'Has lab role', 'required' => true ],
-			],
-		] );
-		$gradStudent = new CategoryModel( 'GradStudent', [
-			'parents' => [ 'Person', 'LabMember' ],
-			'properties' => [
-				[ 'name' => 'Has advisor', 'required' => true ],
-			],
-		] );
-		$resolver = new InheritanceResolver( [
-			'Person' => $person,
-			'LabMember' => $labMember,
-			'GradStudent' => $gradStudent,
-		] );
-
-		$chain = $resolver->getInheritanceChain( 'GradStudent' );
-		$names = array_map( static fn ( $m ) => $m->getName(), $chain );
-
-		// C3 linearization: child first, then parents in declared order
-		$this->assertEquals( [ 'GradStudent', 'Person', 'LabMember' ], $names );
-
-		// Each model in the chain carries only its own declared properties
-		$this->assertEquals( [ 'Has advisor' ], FieldDeclaration::names( $chain[0]->getPropertyFields() ) );
-		$this->assertEquals( [ 'Has name' ], FieldDeclaration::names( $chain[1]->getPropertyFields() ) );
-		$this->assertEquals( [ 'Has lab role' ], FieldDeclaration::names( $chain[2]->getPropertyFields() ) );
-	}
-
-	public function testGetInheritanceChainForUnknownThrows(): void {
-		$resolver = new InheritanceResolver( [
-			'Person' => new CategoryModel( 'Person' ),
-		] );
-
-		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'Unknown category: Unknown' );
-		$resolver->getInheritanceChain( 'Unknown' );
-	}
-
-	/* =========================================================================
 	 * EFFECTIVE CATEGORY MODEL TYPE
 	 * ========================================================================= */
 
@@ -388,13 +294,13 @@ class InheritanceResolverTest extends TestCase {
 	public function testGetEffectiveCategoryMergesInheritedProperties(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
 			'properties' => [
-				[ 'name' => 'Has student ID', 'required' => true ],
+				new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -402,7 +308,7 @@ class InheritanceResolverTest extends TestCase {
 		$effective = $resolver->getEffectiveCategory( 'Student' );
 
 		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
-		$allNames = FieldDeclaration::names( $effective->getPropertyFields() );
+		$allNames = $this->names( $effective->getPropertyFields() );
 		$this->assertContains( 'Has name', $allNames );
 		$this->assertContains( 'Has student ID', $allNames );
 	}
@@ -414,19 +320,19 @@ class InheritanceResolverTest extends TestCase {
 	public function testGetParentEffectiveModelsReturnsEffectiveParents(): void {
 		$grandparent = new CategoryModel( 'Grandparent', [
 			'properties' => [
-				[ 'name' => 'Has gp prop', 'required' => true ],
+				new FieldModel( 'Has gp prop', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$parent = new CategoryModel( 'Parent', [
 			'parents' => [ 'Grandparent' ],
 			'properties' => [
-				[ 'name' => 'Has parent prop', 'required' => true ],
+				new FieldModel( 'Has parent prop', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
 			'properties' => [
-				[ 'name' => 'Has child prop', 'required' => true ],
+				new FieldModel( 'Has child prop', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -440,7 +346,7 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertArrayHasKey( 'Parent', $parentModels );
 		$this->assertCount( 1, $parentModels );
 		$this->assertInstanceOf( EffectiveCategoryModel::class, $parentModels['Parent'] );
-		$parentNames = FieldDeclaration::names( $parentModels['Parent']->getPropertyFields() );
+		$parentNames = $this->names( $parentModels['Parent']->getPropertyFields() );
 		$this->assertContains( 'Has gp prop', $parentNames );
 		$this->assertContains( 'Has parent prop', $parentNames );
 	}
@@ -461,5 +367,18 @@ class InheritanceResolverTest extends TestCase {
 		] );
 
 		$this->assertEmpty( $resolver->getParentEffectiveModels( 'Person' ) );
+	}
+
+	/**
+	 * Extract names from a list of field models.
+	 *
+	 * @param FieldModel[] $fields
+	 * @return string[]
+	 */
+	private static function names( array $fields ): array {
+		return array_map(
+			static fn ( FieldModel $f ) => $f->getName(),
+			$fields
+		);
 	}
 }

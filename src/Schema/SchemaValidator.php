@@ -29,23 +29,6 @@ class SchemaValidator {
 
 	public const SCHEMA_VERSION = '1.0';
 
-	/** @var array Custom validation rules registered by extensions */
-	private $customValidators = [];
-
-	/**
-	 * Validate entire schema (errors only).
-	 *
-	 * This method returns only errors for compatibility with existing code.
-	 * Use validateSchemaWithSeverity() to get both errors and warnings.
-	 *
-	 * @param array $schema
-	 * @return array List of error messages
-	 */
-	public function validateSchema( array $schema ): array {
-		$result = $this->validateSchemaWithSeverity( $schema );
-		return $result['errors'];
-	}
-
 	/**
 	 * Validate entire schema with severity levels.
 	 *
@@ -57,7 +40,7 @@ class SchemaValidator {
 		$warnings = [];
 
 		$structureErrors = $this->validateSchemaStructure( $schema );
-		if ( !empty( $structureErrors ) ) {
+		if ( $structureErrors ) {
 			return [ 'errors' => $structureErrors, 'warnings' => [] ];
 		}
 
@@ -76,17 +59,12 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateProperty( $propertyName, $propertyData, $categories )
+				$this->validateProperty( $propertyName, $propertyData )
 			);
 		}
 
 		$errors = array_merge( $errors, $this->checkCircularDependencies( $categories ) );
 		$warnings = array_merge( $warnings, $this->generateWarnings( $schema ) );
-
-		foreach ( $this->customValidators as $validator ) {
-			$customResult = call_user_func( $validator, $schema );
-			$this->mergeResults( $errors, $warnings, $customResult );
-		}
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}
@@ -178,41 +156,9 @@ class SchemaValidator {
 		return "$prefix: $issue";
 	}
 
-	/**
-	 * Register a custom validation rule.
-	 *
-	 * @param callable $validator Takes schema array, returns ['errors' => [...], 'warnings' => [...]]
-	 */
-	public function registerCustomValidator( callable $validator ): void {
-		$this->customValidators[] = $validator;
-	}
-
 	/* ======================================================================
 	 * COMMON VALIDATION HELPERS
 	 * ====================================================================== */
-
-	/**
-	 * Validate that a field is an array if it exists.
-	 *
-	 * @param string $entityType
-	 * @param string $entityName
-	 * @param array $data
-	 * @param string $field
-	 * @param string $suggestion
-	 * @return string|null Error message or null if valid
-	 */
-	private function requireArrayField(
-		string $entityType,
-		string $entityName,
-		array $data,
-		string $field,
-		string $suggestion
-	): ?string {
-		if ( isset( $data[$field] ) && !is_array( $data[$field] ) ) {
-			return $this->formatError( $entityType, $entityName, "$field must be an array", $suggestion );
-		}
-		return null;
-	}
 
 	/**
 	 * Validate references to items in a lookup array.
@@ -252,11 +198,11 @@ class SchemaValidator {
 	/**
 	 * Validate field declaration entries.
 	 *
-	 * Accepts FieldDeclaration[] or annotated arrays [{name, required}, ...].
+	 * Accepts FieldModel[] or annotated arrays [{name, required}, ...].
 	 *
 	 * @param string $entityType
 	 * @param string $entityName
-	 * @param array $entries FieldDeclaration[] or annotated arrays
+	 * @param array $entries FieldModel[] or annotated arrays
 	 * @param array $lookup Valid items to reference
 	 * @param string $referenceType 'property' or 'category'
 	 * @param string $fieldPrefix Field path prefix for error messages
@@ -275,7 +221,7 @@ class SchemaValidator {
 
 		$names = array_map(
 			static function ( $e ) {
-				if ( $e instanceof \MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration ) {
+				if ( $e instanceof FieldModel ) {
 					return $e->getName();
 				}
 				return is_array( $e ) ? ( $e['name'] ?? '' ) : (string)$e;
@@ -507,7 +453,6 @@ class SchemaValidator {
 	private function validateProperty(
 		string $propertyName,
 		array $propertyData,
-		array $allCategories
 	): array {
 		$errors = [];
 		$warnings = [];
@@ -551,13 +496,21 @@ class SchemaValidator {
 		$categoryModels = [];
 		foreach ( $categories as $name => $data ) {
 			try {
+				$data['properties'] = array_map(
+					static fn ( array $e ) => new FieldModel( $e['name'], $e['required'], FieldModel::TYPE_PROPERTY ),
+					$data['properties'] ?? []
+				);
+				$data['subobjects'] = array_map(
+					static fn ( array $e ) => new FieldModel( $e['name'], $e['required'], FieldModel::TYPE_SUBOBJECT ),
+					$data['subobjects'] ?? []
+				);
 				$categoryModels[$name] = new CategoryModel( $name, $data );
-			} catch ( \InvalidArgumentException | \TypeError $e ) {
+			} catch ( \InvalidArgumentException | \TypeError ) {
 				continue;
 			}
 		}
 
-		if ( empty( $categoryModels ) ) {
+		if ( !$categoryModels ) {
 			return [];
 		}
 
@@ -588,15 +541,15 @@ class SchemaValidator {
 				continue;
 			}
 
-			if ( empty( $data['properties'] ?? [] ) ) {
+			if ( !isset( $data['properties'] ) || !$data['properties'] ) {
 				$warnings[] = "Category '$name': no properties defined";
 			}
 
-			if ( empty( $data['display'] ?? [] ) ) {
+			if ( !isset( $data['display'] ) ) {
 				$warnings[] = "Category '$name': missing display configuration";
 			}
 
-			if ( empty( $data['forms'] ?? [] ) ) {
+			if ( !isset( $data['forms'] ) ) {
 				$warnings[] = "Category '$name': missing form configuration";
 			}
 		}

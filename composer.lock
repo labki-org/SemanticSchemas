@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "80a24c2bb801df444a502c52309e5ee3",
+    "content-hash": "23c9796fa8ec7ce8105752ae72c1598c",
     "packages": [
         {
             "name": "composer/installers",
@@ -235,22 +235,22 @@
         },
         {
             "name": "guzzlehttp/guzzle",
-            "version": "7.9.3",
+            "version": "7.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/guzzle.git",
-                "reference": "7b2f29fe81dc4da0ca0ea7d42107a0845946ea77"
+                "reference": "b51ac707cfa420b7bfd4e4d5e510ba8008e822b4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/7b2f29fe81dc4da0ca0ea7d42107a0845946ea77",
-                "reference": "7b2f29fe81dc4da0ca0ea7d42107a0845946ea77",
+                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/b51ac707cfa420b7bfd4e4d5e510ba8008e822b4",
+                "reference": "b51ac707cfa420b7bfd4e4d5e510ba8008e822b4",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "guzzlehttp/promises": "^1.5.3 || ^2.0.3",
-                "guzzlehttp/psr7": "^2.7.0",
+                "guzzlehttp/promises": "^2.3",
+                "guzzlehttp/psr7": "^2.8",
                 "php": "^7.2.5 || ^8.0",
                 "psr/http-client": "^1.0",
                 "symfony/deprecation-contracts": "^2.2 || ^3.0"
@@ -341,7 +341,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/guzzle/issues",
-                "source": "https://github.com/guzzle/guzzle/tree/7.9.3"
+                "source": "https://github.com/guzzle/guzzle/tree/7.10.0"
             },
             "funding": [
                 {
@@ -357,7 +357,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-03-27T13:37:11+00:00"
+            "time": "2025-08-23T22:36:01+00:00"
         },
         {
             "name": "guzzlehttp/promises",
@@ -444,16 +444,16 @@
         },
         {
             "name": "guzzlehttp/psr7",
-            "version": "2.8.0",
+            "version": "2.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/psr7.git",
-                "reference": "21dc724a0583619cd1652f673303492272778051"
+                "reference": "7d0ed42f28e42d61352a7a79de682e5e67fec884"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/psr7/zipball/21dc724a0583619cd1652f673303492272778051",
-                "reference": "21dc724a0583619cd1652f673303492272778051",
+                "url": "https://api.github.com/repos/guzzle/psr7/zipball/7d0ed42f28e42d61352a7a79de682e5e67fec884",
+                "reference": "7d0ed42f28e42d61352a7a79de682e5e67fec884",
                 "shasum": ""
             },
             "require": {
@@ -469,6 +469,7 @@
             "require-dev": {
                 "bamarni/composer-bin-plugin": "^1.8.2",
                 "http-interop/http-factory-tests": "0.9.0",
+                "jshttp/mime-db": "1.54.0.1",
                 "phpunit/phpunit": "^8.5.44 || ^9.6.25"
             },
             "suggest": {
@@ -540,7 +541,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/psr7/issues",
-                "source": "https://github.com/guzzle/psr7/tree/2.8.0"
+                "source": "https://github.com/guzzle/psr7/tree/2.9.0"
             },
             "funding": [
                 {
@@ -556,20 +557,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-08-23T21:21:41+00:00"
+            "time": "2026-03-10T16:41:02+00:00"
         },
         {
             "name": "justinrainbow/json-schema",
-            "version": "5.3.0",
+            "version": "5.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jsonrainbow/json-schema.git",
-                "reference": "feb2ca6dd1cebdaf1ed60a4c8de2e53ce11c4fd8"
+                "reference": "b5a44b6391a3bbb75c9f2b73e1ef03d6045e1e20"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jsonrainbow/json-schema/zipball/feb2ca6dd1cebdaf1ed60a4c8de2e53ce11c4fd8",
-                "reference": "feb2ca6dd1cebdaf1ed60a4c8de2e53ce11c4fd8",
+                "url": "https://api.github.com/repos/jsonrainbow/json-schema/zipball/b5a44b6391a3bbb75c9f2b73e1ef03d6045e1e20",
+                "reference": "b5a44b6391a3bbb75c9f2b73e1ef03d6045e1e20",
                 "shasum": ""
             },
             "require": {
@@ -619,9 +620,9 @@
             ],
             "support": {
                 "issues": "https://github.com/jsonrainbow/json-schema/issues",
-                "source": "https://github.com/jsonrainbow/json-schema/tree/5.3.0"
+                "source": "https://github.com/jsonrainbow/json-schema/tree/5.3.1"
             },
-            "time": "2024-07-06T21:00:26+00:00"
+            "time": "2025-12-12T08:56:22+00:00"
         },
         {
             "name": "liuggio/statsd-php-client",
@@ -679,16 +680,16 @@
         },
         {
             "name": "mck89/peast",
-            "version": "v1.17.0",
+            "version": "v1.17.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mck89/peast.git",
-                "reference": "3a752d39bd7d8dc1e19bcf424f3d5ac1a1ca6ad5"
+                "reference": "c6a63f32410d2e4ee2cd20fe94b35af147fb852d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mck89/peast/zipball/3a752d39bd7d8dc1e19bcf424f3d5ac1a1ca6ad5",
-                "reference": "3a752d39bd7d8dc1e19bcf424f3d5ac1a1ca6ad5",
+                "url": "https://api.github.com/repos/mck89/peast/zipball/c6a63f32410d2e4ee2cd20fe94b35af147fb852d",
+                "reference": "c6a63f32410d2e4ee2cd20fe94b35af147fb852d",
                 "shasum": ""
             },
             "require": {
@@ -701,7 +702,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.17.0-dev"
+                    "dev-master": "1.17.4-dev"
                 }
             },
             "autoload": {
@@ -722,22 +723,22 @@
             "description": "Peast is PHP library that generates AST for JavaScript code",
             "support": {
                 "issues": "https://github.com/mck89/peast/issues",
-                "source": "https://github.com/mck89/peast/tree/v1.17.0"
+                "source": "https://github.com/mck89/peast/tree/v1.17.4"
             },
-            "time": "2025-03-07T19:44:14+00:00"
+            "time": "2025-10-10T12:53:17+00:00"
         },
         {
             "name": "mediawiki/core",
-            "version": "1.44.3",
+            "version": "1.44.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/mediawiki.git",
-                "reference": "72a8777aa8598d163206f49ac44ec41c818391a0"
+                "reference": "f2e0f0280444738ec01a746cf6b746095b3710c8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/mediawiki/zipball/72a8777aa8598d163206f49ac44ec41c818391a0",
-                "reference": "72a8777aa8598d163206f49ac44ec41c818391a0",
+                "url": "https://api.github.com/repos/wikimedia/mediawiki/zipball/f2e0f0280444738ec01a746cf6b746095b3710c8",
+                "reference": "f2e0f0280444738ec01a746cf6b746095b3710c8",
                 "shasum": ""
             },
             "require": {
@@ -754,10 +755,10 @@
                 "ext-openssl": "*",
                 "ext-xml": "*",
                 "ext-xmlreader": "*",
-                "guzzlehttp/guzzle": "7.9.3",
-                "justinrainbow/json-schema": "5.3.0",
+                "guzzlehttp/guzzle": "7.10.0",
+                "justinrainbow/json-schema": "5.3.1",
                 "liuggio/statsd-php-client": "1.0.18",
-                "mck89/peast": "1.17.0",
+                "mck89/peast": "1.17.4",
                 "monolog/monolog": "2.9.3",
                 "oojs/oojs-ui": "0.51.7",
                 "pear/mail": "2.0.0",
@@ -785,12 +786,12 @@
                 "wikimedia/cssjanus": "2.3.0",
                 "wikimedia/html-formatter": "4.1.0",
                 "wikimedia/ip-utils": "5.0.0",
-                "wikimedia/json-codec": "3.0.3",
-                "wikimedia/less.php": "5.2.1",
+                "wikimedia/json-codec": "4.0.0",
+                "wikimedia/less.php": "5.5.0",
                 "wikimedia/minify": "2.9.0",
                 "wikimedia/normalized-exception": "2.1.1",
                 "wikimedia/object-factory": "5.0.1",
-                "wikimedia/parsoid": "0.21.1",
+                "wikimedia/parsoid": "0.21.4",
                 "wikimedia/php-session-serializer": "3.0.1",
                 "wikimedia/purtle": "2.0.0",
                 "wikimedia/relpath": "4.0.2",
@@ -829,12 +830,12 @@
                 "nikic/php-parser": "^5.5.0",
                 "php-parallel-lint/php-console-highlighter": "1.0.0",
                 "php-parallel-lint/php-parallel-lint": "1.4.0",
-                "phpunit/phpunit": "9.6.21",
-                "psy/psysh": "^0.12.3",
+                "phpunit/phpunit": "9.6.34",
+                "psy/psysh": "^0.12.19",
                 "seld/jsonlint": "1.11.0",
                 "wikimedia/alea": "1.0.0",
                 "wikimedia/langconv": "^0.5.0",
-                "wikimedia/testing-access-wrapper": "^3.0.0",
+                "wikimedia/testing-access-wrapper": "^3.0.0 || ^4.0.0",
                 "wmde/hamcrest-html-matchers": "^1.0.0"
             },
             "suggest": {
@@ -891,11 +892,11 @@
             "support": {
                 "irc": "irc://irc.libera.chat/mediawiki",
                 "issues": "https://phabricator.wikimedia.org/",
-                "source": "https://github.com/wikimedia/mediawiki/tree/1.44.3",
+                "source": "https://github.com/wikimedia/mediawiki/tree/1.44.5",
                 "wiki": "https://www.mediawiki.org/"
             },
             "abandoned": true,
-            "time": "2025-12-15T23:57:48+00:00"
+            "time": "2026-04-01T11:58:40+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -1384,6 +1385,7 @@
                 "issues": "http://pear.php.net/bugs/search.php?cmd=display&package_name[]=Net_Socket",
                 "source": "https://github.com/pear/Net_Socket"
             },
+            "abandoned": true,
             "time": "2015-03-22T15:48:19+00:00"
         },
         {
@@ -3012,31 +3014,30 @@
         },
         {
             "name": "wikimedia/json-codec",
-            "version": "v3.0.3",
+            "version": "v4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/mediawiki-libs-JsonCodec.git",
-                "reference": "6950c6aae8b97cbb37779675f4a475616caeaf46"
+                "reference": "3367a2b4ae54ebfeb4930deb9bf497eafa86542d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/mediawiki-libs-JsonCodec/zipball/6950c6aae8b97cbb37779675f4a475616caeaf46",
-                "reference": "6950c6aae8b97cbb37779675f4a475616caeaf46",
+                "url": "https://api.github.com/repos/wikimedia/mediawiki-libs-JsonCodec/zipball/3367a2b4ae54ebfeb4930deb9bf497eafa86542d",
+                "reference": "3367a2b4ae54ebfeb4930deb9bf497eafa86542d",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.4.3",
-                "psr/container": "^1.1.2|^2.0.2",
-                "symfony/polyfill-php81": "^1.27.0"
+                "php": ">=8.1.0",
+                "psr/container": "^1.1.2|^2.0.2"
             },
             "require-dev": {
-                "mediawiki/mediawiki-codesniffer": "45.0.0",
-                "mediawiki/mediawiki-phan-config": "0.14.0",
+                "mediawiki/mediawiki-codesniffer": "47.0.0",
+                "mediawiki/mediawiki-phan-config": "0.16.0",
                 "mediawiki/minus-x": "1.1.3",
                 "ockcyp/covers-validator": "1.6.0",
                 "php-parallel-lint/php-console-highlighter": "1.0.0",
                 "php-parallel-lint/php-parallel-lint": "1.4.0",
-                "phpunit/phpunit": "9.6.16",
+                "phpunit/phpunit": "9.6.21",
                 "wikimedia/assert": "^0.5.1",
                 "wikimedia/update-history": "1.0.1"
             },
@@ -3068,34 +3069,34 @@
             "description": "Interfaces to serialize and deserialize PHP objects to/from JSON",
             "homepage": "https://www.mediawiki.org/wiki/JsonCodec",
             "support": {
-                "source": "https://github.com/wikimedia/mediawiki-libs-JsonCodec/tree/v3.0.3"
+                "source": "https://github.com/wikimedia/mediawiki-libs-JsonCodec/tree/v4.0.0"
             },
-            "time": "2024-11-09T05:42:52+00:00"
+            "time": "2025-08-04T19:40:57+00:00"
         },
         {
             "name": "wikimedia/less.php",
-            "version": "v5.2.1",
+            "version": "v5.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/less.php.git",
-                "reference": "606e0450857f00d07335bb7ccaa3a789ca215969"
+                "reference": "f12e470d4fb4478b8af759d4c5da99707af3db10"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/less.php/zipball/606e0450857f00d07335bb7ccaa3a789ca215969",
-                "reference": "606e0450857f00d07335bb7ccaa3a789ca215969",
+                "url": "https://api.github.com/repos/wikimedia/less.php/zipball/f12e470d4fb4478b8af759d4c5da99707af3db10",
+                "reference": "f12e470d4fb4478b8af759d4c5da99707af3db10",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.4.3"
+                "php": ">=8.1"
             },
             "require-dev": {
-                "mediawiki/mediawiki-codesniffer": "46.0.0",
-                "mediawiki/mediawiki-phan-config": "0.15.1",
+                "mediawiki/mediawiki-codesniffer": "48.0.0",
+                "mediawiki/mediawiki-phan-config": "0.17.0",
                 "mediawiki/minus-x": "1.1.3",
                 "php-parallel-lint/php-console-highlighter": "1.0.0",
                 "php-parallel-lint/php-parallel-lint": "1.4.0",
-                "phpunit/phpunit": "9.6.21"
+                "phpunit/phpunit": "10.5.58"
             },
             "bin": [
                 "bin/lessc"
@@ -3143,9 +3144,9 @@
             ],
             "support": {
                 "issues": "https://github.com/wikimedia/less.php/issues",
-                "source": "https://github.com/wikimedia/less.php/tree/v5.2.1"
+                "source": "https://github.com/wikimedia/less.php/tree/v5.5.0"
             },
-            "time": "2025-03-05T21:01:16+00:00"
+            "time": "2025-12-18T22:27:01+00:00"
         },
         {
             "name": "wikimedia/minify",
@@ -3317,16 +3318,16 @@
         },
         {
             "name": "wikimedia/parsoid",
-            "version": "v0.21.1",
+            "version": "v0.21.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/mediawiki-services-parsoid.git",
-                "reference": "73dd5f50537b9f72f70ca53c723124a2d26c1427"
+                "reference": "6d6a7fd6d72373f06a0dd7e992c730f1b7f11b65"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/mediawiki-services-parsoid/zipball/73dd5f50537b9f72f70ca53c723124a2d26c1427",
-                "reference": "73dd5f50537b9f72f70ca53c723124a2d26c1427",
+                "url": "https://api.github.com/repos/wikimedia/mediawiki-services-parsoid/zipball/6d6a7fd6d72373f06a0dd7e992c730f1b7f11b65",
+                "reference": "6d6a7fd6d72373f06a0dd7e992c730f1b7f11b65",
                 "shasum": ""
             },
             "require": {
@@ -3334,22 +3335,20 @@
                 "composer/semver": "^3.4.0",
                 "ext-dom": "*",
                 "ext-json": "*",
-                "justinrainbow/json-schema": "5.3.0",
+                "justinrainbow/json-schema": "^5.3.0 || ^6.4.2",
                 "liuggio/statsd-php-client": "^1.0.18",
                 "php": ">=8.1.0",
                 "psr/container": "~1.1.2 || ~2.0.2",
-                "psr/log": "^1.1.4",
-                "symfony/polyfill-php80": "^1.23.1",
+                "psr/log": "^1.1.4 || ^3.0.0",
                 "wikimedia/assert": "^0.5.1",
                 "wikimedia/bcp-47-code": "^2.0.0",
                 "wikimedia/idle-dom": "2.0.1",
                 "wikimedia/ip-utils": "^5.0.0",
-                "wikimedia/json-codec": "^3.0.2",
+                "wikimedia/json-codec": "^3.0.2 || ^4.0.0 || ^5.0.0",
                 "wikimedia/object-factory": "^5.0.1",
-                "wikimedia/remex-html": "^4.1.2",
-                "wikimedia/scoped-callback": "^4.0.0 || ^5.0.0",
+                "wikimedia/remex-html": "^4.0.0 || ^5.0.0",
                 "wikimedia/wikipeg": "^4.0.0 || ^5.0.0",
-                "wikimedia/zest-css": "^3.0.1"
+                "wikimedia/zest-css": "^3.0.1 || ^4.0.0"
             },
             "conflict": {
                 "wikimedia/langconv": "<0.4.2"
@@ -3364,11 +3363,12 @@
                 "ockcyp/covers-validator": "1.6.0",
                 "php-parallel-lint/php-console-highlighter": "1.0.0",
                 "php-parallel-lint/php-parallel-lint": "1.4.0",
-                "phpunit/phpunit": "9.6.21",
+                "phpunit/phpunit": "9.6.34",
                 "sebastian/diff": "^4.0.3",
                 "wikimedia/alea": "^1.0.0",
+                "wikimedia/dodo": "^0.5.0 || ^0.6.0",
                 "wikimedia/langconv": "^0.4.2",
-                "wikimedia/testing-access-wrapper": "~3.0"
+                "wikimedia/testing-access-wrapper": "~3.0.0 || ~4.0.0"
             },
             "suggest": {
                 "wikimedia/langconv": "Provides script conversion support"
@@ -3397,10 +3397,10 @@
             ],
             "support": {
                 "irc": "irc://irc.libera.chat/mediawiki-parsoid",
-                "source": "https://github.com/wikimedia/mediawiki-services-parsoid/tree/v0.21.1",
+                "source": "https://github.com/wikimedia/mediawiki-services-parsoid/tree/v0.21.4",
                 "wiki": "https://www.mediawiki.org/wiki/Parsoid"
             },
-            "time": "2025-09-29T14:55:25+00:00"
+            "time": "2026-02-17T15:24:10+00:00"
         },
         {
             "name": "wikimedia/php-session-serializer",
@@ -4213,33 +4213,33 @@
         },
         {
             "name": "wikimedia/zest-css",
-            "version": "3.0.4",
+            "version": "4.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/mediawiki-libs-Zest.git",
-                "reference": "636a1c88bbd8681c08f0c9fc8eed83a2a443b4f4"
+                "reference": "771f7944c293eaf5e10ab87420ae3419d8356edc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/mediawiki-libs-Zest/zipball/636a1c88bbd8681c08f0c9fc8eed83a2a443b4f4",
-                "reference": "636a1c88bbd8681c08f0c9fc8eed83a2a443b4f4",
+                "url": "https://api.github.com/repos/wikimedia/mediawiki-libs-Zest/zipball/771f7944c293eaf5e10ab87420ae3419d8356edc",
+                "reference": "771f7944c293eaf5e10ab87420ae3419d8356edc",
                 "shasum": ""
             },
             "require": {
                 "ext-mbstring": "*",
                 "ext-xml": "*",
-                "php": ">=7.4"
+                "php": ">=8.1"
             },
             "require-dev": {
-                "mediawiki/mediawiki-codesniffer": "45.0.0",
-                "mediawiki/mediawiki-phan-config": "0.14.0",
+                "mediawiki/mediawiki-codesniffer": "48.0.0",
+                "mediawiki/mediawiki-phan-config": "0.19.0",
                 "mediawiki/minus-x": "1.1.3",
-                "ockcyp/covers-validator": "1.6.0",
+                "ockcyp/covers-validator": "1.7.0",
                 "php-parallel-lint/php-console-highlighter": "1.0.0",
                 "php-parallel-lint/php-parallel-lint": "1.4.0",
-                "phpunit/phpunit": "9.6.16",
-                "wikimedia/remex-html": "^4.1.0",
-                "wikimedia/testing-access-wrapper": "^3.0",
+                "phpunit/phpunit": "10.5.63",
+                "wikimedia/remex-html": "^5.1.0 || ^6.0.0",
+                "wikimedia/testing-access-wrapper": "^4.0.0",
                 "wikimedia/update-history": "^1.0.1"
             },
             "suggest": {
@@ -4273,9 +4273,9 @@
                 "selector"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/mediawiki-libs-Zest/tree/3.0.4"
+                "source": "https://github.com/wikimedia/mediawiki-libs-Zest/tree/4.1.1"
             },
-            "time": "2024-11-09T06:04:20+00:00"
+            "time": "2026-02-13T05:28:55+00:00"
         },
         {
             "name": "zordius/lightncandy",
@@ -4416,16 +4416,16 @@
         },
         {
             "name": "composer/spdx-licenses",
-            "version": "1.5.9",
+            "version": "1.5.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/spdx-licenses.git",
-                "reference": "edf364cefe8c43501e21e88110aac10b284c3c9f"
+                "reference": "e886f5201b27ad5bc3f9967b83394740722e5473"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/spdx-licenses/zipball/edf364cefe8c43501e21e88110aac10b284c3c9f",
-                "reference": "edf364cefe8c43501e21e88110aac10b284c3c9f",
+                "url": "https://api.github.com/repos/composer/spdx-licenses/zipball/e886f5201b27ad5bc3f9967b83394740722e5473",
+                "reference": "e886f5201b27ad5bc3f9967b83394740722e5473",
                 "shasum": ""
             },
             "require": {
@@ -4476,7 +4476,7 @@
             "support": {
                 "irc": "ircs://irc.libera.chat:6697/composer",
                 "issues": "https://github.com/composer/spdx-licenses/issues",
-                "source": "https://github.com/composer/spdx-licenses/tree/1.5.9"
+                "source": "https://github.com/composer/spdx-licenses/tree/1.5.10"
             },
             "funding": [
                 {
@@ -4486,13 +4486,9 @@
                 {
                     "url": "https://github.com/composer",
                     "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/composer/composer",
-                    "type": "tidelift"
                 }
             ],
-            "time": "2025-05-12T21:07:07+00:00"
+            "time": "2026-04-08T20:11:16+00:00"
         },
         {
             "name": "composer/xdebug-handler",
@@ -4559,6 +4555,312 @@
                 }
             ],
             "time": "2024-05-06T16:37:16+00:00"
+        },
+        {
+            "name": "danog/advanced-json-rpc",
+            "version": "v3.2.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/danog/php-advanced-json-rpc.git",
+                "reference": "ae703ea7b4811797a10590b6078de05b3b33dd91"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/danog/php-advanced-json-rpc/zipball/ae703ea7b4811797a10590b6078de05b3b33dd91",
+                "reference": "ae703ea7b4811797a10590b6078de05b3b33dd91",
+                "shasum": ""
+            },
+            "require": {
+                "netresearch/jsonmapper": "^5",
+                "php": ">=8.1",
+                "phpdocumentor/reflection-docblock": "^4.3.4 || ^5.0.0 || ^6"
+            },
+            "replace": {
+                "felixfbecker/php-advanced-json-rpc": "^3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "AdvancedJsonRpc\\": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "ISC"
+            ],
+            "authors": [
+                {
+                    "name": "Felix Becker",
+                    "email": "felix.b@outlook.com"
+                },
+                {
+                    "name": "Daniil Gentili",
+                    "email": "daniil@daniil.it"
+                }
+            ],
+            "description": "A more advanced JSONRPC implementation",
+            "support": {
+                "issues": "https://github.com/danog/php-advanced-json-rpc/issues",
+                "source": "https://github.com/danog/php-advanced-json-rpc/tree/v3.2.3"
+            },
+            "time": "2026-01-12T21:07:10+00:00"
+        },
+        {
+            "name": "data-values/common",
+            "version": "1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/DataValues/Common.git",
+                "reference": "b21c2bd3b213d6233a645003df4f88956afc52f4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DataValues/Common/zipball/b21c2bd3b213d6233a645003df4f88956afc52f4",
+                "reference": "b21c2bd3b213d6233a645003df4f88956afc52f4",
+                "shasum": ""
+            },
+            "require": {
+                "data-values/data-values": "~3.0|~2.0|~1.0|~0.1",
+                "data-values/interfaces": "~1.0|~0.2.0",
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "mediawiki/mediawiki-codesniffer": "^45",
+                "ockcyp/covers-validator": "^1.3.3",
+                "phpunit/phpunit": "~8.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "DataValues\\": "src/DataValues/",
+                    "ValueParsers\\": "src/ValueParsers/",
+                    "ValueFormatters\\": "src/ValueFormatters/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "http://jeroendedauw.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Contains common implementations of the interfaces defined by DataValuesInterfaces",
+            "homepage": "https://github.com/DataValues/Common",
+            "keywords": [
+                "datavalues",
+                "valueformatters",
+                "valueparsers",
+                "valuevalidators",
+                "wikidata"
+            ],
+            "support": {
+                "irc": "irc://irc.freenode.net/wikidata",
+                "issues": "https://github.com/DataValues/Common/issues",
+                "source": "https://github.com/DataValues/Common/tree/1.2.0"
+            },
+            "time": "2024-12-09T23:03:13+00:00"
+        },
+        {
+            "name": "data-values/data-values",
+            "version": "3.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/DataValues/DataValues.git",
+                "reference": "45aca708da1f7d39c4fca9e6c7373404627e083b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DataValues/DataValues/zipball/45aca708da1f7d39c4fca9e6c7373404627e083b",
+                "reference": "45aca708da1f7d39c4fca9e6c7373404627e083b",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.0"
+            },
+            "replace": {
+                "mediawiki/data-values": "*"
+            },
+            "require-dev": {
+                "mediawiki/mediawiki-codesniffer": "^38",
+                "phpunit/phpunit": "~8.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "DataValues\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "http://jeroendedauw.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Defines the DataValue interface and some trivial implementations",
+            "homepage": "https://github.com/DataValues/DataValues",
+            "keywords": [
+                "datavalues",
+                "wikibase",
+                "wikidata"
+            ],
+            "support": {
+                "issues": "https://github.com/DataValues/DataValues/issues",
+                "source": "https://github.com/DataValues/DataValues/tree/3.1.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/JeroenDeDauw",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-02-04T13:26:44+00:00"
+        },
+        {
+            "name": "data-values/interfaces",
+            "version": "1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/DataValues/Interfaces.git",
+                "reference": "22573cd52a7b37416f28ed6a8d8706543b0d430a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DataValues/Interfaces/zipball/22573cd52a7b37416f28ed6a8d8706543b0d430a",
+                "reference": "22573cd52a7b37416f28ed6a8d8706543b0d430a",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "mediawiki/mediawiki-codesniffer": "^45",
+                "ockcyp/covers-validator": "~1.0",
+                "phpmd/phpmd": "^2.9.1",
+                "phpstan/phpstan": "^0.12.68",
+                "phpunit/phpunit": "~8.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ValueParsers\\": "src/ValueParsers/",
+                    "ValueFormatters\\": "src/ValueFormatters/",
+                    "ValueValidators\\": "src/ValueValidators/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "http://jeroendedauw.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Defines interfaces for ValueParsers, ValueFormatters and ValueValidators",
+            "homepage": "https://github.com/DataValues/Interfaces",
+            "keywords": [
+                "datavalues",
+                "valueformatters",
+                "valueparsers",
+                "valuevalidators",
+                "wikidata"
+            ],
+            "support": {
+                "issues": "https://github.com/DataValues/Interfaces/issues",
+                "source": "https://github.com/DataValues/Interfaces/tree/1.2.0"
+            },
+            "time": "2024-12-09T23:03:07+00:00"
+        },
+        {
+            "name": "data-values/validators",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/DataValues/Validators.git",
+                "reference": "83dbac2c5e9442e8fa2119c8b941ecb88156abe8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DataValues/Validators/zipball/83dbac2c5e9442e8fa2119c8b941ecb88156abe8",
+                "reference": "83dbac2c5e9442e8fa2119c8b941ecb88156abe8",
+                "shasum": ""
+            },
+            "require": {
+                "data-values/data-values": "^3.0.0|^2.1.1|~1.0|~0.1",
+                "data-values/interfaces": "^1.0.0|~0.2.0|~0.1.0",
+                "php": ">=7.2"
+            },
+            "require-dev": {
+                "mediawiki/mediawiki-codesniffer": "^34",
+                "phpunit/phpunit": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "ValueValidators\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "http://jeroendedauw.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "The Wikidata team",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Common ValueValidator implementations",
+            "homepage": "https://github.com/DataValues/Validators",
+            "keywords": [
+                "datavalues",
+                "validation",
+                "validators",
+                "wikidata"
+            ],
+            "support": {
+                "irc": "irc://irc.freenode.net/wikidata",
+                "source": "https://github.com/DataValues/Validators/tree/1.0.0"
+            },
+            "time": "2021-01-22T19:14:47+00:00"
         },
         {
             "name": "dealerdirect/phpcodesniffer-composer-installer",
@@ -4658,29 +4960,29 @@
         },
         {
             "name": "doctrine/deprecations",
-            "version": "1.1.5",
+            "version": "1.1.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/deprecations.git",
-                "reference": "459c2f5dd3d6a4633d3b5f46ee2b1c40f57d3f38"
+                "reference": "d4fe3e6fd9bb9e72557a19674f44d8ac7db4c6ca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/deprecations/zipball/459c2f5dd3d6a4633d3b5f46ee2b1c40f57d3f38",
-                "reference": "459c2f5dd3d6a4633d3b5f46ee2b1c40f57d3f38",
+                "url": "https://api.github.com/repos/doctrine/deprecations/zipball/d4fe3e6fd9bb9e72557a19674f44d8ac7db4c6ca",
+                "reference": "d4fe3e6fd9bb9e72557a19674f44d8ac7db4c6ca",
                 "shasum": ""
             },
             "require": {
                 "php": "^7.1 || ^8.0"
             },
             "conflict": {
-                "phpunit/phpunit": "<=7.5 || >=13"
+                "phpunit/phpunit": "<=7.5 || >=14"
             },
             "require-dev": {
-                "doctrine/coding-standard": "^9 || ^12 || ^13",
-                "phpstan/phpstan": "1.4.10 || 2.1.11",
+                "doctrine/coding-standard": "^9 || ^12 || ^14",
+                "phpstan/phpstan": "1.4.10 || 2.1.30",
                 "phpstan/phpstan-phpunit": "^1.0 || ^2",
-                "phpunit/phpunit": "^7.5 || ^8.5 || ^9.6 || ^10.5 || ^11.5 || ^12",
+                "phpunit/phpunit": "^7.5 || ^8.5 || ^9.6 || ^10.5 || ^11.5 || ^12.4 || ^13.0",
                 "psr/log": "^1 || ^2 || ^3"
             },
             "suggest": {
@@ -4700,9 +5002,9 @@
             "homepage": "https://www.doctrine-project.org/",
             "support": {
                 "issues": "https://github.com/doctrine/deprecations/issues",
-                "source": "https://github.com/doctrine/deprecations/tree/1.1.5"
+                "source": "https://github.com/doctrine/deprecations/tree/1.1.6"
             },
-            "time": "2025-04-07T20:06:18+00:00"
+            "time": "2026-02-07T07:09:04+00:00"
         },
         {
             "name": "doctrine/instantiator",
@@ -4775,49 +5077,145 @@
             "time": "2022-12-30T00:23:10+00:00"
         },
         {
-            "name": "felixfbecker/advanced-json-rpc",
-            "version": "v3.2.1",
+            "name": "jeroen/file-fetcher",
+            "version": "6.1.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/felixfbecker/php-advanced-json-rpc.git",
-                "reference": "b5f37dbff9a8ad360ca341f3240dc1c168b45447"
+                "url": "https://github.com/JeroenDeDauw/FileFetcher.git",
+                "reference": "d9fadc0486ef690ce7dd9c6d32d6e5f2857bfd80"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/felixfbecker/php-advanced-json-rpc/zipball/b5f37dbff9a8ad360ca341f3240dc1c168b45447",
-                "reference": "b5f37dbff9a8ad360ca341f3240dc1c168b45447",
+                "url": "https://api.github.com/repos/JeroenDeDauw/FileFetcher/zipball/d9fadc0486ef690ce7dd9c6d32d6e5f2857bfd80",
+                "reference": "d9fadc0486ef690ce7dd9c6d32d6e5f2857bfd80",
                 "shasum": ""
             },
             "require": {
-                "netresearch/jsonmapper": "^1.0 || ^2.0 || ^3.0 || ^4.0",
-                "php": "^7.1 || ^8.0",
-                "phpdocumentor/reflection-docblock": "^4.3.4 || ^5.0.0"
+                "php": ">=7.3",
+                "psr/log": "~3.0|~2.0|~1.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "^7.0 || ^8.0"
+                "jeroen/psr-log-test-doubles": "~3.0|~2.2",
+                "phpstan/phpstan": "~1.6.0",
+                "phpunit/phpunit": "~9.5",
+                "squizlabs/php_codesniffer": "~3.2",
+                "vimeo/psalm": "^4.22.0"
+            },
+            "suggest": {
+                "jeroen/file-fetcher-cache": "Provides a SimpleCache (PSR-16) decorator for file fetchers",
+                "jeroen/file-fetcher-stopwatch": "Provides a Symfony Stopwatch decorator for file fetchers"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "6.0.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
-                    "AdvancedJsonRpc\\": "lib/"
+                    "FileFetcher\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "ISC"
+                "BSD-3-Clause"
             ],
             "authors": [
                 {
-                    "name": "Felix Becker",
-                    "email": "felix.b@outlook.com"
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "https://EntropyWins.wtf",
+                    "role": "Developer"
                 }
             ],
-            "description": "A more advanced JSONRPC implementation",
+            "description": "Simple file fetching interface",
+            "homepage": "https://github.com/JeroenDeDauw/FileFetcher",
+            "keywords": [
+                "Test Doubles",
+                "curl",
+                "file fetcher",
+                "file_get_contents",
+                "http",
+                "http client",
+                "http request",
+                "interface",
+                "mocks",
+                "request",
+                "spies",
+                "stubs",
+                "wget"
+            ],
             "support": {
-                "issues": "https://github.com/felixfbecker/php-advanced-json-rpc/issues",
-                "source": "https://github.com/felixfbecker/php-advanced-json-rpc/tree/v3.2.1"
+                "issues": "https://github.com/JeroenDeDauw/FileFetcher/issues",
+                "source": "https://github.com/JeroenDeDauw/FileFetcher/tree/6.1.1"
             },
-            "time": "2021-06-11T22:34:44+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/JeroenDeDauw",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-02-26T21:03:11+00:00"
+        },
+        {
+            "name": "mediawiki/http-request",
+            "version": "2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SemanticMediaWiki/http-request.git",
+                "reference": "1818e0731561621121fcc9da90f244a727ef0989"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SemanticMediaWiki/http-request/zipball/1818e0731561621121fcc9da90f244a727ef0989",
+                "reference": "1818e0731561621121fcc9da90f244a727ef0989",
+                "shasum": ""
+            },
+            "require": {
+                "onoi/cache": "~1.2",
+                "php": ">=8.0"
+            },
+            "replace": {
+                "onoi/http-request": "*"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5"
+            },
+            "suggest": {
+                "lib-curl": "Allows making CURL requests"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Onoi\\HttpRequest\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "James Hong Kong",
+                    "homepage": "https://github.com/mwjames"
+                }
+            ],
+            "description": "A minimalistic http/curl request interface library",
+            "homepage": "https://github.com/SemanticMediaWiki/http-request",
+            "keywords": [
+                "curl",
+                "http request"
+            ],
+            "support": {
+                "issues": "https://github.com/SemanticMediaWiki/http-request/issues",
+                "source": "https://github.com/SemanticMediaWiki/http-request/tree/2.0.0"
+            },
+            "time": "2022-12-13T13:16:31+00:00"
         },
         {
             "name": "mediawiki/mediawiki-codesniffer",
@@ -4873,30 +5271,30 @@
         },
         {
             "name": "mediawiki/mediawiki-phan-config",
-            "version": "0.14.0",
+            "version": "0.20.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/mediawiki-tools-phan.git",
-                "reference": "58c01ba9cea443c9d345dc1ba87ffe082a188633"
+                "reference": "30f5c430fce73fd796886bab40a172a1ffb3215c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/mediawiki-tools-phan/zipball/58c01ba9cea443c9d345dc1ba87ffe082a188633",
-                "reference": "58c01ba9cea443c9d345dc1ba87ffe082a188633",
+                "url": "https://api.github.com/repos/wikimedia/mediawiki-tools-phan/zipball/30f5c430fce73fd796886bab40a172a1ffb3215c",
+                "reference": "30f5c430fce73fd796886bab40a172a1ffb3215c",
                 "shasum": ""
             },
             "require": {
-                "mediawiki/phan-taint-check-plugin": "6.0.0",
-                "phan/phan": "5.4.3",
-                "php": ">=7.4.0"
+                "mediawiki/phan-taint-check-plugin": "9.1.0",
+                "phan/phan": "6.0.2",
+                "php": ">=8.1.0"
             },
             "require-dev": {
-                "mediawiki/mediawiki-codesniffer": "41.0.0",
-                "mediawiki/minus-x": "1.1.1",
-                "ockcyp/covers-validator": "1.6.0",
+                "mediawiki/mediawiki-codesniffer": "50.0.0",
+                "mediawiki/minus-x": "2.0.1",
+                "ockcyp/covers-validator": "1.7.0",
                 "php-parallel-lint/php-console-highlighter": "1.0.0",
-                "php-parallel-lint/php-parallel-lint": "1.3.2",
-                "phpunit/phpunit": "9.6.16"
+                "php-parallel-lint/php-parallel-lint": "1.4.0",
+                "phpunit/phpunit": "10.5.63"
             },
             "type": "library",
             "autoload": {
@@ -4917,9 +5315,9 @@
             "description": "Standard MediaWiki phan configuration",
             "homepage": "https://www.mediawiki.org/wiki/Continuous_integration/Phan",
             "support": {
-                "source": "https://github.com/wikimedia/mediawiki-tools-phan/tree/0.14.0"
+                "source": "https://github.com/wikimedia/mediawiki-tools-phan/tree/0.20.0"
             },
-            "time": "2024-02-03T20:26:03+00:00"
+            "time": "2026-03-05T11:57:58+00:00"
         },
         {
             "name": "mediawiki/minus-x",
@@ -4971,30 +5369,93 @@
             "time": "2024-05-04T16:06:11+00:00"
         },
         {
-            "name": "mediawiki/phan-taint-check-plugin",
-            "version": "6.0.0",
+            "name": "mediawiki/parser-hooks",
+            "version": "1.6.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/wikimedia/mediawiki-tools-phan-SecurityCheckPlugin.git",
-                "reference": "01fb7e924a2e9fa58e88eda61775feccee38aad6"
+                "url": "https://github.com/JeroenDeDauw/ParserHooks.git",
+                "reference": "45660efef737bcf33abbbb12c1ddb049c4e713fe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/mediawiki-tools-phan-SecurityCheckPlugin/zipball/01fb7e924a2e9fa58e88eda61775feccee38aad6",
-                "reference": "01fb7e924a2e9fa58e88eda61775feccee38aad6",
+                "url": "https://api.github.com/repos/JeroenDeDauw/ParserHooks/zipball/45660efef737bcf33abbbb12c1ddb049c4e713fe",
+                "reference": "45660efef737bcf33abbbb12c1ddb049c4e713fe",
+                "shasum": ""
+            },
+            "require": {
+                "param-processor/param-processor": "^1.3.2",
+                "php": ">=7.2"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.6.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "ParserHooks.php"
+                ],
+                "psr-4": {
+                    "ParserHooks\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "https://www.entropywins.wtf"
+                }
+            ],
+            "description": "Adds a OOP and declarative parser hook interface on top of MediaWiki",
+            "homepage": "https://github.com/JeroenDeDauw/ParserHooks/blob/master/README.md",
+            "keywords": [
+                "mediawiki",
+                "parser function",
+                "parser hook",
+                "parserhooks",
+                "tag extension"
+            ],
+            "support": {
+                "irc": "irc://irc.freenode.net/mediawiki",
+                "issues": "https://github.com/JeroenDeDauw/ParserHooks/issues",
+                "source": "https://github.com/JeroenDeDauw/ParserHooks/tree/master"
+            },
+            "time": "2020-01-14T02:43:39+00:00"
+        },
+        {
+            "name": "mediawiki/phan-taint-check-plugin",
+            "version": "9.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/wikimedia/mediawiki-tools-phan-SecurityCheckPlugin.git",
+                "reference": "f222eb6587623428a7481685d901d058540a7c5b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wikimedia/mediawiki-tools-phan-SecurityCheckPlugin/zipball/f222eb6587623428a7481685d901d058540a7c5b",
+                "reference": "f222eb6587623428a7481685d901d058540a7c5b",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "phan/phan": "5.4.3",
-                "php": "^7.4.0 | ^8.0.0"
+                "phan/phan": "6.0.2",
+                "php": ">=8.1.0"
             },
             "require-dev": {
-                "mediawiki/mediawiki-codesniffer": "41.0.0",
-                "mediawiki/minus-x": "1.1.1",
+                "ext-pdo": "*",
+                "mediawiki/mediawiki-codesniffer": "50.0.0",
+                "mediawiki/minus-x": "2.0.1",
                 "php-parallel-lint/php-console-highlighter": "1.0.0",
-                "php-parallel-lint/php-parallel-lint": "1.3.2",
-                "phpunit/phpunit": "9.6.16"
+                "php-parallel-lint/php-parallel-lint": "1.4.0",
+                "phpunit/phpunit": "10.5.63"
+            },
+            "suggest": {
+                "ext-mysqli": "Used for some mysqli function tests"
             },
             "bin": [
                 "scripts/seccheck"
@@ -5002,7 +5463,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "SecurityCheckPlugin\\": "src"
+                    "SecurityCheckPlugin\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -5034,52 +5495,133 @@
                 "source": "https://phabricator.wikimedia.org/diffusion/MTPS/",
                 "wiki": "https://www.mediawiki.org/wiki/SecurityCheckPlugin"
             },
-            "time": "2024-02-02T01:29:05+00:00"
+            "time": "2026-03-05T11:55:09+00:00"
         },
         {
-            "name": "microsoft/tolerant-php-parser",
-            "version": "v0.1.2",
+            "name": "mediawiki/semantic-media-wiki",
+            "version": "6.0.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/microsoft/tolerant-php-parser.git",
-                "reference": "3eccfd273323aaf69513e2f1c888393f5947804b"
+                "url": "https://github.com/SemanticMediaWiki/SemanticMediaWiki.git",
+                "reference": "448a112ac897ff6a4b615cf0703cf60ed946907f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/microsoft/tolerant-php-parser/zipball/3eccfd273323aaf69513e2f1c888393f5947804b",
-                "reference": "3eccfd273323aaf69513e2f1c888393f5947804b",
+                "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMediaWiki/zipball/448a112ac897ff6a4b615cf0703cf60ed946907f",
+                "reference": "448a112ac897ff6a4b615cf0703cf60ed946907f",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.2"
+                "composer/installers": "^2.2.0|^1.0.1",
+                "ext-mbstring": "*",
+                "jeroen/file-fetcher": "^6|^5|^4.4",
+                "justinrainbow/json-schema": "~5.2",
+                "mediawiki/http-request": "~2.0|~1.1",
+                "mediawiki/parser-hooks": "~1.4",
+                "onoi/blob-store": "~1.2",
+                "onoi/cache": "~1.2",
+                "onoi/callback-container": "~2.0",
+                "onoi/event-dispatcher": "~1.0",
+                "onoi/message-reporter": "~1.0",
+                "param-processor/param-processor": "~1.2",
+                "php": ">=8.1",
+                "psr/log": "~1.0",
+                "seld/jsonlint": "^1.7",
+                "serialization/serialization": "~3.2|~4.0",
+                "symfony/css-selector": "^5|^4|^3.3",
+                "wikimedia/cdb": "^3|^2|^1",
+                "wikimedia/textcat": "^2|^1.1"
             },
             "require-dev": {
-                "phpunit/phpunit": "^8.5.15"
+                "mediawiki/mediawiki-codesniffer": "46.0.0",
+                "mediawiki/mediawiki-phan-config": "0.14.0",
+                "mediawiki/minus-x": "1.1.3",
+                "php-parallel-lint/php-console-highlighter": "1.0.0",
+                "php-parallel-lint/php-parallel-lint": "1.4.0",
+                "phpmd/phpmd": "~2.1",
+                "squizlabs/php_codesniffer": "~3.5"
             },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Microsoft\\PhpParser\\": [
-                        "src/"
-                    ]
+            "suggest": {
+                "mediawiki/semantic-result-formats": "Provides additional result formats for queries of structured data"
+            },
+            "type": "mediawiki-extension",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "6.x-dev"
                 }
+            },
+            "autoload": {
+                "files": [
+                    "includes/GlobalFunctions.php"
+                ],
+                "psr-0": {
+                    "SemanticMediaWiki": "includes/SemanticMediaWiki.php"
+                },
+                "psr-4": {
+                    "SMW\\": "src/",
+                    "Onoi\\Tesa\\": "Tesa/src/",
+                    "SMW\\Tests\\": "tests/phpunit/",
+                    "SMW\\Maintenance\\": "maintenance/"
+                },
+                "classmap": [
+                    "includes/",
+                    "tests/phpunit/includes/"
+                ]
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "MIT"
+                "GPL-2.0-or-later"
             ],
             "authors": [
                 {
-                    "name": "Rob Lourens",
-                    "email": "roblou@microsoft.com"
+                    "name": "Markus Krötzsch",
+                    "homepage": "https://www.korrekt.org/",
+                    "role": "Original author"
+                },
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "https://www.entropywins.wtf/",
+                    "role": "Core developer"
+                },
+                {
+                    "name": "James Hong Kong",
+                    "homepage": "https://www.semantic-mediawiki.org/wiki/User:MWJames",
+                    "role": "Core developer"
+                },
+                {
+                    "name": "Professional Wiki",
+                    "email": "info@professional.wiki",
+                    "homepage": "https://professional.wiki",
+                    "role": "Developer"
                 }
             ],
-            "description": "Tolerant PHP-to-AST parser designed for IDE usage scenarios",
+            "description": "An extension to MediaWiki that lets you store and query structured data within wiki pages",
+            "homepage": "https://www.semantic-mediawiki.org/wiki/",
+            "keywords": [
+                "SMW",
+                "Semantic MediaWiki",
+                "mediawiki",
+                "wiki"
+            ],
             "support": {
-                "issues": "https://github.com/microsoft/tolerant-php-parser/issues",
-                "source": "https://github.com/microsoft/tolerant-php-parser/tree/v0.1.2"
+                "email": "semediawiki-user@lists.sourceforge.net",
+                "forum": "https://www.semantic-mediawiki.org/wiki/semantic-mediawiki.org_talk:Community_portal",
+                "issues": "https://github.com/SemanticMediaWiki/SemanticMediaWiki/issues",
+                "source": "https://github.com/SemanticMediaWiki/SemanticMediaWiki",
+                "wiki": "https://www.semantic-mediawiki.org/wiki/"
             },
-            "time": "2022-10-05T17:30:19+00:00"
+            "funding": [
+                {
+                    "url": "https://www.semantic-mediawiki.org/wiki/Sponsorship",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://opencollective.com/smw",
+                    "type": "open_collective"
+                }
+            ],
+            "time": "2025-08-25T21:49:31+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -5143,16 +5685,16 @@
         },
         {
             "name": "netresearch/jsonmapper",
-            "version": "v4.5.0",
+            "version": "v5.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/cweiske/jsonmapper.git",
-                "reference": "8e76efb98ee8b6afc54687045e1b8dba55ac76e5"
+                "reference": "980674efdda65913492d29a8fd51c82270dd37bb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/cweiske/jsonmapper/zipball/8e76efb98ee8b6afc54687045e1b8dba55ac76e5",
-                "reference": "8e76efb98ee8b6afc54687045e1b8dba55ac76e5",
+                "url": "https://api.github.com/repos/cweiske/jsonmapper/zipball/980674efdda65913492d29a8fd51c82270dd37bb",
+                "reference": "980674efdda65913492d29a8fd51c82270dd37bb",
                 "shasum": ""
             },
             "require": {
@@ -5188,9 +5730,9 @@
             "support": {
                 "email": "cweiske@cweiske.de",
                 "issues": "https://github.com/cweiske/jsonmapper/issues",
-                "source": "https://github.com/cweiske/jsonmapper/tree/v4.5.0"
+                "source": "https://github.com/cweiske/jsonmapper/tree/v5.0.1"
             },
-            "time": "2024-09-08T10:13:13+00:00"
+            "time": "2026-02-22T16:28:03+00:00"
         },
         {
             "name": "nikic/php-parser",
@@ -5251,40 +5793,383 @@
             "time": "2025-12-06T11:56:16+00:00"
         },
         {
-            "name": "phan/phan",
-            "version": "5.4.3",
+            "name": "onoi/blob-store",
+            "version": "1.2.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/phan/phan.git",
-                "reference": "86a7acd99c1239b8867b49feca2398851212e7fe"
+                "url": "https://github.com/onoi/blob-store.git",
+                "reference": "c3e1f15214977e904fc0e91e0480175a464977ce"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phan/phan/zipball/86a7acd99c1239b8867b49feca2398851212e7fe",
-                "reference": "86a7acd99c1239b8867b49feca2398851212e7fe",
+                "url": "https://api.github.com/repos/onoi/blob-store/zipball/c3e1f15214977e904fc0e91e0480175a464977ce",
+                "reference": "c3e1f15214977e904fc0e91e0480175a464977ce",
+                "shasum": ""
+            },
+            "require": {
+                "onoi/cache": "~1.1",
+                "php": ">=5.3.2"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Onoi\\BlobStore\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "mwjames"
+                }
+            ],
+            "description": "A simple interface to manage schema-free temporal persistent key/values",
+            "homepage": "https://github.com/onoi/blob-store",
+            "keywords": [
+                "messages"
+            ],
+            "support": {
+                "issues": "https://github.com/onoi/blob-store/issues",
+                "source": "https://github.com/onoi/blob-store/tree/master"
+            },
+            "time": "2016-07-09T17:32:53+00:00"
+        },
+        {
+            "name": "onoi/cache",
+            "version": "1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/onoi/cache.git",
+                "reference": "ecc999186aab7c8db411aedd892b2e5fe5a0b422"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/onoi/cache/zipball/ecc999186aab7c8db411aedd892b2e5fe5a0b422",
+                "reference": "ecc999186aab7c8db411aedd892b2e5fe5a0b422",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.2"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Onoi\\Cache\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "mwjames",
+                    "homepage": "https://github.com/mwjames"
+                }
+            ],
+            "description": "A minimalistic cache adapter interface library",
+            "homepage": "https://github.com/onoi/cache",
+            "keywords": [
+                "cache"
+            ],
+            "support": {
+                "issues": "https://github.com/onoi/cache/issues",
+                "source": "https://github.com/onoi/cache/tree/master"
+            },
+            "time": "2015-06-02T08:52:45+00:00"
+        },
+        {
+            "name": "onoi/callback-container",
+            "version": "2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/onoi/callback-container.git",
+                "reference": "cf2f4dda1b2479bc786985fdb5554af528d03e52"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/onoi/callback-container/zipball/cf2f4dda1b2479bc786985fdb5554af528d03e52",
+                "reference": "cf2f4dda1b2479bc786985fdb5554af528d03e52",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.5",
+                "psr/log": "~1.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Onoi\\CallbackContainer\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "mwjames",
+                    "homepage": "https://github.com/mwjames"
+                }
+            ],
+            "description": "A very simple callback container/builder library",
+            "homepage": "https://github.com/onoi/callback-container",
+            "keywords": [
+                "container"
+            ],
+            "support": {
+                "issues": "https://github.com/onoi/callback-container/issues",
+                "source": "https://github.com/onoi/callback-container/tree/master"
+            },
+            "time": "2017-02-18T10:46:46+00:00"
+        },
+        {
+            "name": "onoi/event-dispatcher",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/onoi/event-dispatcher.git",
+                "reference": "2af64e3997fc59b6d1e1f8f77e65fd6311c37109"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/onoi/event-dispatcher/zipball/2af64e3997fc59b6d1e1f8f77e65fd6311c37109",
+                "reference": "2af64e3997fc59b6d1e1f8f77e65fd6311c37109",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.2"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Onoi\\EventDispatcher\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "James Hong Kong"
+                }
+            ],
+            "description": "A minimalistic interface to relay generic events to registered listeners",
+            "homepage": "https://github.com/onoi/event-dispatcher",
+            "keywords": [
+                "events",
+                "listener"
+            ],
+            "support": {
+                "issues": "https://github.com/onoi/event-dispatcher/issues",
+                "source": "https://github.com/onoi/event-dispatcher/tree/master"
+            },
+            "time": "2019-01-27T03:37:14+00:00"
+        },
+        {
+            "name": "onoi/message-reporter",
+            "version": "1.4.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/onoi/message-reporter.git",
+                "reference": "ead8ef8f2868ccee6881e471295ebbaf8428c96c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/onoi/message-reporter/zipball/ead8ef8f2868ccee6881e471295ebbaf8428c96c",
+                "reference": "ead8ef8f2868ccee6881e471295ebbaf8428c96c",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.3"
+            },
+            "require-dev": {
+                "mediawiki/mediawiki-codesniffer": "~34.0",
+                "ockcyp/covers-validator": "~1.1",
+                "phpstan/phpstan": "~0.12.67",
+                "phpunit/phpunit": "^9.5",
+                "squizlabs/php_codesniffer": "~3.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Onoi\\MessageReporter\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "homepage": "https://EntropyWins.wtf"
+                },
+                {
+                    "name": "James Hong Kong"
+                }
+            ],
+            "description": "An interface to report and relay arbitrary messages to registered handlers",
+            "homepage": "https://github.com/onoi/message-reporter",
+            "keywords": [
+                "messages",
+                "reporter"
+            ],
+            "support": {
+                "issues": "https://github.com/onoi/message-reporter/issues",
+                "source": "https://github.com/onoi/message-reporter/tree/1.4.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/JeroenDeDauw",
+                    "type": "github"
+                }
+            ],
+            "time": "2021-01-15T14:23:11+00:00"
+        },
+        {
+            "name": "param-processor/param-processor",
+            "version": "1.12.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/JeroenDeDauw/ParamProcessor.git",
+                "reference": "0850dc2af72d31b8f645e0f87a44ff4b68583a64"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/JeroenDeDauw/ParamProcessor/zipball/0850dc2af72d31b8f645e0f87a44ff4b68583a64",
+                "reference": "0850dc2af72d31b8f645e0f87a44ff4b68583a64",
+                "shasum": ""
+            },
+            "require": {
+                "data-values/common": "~1.0|~0.4.0|~0.3.0",
+                "data-values/data-values": "~3.0|~2.0|~1.0",
+                "data-values/interfaces": "~1.0|~0.2.0|~0.1.4",
+                "data-values/validators": "~1.0|~0.1.1",
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "ockcyp/covers-validator": "~1.0",
+                "phpmd/phpmd": "~2.6",
+                "phpunit/phpunit": "~8.0|~7.4",
+                "squizlabs/php_codesniffer": "~3.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "DefaultConfig.php"
+                ],
+                "psr-4": {
+                    "ParamProcessor\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "https://EntropyWins.wtf",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Parameter processing library",
+            "homepage": "https://github.com/JeroenDeDauw/ParamProcessor",
+            "keywords": [
+                "ParamProcessor",
+                "SMW",
+                "Semantic MediaWiki",
+                "Vaidation",
+                "declarative",
+                "mediawiki",
+                "parameters",
+                "validator"
+            ],
+            "support": {
+                "issues": "https://github.com/JeroenDeDauw/ParamProcessor/issues",
+                "source": "https://github.com/JeroenDeDauw/ParamProcessor/tree/1.12.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/JeroenDeDauw",
+                    "type": "github"
+                }
+            ],
+            "time": "2021-05-04T14:53:22+00:00"
+        },
+        {
+            "name": "phan/phan",
+            "version": "6.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phan/phan.git",
+                "reference": "1d56eb53e3df149af461c4a7413ae390d476e139"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phan/phan/zipball/1d56eb53e3df149af461c4a7413ae390d476e139",
+                "reference": "1d56eb53e3df149af461c4a7413ae390d476e139",
                 "shasum": ""
             },
             "require": {
                 "composer/semver": "^1.4|^2.0|^3.0",
                 "composer/xdebug-handler": "^2.0|^3.0",
+                "danog/advanced-json-rpc": "^3.0.4",
                 "ext-filter": "*",
                 "ext-json": "*",
                 "ext-tokenizer": "*",
-                "felixfbecker/advanced-json-rpc": "^3.0.4",
-                "microsoft/tolerant-php-parser": "0.1.2",
-                "netresearch/jsonmapper": "^1.6.0|^2.0|^3.0|^4.0",
-                "php": "^7.2.0|^8.0.0",
-                "sabre/event": "^5.1.3",
-                "symfony/console": "^3.2|^4.0|^5.0|^6.0|^7.0",
+                "netresearch/jsonmapper": "^1.6.0|^2.0|^3.0|^4.0|^5.0",
+                "phan/tolerant-php-parser": "v0.2.0",
+                "phan/var_representation_polyfill": "^0.1.4",
+                "php": "^8.1.0",
+                "sabre/event": "^5.1.3|^6.0",
+                "symfony/console": "^6.0|^7.0|^8.0",
                 "symfony/polyfill-mbstring": "^1.11.0",
-                "symfony/polyfill-php80": "^1.20.0",
-                "tysonandre/var_representation_polyfill": "^0.0.2|^0.1.0"
+                "symfony/string": "^6.0|^7.0|^8.0"
+            },
+            "conflict": {
+                "microsoft/tolerant-php-parser": "*"
             },
             "require-dev": {
-                "phpunit/phpunit": "^8.5.0"
+                "phpunit/phpunit": "^10.0"
             },
             "suggest": {
-                "ext-ast": "Needed for parsing ASTs (unless --use-fallback-parser is used). 1.0.1+ is needed, 1.0.16+ is recommended.",
+                "ext-ast": "Needed for parsing ASTs (unless --use-fallback-parser is used). 1.1.3+ is needed.",
                 "ext-iconv": "Either iconv or mbstring is needed to ensure issue messages are valid utf-8",
                 "ext-igbinary": "Improves performance of polyfill when ext-ast is unavailable",
                 "ext-mbstring": "Either iconv or mbstring is needed to ensure issue messages are valid utf-8",
@@ -5298,6 +6183,9 @@
             ],
             "type": "project",
             "autoload": {
+                "files": [
+                    "src/Phan/bootstrap/polyfills.php"
+                ],
                 "psr-4": {
                     "Phan\\": "src/Phan"
                 }
@@ -5326,9 +6214,113 @@
             ],
             "support": {
                 "issues": "https://github.com/phan/phan/issues",
-                "source": "https://github.com/phan/phan/tree/5.4.3"
+                "source": "https://github.com/phan/phan/tree/6.0.2"
             },
-            "time": "2023-12-26T17:57:35+00:00"
+            "time": "2026-03-05T09:22:13+00:00"
+        },
+        {
+            "name": "phan/tolerant-php-parser",
+            "version": "v0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phan/phan-tolerant.git",
+                "reference": "199a81a43531cea4872893f10adc3eefcacacea9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phan/phan-tolerant/zipball/199a81a43531cea4872893f10adc3eefcacacea9",
+                "reference": "199a81a43531cea4872893f10adc3eefcacacea9",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^1.8",
+                "phpunit/phpunit": "^10.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Microsoft\\PhpParser\\": [
+                        "src/"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Rob Lourens",
+                    "email": "roblou@microsoft.com"
+                }
+            ],
+            "description": "Tolerant PHP-to-AST parser designed for IDE usage scenarios",
+            "support": {
+                "issues": "https://github.com/phan/phan-tolerant/issues",
+                "source": "https://github.com/phan/phan-tolerant/tree/v0.2.0"
+            },
+            "time": "2025-10-29T19:20:13+00:00"
+        },
+        {
+            "name": "phan/var_representation_polyfill",
+            "version": "0.1.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phan/var_representation_polyfill",
+                "reference": "6673325fb4343899af4564d9f6984b1fbe077e9d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phan/var_representation_polyfill/zipball/6673325fb4343899af4564d9f6984b1fbe077e9d",
+                "reference": "6673325fb4343899af4564d9f6984b1fbe077e9d",
+                "shasum": ""
+            },
+            "require": {
+                "ext-tokenizer": "*",
+                "php": "^7.2.0|^8.0.0"
+            },
+            "provide": {
+                "ext-var_representation": "*"
+            },
+            "require-dev": {
+                "phan/phan": "^5.4.1",
+                "phpunit/phpunit": "^8.5.0"
+            },
+            "suggest": {
+                "ext-var_representation": "For best performance"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.1.3-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/var_representation.php"
+                ],
+                "psr-4": {
+                    "VarRepresentation\\": "src/VarRepresentation"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Tyson Andre"
+                }
+            ],
+            "description": "Polyfill for var_representation: convert a variable to a string in a way that fixes the shortcomings of var_export",
+            "keywords": [
+                "var_export",
+                "var_representation"
+            ],
+            "time": "2026-01-28T23:32:31+00:00"
         },
         {
             "name": "phar-io/manifest",
@@ -5840,16 +6832,16 @@
         },
         {
             "name": "phpdocumentor/reflection-docblock",
-            "version": "5.6.6",
+            "version": "6.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "5cee1d3dfc2d2aa6599834520911d246f656bcb8"
+                "reference": "7bae67520aa9f5ecc506d646810bd40d9da54582"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/5cee1d3dfc2d2aa6599834520911d246f656bcb8",
-                "reference": "5cee1d3dfc2d2aa6599834520911d246f656bcb8",
+                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/7bae67520aa9f5ecc506d646810bd40d9da54582",
+                "reference": "7bae67520aa9f5ecc506d646810bd40d9da54582",
                 "shasum": ""
             },
             "require": {
@@ -5857,8 +6849,8 @@
                 "ext-filter": "*",
                 "php": "^7.4 || ^8.0",
                 "phpdocumentor/reflection-common": "^2.2",
-                "phpdocumentor/type-resolver": "^1.7",
-                "phpstan/phpdoc-parser": "^1.7|^2.0",
+                "phpdocumentor/type-resolver": "^2.0",
+                "phpstan/phpdoc-parser": "^2.0",
                 "webmozart/assert": "^1.9.1 || ^2"
             },
             "require-dev": {
@@ -5868,7 +6860,8 @@
                 "phpstan/phpstan-mockery": "^1.1",
                 "phpstan/phpstan-webmozart-assert": "^1.2",
                 "phpunit/phpunit": "^9.5",
-                "psalm/phar": "^5.26"
+                "psalm/phar": "^5.26",
+                "shipmonk/dead-code-detector": "^0.5.1"
             },
             "type": "library",
             "extra": {
@@ -5898,44 +6891,44 @@
             "description": "With this component, a library can provide support for annotations via DocBlocks or otherwise retrieve information that is embedded in a DocBlock.",
             "support": {
                 "issues": "https://github.com/phpDocumentor/ReflectionDocBlock/issues",
-                "source": "https://github.com/phpDocumentor/ReflectionDocBlock/tree/5.6.6"
+                "source": "https://github.com/phpDocumentor/ReflectionDocBlock/tree/6.0.3"
             },
-            "time": "2025-12-22T21:13:58+00:00"
+            "time": "2026-03-18T20:49:53+00:00"
         },
         {
             "name": "phpdocumentor/type-resolver",
-            "version": "1.12.0",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/TypeResolver.git",
-                "reference": "92a98ada2b93d9b201a613cb5a33584dde25f195"
+                "reference": "327a05bbee54120d4786a0dc67aad30226ad4cf9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/TypeResolver/zipball/92a98ada2b93d9b201a613cb5a33584dde25f195",
-                "reference": "92a98ada2b93d9b201a613cb5a33584dde25f195",
+                "url": "https://api.github.com/repos/phpDocumentor/TypeResolver/zipball/327a05bbee54120d4786a0dc67aad30226ad4cf9",
+                "reference": "327a05bbee54120d4786a0dc67aad30226ad4cf9",
                 "shasum": ""
             },
             "require": {
                 "doctrine/deprecations": "^1.0",
-                "php": "^7.3 || ^8.0",
+                "php": "^7.4 || ^8.0",
                 "phpdocumentor/reflection-common": "^2.0",
-                "phpstan/phpdoc-parser": "^1.18|^2.0"
+                "phpstan/phpdoc-parser": "^2.0"
             },
             "require-dev": {
                 "ext-tokenizer": "*",
                 "phpbench/phpbench": "^1.2",
-                "phpstan/extension-installer": "^1.1",
-                "phpstan/phpstan": "^1.8",
-                "phpstan/phpstan-phpunit": "^1.1",
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-phpunit": "^2.0",
                 "phpunit/phpunit": "^9.5",
-                "rector/rector": "^0.13.9",
-                "vimeo/psalm": "^4.25"
+                "psalm/phar": "^4"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-1.x": "1.x-dev"
+                    "dev-1.x": "1.x-dev",
+                    "dev-2.x": "2.x-dev"
                 }
             },
             "autoload": {
@@ -5956,9 +6949,9 @@
             "description": "A PSR-5 based resolver of Class names, Types and Structural Element Names",
             "support": {
                 "issues": "https://github.com/phpDocumentor/TypeResolver/issues",
-                "source": "https://github.com/phpDocumentor/TypeResolver/tree/1.12.0"
+                "source": "https://github.com/phpDocumentor/TypeResolver/tree/2.0.0"
             },
-            "time": "2025-11-21T15:09:14+00:00"
+            "time": "2026-01-06T21:53:42+00:00"
         },
         {
             "name": "phpstan/phpdoc-parser",
@@ -6439,25 +7432,28 @@
         },
         {
             "name": "sabre/event",
-            "version": "5.1.7",
+            "version": "6.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sabre-io/event.git",
-                "reference": "86d57e305c272898ba3c28e9bd3d65d5464587c2"
+                "reference": "70525d519b6fbd8e2cbef4e0dbe69c9d4a3e2db7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sabre-io/event/zipball/86d57e305c272898ba3c28e9bd3d65d5464587c2",
-                "reference": "86d57e305c272898ba3c28e9bd3d65d5464587c2",
+                "url": "https://api.github.com/repos/sabre-io/event/zipball/70525d519b6fbd8e2cbef4e0dbe69c9d4a3e2db7",
+                "reference": "70525d519b6fbd8e2cbef4e0dbe69c9d4a3e2db7",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.1 || ^8.0"
+                "php": "^7.4 || ^8.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "~2.17.1||^3.63",
-                "phpstan/phpstan": "^0.12",
-                "phpunit/phpunit": "^7.5 || ^8.5 || ^9.6"
+                "friendsofphp/php-cs-fixer": "^3.64",
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan": "^1.12",
+                "phpstan/phpstan-phpunit": "^1.4",
+                "phpstan/phpstan-strict-rules": "^1.6",
+                "phpunit/phpunit": "^9.6"
             },
             "type": "library",
             "autoload": {
@@ -6501,7 +7497,7 @@
                 "issues": "https://github.com/sabre-io/event/issues",
                 "source": "https://github.com/fruux/sabre-event"
             },
-            "time": "2024-08-27T11:23:05+00:00"
+            "time": "2024-09-06T10:14:28+00:00"
         },
         {
             "name": "sebastian/cli-parser",
@@ -7515,6 +8511,131 @@
             "time": "2020-09-28T06:39:44+00:00"
         },
         {
+            "name": "seld/jsonlint",
+            "version": "1.11.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Seldaek/jsonlint.git",
+                "reference": "1748aaf847fc731cfad7725aec413ee46f0cc3a2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Seldaek/jsonlint/zipball/1748aaf847fc731cfad7725aec413ee46f0cc3a2",
+                "reference": "1748aaf847fc731cfad7725aec413ee46f0cc3a2",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.3 || ^7.0 || ^8.0"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^1.11",
+                "phpunit/phpunit": "^4.8.35 || ^5.7 || ^6.0 || ^8.5.13"
+            },
+            "bin": [
+                "bin/jsonlint"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Seld\\JsonLint\\": "src/Seld/JsonLint/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jordi Boggiano",
+                    "email": "j.boggiano@seld.be",
+                    "homepage": "https://seld.be"
+                }
+            ],
+            "description": "JSON Linter",
+            "keywords": [
+                "json",
+                "linter",
+                "parser",
+                "validator"
+            ],
+            "support": {
+                "issues": "https://github.com/Seldaek/jsonlint/issues",
+                "source": "https://github.com/Seldaek/jsonlint/tree/1.11.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/Seldaek",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/seld/jsonlint",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2024-07-11T14:55:45+00:00"
+        },
+        {
+            "name": "serialization/serialization",
+            "version": "4.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/wmde/Serialization.git",
+                "reference": "4403fbab83e0187791d35caef4eef4395811e58d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wmde/Serialization/zipball/4403fbab83e0187791d35caef4eef4395811e58d",
+                "reference": "4403fbab83e0187791d35caef4eef4395811e58d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "mediawiki/mediawiki-codesniffer": "^45",
+                "phpunit/phpunit": "^8.5.14"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Serializers\\": "src/Serializers/",
+                    "Deserializers\\": "src/Deserializers/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "http://jeroendedauw.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Library defining a Serializer and a Deserializer interface and basic utilities",
+            "homepage": "https://github.com/wmde/Serialization",
+            "keywords": [
+                "deserialization",
+                "deserializer",
+                "serialization",
+                "serializer",
+                "unserialization",
+                "wikidata"
+            ],
+            "support": {
+                "irc": "irc://irc.freenode.net/wikidata",
+                "source": "https://github.com/wmde/Serialization/tree/4.1.0"
+            },
+            "time": "2024-12-11T14:47:31+00:00"
+        },
+        {
             "name": "squizlabs/php_codesniffer",
             "version": "3.13.2",
             "source": {
@@ -7600,16 +8721,16 @@
         },
         {
             "name": "symfony/console",
-            "version": "v6.4.32",
+            "version": "v6.4.36",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/console.git",
-                "reference": "0bc2199c6c1f05276b05956f1ddc63f6d7eb5fc3"
+                "reference": "9f481cfb580db8bcecc9b2d4c63f3e13df022ad5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/console/zipball/0bc2199c6c1f05276b05956f1ddc63f6d7eb5fc3",
-                "reference": "0bc2199c6c1f05276b05956f1ddc63f6d7eb5fc3",
+                "url": "https://api.github.com/repos/symfony/console/zipball/9f481cfb580db8bcecc9b2d4c63f3e13df022ad5",
+                "reference": "9f481cfb580db8bcecc9b2d4c63f3e13df022ad5",
                 "shasum": ""
             },
             "require": {
@@ -7674,7 +8795,7 @@
                 "terminal"
             ],
             "support": {
-                "source": "https://github.com/symfony/console/tree/v6.4.32"
+                "source": "https://github.com/symfony/console/tree/v6.4.36"
             },
             "funding": [
                 {
@@ -7694,7 +8815,73 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-01-13T08:45:59+00:00"
+            "time": "2026-03-27T15:30:51+00:00"
+        },
+        {
+            "name": "symfony/css-selector",
+            "version": "v5.4.45",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/css-selector.git",
+                "reference": "4f7f3c35fba88146b56d0025d20ace3f3901f097"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/css-selector/zipball/4f7f3c35fba88146b56d0025d20ace3f3901f097",
+                "reference": "4f7f3c35fba88146b56d0025d20ace3f3901f097",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.5",
+                "symfony/polyfill-php80": "^1.16"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\CssSelector\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Jean-François Simon",
+                    "email": "jeanfrancois.simon@sensiolabs.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Converts CSS selectors to XPath expressions",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/css-selector/tree/v5.4.45"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2024-09-25T14:11:13+00:00"
         },
         {
             "name": "symfony/service-contracts",
@@ -7785,16 +8972,16 @@
         },
         {
             "name": "symfony/string",
-            "version": "v6.4.30",
+            "version": "v6.4.34",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/string.git",
-                "reference": "50590a057841fa6bf69d12eceffce3465b9e32cb"
+                "reference": "2adaf4106f2ef4c67271971bde6d3fe0a6936432"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/string/zipball/50590a057841fa6bf69d12eceffce3465b9e32cb",
-                "reference": "50590a057841fa6bf69d12eceffce3465b9e32cb",
+                "url": "https://api.github.com/repos/symfony/string/zipball/2adaf4106f2ef4c67271971bde6d3fe0a6936432",
+                "reference": "2adaf4106f2ef4c67271971bde6d3fe0a6936432",
                 "shasum": ""
             },
             "require": {
@@ -7850,7 +9037,7 @@
                 "utf8"
             ],
             "support": {
-                "source": "https://github.com/symfony/string/tree/v6.4.30"
+                "source": "https://github.com/symfony/string/tree/v6.4.34"
             },
             "funding": [
                 {
@@ -7870,7 +9057,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-11-21T18:03:05+00:00"
+            "time": "2026-02-08T20:44:54+00:00"
         },
         {
             "name": "theseer/tokenizer",
@@ -7921,68 +9108,6 @@
                 }
             ],
             "time": "2025-11-17T20:03:58+00:00"
-        },
-        {
-            "name": "tysonandre/var_representation_polyfill",
-            "version": "0.1.3",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/TysonAndre/var_representation_polyfill.git",
-                "reference": "e9116c2c352bb0835ca428b442dde7767c11ad32"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/TysonAndre/var_representation_polyfill/zipball/e9116c2c352bb0835ca428b442dde7767c11ad32",
-                "reference": "e9116c2c352bb0835ca428b442dde7767c11ad32",
-                "shasum": ""
-            },
-            "require": {
-                "ext-tokenizer": "*",
-                "php": "^7.2.0|^8.0.0"
-            },
-            "provide": {
-                "ext-var_representation": "*"
-            },
-            "require-dev": {
-                "phan/phan": "^5.4.1",
-                "phpunit/phpunit": "^8.5.0"
-            },
-            "suggest": {
-                "ext-var_representation": "For best performance"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-main": "0.1.3-dev"
-                }
-            },
-            "autoload": {
-                "files": [
-                    "src/var_representation.php"
-                ],
-                "psr-4": {
-                    "VarRepresentation\\": "src/VarRepresentation"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Tyson Andre"
-                }
-            ],
-            "description": "Polyfill for var_representation: convert a variable to a string in a way that fixes the shortcomings of var_export",
-            "keywords": [
-                "var_export",
-                "var_representation"
-            ],
-            "support": {
-                "issues": "https://github.com/TysonAndre/var_representation_polyfill/issues",
-                "source": "https://github.com/TysonAndre/var_representation_polyfill/tree/0.1.3"
-            },
-            "time": "2022-08-31T12:59:22+00:00"
         },
         {
             "name": "webmozart/assert",
@@ -8041,6 +9166,59 @@
                 "source": "https://github.com/webmozarts/assert/tree/1.12.1"
             },
             "time": "2025-10-29T15:56:20+00:00"
+        },
+        {
+            "name": "wikimedia/textcat",
+            "version": "2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/wikimedia/textcat.git",
+                "reference": "dfdfb1c41bb016814a9d4da3aa68b62437b54a82"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wikimedia/textcat/zipball/dfdfb1c41bb016814a9d4da3aa68b62437b54a82",
+                "reference": "dfdfb1c41bb016814a9d4da3aa68b62437b54a82",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.9"
+            },
+            "require-dev": {
+                "mediawiki/mediawiki-codesniffer": "38.0.0",
+                "mediawiki/mediawiki-phan-config": "0.11.1",
+                "mediawiki/minus-x": "1.1.1",
+                "ockcyp/covers-validator": "1.3.3",
+                "php-parallel-lint/php-console-highlighter": "0.5.0",
+                "php-parallel-lint/php-parallel-lint": "1.3.1",
+                "phpunit/phpunit": "^8.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "TextCat": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-2.1-only"
+            ],
+            "authors": [
+                {
+                    "name": "Trey Jones",
+                    "email": "tjones@wikimedia.org"
+                },
+                {
+                    "name": "Stanislav Malyshev",
+                    "email": "smalyshev@wikimedia.org"
+                }
+            ],
+            "description": "PHP port of the TextCat language guesser utility, see http://odur.let.rug.nl/~vannoord/TextCat/.",
+            "homepage": "https://www.mediawiki.org/wiki/TextCat",
+            "support": {
+                "source": "https://github.com/wikimedia/textcat/tree/2.0.0"
+            },
+            "time": "2022-03-15T15:54:48+00:00"
         }
     ],
     "aliases": [],

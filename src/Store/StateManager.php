@@ -23,7 +23,7 @@ class StateManager {
 	 *
 	 * @return array
 	 */
-	private function getState(): array {
+	public function getState(): array {
 		$title = $this->pageCreator->makeTitle( self::STATE_PAGE, NS_MEDIAWIKI );
 		if ( $title === null || !$this->pageCreator->pageExists( $title ) ) {
 			return $this->getDefaultState();
@@ -108,16 +108,6 @@ class StateManager {
 	public function isDirty(): bool {
 		$state = $this->getState();
 		return (bool)( $state['dirty'] ?? false );
-	}
-
-	/**
-	 * Get timestamp of last change.
-	 *
-	 * @return string|null
-	 */
-	public function getLastChangeTimestamp(): ?string {
-		$state = $this->getState();
-		return $state['lastChangeTimestamp'] ?? null;
 	}
 
 	/**
@@ -215,27 +205,6 @@ class StateManager {
 		// Also check for pages that were generated but no longer exist
 		foreach ( $pageHashes as $pageName => $stored ) {
 			if ( !isset( $currentHashes[$pageName] ) ) {
-				$modified[] = $pageName;
-			}
-		}
-
-		return $modified;
-	}
-
-	/**
-	 * Get list of pages where generated != current.
-	 *
-	 * @return array
-	 */
-	public function getModifiedPages(): array {
-		$state = $this->getState();
-		$pageHashes = $state['pageHashes'] ?? [];
-		$modified = [];
-
-		foreach ( $pageHashes as $pageName => $hashes ) {
-			$generated = $hashes['generated'] ?? '';
-			$current = $hashes['current'] ?? '';
-			if ( $generated !== $current && $generated !== '' && $current !== '' ) {
 				$modified[] = $pageName;
 			}
 		}

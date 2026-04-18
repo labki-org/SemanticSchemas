@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\FieldDeclaration;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\MainConfigNames;
@@ -24,22 +24,16 @@ class WikiCategoryStore {
 
 	use SMWDataExtractor;
 
-	private const MARKER_START = '<!-- SemanticSchemas Start -->';
-	private const MARKER_END = '<!-- SemanticSchemas End -->';
-
 	private PageCreator $pageCreator;
-	private WikiPropertyStore $propertyStore;
 	private IConnectionProvider $connectionProvider;
 	private Config $mainConfig;
 
 	public function __construct(
 		PageCreator $pageCreator,
-		WikiPropertyStore $propertyStore,
 		IConnectionProvider $connectionProvider,
 		Config $mainConfig
 	) {
 		$this->pageCreator = $pageCreator;
-		$this->propertyStore = $propertyStore;
 		$this->connectionProvider = $connectionProvider;
 		$this->mainConfig = $mainConfig;
 	}
@@ -57,47 +51,7 @@ class WikiCategoryStore {
 		$data = $this->loadFromSMW( $title, $categoryName );
 		$cat = new CategoryModel( $categoryName, $data );
 
-		// Resolve display template
-		if ( !empty( $data['display']['templateProperty'] ) ) {
-			$p = $this->propertyStore->readProperty( $data['display']['templateProperty'] );
-			if ( $p ) {
-				$cat->setDisplayTemplateProperty( $p );
-			}
-		}
-
 		return $cat;
-	}
-
-	/* -------------------------------------------------------------------------
-	 * WRITE PUBLIC
-	 * ------------------------------------------------------------------------- */
-
-	public function writeCategory( CategoryModel $category ): bool {
-		$title = $this->pageCreator->makeTitle( $category->getName(), NS_CATEGORY );
-		if ( !$title ) {
-			return false;
-		}
-
-		$existing = $this->pageCreator->getPageContent( $title ) ?? '';
-
-		$metadata = $this->generateSemanticBlock( $category );
-
-		$newContent = $this->pageCreator->updateWithinMarkers(
-			$existing,
-			$metadata,
-			self::MARKER_START,
-			self::MARKER_END
-		);
-
-		if ( !str_contains( $newContent, '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' ) ) {
-			$newContent .= "\n[[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]';
-		}
-
-		return $this->pageCreator->createOrUpdatePage(
-			$title,
-			$newContent,
-			'SemanticSchemas: Update category schema metadata'
-		);
 	}
 
 	/* -------------------------------------------------------------------------
@@ -238,10 +192,10 @@ class WikiCategoryStore {
 		$out['parents'] = $parents;
 
 		$out['properties'] = $this->smwFetchFieldReferences(
-			$sdata, FieldDeclaration::TYPE_PROPERTY
+			$sdata, FieldModel::TYPE_PROPERTY
 		);
 		$out['subobjects'] = $this->smwFetchFieldReferences(
-			$sdata, FieldDeclaration::TYPE_SUBOBJECT
+			$sdata, FieldModel::TYPE_SUBOBJECT
 		);
 
 		$out['display'] = $this->loadDisplayConfig( $sdata );
@@ -262,55 +216,5 @@ class WikiCategoryStore {
 		}
 
 		return $out;
-	}
-
-	/* -------------------------------------------------------------------------
-	 * WRITE: semantic block
-	 * ------------------------------------------------------------------------- */
-
-	private function generateSemanticBlock( CategoryModel $cat ): string {
-		$lines = [];
-
-		if ( $cat->getDescription() !== '' ) {
-			$lines[] = '[[Has description::' . $cat->getDescription() . ']]';
-		}
-
-		if ( $cat->getTargetNamespace() !== null ) {
-			$lines[] = '[[Has target namespace::' . $cat->getTargetNamespace() . ']]';
-		}
-
-		// Parent categories
-		foreach ( $cat->getParents() as $p ) {
-			$lines[] = "[[Category:$p]]";
-		}
-
-		// Display format
-		if ( $cat->getDisplayFormat() !== null ) {
-			$lines[] = '[[Has display format::' . $cat->getDisplayFormat() . ']]';
-		}
-
-		// Display template
-		if ( $cat->getDisplayTemplateProperty() !== null ) {
-			$lines[] = '[[Has display template::' . $cat->getDisplayTemplateProperty()->getName() . ']]';
-		}
-
-		// Backlink properties
-		foreach ( $cat->getBacklinksFor() as $prop ) {
-			$lines[] = "[[Show backlinks for::Property:$prop]]";
-		}
-
-		// Property fields
-		$propWikitext = FieldDeclaration::toWikitextAll( $cat->getPropertyFields() );
-		if ( $propWikitext !== '' ) {
-			$lines[] = $propWikitext;
-		}
-
-		// Subobject fields
-		$subWikitext = FieldDeclaration::toWikitextAll( $cat->getSubobjectFields() );
-		if ( $subWikitext !== '' ) {
-			$lines[] = $subWikitext;
-		}
-
-		return implode( "\n", $lines );
 	}
 }

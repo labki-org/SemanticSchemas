@@ -49,11 +49,6 @@ class StateManagerTest extends TestCase {
 		$this->assertEquals( [], $manager->getPageHashes() );
 	}
 
-	public function testGetLastChangeTimestampReturnsNullByDefault(): void {
-		$manager = $this->createStateManager();
-		$this->assertNull( $manager->getLastChangeTimestamp() );
-	}
-
 	/* =========================================================================
 	 * DIRTY FLAG
 	 * ========================================================================= */
@@ -70,8 +65,7 @@ class StateManagerTest extends TestCase {
 		$manager = $this->createStateManager();
 		$manager->setDirty( true );
 
-		$timestamp = $manager->getLastChangeTimestamp();
-		$this->assertNotNull( $timestamp );
+		$timestamp = $manager->getState()['lastChangeTimestamp'];
 		// Timestamp should be in ISO 8601 format
 		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $timestamp );
 	}
@@ -195,33 +189,6 @@ class StateManagerTest extends TestCase {
 
 		$modified = $manager->comparePageHashes( $currentHashes );
 		$this->assertEmpty( $modified );
-	}
-
-	/* =========================================================================
-	 * MODIFIED PAGES (GENERATED VS CURRENT)
-	 * ========================================================================= */
-
-	public function testGetModifiedPagesReturnsEmptyWhenUnchanged(): void {
-		$manager = $this->createStateManager();
-		$manager->setPageHashes( [
-			'Category:Person' => 'hash1',
-		] );
-
-		$modified = $manager->getModifiedPages();
-		$this->assertEmpty( $modified );
-	}
-
-	public function testGetModifiedPagesDetectsChanges(): void {
-		$manager = $this->createStateManager();
-		$manager->setPageHashes( [
-			'Category:Person' => 'original',
-		] );
-		$manager->updateCurrentHashes( [
-			'Category:Person' => 'modified',
-		] );
-
-		$modified = $manager->getModifiedPages();
-		$this->assertContains( 'Category:Person', $modified );
 	}
 
 	/* =========================================================================

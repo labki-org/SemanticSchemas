@@ -2,9 +2,9 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Maintenance;
 
-use Maintenance;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
+use MediaWiki\Maintenance\Maintenance;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
 if ( $IP === false ) {

@@ -50,16 +50,14 @@ class PropertyModel {
 	private array $allowedValues;
 
 	private ?string $subpropertyOf;
-
 	private ?string $hasTemplate;
-
 	private ?string $allowedCategory;
 	private ?string $allowedNamespace;
 	private bool $allowsMultipleValues;
-
 	private ?string $inputType;
-
 	private ?string $inverseLabel;
+
+	private bool $hidden;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
@@ -74,7 +72,7 @@ class PropertyModel {
 		$this->name = $name;
 
 		/* -------------------- Datatype -------------------- */
-		if ( empty( $data['datatype'] ) ) {
+		if ( !isset( $data['datatype'] ) ) {
 			throw new InvalidArgumentException(
 				"Property '{$name}' must define a 'datatype' field."
 			);
@@ -150,6 +148,9 @@ class PropertyModel {
 		$invLabel = $data['inverseLabel'] ?? null;
 		$this->inverseLabel = ( $invLabel !== null && trim( (string)$invLabel ) !== '' )
 			? trim( (string)$invLabel ) : null;
+
+		/* -------------------- Hidden -------------------- */
+		$this->hidden = !empty( $data['hidden'] );
 	}
 
 	/* -------------------------------------------------------------------------
@@ -247,15 +248,6 @@ class PropertyModel {
 		);
 	}
 
-	public function getSubpropertyOf(): ?string {
-		return $this->subpropertyOf;
-	}
-
-	/* Template config */
-	public function getHasTemplate(): ?string {
-		return $this->hasTemplate;
-	}
-
 	public function getRenderTemplate(): string {
 		// Priority 1: Explicit custom template
 		if ( $this->hasTemplate !== null ) {
@@ -294,6 +286,10 @@ class PropertyModel {
 		return $this->inverseLabel;
 	}
 
+	public function isHidden(): bool {
+		return $this->hidden;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */
@@ -311,6 +307,7 @@ class PropertyModel {
 			'allowsMultipleValues' => $this->allowsMultipleValues,
 			'inputType' => $this->inputType,
 			'inverseLabel' => $this->inverseLabel,
+			'hidden' => $this->hidden ?: null,
 		];
 
 		// Remove nulls + empty arrays, but preserve boolean false

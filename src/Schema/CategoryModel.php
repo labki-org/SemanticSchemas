@@ -17,8 +17,8 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   targetNamespace: string|null
  *   renderAs: string|null - TemplateFormat category reference
  *
- *   properties: array<array{name:string, required:bool}>
- *   subobjects: array<array{name:string, required:bool}>
+ *   properties: FieldModel[]
+ *   subobjects: FieldModel[]
  *
  *   display:
  *     format: string|null
@@ -56,10 +56,10 @@ class CategoryModel {
 	private ?string $targetNamespace;
 	private ?string $renderAs;
 
-	/** @var FieldDeclaration[] */
+	/** @var FieldModel[] */
 	private array $propertyFields;
 
-	/** @var FieldDeclaration[] */
+	/** @var FieldModel[] */
 	private array $subobjectFields;
 
 	/** @var string[] Property names whose incoming links to show as backlinks. */
@@ -67,11 +67,6 @@ class CategoryModel {
 
 	private array $displayConfig;
 	private array $formConfig;
-
-	/* -------------------- New Display System -------------------- */
-
-	/** @var ?PropertyModel Property defining the display format */
-	private ?PropertyModel $displayTemplateProperty = null;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
@@ -115,9 +110,8 @@ class CategoryModel {
 		if ( !is_array( $props ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'properties' must be an array." );
 		}
-		$this->propertyFields = self::resolveFields(
-			$props, FieldDeclaration::TYPE_PROPERTY, "Category '{$name}'"
-		);
+		FieldModel::validateNoDuplicates( $props, "Category '{$name}'" );
+		$this->propertyFields = $props;
 
 		/* -------------------- Subobjects -------------------- */
 
@@ -125,9 +119,8 @@ class CategoryModel {
 		if ( !is_array( $subs ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'subobjects' must be an array." );
 		}
-		$this->subobjectFields = self::resolveFields(
-			$subs, FieldDeclaration::TYPE_SUBOBJECT, "Category '{$name}'"
-		);
+		FieldModel::validateNoDuplicates( $subs, "Category '{$name}'" );
+		$this->subobjectFields = $subs;
 
 		/* -------------------- Backlinks -------------------- */
 
@@ -180,14 +173,14 @@ class CategoryModel {
 
 	/* -------------------- Property Fields -------------------- */
 
-	/** @return FieldDeclaration[] */
+	/** @return FieldModel[] */
 	public function getPropertyFields(): array {
 		return $this->propertyFields;
 	}
 
 	/* -------------------- Subobject Fields -------------------- */
 
-	/** @return FieldDeclaration[] */
+	/** @return FieldModel[] */
 	public function getSubobjectFields(): array {
 		return $this->subobjectFields;
 	}
@@ -217,29 +210,6 @@ class CategoryModel {
 		return $this->formConfig;
 	}
 
-	/**
-	 * Accept FieldDeclaration[] directly or annotated arrays [{name, required}, ...].
-	 *
-	 * @param array $input FieldDeclaration[] or annotated array
-	 * @param string $fieldType
-	 * @param string $contextLabel
-	 * @return FieldDeclaration[]
-	 */
-	private static function resolveFields( array $input, string $fieldType, string $contextLabel ): array {
-		if ( $input === [] ) {
-			return [];
-		}
-
-		// Already FieldDeclaration objects — validate and return
-		if ( $input[0] instanceof FieldDeclaration ) {
-			FieldDeclaration::validateNoDuplicates( $input, $contextLabel );
-			return $input;
-		}
-
-		// Annotated array from SMW or external sources
-		return FieldDeclaration::parseInput( $input, $fieldType, $contextLabel );
-	}
-
 	/* -------------------------------------------------------------------------
 	 * MERGING (CATEGORY + PARENT)
 	 * ------------------------------------------------------------------------- */
@@ -247,14 +217,14 @@ class CategoryModel {
 	public function mergeWithParent( CategoryModel $parent ): EffectiveCategoryModel {
 		/* -------------------- Properties -------------------- */
 
-		$mergedProps = self::mergeFieldDeclarations(
+		$mergedProps = self::mergeFieldModels(
 			$parent->getPropertyFields(),
 			$this->propertyFields
 		);
 
 		/* -------------------- Subobjects -------------------- */
 
-		$mergedSubs = self::mergeFieldDeclarations(
+		$mergedSubs = self::mergeFieldModels(
 			$parent->getSubobjectFields(),
 			$this->subobjectFields
 		);
@@ -305,11 +275,11 @@ class CategoryModel {
 	 * If a field appears in both, required wins (child can promote optional to required).
 	 * Order: required fields first, then optional.
 	 *
-	 * @param FieldDeclaration[] $parentFields
-	 * @param FieldDeclaration[] $childFields
-	 * @return FieldDeclaration[]
+	 * @param FieldModel[] $parentFields
+	 * @param FieldModel[] $childFields
+	 * @return FieldModel[]
 	 */
-	private static function mergeFieldDeclarations( array $parentFields, array $childFields ): array {
+	private static function mergeFieldModels( array $parentFields, array $childFields ): array {
 		$required = [];
 		$optional = [];
 
@@ -405,17 +375,5 @@ class CategoryModel {
 		}
 
 		return $out;
-	}
-
-	/* -------------------------------------------------------------------------
-	 * NEW DISPLAY SYSTEM ACCESSORS
-	 * ------------------------------------------------------------------------- */
-
-	public function setDisplayTemplateProperty( ?PropertyModel $property ): void {
-		$this->displayTemplateProperty = $property;
-	}
-
-	public function getDisplayTemplateProperty(): ?PropertyModel {
-		return $this->displayTemplateProperty;
 	}
 }

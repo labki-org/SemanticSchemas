@@ -134,4 +134,36 @@ class PropertyModelTest extends TestCase {
 		$arr = $p->toArray();
 		$this->assertArrayNotHasKey( 'inverseLabel', $arr );
 	}
+
+	/* =========================================================================
+	 * HIDDEN
+	 * ========================================================================= */
+
+	public function testIsHiddenFalseByDefault(): void {
+		$p = new PropertyModel( 'Has name', [ 'datatype' => 'Text' ] );
+		$this->assertFalse( $p->isHidden() );
+	}
+
+	public function testIsHiddenTrueWhenSet(): void {
+		$p = new PropertyModel( 'Has sort order', [
+			'datatype' => 'Number',
+			'hidden' => true,
+		] );
+		$this->assertTrue( $p->isHidden() );
+	}
+
+	public function testToArrayIncludesHiddenWhenTrue(): void {
+		$p = new PropertyModel( 'Has sort order', [
+			'datatype' => 'Number',
+			'hidden' => true,
+		] );
+		$arr = $p->toArray();
+		$this->assertTrue( $arr['hidden'] );
+	}
+
+	public function testToArrayOmitsHiddenWhenFalse(): void {
+		$p = new PropertyModel( 'Has name', [ 'datatype' => 'Text' ] );
+		$arr = $p->toArray();
+		$this->assertArrayNotHasKey( 'hidden', $arr );
+	}
 }

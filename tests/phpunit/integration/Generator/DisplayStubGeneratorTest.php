@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -22,7 +23,6 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$services = $this->getServiceContainer();
 		$this->pageCreator = new PageCreator(
 			$services->getWikiPageFactory(),
-			$services->getDeletePageFactory(),
 		);
 	}
 
@@ -45,23 +45,20 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 	/**
 	 * Generate and retrieve display template content for a category.
+	 *
+	 * @param string $categoryName
+	 * @param FieldModel[] $fields
+	 * @param array<string, PropertyModel> $propertyMap
+	 * @return string
 	 */
 	private function generateAndRead(
 		string $categoryName,
-		array $requiredProps,
-		array $optionalProps = [],
+		array $fields,
 		array $propertyMap = []
 	): string {
 		$gen = $this->makeGenerator( $propertyMap );
-		$props = [];
-		foreach ( $requiredProps as $name ) {
-			$props[] = [ 'name' => $name, 'required' => true ];
-		}
-		foreach ( $optionalProps as $name ) {
-			$props[] = [ 'name' => $name, 'required' => false ];
-		}
 		$category = new EffectiveCategoryModel( $categoryName, [
-			'properties' => $props,
+			'properties' => $fields,
 		] );
 
 		$gen->generateOrUpdateDisplayStub( $category );
@@ -79,13 +76,19 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * ========================================================================= */
 
 	public function testPropertyRowsWrappedInIfCondition(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead(
+			'TestCat_' . uniqid(),
+			[ new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ) ]
+		);
 
 		$this->assertStringContainsString( '{{#if: {{{has_name|}}} |', $content );
 	}
 
 	public function testPropertyRowUsesMagicWordPipeEscape(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead(
+			'TestCat_' . uniqid(),
+			[ new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ) ]
+		);
 
 		$this->assertStringContainsString( '{{!}}-', $content );
 		$this->assertStringContainsString( '{{!}} ', $content );
@@ -94,7 +97,11 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testMultiplePropertiesEachHaveIfCondition(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[ 'Has name', 'Has email', 'Has phone' ]
+			[
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has email', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has phone', true, FieldModel::TYPE_PROPERTY ),
+			]
 		);
 
 		$this->assertStringContainsString( '{{#if: {{{has_name|}}} |', $content );
@@ -105,8 +112,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testOptionalPropertiesAlsoHaveIfCondition(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[],
-			[ 'Has nickname' ]
+			[ new FieldModel( 'Has nickname', false, FieldModel::TYPE_PROPERTY ) ]
 		);
 
 		$this->assertStringContainsString( '{{#if: {{{has_nickname|}}} |', $content );
@@ -117,7 +123,10 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * ========================================================================= */
 
 	public function testDefaultRenderTemplateUsedForUnknownProperties(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead(
+			'TestCat_' . uniqid(),
+			[ new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ) ]
+		);
 
 		$this->assertStringContainsString( 'Property/Default', $content );
 	}
@@ -125,8 +134,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testCustomRenderTemplateUsedWhenPropertyHasOne(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[ 'Has email' ],
-			[],
+			[ new FieldModel( 'Has email', true, FieldModel::TYPE_PROPERTY ) ],
 			[
 				'Has email' => new PropertyModel( 'Has email', [
 					'datatype' => 'Text',
@@ -142,8 +150,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testPageTypePropertyUsesPageRenderTemplate(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[ 'Has lead' ],
-			[],
+			[ new FieldModel( 'Has lead', true, FieldModel::TYPE_PROPERTY ) ],
 			[
 				'Has lead' => new PropertyModel( 'Has lead', [
 					'datatype' => 'Page',
@@ -157,8 +164,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	public function testCustomRenderTemplateStillWrappedInIf(): void {
 		$content = $this->generateAndRead(
 			'TestCat_' . uniqid(),
-			[ 'Has email' ],
-			[],
+			[ new FieldModel( 'Has email', true, FieldModel::TYPE_PROPERTY ) ],
 			[
 				'Has email' => new PropertyModel( 'Has email', [
 					'datatype' => 'Text',
@@ -176,7 +182,10 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	 * ========================================================================= */
 
 	public function testContainsAutoRegenerateMarker(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead(
+			'TestCat_' . uniqid(),
+			[ new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ) ]
+		);
 
 		$this->assertStringContainsString(
 			DisplayStubGenerator::AUTO_REGENERATE_MARKER,
@@ -185,7 +194,10 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public function testContainsManagedDisplayCategory(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead(
+			'TestCat_' . uniqid(),
+			[ new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ) ]
+		);
 
 		$this->assertStringContainsString(
 			'[[Category:SemanticSchemas-managed-display]]',
@@ -194,14 +206,20 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public function testContainsWikitableMarkup(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead(
+			'TestCat_' . uniqid(),
+			[ new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ) ]
+		);
 
 		$this->assertStringContainsString( '{| class="wikitable', $content );
 		$this->assertStringContainsString( '|}', $content );
 	}
 
 	public function testValueExpressionPassedToRenderTemplate(): void {
-		$content = $this->generateAndRead( 'TestCat_' . uniqid(), [ 'Has name' ] );
+		$content = $this->generateAndRead(
+			'TestCat_' . uniqid(),
+			[ new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ) ]
+		);
 
 		$this->assertStringContainsString( 'value={{{has_name|}}}', $content );
 	}
@@ -224,7 +242,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 		$catName = 'Project';
 		$category = new EffectiveCategoryModel( $catName, [
 			'properties' => [
-				[ 'name' => 'Has name', 'required' => true ],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'backlinksFor' => [ 'Has project' ],
 		] );
