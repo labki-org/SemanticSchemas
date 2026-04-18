@@ -1,11 +1,11 @@
-<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]] | ?For category | format=plainlist | link=none | sep=, }}|,|@@subcat@@|
-=== {{#show:@@subcat@@|?Display label|default={{PAGENAME:@@subcat@@}}}} ===
+<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]] | mainlabel=- | ?For category= | format=plainlist | link=none | sep=, }}|,|@@subcat@@|<h3>{{#show:@@subcat@@|?Display label|default={{PAGENAME:@@subcat@@}}}}</h3>
 {{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[@@subcat@@]]
- {{!}} format=template
- {{!}} template=Category/subobject-instance
- {{!}} userparam={{PAGENAME:@@subcat@@}}
- {{!}} sort=Has sort order
- {{!}} order=asc
+ | link=none
+ | format=template
+ | template=Category/subobject-instance
+ | userparam={{PAGENAME:@@subcat@@}}
+ | sort=Has sort order
+ | order=asc
 }}|\n}}</includeonly><noinclude>
 Renders subobject sections for a category. For each subobject type
 declared on the category (or any ancestor, via Category/collect-ancestors),

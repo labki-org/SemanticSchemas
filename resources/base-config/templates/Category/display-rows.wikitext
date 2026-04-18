@@ -1,4 +1,4 @@
-<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Property field]] | ?For property | format=plainlist | link=none | sep=, }}|,|@@prop@@|{{#if:{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
+<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Property field]] | mainlabel=- | ?For property= | format=plainlist | link=none | sep=, }}|,|@@prop@@|{{#if:{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
 ! {{#show:@@prop@@|?Display label|default={{PAGENAME:@@prop@@}}}}
 {{!}} {{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}}}|\n}}</includeonly><noinclude>
 Renders property value rows for a SemanticSchemas category display.

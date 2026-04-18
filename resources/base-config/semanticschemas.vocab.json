@@ -142,6 +142,26 @@
 			}
 		},
 		{
+			"page": "Category/subobjects",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/subobjects.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/subobject-instance",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/subobject-instance.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Allows multiple values",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {

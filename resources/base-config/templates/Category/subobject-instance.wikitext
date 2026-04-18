@@ -1,10 +1,12 @@
-<includeonly>{{Category/table | category={{{userparam|}}} | page={{{1|}}} | subobjects=no }}</includeonly><noinclude>
+<includeonly>{{Category/table | category={{{#userparam|}}} | page={{{1|}}} | subobjects=no }}</includeonly><noinclude>
 Renders a single subobject instance as a full Category/table.
 
 Called from Category/subobjects via {{#ask: | format=template | template=Category/subobject-instance | userparam=<SubCat>}}:
 
-* {{{1}}}       - the subobject's fragment identifier (e.g. "ParentPage#_abc123")
-* {{{userparam}}} - the subobject's category name (without namespace prefix)
+* {{{1}}}            - the subobject's fragment identifier (e.g. "ParentPage#_abc123")
+* {{{#userparam}}} - the subobject's category name (without namespace prefix).
+                       SMW's format=template uses #userparam (with hash) for the
+                       userparam option passed via #ask.
 
 Reuses Category/table so subobjects render with the exact same look as
 the parent category page. subobjects=no stops recursion into nested
