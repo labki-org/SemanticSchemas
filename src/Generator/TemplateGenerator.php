@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -75,14 +76,18 @@ class TemplateGenerator {
 		}
 
 		if ( $propModel->allowsMultipleValues() ) {
-			// Multi-value Page property with namespace: prefix each value via #arraymap inside #set
+			// Multi-value Page property with namespace: prefix each value via #arraymap.
+			// Only add namespace when the value has none (FULLPAGENAME == PAGENAME).
 			return ' | ' . $propertyName . ' = {{#arraymap:{{{' . $param .
-				'|}}}|,|@@item@@|' . $allowedNamespace . ':@@item@@|,}} |+sep=,';
+				'|}}}|,|@@item@@|{{#ifeq:{{FULLPAGENAME:@@item@@}}|{{PAGENAME:@@item@@}}|'
+				. $allowedNamespace . ':}}@@item@@|,}} |+sep=,';
 		}
 
-		// Single value: conditional prefix
-		return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|' .
-			$allowedNamespace . ':{{{' . $param . '|}}}|}}';
+		// Single value: add namespace only when the value has none.
+		// If the user typed a namespace explicitly, preserve it as-is.
+		return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|'
+			. '{{#ifeq:{{FULLPAGENAME:{{{' . $param . '|}}}}}|{{PAGENAME:{{{' . $param . '|}}}}}'
+			. '|' . $allowedNamespace . ':}}{{{' . $param . '|}}}|}}';
 	}
 
 	/* =====================================================================
@@ -108,8 +113,8 @@ class TemplateGenerator {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$props = $category->getAllProperties();
-		sort( $props );
+		$fields = $category->getPropertyFields();
+		self::sortFieldsByName( $fields );
 
 		$out = [];
 		$out[] = '<noinclude>';
@@ -119,11 +124,11 @@ class TemplateGenerator {
 
 		/* Embed parent semantic templates */
 		foreach ( $parentEffectives as $parentName => $parentEffective ) {
-			$parentProps = $parentEffective->getAllProperties();
-			sort( $parentProps );
+			$parentFields = $parentEffective->getPropertyFields();
+			self::sortFieldsByName( $parentFields );
 			$out = array_merge(
 				$out,
-				$this->generateTemplateCall( $parentName . '/semantic', $parentProps )
+				$this->generateTemplateCall( $parentName . '/semantic', $parentFields )
 			);
 			$out[] = '';
 		}
@@ -131,9 +136,10 @@ class TemplateGenerator {
 		/* Own property storage */
 		$out[] = '{{#set:';
 
-		foreach ( $props as $p ) {
-			$param = NamingHelper::propertyToParameter( $p );
-			$out[] = $this->generatePropertyLine( $p, $param );
+		foreach ( $fields as $field ) {
+			$out[] = $this->generatePropertyLine(
+				$field->getName(), $field->getParameterName()
+			);
 		}
 
 		$out[] = '}}';
@@ -151,14 +157,14 @@ class TemplateGenerator {
 	 * Generate a template call with property parameter passthrough.
 	 *
 	 * @param string $templateName Template name to call
-	 * @param array $props List of property names
+	 * @param FieldModel[] $fields
 	 * @return array Lines of wikitext
 	 */
-	private function generateTemplateCall( string $templateName, array $props ): array {
+	private function generateTemplateCall( string $templateName, array $fields ): array {
 		$out = [];
 		$out[] = '{{' . $templateName;
-		foreach ( $props as $p ) {
-			$param = NamingHelper::propertyToParameter( $p );
+		foreach ( $fields as $field ) {
+			$param = $field->getParameterName();
 			$out[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
 		}
 		$out[] = '}}';
@@ -179,8 +185,8 @@ class TemplateGenerator {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$allProps = $effective->getAllProperties();
-		sort( $allProps );
+		$allFields = $effective->getPropertyFields();
+		self::sortFieldsByName( $allFields );
 
 		$out = [];
 		$out[] = '<noinclude>';
@@ -191,11 +197,11 @@ class TemplateGenerator {
 		$out[] = '';
 
 		/* Semantic storage */
-		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allProps ) );
+		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allFields ) );
 		$out[] = '';
 
 		/* Display template */
-		$out = array_merge( $out, $this->generateTemplateCall( $name . '/display', $allProps ) );
+		$out = array_merge( $out, $this->generateTemplateCall( $name . '/display', $allFields ) );
 		$out[] = '';
 
 		/* Category membership */
@@ -219,7 +225,7 @@ class TemplateGenerator {
 	 *
 	 * Subobject types are categories. The generator reads the category schema
 	 * via WikiCategoryStore and produces templates that use SMW's @category
-	 * mechanism for typing instead of a custom Has subobject type property.
+	 * mechanism for typing instead of a custom property.
 	 * ===================================================================== */
 
 	private function generateSubobjectTemplate( EffectiveCategoryModel $sub ): string {
@@ -231,14 +237,15 @@ class TemplateGenerator {
 		$out[] = 'Subobject template for Category:' . $name;
 		$out[] = '</noinclude><includeonly>';
 
+		$idPrefix = NamingHelper::propertyToParameter( $name );
 		$out[] = '{{#subobject:';
 		$out[] = ' |@category=' . $name;
+		$out[] = ' | Has sort order = {{#s2counter:' . $idPrefix . '}}';
 
-		$props = $sub->getAllProperties();
-
-		foreach ( $props as $p ) {
-			$param = NamingHelper::propertyToParameter( $p );
-			$out[] = $this->generatePropertyLine( $p, $param );
+		foreach ( $sub->getPropertyFields() as $field ) {
+			$out[] = $this->generatePropertyLine(
+				$field->getName(), $field->getParameterName()
+			);
 		}
 
 		$out[] = '}}';
@@ -295,6 +302,17 @@ class TemplateGenerator {
 			'success' => !$errors,
 			'errors' => $errors
 		];
+	}
+
+	/**
+	 * Sort FieldModel[] alphabetically by name (in place).
+	 *
+	 * @param FieldModel[] &$fields
+	 */
+	private static function sortFieldsByName( array &$fields ): void {
+		usort( $fields, static fn ( FieldModel $a, FieldModel $b ) =>
+			strcmp( $a->getName(), $b->getName() )
+		);
 	}
 
 	/* =====================================================================

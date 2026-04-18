@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -45,8 +46,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplateReturnsString(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -73,8 +73,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplateContainsSetParser(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -86,8 +85,8 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplateContainsPropertyMappings(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name', 'Has email' ],
-				'optional' => [],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has email', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -119,7 +118,7 @@ class TemplateGeneratorTest extends TestCase {
 		// Create a mock that returns empty name
 		$category = $this->createMock( CategoryModel::class );
 		$category->method( 'getName' )->willReturn( '' );
-		$category->method( 'getAllProperties' )->willReturn( [] );
+		$category->method( 'getPropertyFields' )->willReturn( [] );
 
 		$this->generator->generateSemanticTemplate( $category );
 	}
@@ -127,8 +126,9 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateSemanticTemplatePropertiesAreSorted(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has zoo', 'Has apple', 'Has middle' ],
-				'optional' => [],
+				new FieldModel( 'Has zoo', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has apple', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has middle', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -186,8 +186,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -212,8 +211,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testPropertyToParameterConversionInTemplate(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has full name' ],
-				'optional' => [],
+				new FieldModel( 'Has full name', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -226,8 +224,9 @@ class TemplateGeneratorTest extends TestCase {
 	public function testMultiplePropertiesConvertedCorrectly(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has first name', 'Has last name', 'Has email address' ],
-				'optional' => [],
+				new FieldModel( 'Has first name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has last name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has email address', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -337,8 +336,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has tags' ],
-				'optional' => [],
+				new FieldModel( 'Has tags', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -356,8 +354,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has title' ],
-				'optional' => [],
+				new FieldModel( 'Has title', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -376,8 +373,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has related' ],
-				'optional' => [],
+				new FieldModel( 'Has related', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -396,16 +392,39 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has author' ],
-				'optional' => [],
+				new FieldModel( 'Has author', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$result = $gen->generateSemanticTemplate( $category );
+		$this->assertStringContainsString( '{{#arraymap:', $result );
+		$this->assertStringContainsString( '|+sep=,', $result );
+		// Only prefixes when value has no namespace (FULLPAGENAME == PAGENAME)
 		$this->assertStringContainsString(
-			'Has author = {{#arraymap:{{{has_author|}}}|,|@@item@@|User:@@item@@|,}} |+sep=,',
+			'{{#ifeq:{{FULLPAGENAME:@@item@@}}|{{PAGENAME:@@item@@}}|User:}}@@item@@',
 			$result
 		);
+	}
+
+	public function testSingleValuePagePropertyWithNamespaceConditionallyPrefixes(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has location' => new PropertyModel( 'Has location', [
+				'datatype' => 'Page',
+				'allowedNamespace' => 'Project',
+			] ),
+		] );
+
+		$category = new CategoryModel( 'Article', [
+			'properties' => [
+				new FieldModel( 'Has location', true, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+
+		$result = $gen->generateSemanticTemplate( $category );
+		// Only prefixes when value has no namespace (FULLPAGENAME == PAGENAME)
+		$expected = '{{#ifeq:{{FULLPAGENAME:{{{has_location|}}}}}'
+			. '|{{PAGENAME:{{{has_location|}}}}}|Project:}}{{{has_location|}}}';
+		$this->assertStringContainsString( $expected, $result );
 	}
 
 	public function testSingleValuePagePropertyWithoutNamespaceDoesNotUseSep(): void {
@@ -418,8 +437,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$category = new CategoryModel( 'Article', [
 			'properties' => [
-				'required' => [ 'Has homepage' ],
-				'optional' => [],
+				new FieldModel( 'Has homepage', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -435,15 +453,14 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherCallsOnlyLeafSemanticTemplate(): void {
 		$person = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has email' ],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
 			'properties' => [
-				'required' => [ 'Has student ID' ],
-				'optional' => [],
+				new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -466,11 +483,15 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testSemanticTemplateForEachAncestorHasOwnPropertiesOnly(): void {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
@@ -497,11 +518,15 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testSemanticTemplateForwardsOnlyParentEffectiveParams(): void {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
@@ -523,7 +548,9 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testDispatcherContainsCategoryMembership(): void {
 		$category = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 
 		$dispatcher = $this->generateDispatcher( $category );
@@ -544,14 +571,18 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherDoesNotContainSubobjectDisplay(): void {
 		$subCategory = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has city', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
+			'subobjects' => [
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [
@@ -579,8 +610,8 @@ class TemplateGeneratorTest extends TestCase {
 	public function testSubobjectTemplateUsesAtCategory(): void {
 		$address = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has city', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
@@ -597,15 +628,14 @@ class TemplateGeneratorTest extends TestCase {
 	public function testSubobjectTemplateIncludesInheritedProperties(): void {
 		$base = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has city', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$child = new CategoryModel( 'MailingAddress', [
 			'parents' => [ 'Address' ],
 			'properties' => [
-				'required' => [ 'Has zip' ],
-				'optional' => [],
+				new FieldModel( 'Has zip', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 

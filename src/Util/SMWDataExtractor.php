@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Util;
 
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use SMW\DIProperty;
 use SMW\DIWikiPage;
 use SMWDataItem;
@@ -14,7 +15,7 @@ use SMWDINumber;
  * -----------------
  * Shared trait for extracting values from SMW SemanticData objects.
  *
- * Used by WikiCategoryStore and WikiPropertyStore to avoid code duplication
+ * Used by WikiCategoryStore to avoid code duplication
  * in SMW data extraction logic.
  */
 trait SMWDataExtractor {
@@ -27,8 +28,8 @@ trait SMWDataExtractor {
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null
 	 */
-	protected function smwFetchOne( $semanticData, string $propName, string $type = 'text' ): ?string {
-		$vals = $this->smwFetchMany( $semanticData, $propName, $type );
+	protected static function smwFetchOne( $semanticData, string $propName, string $type = 'text' ): ?string {
+		$vals = self::smwFetchMany( $semanticData, $propName, $type );
 		return $vals[0] ?? null;
 	}
 
@@ -40,12 +41,12 @@ trait SMWDataExtractor {
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return array
 	 */
-	protected function smwFetchMany( $semanticData, string $propName, string $type = 'text' ): array {
+	protected static function smwFetchMany( $semanticData, string $propName, string $type = 'text' ): array {
 		$prop = DIProperty::newFromUserLabel( $propName );
 		$items = $semanticData->getPropertyValues( $prop );
 		$out = [];
 		foreach ( $items as $di ) {
-			$v = $this->smwExtractValue( $di, $type );
+			$v = self::smwExtractValue( $di, $type );
 			if ( $v !== null ) {
 				$out[] = $v;
 			}
@@ -60,7 +61,7 @@ trait SMWDataExtractor {
 	 * @param string $propName Property label
 	 * @return bool
 	 */
-	protected function smwFetchBoolean( $semanticData, string $propName ): bool {
+	protected static function smwFetchBoolean( $semanticData, string $propName ): bool {
 		$prop = \SMW\DIProperty::newFromUserLabel( $propName );
 		$items = $semanticData->getPropertyValues( $prop );
 
@@ -83,6 +84,76 @@ trait SMWDataExtractor {
 	}
 
 	/**
+	 * Load properties declaratively from a model's SMW_PROPERTIES map.
+	 *
+	 * Each entry maps: fieldName => [smwPropertyLabel, type]
+	 * Types: 'text', 'property', 'category', 'page' (single value),
+	 *        'boolean', 'text[]', 'property[]' etc. (multi-value with [] suffix).
+	 *
+	 * @param \SMW\SemanticData $semanticData
+	 * @param array $propertyMap fieldName => [smwLabel, type]
+	 * @return array fieldName => value
+	 */
+	protected function smwLoadProperties( $semanticData, array $propertyMap ): array {
+		$out = [];
+		foreach ( $propertyMap as $field => [ $smwLabel, $type ] ) {
+			if ( str_ends_with( $type, '[]' ) ) {
+				$out[$field] = $this->smwFetchMany(
+					$semanticData, $smwLabel, substr( $type, 0, -2 )
+				);
+			} elseif ( $type === 'boolean' ) {
+				$out[$field] = $this->smwFetchBoolean( $semanticData, $smwLabel );
+			} else {
+				$out[$field] = $this->smwFetchOne( $semanticData, $smwLabel, $type );
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Read ordered FieldModel[] from SMW subobjects attached to a page.
+	 *
+	 * Iterates sub-semantic-data, filters by @category membership, and
+	 * delegates per-subobject extraction to FieldModel::fromSMWSubobject().
+	 *
+	 * @param \SMW\SemanticData $semanticData The parent page's semantic data
+	 * @param string $fieldType FieldModel type constant (TYPE_PROPERTY or TYPE_SUBOBJECT)
+	 * @return FieldModel[] Ordered list of field models
+	 */
+	protected function smwFetchFieldReferences(
+		$semanticData,
+		string $fieldType
+	): array {
+		$categoryName = FieldModel::FIELD_CONFIG[$fieldType]['category'];
+		$expectedKey = str_replace( ' ', '_', $categoryName );
+		$instProp = new \SMW\DIProperty( '_INST' );
+
+		$entries = [];
+
+		foreach ( $semanticData->getSubSemanticData() as $subData ) {
+			$matchesCategory = false;
+			foreach ( $subData->getPropertyValues( $instProp ) as $cat ) {
+				if ( $cat instanceof \SMW\DIWikiPage && $cat->getDBKey() === $expectedKey ) {
+					$matchesCategory = true;
+					break;
+				}
+			}
+			if ( !$matchesCategory ) {
+				continue;
+			}
+
+			$entry = FieldModel::fromSMWSubobject( $subData, $fieldType );
+			if ( $entry !== null ) {
+				$entries[] = $entry;
+			}
+		}
+
+		usort( $entries, static fn ( $a, $b ) => $a['sort'] <=> $b['sort'] );
+
+		return array_map( static fn ( $e ) => $e['field'], $entries );
+	}
+
+	/**
 	 * Extract a value from a SMW DataItem based on type.
 	 *
 	 * The $type parameter acts as a namespace assertion: when the DataItem is a
@@ -101,9 +172,13 @@ trait SMWDataExtractor {
 	 * @param string $type Value type: 'text', 'property', 'category', 'page'
 	 * @return string|null The extracted value, or null if the DataItem type or namespace doesn't match
 	 */
-	protected function smwExtractValue( $di, string $type ): ?string {
+	protected static function smwExtractValue( $di, string $type ): ?string {
 		if ( $di instanceof SMWDIBlob ) {
 			return trim( $di->getString() );
+		}
+
+		if ( $di instanceof \SMWDINumber ) {
+			return (string)$di->getNumber();
 		}
 
 		if ( $di instanceof DIWikiPage ) {

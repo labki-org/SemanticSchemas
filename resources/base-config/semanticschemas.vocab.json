@@ -132,40 +132,20 @@
 			}
 		},
 		{
-			"page": "Has optional property",
+			"page": "For property",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
-				"importFrom": "properties/Has_optional_property.wikitext"
+				"importFrom": "properties/For_property.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Has optional subobject",
+			"page": "For category",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
-				"importFrom": "properties/Has_optional_subobject.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Has required property",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_required_property.wikitext"
-			},
-			"options": {
-				"replaceable": true
-			}
-		},
-		{
-			"page": "Has required subobject",
-			"namespace": "SMW_NS_PROPERTY",
-			"contents": {
-				"importFrom": "properties/Has_required_subobject.wikitext"
+				"importFrom": "properties/For_category.wikitext"
 			},
 			"options": {
 				"replaceable": true
@@ -222,6 +202,26 @@
 			}
 		},
 		{
+			"page": "Is required",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Is_required.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Has sort order",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_sort_order.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Show backlinks for",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
@@ -266,6 +266,36 @@
 			"namespace": "NS_CATEGORY",
 			"contents": {
 				"importFrom": "categories/SemanticSchemas-managed.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Field",
+			"namespace": "NS_CATEGORY",
+			"contents": {
+				"importFrom": "categories/Field.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Property field",
+			"namespace": "NS_CATEGORY",
+			"contents": {
+				"importFrom": "categories/Property_field.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Subobject field",
+			"namespace": "NS_CATEGORY",
+			"contents": {
+				"importFrom": "categories/Subobject_field.wikitext"
 			},
 			"options": {
 				"replaceable": true

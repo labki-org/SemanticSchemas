@@ -4,7 +4,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Title\Title;
 use MediaWikiIntegrationTestCase;
@@ -24,10 +23,6 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$services = $this->getServiceContainer();
 		$this->pageCreator = new PageCreator(
 			$services->getWikiPageFactory(),
-		);
-		$propertyStore = new WikiPropertyStore(
-			$this->pageCreator,
-			$services->getConnectionProvider(),
 		);
 		$this->categoryStore = new WikiCategoryStore(
 			$this->pageCreator,
@@ -95,15 +90,4 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		);
 	}
 
-	/**
-	 * Helper to run any pending MediaWiki jobs.
-	 */
-	private function executeJobs(): void {
-		$runner = $this->getServiceContainer()->getJobRunner();
-		$runner->run( [
-			'type' => false,
-			'maxJobs' => 100,
-			'maxTime' => 30,
-		] );
-	}
 }

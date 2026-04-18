@@ -99,7 +99,7 @@ class OntologyInspector {
 				$stats['categoriesWithParents']++;
 			}
 
-			if ( $cat->getAllProperties() ) {
+			if ( $cat->getPropertyFields() !== [] ) {
 				$stats['categoriesWithProperties']++;
 			}
 

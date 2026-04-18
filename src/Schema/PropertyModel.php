@@ -23,6 +23,23 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  */
 class PropertyModel {
 
+	/**
+	 * Declarative map of internal field names to SMW property labels and types.
+	 * Used by WikiPropertyStore::loadFromSMW via smwLoadProperties().
+	 */
+	public const SMW_PROPERTIES = [
+		'label' => [ 'Display label', 'text' ],
+		'description' => [ 'Has description', 'text' ],
+		'allowedValues' => [ 'Allows value', 'text[]' ],
+		'subpropertyOf' => [ 'Subproperty of', 'property' ],
+		'allowedCategory' => [ 'Allows value from category', 'category' ],
+		'allowedNamespace' => [ 'Allows value from namespace', 'text' ],
+		'allowsMultipleValues' => [ 'Allows multiple values', 'boolean' ],
+		'hasTemplate' => [ 'Has template', 'page' ],
+		'inputType' => [ 'Has input type', 'text' ],
+		'inverseLabel' => [ 'Inverse property label', 'text' ],
+	];
+
 	private string $name;
 	private string $datatype;
 
@@ -39,6 +56,8 @@ class PropertyModel {
 	private bool $allowsMultipleValues;
 	private ?string $inputType;
 	private ?string $inverseLabel;
+
+	private bool $hidden;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
@@ -129,6 +148,9 @@ class PropertyModel {
 		$invLabel = $data['inverseLabel'] ?? null;
 		$this->inverseLabel = ( $invLabel !== null && trim( (string)$invLabel ) !== '' )
 			? trim( (string)$invLabel ) : null;
+
+		/* -------------------- Hidden -------------------- */
+		$this->hidden = !empty( $data['hidden'] );
 	}
 
 	/* -------------------------------------------------------------------------
@@ -264,6 +286,10 @@ class PropertyModel {
 		return $this->inverseLabel;
 	}
 
+	public function isHidden(): bool {
+		return $this->hidden;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */
@@ -281,6 +307,7 @@ class PropertyModel {
 			'allowsMultipleValues' => $this->allowsMultipleValues,
 			'inputType' => $this->inputType,
 			'inverseLabel' => $this->inverseLabel,
+			'hidden' => $this->hidden ?: null,
 		];
 
 		// Remove nulls + empty arrays, but preserve boolean false

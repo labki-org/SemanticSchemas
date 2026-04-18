@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -41,13 +42,13 @@ class CategoryModelTest extends TestCase {
 		] );
 	}
 
-	public function testDuplicateRequiredOptionalPropertyThrowsException(): void {
+	public function testDuplicatePropertyThrowsException(): void {
 		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'both required and optional' );
+		$this->expectExceptionMessage( 'duplicate field declaration' );
 		new CategoryModel( 'TestCategory', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has name' ],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has name', false, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 	}
@@ -59,13 +60,13 @@ class CategoryModelTest extends TestCase {
 		] );
 	}
 
-	public function testDuplicateRequiredOptionalSubobjectThrowsException(): void {
+	public function testDuplicateSubobjectThrowsException(): void {
 		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'both required and optional' );
+		$this->expectExceptionMessage( 'duplicate field declaration' );
 		new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [ 'Address' ],
-				'optional' => [ 'Address' ],
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
+				new FieldModel( 'Address', false, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 	}
@@ -128,84 +129,62 @@ class CategoryModelTest extends TestCase {
 	 * PROPERTY ACCESSORS
 	 * ========================================================================= */
 
-	public function testGetRequiredProperties(): void {
+	public function testFilterFieldsByRequired(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
-				'required' => [ 'Has name', 'Has email' ],
-				'optional' => [],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has email', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has phone', false, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
-		$this->assertEquals( [ 'Has name', 'Has email' ], $model->getRequiredProperties() );
+		$required = $this->names( FieldModel::filter( $model->getPropertyFields(), required: true ) );
+		$optional = $this->names( FieldModel::filter( $model->getPropertyFields(), required: false ) );
+		$this->assertEquals( [ 'Has name', 'Has email' ], $required );
+		$this->assertEquals( [ 'Has phone' ], $optional );
 	}
 
-	public function testGetOptionalProperties(): void {
+	public function testGetPropertyFields(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'properties' => [
-				'required' => [],
-				'optional' => [ 'Has phone', 'Has address' ],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
-		$this->assertEquals( [ 'Has phone', 'Has address' ], $model->getOptionalProperties() );
+		$fields = $model->getPropertyFields();
+		$this->assertCount( 2, $fields );
+		$this->assertSame( 'Has name', $fields[0]->getName() );
+		$this->assertTrue( $fields[0]->isRequired() );
+		$this->assertSame( 'Has email', $fields[1]->getName() );
+		$this->assertFalse( $fields[1]->isRequired() );
 	}
 
-	public function testGetAllPropertiesCombinesBoth(): void {
-		$model = new CategoryModel( 'TestCategory', [
-			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has email' ],
-			],
-		] );
-		$allProps = $model->getAllProperties();
-		$this->assertContains( 'Has name', $allProps );
-		$this->assertContains( 'Has email', $allProps );
-		$this->assertCount( 2, $allProps );
-	}
-
-	public function testGetAnnotatedPropertiesReturnsBothWithFlags(): void {
-		$model = new CategoryModel( 'TestCategory', [
-			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has email' ],
-			],
-		] );
-		$tagged = $model->getAnnotatedProperties();
-		$this->assertCount( 2, $tagged );
-		$this->assertSame( [ 'name' => 'Has name', 'required' => true ], $tagged[0] );
-		$this->assertSame( [ 'name' => 'Has email', 'required' => false ], $tagged[1] );
-	}
-
-	public function testGetAnnotatedPropertiesReturnsEmptyWhenNone(): void {
+	public function testGetPropertyFieldsReturnsEmptyWhenNone(): void {
 		$model = new CategoryModel( 'TestCategory' );
-		$this->assertSame( [], $model->getAnnotatedProperties() );
+		$this->assertSame( [], $model->getPropertyFields() );
 	}
 
 	/* =========================================================================
 	 * SUBOBJECT ACCESSORS
 	 * ========================================================================= */
 
-	public function testGetRequiredSubobjects(): void {
+	public function testFilterSubobjectFieldsByRequired(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [],
+				new FieldModel( 'Author', true, FieldModel::TYPE_SUBOBJECT ),
+				new FieldModel( 'Funding', false, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
-		$this->assertEquals( [ 'Author' ], $model->getRequiredSubobjects() );
-	}
-
-	public function testGetOptionalSubobjects(): void {
-		$model = new CategoryModel( 'TestCategory', [
-			'subobjects' => [
-				'required' => [],
-				'optional' => [ 'Funding' ],
-			],
-		] );
-		$this->assertEquals( [ 'Funding' ], $model->getOptionalSubobjects() );
+		$required = $this->names( FieldModel::filter( $model->getSubobjectFields(), required: true ) );
+		$optional = $this->names( FieldModel::filter( $model->getSubobjectFields(), required: false ) );
+		$this->assertEquals( [ 'Author' ], $required );
+		$this->assertEquals( [ 'Funding' ], $optional );
 	}
 
 	public function testHasSubobjectsReturnsTrue(): void {
 		$model = new CategoryModel( 'TestCategory', [
-			'subobjects' => [ 'required' => [ 'Author' ], 'optional' => [] ],
+			'subobjects' => [
+				new FieldModel( 'Author', true, FieldModel::TYPE_SUBOBJECT ),
+			],
 		] );
 		$this->assertTrue( $model->hasSubobjects() );
 	}
@@ -215,22 +194,24 @@ class CategoryModelTest extends TestCase {
 		$this->assertFalse( $model->hasSubobjects() );
 	}
 
-	public function testGetAnnotatedSubobjectsReturnsBothWithFlags(): void {
+	public function testGetSubobjectFieldsReturnsBothWithFlags(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [ 'Funding' ],
+				new FieldModel( 'Author', true, FieldModel::TYPE_SUBOBJECT ),
+				new FieldModel( 'Funding', false, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
-		$tagged = $model->getAnnotatedSubobjects();
-		$this->assertCount( 2, $tagged );
-		$this->assertSame( [ 'name' => 'Author', 'required' => true ], $tagged[0] );
-		$this->assertSame( [ 'name' => 'Funding', 'required' => false ], $tagged[1] );
+		$fields = $model->getSubobjectFields();
+		$this->assertCount( 2, $fields );
+		$this->assertSame( 'Author', $fields[0]->getName() );
+		$this->assertTrue( $fields[0]->isRequired() );
+		$this->assertSame( 'Funding', $fields[1]->getName() );
+		$this->assertFalse( $fields[1]->isRequired() );
 	}
 
-	public function testGetAnnotatedSubobjectsReturnsEmptyWhenNone(): void {
+	public function testGetSubobjectFieldsReturnsEmptyWhenNone(): void {
 		$model = new CategoryModel( 'TestCategory' );
-		$this->assertSame( [], $model->getAnnotatedSubobjects() );
+		$this->assertSame( [], $model->getSubobjectFields() );
 	}
 
 	/* =========================================================================
@@ -266,22 +247,20 @@ class CategoryModelTest extends TestCase {
 	public function testMergeWithParentInheritsProperties(): void {
 		$parent = new CategoryModel( 'Parent', [
 			'properties' => [
-				'required' => [ 'Has parent prop' ],
-				'optional' => [],
+				new FieldModel( 'Has parent prop', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
 			'properties' => [
-				'required' => [ 'Has child prop' ],
-				'optional' => [],
+				new FieldModel( 'Has child prop', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
-		$allProps = $merged->getAllProperties();
-		$this->assertContains( 'Has parent prop', $allProps );
-		$this->assertContains( 'Has child prop', $allProps );
+		$allNames = $this->names( $merged->getPropertyFields() );
+		$this->assertContains( 'Has parent prop', $allNames );
+		$this->assertContains( 'Has child prop', $allNames );
 	}
 
 	public function testMergeWithParentPreservesChildName(): void {
@@ -295,21 +274,21 @@ class CategoryModelTest extends TestCase {
 	public function testMergeWithParentPromotesOptionalToRequired(): void {
 		$parent = new CategoryModel( 'Parent', [
 			'properties' => [
-				'required' => [],
-				'optional' => [ 'Has prop' ],
+				new FieldModel( 'Has prop', false, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
 			'properties' => [
-				'required' => [ 'Has prop' ],
-				'optional' => [],
+				new FieldModel( 'Has prop', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
-		$this->assertContains( 'Has prop', $merged->getRequiredProperties() );
-		$this->assertNotContains( 'Has prop', $merged->getOptionalProperties() );
+		$required = $this->names( FieldModel::filter( $merged->getPropertyFields(), required: true ) );
+		$optional = $this->names( FieldModel::filter( $merged->getPropertyFields(), required: false ) );
+		$this->assertContains( 'Has prop', $required );
+		$this->assertNotContains( 'Has prop', $optional );
 	}
 
 	public function testMergeWithParentInheritsRenderAs(): void {
@@ -333,60 +312,73 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergeWithParentMergesSubobjects(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'subobjects' => [ 'required' => [ 'ParentSub' ], 'optional' => [] ],
+			'subobjects' => [ new FieldModel( 'ParentSub', true, FieldModel::TYPE_SUBOBJECT ) ],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'subobjects' => [ 'required' => [ 'ChildSub' ], 'optional' => [] ],
+			'subobjects' => [ new FieldModel( 'ChildSub', true, FieldModel::TYPE_SUBOBJECT ) ],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
-		$this->assertContains( 'ParentSub', $merged->getRequiredSubobjects() );
-		$this->assertContains( 'ChildSub', $merged->getRequiredSubobjects() );
+		$requiredSubs = $this->names( FieldModel::filter( $merged->getSubobjectFields(), required: true ) );
+		$this->assertContains( 'ParentSub', $requiredSubs );
+		$this->assertContains( 'ChildSub', $requiredSubs );
 	}
 
 	public function testMergePromotesOptionalSubobjectToRequired(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'subobjects' => [ 'required' => [], 'optional' => [ 'Address' ] ],
+			'subobjects' => [ new FieldModel( 'Address', false, FieldModel::TYPE_SUBOBJECT ) ],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+			'subobjects' => [ new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ) ],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
-		$this->assertContains( 'Address', $merged->getRequiredSubobjects() );
-		$this->assertNotContains( 'Address', $merged->getOptionalSubobjects() );
+		$requiredSubs = $this->names( FieldModel::filter( $merged->getSubobjectFields(), required: true ) );
+		$optionalSubs = $this->names( FieldModel::filter( $merged->getSubobjectFields(), required: false ) );
+		$this->assertContains( 'Address', $requiredSubs );
+		$this->assertNotContains( 'Address', $optionalSubs );
 	}
 
 	public function testMergeDeduplicatesProperties(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [ new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ) ],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'properties' => [ 'required' => [ 'Has name', 'Has age' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has age', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
-		$required = $merged->getRequiredProperties();
+		$required = $this->names( FieldModel::filter( $merged->getPropertyFields(), required: true ) );
 		$this->assertCount( 1, array_keys( array_filter( $required, static fn ( $p ) => $p === 'Has name' ) ) );
 		$this->assertContains( 'Has age', $required );
 	}
 
 	public function testMergeKeepsOptionalWhenNotPromoted(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [ 'Has email' ] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'properties' => [ 'required' => [], 'optional' => [ 'Has phone' ] ],
+			'properties' => [
+				new FieldModel( 'Has phone', false, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
-		$this->assertContains( 'Has email', $merged->getOptionalProperties() );
-		$this->assertContains( 'Has phone', $merged->getOptionalProperties() );
-		$this->assertNotContains( 'Has email', $merged->getRequiredProperties() );
+		$optional = $this->names( FieldModel::filter( $merged->getPropertyFields(), required: false ) );
+		$required = $this->names( FieldModel::filter( $merged->getPropertyFields(), required: true ) );
+		$this->assertContains( 'Has email', $optional );
+		$this->assertContains( 'Has phone', $optional );
+		$this->assertNotContains( 'Has email', $required );
 	}
 
 	/* =========================================================================
@@ -402,14 +394,17 @@ class CategoryModelTest extends TestCase {
 	public function testToArrayIncludesSubobjectsWhenPresent(): void {
 		$model = new CategoryModel( 'TestCategory', [
 			'subobjects' => [
-				'required' => [ 'Author' ],
-				'optional' => [ 'Funding' ],
+				new FieldModel( 'Author', true, FieldModel::TYPE_SUBOBJECT ),
+				new FieldModel( 'Funding', false, FieldModel::TYPE_SUBOBJECT ),
 			],
 		] );
 		$arr = $model->toArray();
 		$this->assertArrayHasKey( 'subobjects', $arr );
-		$this->assertEquals( [ 'Author' ], $arr['subobjects']['required'] );
-		$this->assertEquals( [ 'Funding' ], $arr['subobjects']['optional'] );
+		$this->assertCount( 2, $arr['subobjects'] );
+		$this->assertSame( 'Author', $arr['subobjects'][0]->getName() );
+		$this->assertTrue( $arr['subobjects'][0]->isRequired() );
+		$this->assertSame( 'Funding', $arr['subobjects'][1]->getName() );
+		$this->assertFalse( $arr['subobjects'][1]->isRequired() );
 	}
 
 	public function testToArrayContainsAllFields(): void {
@@ -418,8 +413,8 @@ class CategoryModelTest extends TestCase {
 			'description' => 'Test description',
 			'parents' => [ 'Parent1' ],
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [ 'Has email' ],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
 			],
 			'display' => [ 'header' => [ 'Has name' ] ],
 			'forms' => [ 'sections' => [] ],
@@ -449,30 +444,32 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergeDoesNotModifyOriginalChild(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+			'properties' => [ new FieldModel( 'Has parent prop', true, FieldModel::TYPE_PROPERTY ) ],
 		] );
 		$child = new CategoryModel( 'Child', [
-			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+			'properties' => [ new FieldModel( 'Has child prop', true, FieldModel::TYPE_PROPERTY ) ],
 		] );
 
-		$originalChildProps = $child->getRequiredProperties();
+		$originalChildProps = $this->names( FieldModel::filter( $child->getPropertyFields(), required: true ) );
 		$child->mergeWithParent( $parent );
 
-		$this->assertEquals( $originalChildProps, $child->getRequiredProperties() );
+		$childRequired = FieldModel::filter( $child->getPropertyFields(), required: true );
+		$this->assertEquals( $originalChildProps, $this->names( $childRequired ) );
 	}
 
 	public function testMergeDoesNotModifyOriginalParent(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+			'properties' => [ new FieldModel( 'Has parent prop', true, FieldModel::TYPE_PROPERTY ) ],
 		] );
 		$child = new CategoryModel( 'Child', [
-			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+			'properties' => [ new FieldModel( 'Has child prop', true, FieldModel::TYPE_PROPERTY ) ],
 		] );
 
-		$originalParentProps = $parent->getRequiredProperties();
+		$originalParentProps = $this->names( FieldModel::filter( $parent->getPropertyFields(), required: true ) );
 		$child->mergeWithParent( $parent );
 
-		$this->assertEquals( $originalParentProps, $parent->getRequiredProperties() );
+		$afterMerge = $this->names( FieldModel::filter( $parent->getPropertyFields(), required: true ) );
+		$this->assertEquals( $originalParentProps, $afterMerge );
 	}
 
 	/* =========================================================================
@@ -481,15 +478,29 @@ class CategoryModelTest extends TestCase {
 
 	public function testMergeWithParentReturnsEffectiveCategoryModel(): void {
 		$parent = new CategoryModel( 'Parent', [
-			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+			'properties' => [ new FieldModel( 'Has parent prop', true, FieldModel::TYPE_PROPERTY ) ],
 		] );
 		$child = new CategoryModel( 'Child', [
-			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+			'properties' => [ new FieldModel( 'Has child prop', true, FieldModel::TYPE_PROPERTY ) ],
 		] );
 
 		$merged = $child->mergeWithParent( $parent );
 		$this->assertInstanceOf( EffectiveCategoryModel::class, $merged );
-		$this->assertContains( 'Has parent prop', $merged->getAllProperties() );
-		$this->assertContains( 'Has child prop', $merged->getAllProperties() );
+		$allNames = $this->names( $merged->getPropertyFields() );
+		$this->assertContains( 'Has parent prop', $allNames );
+		$this->assertContains( 'Has child prop', $allNames );
+	}
+
+	/**
+	 * Extract names from a list of field models.
+	 *
+	 * @param FieldModel[] $fields
+	 * @return string[]
+	 */
+	private static function names( array $fields ): array {
+		return array_map(
+			static fn ( FieldModel $f ) => $f->getName(),
+			$fields
+		);
 	}
 }

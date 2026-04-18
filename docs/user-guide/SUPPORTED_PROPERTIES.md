@@ -33,46 +33,34 @@ Category pages support the following semantic properties to define their schema:
   [[Has target namespace::Main]]
   ```
 
-### Properties
+### Field Declarations
 
-#### `Property:Has required property`
+Fields are declared using subobjects on the category page. Property fields use `@category=Property field` and subobject fields use `@category=Subobject field`.
+
+#### `Property:For property`
 - **Type:** Page (Property namespace)
-- **Purpose:** Properties that must be filled when creating a page in this category
-- **Multiple:** Yes
+- **Purpose:** References the property a field declaration is for
 - **Example:**
   ```wiki
-  [[Has required property::Property:Has full name]]
-  [[Has required property::Property:Has email]]
+  {{#subobject:
+   |@category=Property field
+   | For property = Property:Has full name
+   | Is required = true
+   | Has sort order = 1
+  }}
   ```
 
-#### `Property:Has optional property`
-- **Type:** Page (Property namespace)
-- **Purpose:** Properties that may be filled when creating a page in this category
-- **Multiple:** Yes
+#### `Property:For category`
+- **Type:** Page (Category namespace)
+- **Purpose:** References the category a subobject field declaration is for
 - **Example:**
   ```wiki
-  [[Has optional property::Property:Has phone]]
-  [[Has optional property::Property:Has website]]
-  ```
-
-### Subobjects
-
-#### `Property:Has required subobject`
-- **Type:** Page (Subobject namespace)
-- **Purpose:** Subobjects that must be present on pages in this category
-- **Multiple:** Yes
-- **Example:**
-  ```wiki
-  [[Has required subobject::Subobject:Publication]]
-  ```
-
-#### `Property:Has optional subobject`
-- **Type:** Page (Subobject namespace)
-- **Purpose:** Subobjects that may be present on pages in this category
-- **Multiple:** Yes
-- **Example:**
-  ```wiki
-  [[Has optional subobject::Subobject:Award]]
+  {{#subobject:
+   |@category=Subobject field
+   | For category = Category:Publication
+   | Is required = false
+   | Has sort order = 1
+  }}
   ```
 
 ### Display Configuration

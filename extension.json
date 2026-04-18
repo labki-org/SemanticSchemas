@@ -26,7 +26,8 @@
 		]
 	},
 	"ExtensionMessagesFiles": {
-		"SemanticSchemasAlias": "SemanticSchemas.alias.php"
+		"SemanticSchemasAlias": "SemanticSchemas.alias.php",
+		"SemanticSchemasMagic": "SemanticSchemas.i18n.magic.php"
 	},
 	"HookHandlers": {
 		"CategoryPageHooks": {

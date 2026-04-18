@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
@@ -131,14 +132,13 @@ class FormGenerator {
 	 * Separates required and optional properties into distinct sections.
 	 */
 	private function generatePropertyTable( CategoryModel $category ): array {
-		$required = $category->getRequiredProperties();
-		$optional = $category->getOptionalProperties();
-		sort( $required );
-		sort( $optional );
+		$fields = $category->getPropertyFields();
+		$required = FieldModel::filter( $fields, required: true );
+		$optional = FieldModel::filter( $fields, required: false );
 
 		$out = [];
-		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields', true ) );
-		$out = array_merge( $out, $this->generatePropertySection( $optional, 'Optional fields', false ) );
+		$out = array_merge( $out, $this->generatePropertySection( $required, 'Required fields' ) );
+		$out = array_merge( $out, $this->generatePropertySection( $optional, 'Optional fields' ) );
 
 		return $out;
 	}
@@ -146,17 +146,15 @@ class FormGenerator {
 	/**
 	 * Generate a property section with label and table.
 	 *
-	 * @param string[] $props List of property names
+	 * @param FieldModel[] $fields
 	 * @param string $label Section label
-	 * @param bool $isRequired Whether properties in this section are required
 	 * @return array Lines of wikitext
 	 */
 	private function generatePropertySection(
-		array $props,
-		string $label,
-		bool $isRequired
+		array $fields,
+		string $label
 	): array {
-		if ( !$props ) {
+		if ( !$fields ) {
 			return [];
 		}
 
@@ -165,8 +163,8 @@ class FormGenerator {
 		$out[] = '';
 		$out[] = '{| class="formtable"';
 
-		foreach ( $props as $prop ) {
-			$out = array_merge( $out, $this->generateTableField( $prop, $isRequired ) );
+		foreach ( $fields as $field ) {
+			$out = array_merge( $out, $this->generateTableField( $field ) );
 		}
 
 		$out[] = '|}';
@@ -178,35 +176,36 @@ class FormGenerator {
 	/**
 	 * Generate a table row for a property field with label and description.
 	 *
-	 * @param string $propertyName
-	 * @param bool $isRequired
+	 * @param FieldModel $field
 	 * @return array Lines of wikitext
 	 */
-	private function generateTableField(
-		string $propertyName,
-		bool $isRequired
-	): array {
+	private function generateTableField( FieldModel $field ): array {
+		$propertyName = $field->getName();
+		$isRequired = $field->isRequired();
+
 		$prop = $this->propertyStore->readProperty( $propertyName )
 			?: new PropertyModel( $propertyName, [ 'datatype' => 'Page' ] );
 
-		$isReq = $isRequired;
+		if ( $prop->isHidden() ) {
+			return [];
+		}
 
-		$param = NamingHelper::propertyToParameter( $propertyName );
+		$param = $field->getParameterName();
 		$label = $prop->getLabel();
 		$description = $prop->getDescription();
 
 		// Special handling for "Has Type" property
 		if ( strcasecmp( $propertyName, 'Has type' ) === 0 ) {
-			$input = $this->generateHasTypeInput( $isReq );
+			$input = $this->generateHasTypeInput( $isRequired );
 		} else {
-			$input = $this->inputMapper->generateInputDefinition( $prop, $isReq );
+			$input = $this->inputMapper->generateInputDefinition( $prop, $isRequired );
 		}
 
 		$out = [];
 		$out[] = '|-';
 
 		$labelLine = '! ' . $label;
-		if ( $isReq ) {
+		if ( $isRequired ) {
 			$labelLine .= '<span style="color:red;"> *</span>';
 		}
 		$labelLine .= ':';
@@ -241,62 +240,34 @@ class FormGenerator {
 	}
 
 	/**
-	 * Subobject repeatable blocks.
-	 *
-	 * Subobject types are categories resolved through InheritanceResolver
-	 * to include inherited properties from parent categories.
+	 * Subobject sections: transclude each subobject category's composite form
+	 * in subobject mode instead of duplicating its field definitions.
 	 */
 	private function generateSubobjectSections(
 		CategoryModel $category,
 		InheritanceResolver $resolver
 	): array {
-		$tagged = $category->getAnnotatedSubobjects();
-		if ( !$tagged ) {
+		$subFields = $category->getSubobjectFields();
+		if ( !$subFields ) {
 			return [];
 		}
 
 		$out = [];
 
-		foreach ( $tagged as $entry ) {
-			$subName = $entry['name'];
-			$isRequired = $entry['required'];
+		foreach ( $subFields as $field ) {
+			$subName = $field->getName();
 
 			if ( !$resolver->hasCategory( $subName ) ) {
-				// Category page doesn't exist yet — nothing to generate
 				continue;
 			}
 
-			$model = $resolver->getEffectiveCategory( $subName );
-
-			$label = $model->getLabel();
-
-			$out[] = '=== ' . $label . ' ===';
-			$out[] = '';
-
-			$templateName = $model->getName() . '/subobject';
-
-			$for = [ $templateName, 'multiple' ];
-			if ( $isRequired ) {
-				$for[] = 'minimum instances=1';
+			$params = [ 'subobject=true' ];
+			if ( $field->isRequired() ) {
+				$params[] = 'required=true';
 			}
 
-			$out[] = '{{{for template|' . implode( '|', $for ) . '}}}';
-			$out[] = '';
-
-			// Generate table for subobject properties
-			$taggedProps = $model->getAnnotatedProperties();
-			if ( $taggedProps ) {
-				$out[] = '{| class="formtable"';
-
-				foreach ( $taggedProps as $prop ) {
-					$out = array_merge( $out, $this->generateTableField( $prop['name'], $prop['required'] ) );
-				}
-
-				$out[] = '|}';
-				$out[] = '';
-			}
-
-			$out[] = '{{{end template}}}';
+			$out[] = '{{Form:' . $subName
+				. '/composite|' . implode( '|', $params ) . '}}';
 			$out[] = '';
 		}
 
@@ -351,7 +322,16 @@ class FormGenerator {
 	 * Generate a composite form slot for a category.
 	 *
 	 * Produces a form fragment with nowiki-wrapped field directives,
-	 * designed to be transcluded by Form:CompositeForm via {{Form:Category/composite}}.
+	 * designed to be transcluded via {{Form:Category/composite}}.
+	 *
+	 * Supports two modes via template parameters:
+	 *   - Standalone (default): {{{for template|Category}}} with <h2> heading
+	 *   - Subobject ({{{subobject|}}}): {{{for template|Category/subobject|multiple}}}
+	 *     with <h3> heading; {{{required|}}} adds |minimum instances=1
+	 *
+	 * This means a parent form's subobject section can simply transclude
+	 * {{Form:SubobjectCategory/composite|subobject=true|required=true}}
+	 * instead of duplicating the subobject's field definitions.
 	 */
 	public function generateCompositeForm(
 		EffectiveCategoryModel $category,
@@ -359,6 +339,7 @@ class FormGenerator {
 	): string {
 		$name = trim( $category->getName() );
 		$label = trim( $category->getLabel() );
+		$escapedLabel = htmlspecialchars( $label, ENT_QUOTES );
 
 		$lines = [];
 
@@ -367,11 +348,24 @@ class FormGenerator {
 		$lines[] = '<!-- Composite form slot for ' . $name . ' -->';
 		$lines[] = '</noinclude><includeonly>';
 
-		// HTML heading (wiki == headings don't parse through transclusion)
-		$lines[] = '<h2>' . htmlspecialchars( $label, ENT_QUOTES ) . '</h2>';
+		// Heading: <h3> in subobject mode, <h2> in standalone mode
+		$lines[] = '{{#if:{{{subobject|}}}|<h3>' . $escapedLabel
+			. '</h3>|<h2>' . $escapedLabel . '</h2>}}';
 		$lines[] = '';
 
-		$lines[] = '<nowiki>{{{for template|' . $name . '}}}</nowiki>';
+		// For-template directive: subobject mode switches to /subobject|multiple,
+		// with optional minimum instances for required subobjects.
+		// {{{subobject|}}} and {{{required|}}} are resolved during transclusion;
+		// the <nowiki> tags protect the PageForms {{{...}}} directives from
+		// being parsed as template parameters.
+		$subFor = $name . '/subobject|multiple';
+		$lines[] = '{{#if:{{{subobject|}}}';
+		$lines[] = '|{{#if:{{{required|}}}';
+		$lines[] = '|<nowiki>{{{for template|' . $subFor . '|minimum instances=1}}}</nowiki>';
+		$lines[] = '|<nowiki>{{{for template|' . $subFor . '}}}</nowiki>';
+		$lines[] = '}}';
+		$lines[] = '|<nowiki>{{{for template|' . $name . '}}}</nowiki>';
+		$lines[] = '}}';
 		$lines[] = '';
 
 		$fieldLines = $this->generatePropertyTable( $category );
@@ -438,14 +432,14 @@ class FormGenerator {
 	 * Find the parent category property in a category's schema.
 	 */
 	private function findParentCategoryProperty( CategoryModel $category ): ?string {
-		foreach ( $category->getAllProperties() as $p ) {
-			$lc = strtolower( $p );
+		foreach ( $category->getPropertyFields() as $field ) {
+			$lc = strtolower( $field->getName() );
 
 			if (
 				str_contains( $lc, 'parent' ) &&
 				str_contains( $lc, 'category' )
 			) {
-				return $p;
+				return $field->getName();
 			}
 		}
 

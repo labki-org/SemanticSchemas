@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Hooks;
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\ContentHandler;
 use MediaWiki\Extension\SemanticSchemas\Hooks\CategoryPageHooks;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -294,7 +295,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 	private function createManagedCategory( string $name ): void {
 		$title = Title::makeTitle( NS_CATEGORY, $name );
 		$this->pageCreator->createOrUpdatePage( $title,
-			"[[Has required property::Property:Has name]]" .
+			$this->fieldToWikitext( new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ), 1 ) .
 			"[[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . "]]", '' );
 	}
 
@@ -311,4 +312,17 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		);
 	}
 
+	private function fieldToWikitext( FieldModel $field, int $index ): string {
+		$config = FieldModel::FIELD_CONFIG[$field->getFieldType()];
+
+		$lines = [];
+		$lines[] = '{{#subobject:';
+		$lines[] = ' |@category=' . $config['category'];
+		$lines[] = ' | ' . $config['referenceProperty'] . ' = ' . $config['namespacePrefix'] . ':' . $field->getName();
+		$lines[] = ' | Is required = ' . ( $field->isRequired() ? 'true' : 'false' );
+		$lines[] = ' | Has sort order = ' . $index;
+		$lines[] = '}}';
+
+		return implode( "\n", $lines );
+	}
 }

@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -189,15 +190,14 @@ class InheritanceResolverTest extends TestCase {
 		$map = [
 			'Person' => new CategoryModel( 'Person', [
 				'properties' => [
-					'required' => [ 'Has name' ],
-					'optional' => [ 'Has email' ],
+					new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+					new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
 				],
 			] ),
 			'Student' => new CategoryModel( 'Student', [
 				'parents' => [ 'Person' ],
 				'properties' => [
-					'required' => [ 'Has student ID' ],
-					'optional' => [],
+					new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
 				],
 			] ),
 		];
@@ -205,10 +205,10 @@ class InheritanceResolverTest extends TestCase {
 
 		$effective = $resolver->getEffectiveCategory( 'Student' );
 
-		$allProps = $effective->getAllProperties();
-		$this->assertContains( 'Has name', $allProps );
-		$this->assertContains( 'Has student ID', $allProps );
-		$this->assertContains( 'Has email', $allProps );
+		$allNames = $this->names( $effective->getPropertyFields() );
+		$this->assertContains( 'Has name', $allNames );
+		$this->assertContains( 'Has student ID', $allNames );
+		$this->assertContains( 'Has email', $allNames );
 	}
 
 	public function testGetEffectiveCategoryForUnknownThrows(): void {
@@ -293,19 +293,24 @@ class InheritanceResolverTest extends TestCase {
 
 	public function testGetEffectiveCategoryMergesInheritedProperties(): void {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 		$student = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [ 'Person' => $person, 'Student' => $student ] );
 		$effective = $resolver->getEffectiveCategory( 'Student' );
 
 		$this->assertInstanceOf( EffectiveCategoryModel::class, $effective );
-		$this->assertContains( 'Has name', $effective->getAllProperties() );
-		$this->assertContains( 'Has student ID', $effective->getAllProperties() );
+		$allNames = $this->names( $effective->getPropertyFields() );
+		$this->assertContains( 'Has name', $allNames );
+		$this->assertContains( 'Has student ID', $allNames );
 	}
 
 	/* =========================================================================
@@ -314,15 +319,21 @@ class InheritanceResolverTest extends TestCase {
 
 	public function testGetParentEffectiveModelsReturnsEffectiveParents(): void {
 		$grandparent = new CategoryModel( 'Grandparent', [
-			'properties' => [ 'required' => [ 'Has gp prop' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has gp prop', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 		$parent = new CategoryModel( 'Parent', [
 			'parents' => [ 'Grandparent' ],
-			'properties' => [ 'required' => [ 'Has parent prop' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has parent prop', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 		$child = new CategoryModel( 'Child', [
 			'parents' => [ 'Parent' ],
-			'properties' => [ 'required' => [ 'Has child prop' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has child prop', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [
@@ -335,8 +346,9 @@ class InheritanceResolverTest extends TestCase {
 		$this->assertArrayHasKey( 'Parent', $parentModels );
 		$this->assertCount( 1, $parentModels );
 		$this->assertInstanceOf( EffectiveCategoryModel::class, $parentModels['Parent'] );
-		$this->assertContains( 'Has gp prop', $parentModels['Parent']->getAllProperties() );
-		$this->assertContains( 'Has parent prop', $parentModels['Parent']->getAllProperties() );
+		$parentNames = $this->names( $parentModels['Parent']->getPropertyFields() );
+		$this->assertContains( 'Has gp prop', $parentNames );
+		$this->assertContains( 'Has parent prop', $parentNames );
 	}
 
 	public function testGetParentEffectiveModelsForUnknownThrows(): void {
@@ -355,5 +367,18 @@ class InheritanceResolverTest extends TestCase {
 		] );
 
 		$this->assertEmpty( $resolver->getParentEffectiveModels( 'Person' ) );
+	}
+
+	/**
+	 * Extract names from a list of field models.
+	 *
+	 * @param FieldModel[] $fields
+	 * @return string[]
+	 */
+	private static function names( array $fields ): array {
+		return array_map(
+			static fn ( FieldModel $f ) => $f->getName(),
+			$fields
+		);
 	}
 }

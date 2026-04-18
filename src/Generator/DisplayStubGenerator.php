@@ -164,16 +164,15 @@ class DisplayStubGenerator {
 	}
 
 	/**
-	 * Generate table rows for a list of properties.
-	 * Default to all category properties if $properties is null.
+	 * Generate table rows for all properties in a category.
 	 */
-	private function generatePropertyRows( CategoryModel $category, ?array $properties = null ): string {
+	private function generatePropertyRows( CategoryModel $category ): string {
 		$out = "";
-		$targetProperties = $properties ?? $category->getAllProperties();
 
-		foreach ( $targetProperties as $propName ) {
+		foreach ( $category->getPropertyFields() as $field ) {
+			$propName = $field->getName();
 			$property = $this->propertyStore->readProperty( $propName );
-			$paramName = NamingHelper::propertyToParameter( $propName );
+			$paramName = $field->getParameterName();
 
 			if ( $property ) {
 				$label = $property->getLabel();
@@ -203,9 +202,11 @@ class DisplayStubGenerator {
 	 * For multi-value properties, uses #arraymap to prefix each value.
 	 * For other properties, returns the raw parameter reference.
 	 *
-	 * Namespace prefixing is needed because Page Forms autocomplete returns bare
-	 * page names (e.g. "MyPage") without the namespace. The display template must
-	 * re-add the prefix so links resolve to the correct namespaced page.
+	 * Uses {{PAGENAME:}} to strip any existing namespace prefix before re-adding it,
+	 * making the expression idempotent. This is needed because display templates are
+	 * called from two contexts:
+	 *   - Dispatcher templates: values come from forms as bare names ("MyPage")
+	 *   - #ask queries: values come from SMW as prefixed names ("Namespace:MyPage")
 	 *
 	 * @param \MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel $property
 	 * @param string $paramName
@@ -219,16 +220,18 @@ class DisplayStubGenerator {
 			return '{{{' . $paramName . '|}}}';
 		}
 
-		// Page-type with namespace restriction: prefix namespace to values
+		// Page-type with namespace restriction: add namespace only when the
+		// value has none. If the user (or an #ask query) provides a value
+		// that already has a namespace, preserve it as-is.
 		if ( $property->allowsMultipleValues() ) {
-			// Multi-value: use #arraymap to prefix each value
-			// Input: "Value1,Value2" -> Output: "Namespace:Value1,Namespace:Value2"
-			return '{{#arraymap:{{{' . $paramName . '|}}}|,|@@item@@|' .
-				$allowedNamespace . ':@@item@@|,&#32;}}';
+			return '{{#arraymap:{{{' . $paramName . '|}}}|,|@@item@@|'
+				. '{{#ifeq:{{FULLPAGENAME:@@item@@}}|{{PAGENAME:@@item@@}}|'
+				. $allowedNamespace . ':}}@@item@@|,&#32;}}';
 		}
 
-		// Single value: conditional prefix (empty if no value)
-		return '{{#if:{{{' . $paramName . '|}}}|' . $allowedNamespace . ':{{{' . $paramName . '|}}}|}}';
+		return '{{#if:{{{' . $paramName . '|}}}|'
+			. '{{#ifeq:{{FULLPAGENAME:{{{' . $paramName . '|}}}}}|{{PAGENAME:{{{' . $paramName . '|}}}}}'
+			. '|' . $allowedNamespace . ':}}{{{' . $paramName . '|}}}|}}';
 	}
 
 	/**
@@ -364,24 +367,24 @@ class DisplayStubGenerator {
 			return '';
 		}
 
-		$tagged = $category->getAnnotatedSubobjects();
-		if ( !$tagged ) {
+		$subFields = $category->getSubobjectFields();
+		if ( !$subFields ) {
 			return '';
 		}
 
 		$sections = '';
 		$catNs = $this->language->getFormattedNsText( NS_CATEGORY );
 
-		foreach ( $tagged as $entry ) {
-			$subName = $entry['name'];
+		foreach ( $subFields as $field ) {
+			$subName = $field->getName();
 			if ( !$resolver->hasCategory( $subName ) ) {
 				continue;
 			}
 
 			$sub = $resolver->getEffectiveCategory( $subName );
 
-			$props = $sub->getAllProperties();
-			if ( !$props ) {
+			$fields = $sub->getPropertyFields();
+			if ( !$fields ) {
 				continue;
 			}
 
@@ -390,15 +393,17 @@ class DisplayStubGenerator {
 			$sections .= '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]]'
 				. ' [[' . $catNs . ':' . $subName . ']]' . "\n";
 
-			foreach ( $props as $p ) {
-				$param = NamingHelper::propertyToParameter( $p );
-				$sections .= ' | ?' . $p . ' = ' . $param . "\n";
+			foreach ( $fields as $f ) {
+				$sections .= ' | ?' . $f->getName() . ' = ' . $f->getParameterName() . "\n";
 			}
 
 			$sections .= ' | format=template' . "\n";
 			$sections .= ' | template=' . $subName . '/display' . "\n";
 			$sections .= ' | named args=yes' . "\n";
+			$sections .= ' | link=none' . "\n";
 			$sections .= ' | mainlabel=-' . "\n";
+			$sections .= ' | sort=Has sort order' . "\n";
+			$sections .= ' | order=asc' . "\n";
 			$sections .= '}}' . "\n";
 		}
 

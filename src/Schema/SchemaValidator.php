@@ -161,29 +161,6 @@ class SchemaValidator {
 	 * ====================================================================== */
 
 	/**
-	 * Validate that a field is an array if it exists.
-	 *
-	 * @param string $entityType
-	 * @param string $entityName
-	 * @param array $data
-	 * @param string $field
-	 * @param string $suggestion
-	 * @return string|null Error message or null if valid
-	 */
-	private function requireArrayField(
-		string $entityType,
-		string $entityName,
-		array $data,
-		string $field,
-		string $suggestion
-	): ?string {
-		if ( isset( $data[$field] ) && !is_array( $data[$field] ) ) {
-			return $this->formatError( $entityType, $entityName, "$field must be an array", $suggestion );
-		}
-		return null;
-	}
-
-	/**
 	 * Validate references to items in a lookup array.
 	 *
 	 * @param string $entityType
@@ -219,65 +196,44 @@ class SchemaValidator {
 	}
 
 	/**
-	 * Validate required/optional bucket structure.
+	 * Validate field declaration entries.
 	 *
-	 * This pattern is used for properties and subobjects in categories,
-	 * and for properties in subobjects.
+	 * Accepts FieldModel[] or annotated arrays [{name, required}, ...].
 	 *
 	 * @param string $entityType
 	 * @param string $entityName
-	 * @param array $buckets Array with 'required' and/or 'optional' keys
+	 * @param array $entries FieldModel[] or annotated arrays
 	 * @param array $lookup Valid items to reference
-	 * @param string $referenceType 'property' or 'subobject'
+	 * @param string $referenceType 'property' or 'category'
 	 * @param string $fieldPrefix Field path prefix for error messages
 	 * @return array ['errors' => [...], 'warnings' => [...]]
 	 */
-	private function validateRequiredOptionalBuckets(
+	private function validateAnnotatedEntries(
 		string $entityType,
 		string $entityName,
-		array $buckets,
+		array $entries,
 		array $lookup,
 		string $referenceType,
 		string $fieldPrefix = ''
 	): array {
 		$errors = [];
 		$warnings = [];
-		$prefix = $fieldPrefix ? "$fieldPrefix." : '';
 
-		foreach ( [ 'required', 'optional' ] as $bucket ) {
-			$error = $this->requireArrayField(
-				$entityType,
-				$entityName,
-				$buckets,
-				$bucket,
-				"Use an array like [\"Item1\", \"Item2\"]"
-			);
-			if ( $error ) {
-				$errors[] = str_replace( "$bucket must be", "{$prefix}$bucket must be", $error );
-			}
-		}
-
-		$required = is_array( $buckets['required'] ?? null ) ? $buckets['required'] : [];
-		$optional = is_array( $buckets['optional'] ?? null ) ? $buckets['optional'] : [];
-
-		$duplicates = array_intersect(
-			array_map( 'strval', $required ),
-			array_map( 'strval', $optional )
+		$names = array_map(
+			static function ( $e ) {
+				if ( $e instanceof FieldModel ) {
+					return $e->getName();
+				}
+				return is_array( $e ) ? ( $e['name'] ?? '' ) : (string)$e;
+			},
+			$entries
 		);
-		if ( $duplicates ) {
-			$itemType = ucfirst( $referenceType ) . 's';
-			$errors[] = $this->formatError(
-				$entityType,
-				$entityName,
-				"$itemType cannot be both required and optional: " . implode( ', ', $duplicates ),
-				'Remove duplicates from either list'
-			);
-		}
 
 		$errors = array_merge(
 			$errors,
-			$this->validateReferences( $entityType, $entityName, $required, $lookup, $referenceType, 'required' ),
-			$this->validateReferences( $entityType, $entityName, $optional, $lookup, $referenceType, 'optional' )
+			$this->validateReferences(
+				$entityType, $entityName, $names, $lookup, $referenceType, $fieldPrefix
+			)
 		);
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];
@@ -384,7 +340,7 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateRequiredOptionalBuckets(
+				$this->validateAnnotatedEntries(
 					'category',
 					$categoryName,
 					$categoryData['properties'],
@@ -399,7 +355,7 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateRequiredOptionalBuckets(
+				$this->validateAnnotatedEntries(
 					'category',
 					$categoryName,
 					$categoryData['subobjects'],
@@ -540,6 +496,14 @@ class SchemaValidator {
 		$categoryModels = [];
 		foreach ( $categories as $name => $data ) {
 			try {
+				$data['properties'] = array_map(
+					static fn ( array $e ) => new FieldModel( $e['name'], $e['required'], FieldModel::TYPE_PROPERTY ),
+					$data['properties'] ?? []
+				);
+				$data['subobjects'] = array_map(
+					static fn ( array $e ) => new FieldModel( $e['name'], $e['required'], FieldModel::TYPE_SUBOBJECT ),
+					$data['subobjects'] ?? []
+				);
 				$categoryModels[$name] = new CategoryModel( $name, $data );
 			} catch ( \InvalidArgumentException | \TypeError ) {
 				continue;
@@ -577,10 +541,7 @@ class SchemaValidator {
 				continue;
 			}
 
-			$req = $data['properties']['required'] ?? [];
-			$opt = $data['properties']['optional'] ?? [];
-
-			if ( !$req && !$opt ) {
+			if ( !isset( $data['properties'] ) || !$data['properties'] ) {
 				$warnings[] = "Category '$name': no properties defined";
 			}
 

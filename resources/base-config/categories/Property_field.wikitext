@@ -1,0 +1,12 @@
+<!-- SemanticSchemas Start -->
+[[Has description::A property field declaration in a category schema. Declares which properties a category has.]]
+[[Display label::Property field]]
+{{#subobject:
+ |@category=Property field
+ | For property = Property:For property
+ | Is required = true
+ | Has sort order = 1
+}}
+<!-- SemanticSchemas End -->
+[[Category:Field]]
+[[Category:SemanticSchemas-managed]]

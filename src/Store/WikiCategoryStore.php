@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\MainConfigNames;
@@ -180,28 +181,26 @@ class WikiCategoryStore {
 
 		# strip namespace prefix from parent categories
 		$parents = array_map(
-			static fn ( string $parentName )=>explode( ':', $parentName )[1],
+			static fn ( string $parentName ) => explode( ':', $parentName, 2 )[1],
 			array_keys( $title->getParentCategories() )
 		);
 
-		return [
-			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
-			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
-			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ),
-			'parents' => $parents,
-			'properties' => [
-				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
-				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),
-			],
-			'subobjects' => [
-				'required' => $this->smwFetchMany( $sdata, 'Has required subobject', 'category' ),
-				'optional' => $this->smwFetchMany( $sdata, 'Has optional subobject', 'category' ),
-			],
+		$out = $this->smwLoadProperties( $sdata, CategoryModel::SMW_PROPERTIES );
 
-			'backlinksFor' => $this->smwFetchMany( $sdata, 'Show backlinks for', 'property' ),
+		$out['label'] ??= $categoryName;
+		$out['description'] ??= '';
+		$out['parents'] = $parents;
 
-			'display' => $this->loadDisplayConfig( $sdata ),
-		];
+		$out['properties'] = $this->smwFetchFieldReferences(
+			$sdata, FieldModel::TYPE_PROPERTY
+		);
+		$out['subobjects'] = $this->smwFetchFieldReferences(
+			$sdata, FieldModel::TYPE_SUBOBJECT
+		);
+
+		$out['display'] = $this->loadDisplayConfig( $sdata );
+
+		return $out;
 	}
 
 	private function loadDisplayConfig( $semanticData ): array {

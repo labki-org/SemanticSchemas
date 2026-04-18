@@ -13,6 +13,7 @@ use PPFrame;
  *
  *   {{#semanticschemas_hierarchy:}}
  *   {{#semanticschemas_load_form_preview:}}
+ *   {{#s2counter:prefix}}
  *
  * The old rendering parser functions have been removed since
  * display templates are now static wikitext that directly calls
@@ -21,6 +22,7 @@ use PPFrame;
  * Responsibilities:
  *   - Inject hierarchy widget
  *   - Load form preview modules
+ *   - Page-scoped counter for ordered subobject IDs
  *   - Provide clean HTML-safe outputs
  *
  * @suppress PhanUnreferencedClass
@@ -47,6 +49,12 @@ class DisplayParserFunctions {
 			'semanticschemas_load_form_preview',
 			[ $this, 'loadFormPreview' ],
 			SFH_OBJECT_ARGS
+		);
+
+		// Page-scoped counter for ordered subobject IDs
+		$parser->setFunctionHook(
+			's2counter',
+			[ $this, 'renderCounter' ]
 		);
 	}
 
@@ -93,6 +101,29 @@ class DisplayParserFunctions {
 			],
 			Html::element( 'p', [], wfMessage( 'semanticschemas-hierarchy-loading' )->text() )
 		) );
+	}
+
+	/* =====================================================================
+	 * PAGE-SCOPED COUNTER
+	 * ===================================================================== */
+
+	/**
+	 * {{#s2counter:prefix}} — returns "1", "2", "3", etc.
+	 *
+	 * Increments per call within a single page parse. Each prefix has its
+	 * own independent counter. Used in subobject templates to populate
+	 * the "Has sort order" property for preserving ordering in queries.
+	 *
+	 * @param Parser $parser
+	 * @param string $prefix Counter namespace (e.g. "has_property_field")
+	 * @return string The numeric counter value
+	 */
+	public function renderCounter( Parser $parser, string $prefix = 'field' ): string {
+		$output = $parser->getOutput();
+		$key = 's2counter-' . $prefix;
+		$count = ( $output->getExtensionData( $key ) ?? 0 ) + 1;
+		$output->setExtensionData( $key, $count );
+		return (string)$count;
 	}
 
 	/* =====================================================================

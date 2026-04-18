@@ -58,6 +58,7 @@ class WikiPropertyStore {
 			'hasTemplate' => null,
 			'inputType' => null,
 			'inverseLabel' => null,
+			'hidden' => false,
 		];
 
 		return new PropertyModel( $canonical, $data );
@@ -102,43 +103,69 @@ class WikiPropertyStore {
 
 		$out = [];
 
-		$out['label'] = $this->smwFetchOne( $sdata, 'Display label' );
-		$out['description'] = $this->smwFetchOne( $sdata, 'Has description' );
-
-		$out['allowedValues'] =
-			$this->smwFetchMany( $sdata, 'Allows value', 'text' );
-
-		$out['subpropertyOf'] =
-			$this->smwFetchOne( $sdata, 'Subproperty of', 'property' );
-
-		$out['allowedCategory'] =
-			$this->smwFetchOne( $sdata, 'Allows value from category', 'category' );
-
-		$out['allowedNamespace'] =
-			$this->smwFetchOne( $sdata, 'Allows value from namespace', 'text' );
-
-		$out['allowsMultipleValues'] =
-			$this->smwFetchBoolean( $sdata, 'Allows multiple values' );
-
-		/* -------------------- Template Configuration -------------------- */
-		$hasTemplate = $this->smwFetchOne( $sdata, 'Has template', 'page' );
-
-		if ( $hasTemplate ) {
-			$out['hasTemplate'] = $hasTemplate;
-			$out['templateSource'] = $hasTemplate;
+		// Datatype comes from SMW's internal property type API, not semantic annotations
+		try {
+			$prop = \SMW\DIProperty::newFromUserLabel( $title->getText() );
+			$internalTypeId = $prop->findPropertyTypeID();
+			if ( $internalTypeId !== null ) {
+				$out['datatype'] = $this->convertSMWTypeIdToCanonical( $internalTypeId );
+			}
+		} catch ( \Throwable ) {
+			// If property creation fails, datatype will default to 'Page' in readProperty()
 		}
 
-		/* -------------------- Input type override -------------------- */
-		$out['inputType'] = $this->smwFetchOne( $sdata, 'Has input type' );
+		$out += $this->smwLoadProperties( $sdata, PropertyModel::SMW_PROPERTIES );
 
-		/* -------------------- Backlink label -------------------- */
-		$out['inverseLabel'] = $this->smwFetchOne( $sdata, 'Inverse property label' );
+		// hasTemplate also sets templateSource for backward compat
+		if ( !empty( $out['hasTemplate'] ) ) {
+			$out['templateSource'] = $out['hasTemplate'];
+		}
 
-		// Clean null/empty
 		return array_filter(
 			$out,
 			static fn ( $v ) => $v !== null && $v !== []
 		);
+	}
+
+	/* -------------------------------------------------------------------------
+	 * TYPE ID CONVERSION
+	 * ------------------------------------------------------------------------- */
+
+	/**
+	 * Convert SMW's internal type ID (e.g., '_txt', '_wpg') to canonical datatype name.
+	 *
+	 * @param string $typeId SMW internal type ID
+	 * @return string Canonical datatype name
+	 */
+	private function convertSMWTypeIdToCanonical( string $typeId ): string {
+		// Mapping from SMW internal type IDs to canonical names
+		static $typeMap = [
+			'_txt' => 'Text',
+			'_wpg' => 'Page',
+			'_dat' => 'Date',
+			'_num' => 'Number',
+			'_boo' => 'Boolean',
+			'_uri' => 'URL',
+			'_ema' => 'Email',
+			'_tel' => 'Telephone number',
+			'_cod' => 'Code',
+			'_geo' => 'Geographic coordinate',
+			'_qty' => 'Quantity',
+			'_tem' => 'Temperature',
+			'_anu' => 'Annotation URI',
+			'_eid' => 'External identifier',
+			'_key' => 'Keyword',
+			'_mlt_rec' => 'Monolingual text',
+			'_rec' => 'Record',
+			'_ref_rec' => 'Reference',
+		];
+
+		// If it's already a canonical name, return as-is
+		if ( substr( $typeId, 0, 1 ) !== '_' ) {
+			return $typeId;
+		}
+
+		return $typeMap[$typeId] ?? 'Text';
 	}
 
 	/* -------------------------------------------------------------------------

@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Generator;
 
 use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -39,14 +40,18 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testSubobjectSectionsUseDisplayTemplate() {
 		$address = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has city', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
+			'subobjects' => [
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [
@@ -70,22 +75,25 @@ class DisplayStubGeneratorTest extends TestCase {
 	public function testSubobjectDisplayIncludesInheritedProperties() {
 		$baseAddress = new CategoryModel( 'Address', [
 			'properties' => [
-				'required' => [ 'Has street', 'Has city' ],
-				'optional' => [],
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has city', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$mailingAddress = new CategoryModel( 'MailingAddress', [
 			'parents' => [ 'Address' ],
 			'properties' => [
-				'required' => [ 'Has zip' ],
-				'optional' => [],
+				new FieldModel( 'Has zip', true, FieldModel::TYPE_PROPERTY ),
 			],
 		] );
 
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'MailingAddress' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
+			'subobjects' => [
+				new FieldModel( 'MailingAddress', true, FieldModel::TYPE_SUBOBJECT ),
+			],
 		] );
 
 		$resolver = new InheritanceResolver( [
@@ -105,8 +113,12 @@ class DisplayStubGeneratorTest extends TestCase {
 
 	public function testNoSubobjectSectionsWithoutResolver() {
 		$person = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
-			'subobjects' => [ 'required' => [ 'Address' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
+			'subobjects' => [
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
+			],
 		] );
 
 		$generated = $this->generator->generateWikitext( $person );
