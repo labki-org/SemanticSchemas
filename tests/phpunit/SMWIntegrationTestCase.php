@@ -5,10 +5,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests;
 use SMW\MediaWiki\Deferred\CallableUpdate;
 use SMW\Services\ServicesFactory as SMWServicesFactory;
 
-class SMWIntegrationTestCase extends \MediaWikiIntegrationTestCase
-{
-	protected function setUp(): void
-	{
+class SMWIntegrationTestCase extends \MediaWikiIntegrationTestCase {
+	protected function setUp(): void {
 		parent::setUp();
 
 		// SMW registers hooks dynamically via HookContainer::register(), but

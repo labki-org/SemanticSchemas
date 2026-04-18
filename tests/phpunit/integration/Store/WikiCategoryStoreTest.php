@@ -4,8 +4,8 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
-use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Tests\SMWIntegrationTestCase;
+use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Title\Title;
 
 /**
@@ -90,15 +90,14 @@ class WikiCategoryStoreTest extends SMWIntegrationTestCase {
 		);
 	}
 
-	public function testReadCategoryFromSMW()
-	{
-		$expected = uniqid('Hey');
+	public function testReadCategoryFromSMW() {
+		$expected = uniqid( 'Hey' );
 		$content = "[[Has description::$expected]] " .
 			"[[Category:" .
 			Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY .
 			"]]";
 		$title = Title::makeTitleSafe( NS_CATEGORY, "TestCategory" );
-		$this->pageCreator->createOrUpdatePage($title, $content, "" );
+		$this->pageCreator->createOrUpdatePage( $title, $content, "" );
 
 		$this->runSMWUpdates();
 
