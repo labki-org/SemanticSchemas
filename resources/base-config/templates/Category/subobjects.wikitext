@@ -1,0 +1,22 @@
+<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]] | ?For category | format=plainlist | link=none | sep=, }}|,|@@subcat@@|
+=== {{#show:@@subcat@@|?Display label|default={{PAGENAME:@@subcat@@}}}} ===
+{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[@@subcat@@]]
+ {{!}} format=template
+ {{!}} template=Category/subobject-instance
+ {{!}} userparam={{PAGENAME:@@subcat@@}}
+ {{!}} sort=Has sort order
+ {{!}} order=asc
+}}|\n}}</includeonly><noinclude>
+Renders subobject sections for a category. For each subobject type
+declared on the category (or any ancestor, via Category/collect-ancestors),
+emits a heading and an #ask that renders each instance through
+Category/subobject-instance (which itself reuses Category/table).
+
+Subobject types are discovered from Subobject field declarations on the
+ancestor chain: {{#ask: [[-Has subobject::<ancestors>]] [[Category:Subobject field]] | ?For category}}.
+
+Parameters:
+* category - The category name whose subobject types should be rendered
+* page - The parent page whose subobject instances should be listed;
+         defaults to {{FULLPAGENAME}}.
+</noinclude>

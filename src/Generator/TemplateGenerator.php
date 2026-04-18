@@ -178,8 +178,7 @@ class TemplateGenerator {
 	 * @return string
 	 */
 	public function generateDispatcherTemplate(
-		EffectiveCategoryModel $effective,
-		?InheritanceResolver $resolver = null
+		EffectiveCategoryModel $effective
 	): string {
 		$name = trim( $effective->getName() );
 		if ( $name === '' ) {
@@ -198,13 +197,9 @@ class TemplateGenerator {
 		/* Semantic storage */
 		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allFields ) );
 
-		/* Dynamic display */
+		/* Dynamic display — Category/table (or user override) handles properties
+		 * AND subobjects entirely in wikitext; no per-category generation needed. */
 		$out = array_merge( $out, $this->generateDynamicDisplay( $effective, $allFields ) );
-
-		/* Subobject display sections */
-		if ( $resolver !== null ) {
-			$out = array_merge( $out, $this->generateSubobjectSections( $effective, $resolver ) );
-		}
 
 		/* Category membership */
 		// FIXME: Temporary special-case hack to exclude Category:Category membership -
@@ -253,63 +248,6 @@ class TemplateGenerator {
 		if ( $displayTemplate !== null ) {
 			$templateName = preg_replace( '/^Template:/', '', $displayTemplate );
 			$out = array_merge( $out, $this->generateTemplateCall( $templateName, $allFields ) );
-		}
-
-		return $out;
-	}
-
-	/**
-	 * Emit #ask sections that render each subobject category via its /display template.
-	 *
-	 * Results are sorted by "Has sort order" (populated via {{#s2counter:…}} in the
-	 * subobject template) so the display order on the parent page matches the order
-	 * of subobjects as they were added in the form.
-	 *
-	 * @param EffectiveCategoryModel $category
-	 * @param InheritanceResolver $resolver
-	 * @return string[]
-	 */
-	private function generateSubobjectSections(
-		EffectiveCategoryModel $category,
-		InheritanceResolver $resolver
-	): array {
-		$subFields = $category->getSubobjectFields();
-		if ( !$subFields ) {
-			return [];
-		}
-
-		$out = [];
-		$catNs = $this->language->getFormattedNsText( NS_CATEGORY );
-
-		foreach ( $subFields as $field ) {
-			$subName = $field->getName();
-			if ( !$resolver->hasCategory( $subName ) ) {
-				continue;
-			}
-
-			$sub = $resolver->getEffectiveCategory( $subName );
-			$fields = $sub->getPropertyFields();
-			if ( !$fields ) {
-				continue;
-			}
-
-			$label = $sub->getLabel() ?: $sub->getName();
-			$out[] = '=== ' . $label . ' ===';
-			$out[] = '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]]'
-				. ' [[' . $catNs . ':' . $subName . ']]';
-
-			foreach ( $fields as $f ) {
-				$out[] = ' | ?' . $f->getName() . ' = ' . $f->getParameterName();
-			}
-
-			$out[] = ' | format=template';
-			$out[] = ' | template=' . $subName . '/display';
-			$out[] = ' | named args=yes';
-			$out[] = ' | link=none';
-			$out[] = ' | mainlabel=-';
-			$out[] = ' | sort=Has sort order';
-			$out[] = ' | order=asc';
-			$out[] = '}}';
 		}
 
 		return $out;
@@ -379,7 +317,7 @@ class TemplateGenerator {
 
 		/* Dispatcher */
 		try {
-			$content = $this->generateDispatcherTemplate( $effective, $resolver );
+			$content = $this->generateDispatcherTemplate( $effective );
 			$this->updateTemplate( $name, $content );
 		} catch ( \Exception $e ) {
 			$errors[] = "Error generating dispatcher template for $name: " . $e->getMessage();

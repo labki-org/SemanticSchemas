@@ -29,7 +29,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'display-rows' );
 
 		$this->assertStringContainsString(
-			'{{#if:{{#show:{{FULLPAGENAME}}',
+			'{{#if:{{#show:{{{page|{{FULLPAGENAME}}}}}',
 			$content,
 			'display-rows must use #if with #show to conditionally render rows'
 		);
@@ -68,9 +68,9 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'display-rows' );
 
 		$this->assertStringContainsString(
-			'{{#show:{{FULLPAGENAME}}|?{{PAGENAME:@@prop@@}}}}',
+			'{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}',
 			$content,
-			'display-rows must use #show to retrieve property values for the current page'
+			'display-rows must use #show to retrieve property values from the target page'
 		);
 	}
 

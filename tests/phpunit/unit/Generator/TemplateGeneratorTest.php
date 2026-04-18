@@ -525,8 +525,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherSkipsFormatTemplateWhenNone(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'display' => [ 'format' => 'none' ],
 		] );
@@ -539,8 +538,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherIncludesCustomDisplayTemplate(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'display' => [ 'template' => 'Template:Person/custom' ],
 		] );
@@ -555,8 +553,7 @@ class TemplateGeneratorTest extends TestCase {
 	public function testDispatcherCustomTemplateOnlyWithFormatNone(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
 			],
 			'display' => [ 'format' => 'none', 'template' => 'Template:Person/custom' ],
 		] );
@@ -570,11 +567,15 @@ class TemplateGeneratorTest extends TestCase {
 
 	public function testDispatcherCustomTemplateSurvivesInheritanceResolution(): void {
 		$parent = new CategoryModel( 'Person', [
-			'properties' => [ 'required' => [ 'Has name' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
 		] );
 		$child = new CategoryModel( 'Student', [
 			'parents' => [ 'Person' ],
-			'properties' => [ 'required' => [ 'Has student ID' ], 'optional' => [] ],
+			'properties' => [
+				new FieldModel( 'Has student ID', true, FieldModel::TYPE_PROPERTY ),
+			],
 			'display' => [ 'template' => 'Template:Student/custom' ],
 		] );
 

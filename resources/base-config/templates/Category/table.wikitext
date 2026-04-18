@@ -1,13 +1,20 @@
 <includeonly>{| class="wikitable source-semanticschemas"
 {{Category/display-header | category={{{category|}}} }}
-{{Category/display-rows | category={{{category|}}} }}
+{{Category/display-rows | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}
 {{Category/render-reverse | {{{category|}}} }}
-|}</includeonly><noinclude>
+|}{{#ifeq:{{{subobjects|yes}}}|yes|
+{{Category/subobjects | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}|}}</includeonly><noinclude>
 Dynamic table display template for SemanticSchemas categories.
 
-Composes display-header, display-rows, and render-reverse into a
-full-width wikitable layout.
+Composes display-header, display-rows, render-reverse, and subobjects
+into a full-width wikitable layout.
 
-Parameter:
+Parameters:
 * category - The category name (without namespace prefix)
+* page - Target page to read property values from. Defaults to
+         {{FULLPAGENAME}}; Category/subobject-instance passes a
+         subobject fragment here so the same template renders
+         individual subobject instances.
+* subobjects - Set to "no" to suppress the subobject sections
+         (used by Category/subobject-instance to prevent recursion).
 </noinclude>

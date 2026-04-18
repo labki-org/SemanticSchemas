@@ -38,6 +38,7 @@ class PropertyModel {
 		'renderTemplate' => [ 'Has render template', 'page' ],
 		'inputType' => [ 'Has input type', 'text' ],
 		'inverseLabel' => [ 'Inverse property label', 'text' ],
+		'hidden' => [ 'Is hidden', 'boolean' ],
 	];
 
 	private string $name;
