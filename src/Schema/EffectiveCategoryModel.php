@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Schema;
 /**
  * A CategoryModel that has been through inheritance resolution.
  *
- * Contains the fully merged properties, subobjects, and display/form config
+ * Contains the fully merged properties and display/form config
  * from the entire ancestor chain. Returned by InheritanceResolver::getEffectiveCategory().
  *
  * This is a type-level marker: methods that accept EffectiveCategoryModel

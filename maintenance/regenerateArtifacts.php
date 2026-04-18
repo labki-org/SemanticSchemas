@@ -2,9 +2,9 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Maintenance;
 
-use Maintenance;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\SemanticSchemasServices;
+use MediaWiki\Maintenance\Maintenance;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
 if ( $IP === false ) {
@@ -102,7 +102,7 @@ class RegenerateArtifacts extends Maintenance {
 			$this->output( "  ✗ Form generation failed\n" );
 		}
 
-		if ( $formGenerator->generateAndSaveCompositeForm( $effective ) ) {
+		if ( $formGenerator->generateAndSaveCompositeForm( $effective, $resolver ) ) {
 			$this->output( "  ✓ Generated composite form\n" );
 		} else {
 			$this->output( "  ✗ Composite form generation failed\n" );

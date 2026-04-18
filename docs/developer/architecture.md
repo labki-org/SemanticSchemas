@@ -70,7 +70,6 @@ Core schema models and operations.
 - **CategoryModel**: Immutable category definition with properties and metadata
 - **PropertyModel**: Immutable property definition with datatype and constraints (enhanced validation)
 - **InheritanceResolver**: C3 linearization for multiple inheritance
-- **SchemaLoader**: JSON/YAML parsing with gzip support and security limits
 - **SchemaImporter**: Imports schema into wiki with topological sorting
 - **SchemaExporter**: Exports current wiki state to schema with error recovery
 - **SchemaValidator**: Validates schema with severity levels (errors + warnings)
@@ -137,8 +136,6 @@ Shared utilities and helpers.
 ```
 YAML/JSON Schema
     ↓
-SchemaLoader (parse)
-    ↓
 SchemaValidator (validate)
     ↓
 SchemaImporter (topological sort)
@@ -158,8 +155,6 @@ Wiki Pages (Category/Property)
 WikiCategoryStore / WikiPropertyStore (read pages)
     ↓
 SchemaExporter (build schema)
-    ↓
-SchemaLoader (serialize)
     ↓
 YAML/JSON Schema
 ```

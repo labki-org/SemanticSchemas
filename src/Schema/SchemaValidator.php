@@ -27,22 +27,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Schema;
  */
 class SchemaValidator {
 
-	/** @var array Custom validation rules registered by extensions */
-	private $customValidators = [];
-
-	/**
-	 * Validate entire schema (errors only).
-	 *
-	 * This method returns only errors for compatibility with existing code.
-	 * Use validateSchemaWithSeverity() to get both errors and warnings.
-	 *
-	 * @param array $schema
-	 * @return array List of error messages
-	 */
-	public function validateSchema( array $schema ): array {
-		$result = $this->validateSchemaWithSeverity( $schema );
-		return $result['errors'];
-	}
+	public const SCHEMA_VERSION = '1.0';
 
 	/**
 	 * Validate entire schema with severity levels.
@@ -55,19 +40,18 @@ class SchemaValidator {
 		$warnings = [];
 
 		$structureErrors = $this->validateSchemaStructure( $schema );
-		if ( !empty( $structureErrors ) ) {
+		if ( $structureErrors ) {
 			return [ 'errors' => $structureErrors, 'warnings' => [] ];
 		}
 
 		$categories = $schema['categories'];
 		$properties = $schema['properties'];
-		$subobjects = $schema['subobjects'] ?? [];
 
 		foreach ( $categories as $categoryName => $categoryData ) {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateCategory( $categoryName, $categoryData, $categories, $properties, $subobjects )
+				$this->validateCategory( $categoryName, $categoryData, $categories, $properties )
 			);
 		}
 
@@ -75,25 +59,12 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateProperty( $propertyName, $propertyData, $categories )
-			);
-		}
-
-		foreach ( $subobjects as $subobjectName => $subobjectData ) {
-			$this->mergeResults(
-				$errors,
-				$warnings,
-				$this->validateSubobject( $subobjectName, $subobjectData, $properties )
+				$this->validateProperty( $propertyName, $propertyData )
 			);
 		}
 
 		$errors = array_merge( $errors, $this->checkCircularDependencies( $categories ) );
 		$warnings = array_merge( $warnings, $this->generateWarnings( $schema ) );
-
-		foreach ( $this->customValidators as $validator ) {
-			$customResult = call_user_func( $validator, $schema );
-			$this->mergeResults( $errors, $warnings, $customResult );
-		}
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];
 	}
@@ -112,7 +83,7 @@ class SchemaValidator {
 				'schema',
 				'',
 				'Missing required field: schemaVersion',
-				'Add "schemaVersion": "' . SchemaLoader::SCHEMA_VERSION . '" to the schema root'
+				'Add "schemaVersion": "' . self::SCHEMA_VERSION . '" to the schema root'
 			);
 		}
 
@@ -185,41 +156,9 @@ class SchemaValidator {
 		return "$prefix: $issue";
 	}
 
-	/**
-	 * Register a custom validation rule.
-	 *
-	 * @param callable $validator Takes schema array, returns ['errors' => [...], 'warnings' => [...]]
-	 */
-	public function registerCustomValidator( callable $validator ): void {
-		$this->customValidators[] = $validator;
-	}
-
 	/* ======================================================================
 	 * COMMON VALIDATION HELPERS
 	 * ====================================================================== */
-
-	/**
-	 * Validate that a field is an array if it exists.
-	 *
-	 * @param string $entityType
-	 * @param string $entityName
-	 * @param array $data
-	 * @param string $field
-	 * @param string $suggestion
-	 * @return string|null Error message or null if valid
-	 */
-	private function requireArrayField(
-		string $entityType,
-		string $entityName,
-		array $data,
-		string $field,
-		string $suggestion
-	): ?string {
-		if ( isset( $data[$field] ) && !is_array( $data[$field] ) ) {
-			return $this->formatError( $entityType, $entityName, "$field must be an array", $suggestion );
-		}
-		return null;
-	}
 
 	/**
 	 * Validate references to items in a lookup array.
@@ -257,65 +196,44 @@ class SchemaValidator {
 	}
 
 	/**
-	 * Validate required/optional bucket structure.
+	 * Validate field declaration entries.
 	 *
-	 * This pattern is used for properties and subobjects in categories,
-	 * and for properties in subobjects.
+	 * Accepts FieldModel[] or annotated arrays [{name, required}, ...].
 	 *
 	 * @param string $entityType
 	 * @param string $entityName
-	 * @param array $buckets Array with 'required' and/or 'optional' keys
+	 * @param array $entries FieldModel[] or annotated arrays
 	 * @param array $lookup Valid items to reference
-	 * @param string $referenceType 'property' or 'subobject'
+	 * @param string $referenceType 'property' or 'category'
 	 * @param string $fieldPrefix Field path prefix for error messages
 	 * @return array ['errors' => [...], 'warnings' => [...]]
 	 */
-	private function validateRequiredOptionalBuckets(
+	private function validateAnnotatedEntries(
 		string $entityType,
 		string $entityName,
-		array $buckets,
+		array $entries,
 		array $lookup,
 		string $referenceType,
 		string $fieldPrefix = ''
 	): array {
 		$errors = [];
 		$warnings = [];
-		$prefix = $fieldPrefix ? "$fieldPrefix." : '';
 
-		foreach ( [ 'required', 'optional' ] as $bucket ) {
-			$error = $this->requireArrayField(
-				$entityType,
-				$entityName,
-				$buckets,
-				$bucket,
-				"Use an array like [\"Item1\", \"Item2\"]"
-			);
-			if ( $error ) {
-				$errors[] = str_replace( "$bucket must be", "{$prefix}$bucket must be", $error );
-			}
-		}
-
-		$required = is_array( $buckets['required'] ?? null ) ? $buckets['required'] : [];
-		$optional = is_array( $buckets['optional'] ?? null ) ? $buckets['optional'] : [];
-
-		$duplicates = array_intersect(
-			array_map( 'strval', $required ),
-			array_map( 'strval', $optional )
+		$names = array_map(
+			static function ( $e ) {
+				if ( $e instanceof FieldModel ) {
+					return $e->getName();
+				}
+				return is_array( $e ) ? ( $e['name'] ?? '' ) : (string)$e;
+			},
+			$entries
 		);
-		if ( !empty( $duplicates ) ) {
-			$itemType = ucfirst( $referenceType ) . 's';
-			$errors[] = $this->formatError(
-				$entityType,
-				$entityName,
-				"$itemType cannot be both required and optional: " . implode( ', ', $duplicates ),
-				'Remove duplicates from either list'
-			);
-		}
 
 		$errors = array_merge(
 			$errors,
-			$this->validateReferences( $entityType, $entityName, $required, $lookup, $referenceType, 'required' ),
-			$this->validateReferences( $entityType, $entityName, $optional, $lookup, $referenceType, 'optional' )
+			$this->validateReferences(
+				$entityType, $entityName, $names, $lookup, $referenceType, $fieldPrefix
+			)
 		);
 
 		return [ 'errors' => $errors, 'warnings' => $warnings ];
@@ -387,8 +305,7 @@ class SchemaValidator {
 		string $categoryName,
 		array $categoryData,
 		array $allCategories,
-		array $allProperties,
-		array $allSubobjects
+		array $allProperties
 	): array {
 		$errors = [];
 		$warnings = [];
@@ -423,7 +340,7 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateRequiredOptionalBuckets(
+				$this->validateAnnotatedEntries(
 					'category',
 					$categoryName,
 					$categoryData['properties'],
@@ -438,12 +355,12 @@ class SchemaValidator {
 			$this->mergeResults(
 				$errors,
 				$warnings,
-				$this->validateRequiredOptionalBuckets(
+				$this->validateAnnotatedEntries(
 					'category',
 					$categoryName,
 					$categoryData['subobjects'],
-					$allSubobjects,
-					'subobject',
+					$allCategories,
+					'category',
 					'subobjects'
 				)
 			);
@@ -495,59 +412,6 @@ class SchemaValidator {
 	}
 
 	/* ======================================================================
-	 * SUBOBJECT VALIDATION
-	 * ====================================================================== */
-
-	private function validateSubobject(
-		string $subobjectName,
-		array $subobjectData,
-		array $allProperties
-	): array {
-		$errors = [];
-		$warnings = [];
-
-		if ( trim( $subobjectName ) === '' ) {
-			$errors[] = $this->formatError(
-				'subobject',
-				$subobjectName,
-				'Name cannot be empty',
-				'Provide a non-empty subobject name'
-			);
-			return [ 'errors' => $errors, 'warnings' => $warnings ];
-		}
-
-		if ( !isset( $subobjectData['properties'] ) ) {
-			return [ 'errors' => $errors, 'warnings' => $warnings ];
-		}
-
-		$props = $subobjectData['properties'];
-		if ( !is_array( $props ) ) {
-			$errors[] = $this->formatError(
-				'subobject',
-				$subobjectName,
-				'properties must be an array with required/optional keys',
-				'Use {"required": [...], "optional": [...]}'
-			);
-			return [ 'errors' => $errors, 'warnings' => $warnings ];
-		}
-
-		$this->mergeResults(
-			$errors,
-			$warnings,
-			$this->validateRequiredOptionalBuckets(
-				'subobject',
-				$subobjectName,
-				$props,
-				$allProperties,
-				'property',
-				'properties'
-			)
-		);
-
-		return [ 'errors' => $errors, 'warnings' => $warnings ];
-	}
-
-	/* ======================================================================
 	 * FORM VALIDATION
 	 * ====================================================================== */
 
@@ -589,7 +453,6 @@ class SchemaValidator {
 	private function validateProperty(
 		string $propertyName,
 		array $propertyData,
-		array $allCategories
 	): array {
 		$errors = [];
 		$warnings = [];
@@ -633,13 +496,21 @@ class SchemaValidator {
 		$categoryModels = [];
 		foreach ( $categories as $name => $data ) {
 			try {
+				$data['properties'] = array_map(
+					static fn ( array $e ) => new FieldModel( $e['name'], $e['required'], FieldModel::TYPE_PROPERTY ),
+					$data['properties'] ?? []
+				);
+				$data['subobjects'] = array_map(
+					static fn ( array $e ) => new FieldModel( $e['name'], $e['required'], FieldModel::TYPE_SUBOBJECT ),
+					$data['subobjects'] ?? []
+				);
 				$categoryModels[$name] = new CategoryModel( $name, $data );
-			} catch ( \InvalidArgumentException | \TypeError $e ) {
+			} catch ( \InvalidArgumentException | \TypeError ) {
 				continue;
 			}
 		}
 
-		if ( empty( $categoryModels ) ) {
+		if ( !$categoryModels ) {
 			return [];
 		}
 
@@ -670,18 +541,15 @@ class SchemaValidator {
 				continue;
 			}
 
-			$req = $data['properties']['required'] ?? [];
-			$opt = $data['properties']['optional'] ?? [];
-
-			if ( empty( $req ) && empty( $opt ) ) {
+			if ( !isset( $data['properties'] ) || !$data['properties'] ) {
 				$warnings[] = "Category '$name': no properties defined";
 			}
 
-			if ( empty( $data['display'] ?? [] ) ) {
+			if ( !isset( $data['display'] ) ) {
 				$warnings[] = "Category '$name': missing display configuration";
 			}
 
-			if ( empty( $data['forms'] ?? [] ) ) {
+			if ( !isset( $data['forms'] ) ) {
 				$warnings[] = "Category '$name': missing form configuration";
 			}
 		}

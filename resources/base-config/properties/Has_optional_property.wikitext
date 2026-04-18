@@ -1,8 +1,0 @@
-<!-- SemanticSchemas Start -->
-[[Has type::Page]]
-[[Has description::Fields that may optionally be filled in.]]
-[[Allows multiple values::true]]
-[[Display label::Optional fields]]
-[[Allows value from namespace::Property]]
-<!-- SemanticSchemas End -->
-[[Category:SemanticSchemas-managed-property]]

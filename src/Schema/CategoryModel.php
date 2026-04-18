@@ -17,13 +17,8 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   targetNamespace: string|null
  *   renderAs: string|null - TemplateFormat category reference
  *
- *   properties:
- *     required: string[]
- *     optional: string[]
- *
- *   subobjects:
- *     required: string[]
- *     optional: string[]
+ *   properties: FieldModel[]
+ *   subobjects: FieldModel[]
  *
  *   display:
  *     format: string|null
@@ -38,6 +33,20 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  */
 class CategoryModel {
 
+	/**
+	 * Declarative map of internal field names to SMW property labels and types.
+	 * Used by WikiCategoryStore::loadFromSMW via smwLoadProperties().
+	 *
+	 * Fields loaded separately: parents (MediaWiki API), properties/subobjects
+	 * (FieldDeclaration subobjects), display config (nested structure).
+	 */
+	public const SMW_PROPERTIES = [
+		'label' => [ 'Display label', 'text' ],
+		'description' => [ 'Has description', 'text' ],
+		'targetNamespace' => [ 'Has target namespace', 'text' ],
+		'backlinksFor' => [ 'Show backlinks for', 'property[]' ],
+	];
+
 	private string $name;
 	private array $parents;
 
@@ -47,19 +56,17 @@ class CategoryModel {
 	private ?string $targetNamespace;
 	private ?string $renderAs;
 
-	private array $requiredProperties;
-	private array $optionalProperties;
+	/** @var FieldModel[] */
+	private array $propertyFields;
 
-	private array $requiredSubobjects;
-	private array $optionalSubobjects;
+	/** @var FieldModel[] */
+	private array $subobjectFields;
 
 	/** @var string[] Property names whose incoming links to show as backlinks. */
 	private array $backlinksFor;
 
 	private array $displayConfig;
 	private array $formConfig;
-
-	/* -------------------- New Display System -------------------- */
 
 	/** @var ?string Custom display template page name (e.g. "Template:MyDisplay") */
 	private ?string $displayTemplate = null;
@@ -106,17 +113,8 @@ class CategoryModel {
 		if ( !is_array( $props ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'properties' must be an array." );
 		}
-
-		$this->requiredProperties = NamingHelper::normalizeList( $props['required'] ?? [] );
-		$this->optionalProperties = NamingHelper::normalizeList( $props['optional'] ?? [] );
-
-		$dup = array_intersect( $this->requiredProperties, $this->optionalProperties );
-		if ( $dup !== [] ) {
-			throw new InvalidArgumentException(
-				"Category '{$name}' has properties listed as both required and optional: " .
-				implode( ', ', $dup )
-			);
-		}
+		FieldModel::validateNoDuplicates( $props, "Category '{$name}'" );
+		$this->propertyFields = $props;
 
 		/* -------------------- Subobjects -------------------- */
 
@@ -124,17 +122,8 @@ class CategoryModel {
 		if ( !is_array( $subs ) ) {
 			throw new InvalidArgumentException( "Category '{$name}': 'subobjects' must be an array." );
 		}
-
-		$this->requiredSubobjects = NamingHelper::normalizeList( $subs['required'] ?? [] );
-		$this->optionalSubobjects = NamingHelper::normalizeList( $subs['optional'] ?? [] );
-
-		$dupSG = array_intersect( $this->requiredSubobjects, $this->optionalSubobjects );
-		if ( $dupSG !== [] ) {
-			throw new InvalidArgumentException(
-				"Category '{$name}' has subobjects listed as both required and optional: " .
-				implode( ', ', $dupSG )
-			);
-		}
+		FieldModel::validateNoDuplicates( $subs, "Category '{$name}'" );
+		$this->subobjectFields = $subs;
 
 		/* -------------------- Backlinks -------------------- */
 
@@ -189,66 +178,22 @@ class CategoryModel {
 		return $this->renderAs;
 	}
 
-	/* -------------------- Properties -------------------- */
+	/* -------------------- Property Fields -------------------- */
 
-	public function getRequiredProperties(): array {
-		return $this->requiredProperties;
+	/** @return FieldModel[] */
+	public function getPropertyFields(): array {
+		return $this->propertyFields;
 	}
 
-	public function getOptionalProperties(): array {
-		return $this->optionalProperties;
-	}
+	/* -------------------- Subobject Fields -------------------- */
 
-	public function getAllProperties(): array {
-		return array_values( array_unique(
-			array_merge( $this->requiredProperties, $this->optionalProperties )
-		) );
-	}
-
-	/**
-	 * Return all properties tagged with their required/optional status.
-	 *
-	 * @return array<array{name:string, required:bool}>
-	 */
-	public function getTaggedProperties(): array {
-		$out = [];
-		foreach ( $this->requiredProperties as $name ) {
-			$out[] = [ 'name' => $name, 'required' => true ];
-		}
-		foreach ( $this->optionalProperties as $name ) {
-			$out[] = [ 'name' => $name, 'required' => false ];
-		}
-		return $out;
-	}
-
-	/* -------------------- Subobjects -------------------- */
-
-	public function getRequiredSubobjects(): array {
-		return $this->requiredSubobjects;
-	}
-
-	public function getOptionalSubobjects(): array {
-		return $this->optionalSubobjects;
+	/** @return FieldModel[] */
+	public function getSubobjectFields(): array {
+		return $this->subobjectFields;
 	}
 
 	public function hasSubobjects(): bool {
-		return $this->requiredSubobjects !== [] || $this->optionalSubobjects !== [];
-	}
-
-	/**
-	 * Return all subobjects tagged with their required/optional status.
-	 *
-	 * @return array<array{name:string, required:bool}>
-	 */
-	public function getTaggedSubobjects(): array {
-		$out = [];
-		foreach ( $this->requiredSubobjects as $name ) {
-			$out[] = [ 'name' => $name, 'required' => true ];
-		}
-		foreach ( $this->optionalSubobjects as $name ) {
-			$out[] = [ 'name' => $name, 'required' => false ];
-		}
-		return $out;
+		return $this->subobjectFields !== [];
 	}
 
 	/* -------------------- Backlinks -------------------- */
@@ -279,33 +224,17 @@ class CategoryModel {
 	public function mergeWithParent( CategoryModel $parent ): EffectiveCategoryModel {
 		/* -------------------- Properties -------------------- */
 
-		$mergedRequired = array_values( array_unique( array_merge(
-			$parent->getRequiredProperties(),
-			$this->requiredProperties
-		) ) );
-
-		$mergedOptional = array_values( array_diff(
-			array_unique( array_merge(
-				$parent->getOptionalProperties(),
-				$this->optionalProperties
-			) ),
-			$mergedRequired
-		) );
+		$mergedProps = self::mergeFieldModels(
+			$parent->getPropertyFields(),
+			$this->propertyFields
+		);
 
 		/* -------------------- Subobjects -------------------- */
 
-		$mergedRequiredSG = array_values( array_unique( array_merge(
-			$parent->getRequiredSubobjects(),
-			$this->requiredSubobjects
-		) ) );
-
-		$mergedOptionalSG = array_values( array_diff(
-			array_unique( array_merge(
-				$parent->getOptionalSubobjects(),
-				$this->optionalSubobjects
-			) ),
-			$mergedRequiredSG
-		) );
+		$mergedSubs = self::mergeFieldModels(
+			$parent->getSubobjectFields(),
+			$this->subobjectFields
+		);
 
 		/* -------------------- Backlinks -------------------- */
 
@@ -338,19 +267,40 @@ class CategoryModel {
 				'description' => $this->description,
 				'targetNamespace' => $this->targetNamespace,
 				'renderAs' => $this->renderAs ?? $parent->getRenderAs(),
-				'properties' => [
-					'required' => $mergedRequired,
-					'optional' => $mergedOptional,
-				],
-				'subobjects' => [
-					'required' => $mergedRequiredSG,
-					'optional' => $mergedOptionalSG,
-				],
+				'properties' => $mergedProps,
+				'subobjects' => $mergedSubs,
 				'backlinksFor' => $mergedBacklinksFor,
 				'display' => $mergedDisplay,
 				'forms' => $mergedForms,
 			]
 		);
+	}
+
+	/**
+	 * Merge parent and child field declarations.
+	 *
+	 * If a field appears in both, required wins (child can promote optional to required).
+	 * Order: required fields first, then optional.
+	 *
+	 * @param FieldModel[] $parentFields
+	 * @param FieldModel[] $childFields
+	 * @return FieldModel[]
+	 */
+	private static function mergeFieldModels( array $parentFields, array $childFields ): array {
+		$required = [];
+		$optional = [];
+
+		foreach ( array_merge( $parentFields, $childFields ) as $field ) {
+			$name = $field->getName();
+			if ( $field->isRequired() ) {
+				$required[$name] = $field;
+				unset( $optional[$name] );
+			} elseif ( !isset( $required[$name] ) ) {
+				$optional[$name] = $field;
+			}
+		}
+
+		return array_values( array_merge( $required, $optional ) );
 	}
 
 	/* -------------------------------------------------------------------------
@@ -404,17 +354,11 @@ class CategoryModel {
 			'parents' => $this->parents,
 			'label' => $this->label,
 			'description' => $this->description,
-			'properties' => [
-				'required' => $this->requiredProperties,
-				'optional' => $this->optionalProperties,
-			],
+			'properties' => $this->propertyFields,
 		];
 
 		if ( $this->hasSubobjects() ) {
-			$out['subobjects'] = [
-				'required' => $this->requiredSubobjects,
-				'optional' => $this->optionalSubobjects,
-			];
+			$out['subobjects'] = $this->subobjectFields;
 		}
 
 		if ( $this->backlinksFor !== [] ) {
@@ -439,10 +383,6 @@ class CategoryModel {
 
 		return $out;
 	}
-
-	/* -------------------------------------------------------------------------
-	 * NEW DISPLAY SYSTEM ACCESSORS
-	 * ------------------------------------------------------------------------- */
 
 	public function getDisplayTemplate(): ?string {
 		return $this->displayTemplate;

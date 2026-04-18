@@ -5,14 +5,14 @@ namespace MediaWiki\Extension\SemanticSchemas\Generator;
 use InvalidArgumentException;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\EffectiveCategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\InheritanceResolver;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
-use MediaWiki\Extension\SemanticSchemas\Schema\SubobjectModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
+use MediaWiki\Language\Language;
 
 /**
  * Generates core templates for proper Semantic MediaWiki functioning.
@@ -20,22 +20,22 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  * Responsibilities:
  *   - Semantic template: Template:<Category>/semantic (stores data via #set)
  *   - Dispatcher template: Template:<Category> (coordinates form, storage, and display)
- *   - Subobject templates: Template:Subobject/<Name> (for nested data)
+ *   - Subobject templates: Template:<Name>/subobject (for nested data via #subobject)
  */
 class TemplateGenerator {
 
 	private PageCreator $pageCreator;
-	private WikiSubobjectStore $subobjectStore;
 	private WikiPropertyStore $propertyStore;
+	private Language $language;
 
 	public function __construct(
 		PageCreator $pageCreator,
-		WikiSubobjectStore $subobjectStore,
-		WikiPropertyStore $propertyStore
+		WikiPropertyStore $propertyStore,
+		Language $language
 	) {
 		$this->pageCreator = $pageCreator;
-		$this->subobjectStore = $subobjectStore;
 		$this->propertyStore = $propertyStore;
+		$this->language = $language;
 	}
 
 	/* =====================================================================
@@ -76,14 +76,18 @@ class TemplateGenerator {
 		}
 
 		if ( $propModel->allowsMultipleValues() ) {
-			// Multi-value Page property with namespace: prefix each value via #arraymap inside #set
+			// Multi-value Page property with namespace: prefix each value via #arraymap.
+			// Only add namespace when the value has none (FULLPAGENAME == PAGENAME).
 			return ' | ' . $propertyName . ' = {{#arraymap:{{{' . $param .
-				'|}}}|,|@@item@@|' . $allowedNamespace . ':@@item@@|,}} |+sep=,';
+				'|}}}|,|@@item@@|{{#ifeq:{{FULLPAGENAME:@@item@@}}|{{PAGENAME:@@item@@}}|'
+				. $allowedNamespace . ':}}@@item@@|,}} |+sep=,';
 		}
 
-		// Single value: conditional prefix
-		return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|' .
-			$allowedNamespace . ':{{{' . $param . '|}}}|}}';
+		// Single value: add namespace only when the value has none.
+		// If the user typed a namespace explicitly, preserve it as-is.
+		return ' | ' . $propertyName . ' = {{#if:{{{' . $param . '|}}}|'
+			. '{{#ifeq:{{FULLPAGENAME:{{{' . $param . '|}}}}}|{{PAGENAME:{{{' . $param . '|}}}}}'
+			. '|' . $allowedNamespace . ':}}{{{' . $param . '|}}}|}}';
 	}
 
 	/* =====================================================================
@@ -109,8 +113,8 @@ class TemplateGenerator {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$props = $category->getAllProperties();
-		sort( $props );
+		$fields = $category->getPropertyFields();
+		self::sortFieldsByName( $fields );
 
 		$out = [];
 		$out[] = '<noinclude>';
@@ -120,11 +124,11 @@ class TemplateGenerator {
 
 		/* Embed parent semantic templates */
 		foreach ( $parentEffectives as $parentName => $parentEffective ) {
-			$parentProps = $parentEffective->getAllProperties();
-			sort( $parentProps );
+			$parentFields = $parentEffective->getPropertyFields();
+			self::sortFieldsByName( $parentFields );
 			$out = array_merge(
 				$out,
-				$this->generateTemplateCall( $parentName . '/semantic', $parentProps )
+				$this->generateTemplateCall( $parentName . '/semantic', $parentFields )
 			);
 			$out[] = '';
 		}
@@ -132,9 +136,10 @@ class TemplateGenerator {
 		/* Own property storage */
 		$out[] = '{{#set:';
 
-		foreach ( $props as $p ) {
-			$param = NamingHelper::propertyToParameter( $p );
-			$out[] = $this->generatePropertyLine( $p, $param );
+		foreach ( $fields as $field ) {
+			$out[] = $this->generatePropertyLine(
+				$field->getName(), $field->getParameterName()
+			);
 		}
 
 		$out[] = '}}';
@@ -152,14 +157,14 @@ class TemplateGenerator {
 	 * Generate a template call with property parameter passthrough.
 	 *
 	 * @param string $templateName Template name to call
-	 * @param array $props List of property names
+	 * @param FieldModel[] $fields
 	 * @return array Lines of wikitext
 	 */
-	private function generateTemplateCall( string $templateName, array $props ): array {
+	private function generateTemplateCall( string $templateName, array $fields ): array {
 		$out = [];
 		$out[] = '{{' . $templateName;
-		foreach ( $props as $p ) {
-			$param = NamingHelper::propertyToParameter( $p );
+		foreach ( $fields as $field ) {
+			$param = $field->getParameterName();
 			$out[] = ' | ' . $param . ' = {{{' . $param . '|}}}';
 		}
 		$out[] = '}}';
@@ -172,14 +177,17 @@ class TemplateGenerator {
 	 * @param EffectiveCategoryModel $effective The fully merged category
 	 * @return string
 	 */
-	public function generateDispatcherTemplate( EffectiveCategoryModel $effective ): string {
+	public function generateDispatcherTemplate(
+		EffectiveCategoryModel $effective,
+		?InheritanceResolver $resolver = null
+	): string {
 		$name = trim( $effective->getName() );
 		if ( $name === '' ) {
 			throw new InvalidArgumentException( "Category name cannot be empty" );
 		}
 
-		$allProps = $effective->getAllProperties();
-		sort( $allProps );
+		$allFields = $effective->getPropertyFields();
+		self::sortFieldsByName( $allFields );
 
 		$out = [];
 		$out[] = '<noinclude>';
@@ -188,19 +196,25 @@ class TemplateGenerator {
 		$out[] = '</noinclude><includeonly>{{#default_form:' . $name . '}}';
 
 		/* Semantic storage */
-		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allProps ) );
+		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allFields ) );
 
 		/* Dynamic display */
-		$out = array_merge( $out, $this->generateDynamicDisplay( $effective, $allProps ) );
+		$out = array_merge( $out, $this->generateDynamicDisplay( $effective, $allFields ) );
 
-		/* Subobject sections */
-		$out = array_merge(
-			$out,
-			$this->generateSubobjectDisplaySections( $effective )
-		);
+		/* Subobject display sections */
+		if ( $resolver !== null ) {
+			$out = array_merge( $out, $this->generateSubobjectSections( $effective, $resolver ) );
+		}
 
-		/* Category annotations (previously in the display template) */
-		$out[] = '[[Category:' . $name . ']]';
+		/* Category membership */
+		// FIXME: Temporary special-case hack to exclude Category:Category membership -
+		// prevent categories from inheriting the metacategory fields.
+		// To be resolved in #122 after removing the need for generation,
+		// where this will become part of the pre-packaged Template:Category template
+		$categoryPrefix = $this->language->getFormattedNsText( NS_CATEGORY );
+		if ( $name !== $categoryPrefix ) {
+			$out[] = '[[' . $categoryPrefix . ':' . $name . ']]';
+		}
 		$out[] = '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]';
 
 		$out[] = '</includeonly>';
@@ -217,12 +231,12 @@ class TemplateGenerator {
 	 * is called after the format template (or alone if format is 'none').
 	 *
 	 * @param EffectiveCategoryModel $effective
-	 * @param string[] $allProps Sorted effective property list
+	 * @param FieldModel[] $allFields Sorted effective fields
 	 * @return string[]
 	 */
 	private function generateDynamicDisplay(
 		EffectiveCategoryModel $effective,
-		array $allProps
+		array $allFields
 	): array {
 		$name = $effective->getName();
 		$format = $effective->getDisplayFormat() ?? 'table';
@@ -238,123 +252,101 @@ class TemplateGenerator {
 		$displayTemplate = $effective->getDisplayTemplate();
 		if ( $displayTemplate !== null ) {
 			$templateName = preg_replace( '/^Template:/', '', $displayTemplate );
-			$out = array_merge( $out, $this->generateTemplateCall( $templateName, $allProps ) );
+			$out = array_merge( $out, $this->generateTemplateCall( $templateName, $allFields ) );
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Emit #ask sections that render each subobject category via its /display template.
+	 *
+	 * Results are sorted by "Has sort order" (populated via {{#s2counter:…}} in the
+	 * subobject template) so the display order on the parent page matches the order
+	 * of subobjects as they were added in the form.
+	 *
+	 * @param EffectiveCategoryModel $category
+	 * @param InheritanceResolver $resolver
+	 * @return string[]
+	 */
+	private function generateSubobjectSections(
+		EffectiveCategoryModel $category,
+		InheritanceResolver $resolver
+	): array {
+		$subFields = $category->getSubobjectFields();
+		if ( !$subFields ) {
+			return [];
+		}
+
+		$out = [];
+		$catNs = $this->language->getFormattedNsText( NS_CATEGORY );
+
+		foreach ( $subFields as $field ) {
+			$subName = $field->getName();
+			if ( !$resolver->hasCategory( $subName ) ) {
+				continue;
+			}
+
+			$sub = $resolver->getEffectiveCategory( $subName );
+			$fields = $sub->getPropertyFields();
+			if ( !$fields ) {
+				continue;
+			}
+
+			$label = $sub->getLabel() ?: $sub->getName();
+			$out[] = '=== ' . $label . ' ===';
+			$out[] = '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]]'
+				. ' [[' . $catNs . ':' . $subName . ']]';
+
+			foreach ( $fields as $f ) {
+				$out[] = ' | ?' . $f->getName() . ' = ' . $f->getParameterName();
+			}
+
+			$out[] = ' | format=template';
+			$out[] = ' | template=' . $subName . '/display';
+			$out[] = ' | named args=yes';
+			$out[] = ' | link=none';
+			$out[] = ' | mainlabel=-';
+			$out[] = ' | sort=Has sort order';
+			$out[] = ' | order=asc';
+			$out[] = '}}';
 		}
 
 		return $out;
 	}
 
 	/* =====================================================================
-	 * SUBOBJECT TEMPLATES  (Template:Subobject/<Name>)
+	 * SUBOBJECT TEMPLATES  (Template:<Name>/subobject)
+	 *
+	 * Subobject types are categories. The generator reads the category schema
+	 * via WikiCategoryStore and produces templates that use SMW's @category
+	 * mechanism for typing instead of a custom property.
 	 * ===================================================================== */
 
-	private function generateSubobjectTemplate( SubobjectModel $sub ): string {
+	private function generateSubobjectTemplate( EffectiveCategoryModel $sub ): string {
 		$name = $sub->getName();
 
 		$out = [];
 		$out[] = '<noinclude>';
 		$out[] = '<!-- AUTO-GENERATED by SemanticSchemas - DO NOT EDIT MANUALLY -->';
-		$out[] = 'Subobject semantic template for Subobject:' . $name;
+		$out[] = 'Subobject template for Category:' . $name;
 		$out[] = '</noinclude><includeonly>';
 
+		$idPrefix = NamingHelper::propertyToParameter( $name );
 		$out[] = '{{#subobject:';
-		$out[] = ' | Has subobject type = Subobject:' . $name;
+		$out[] = ' |@category=' . $name;
+		$out[] = ' | Has sort order = {{#s2counter:' . $idPrefix . '}}';
 
-		$props = array_merge(
-			$sub->getRequiredProperties(),
-			$sub->getOptionalProperties()
-		);
-
-		foreach ( $props as $p ) {
-			$param = NamingHelper::propertyToParameter( $p );
-			$out[] = $this->generatePropertyLine( $p, $param );
+		foreach ( $sub->getPropertyFields() as $field ) {
+			$out[] = $this->generatePropertyLine(
+				$field->getName(), $field->getParameterName()
+			);
 		}
 
 		$out[] = '}}';
 		$out[] = '</includeonly>';
 
 		return implode( "\n", $out );
-	}
-
-	private function generateSubobjectRowTemplate( SubobjectModel $sub ): string {
-		$name = $sub->getName();
-		$props = $sub->getAllProperties();
-
-		$out = [];
-		$out[] = '<noinclude>Auto-generated row template for subobject ' . $name . '</noinclude>';
-		$out[] = '<includeonly>';
-		$out[] = '|-';
-
-		$i = 2;
-		foreach ( $props as $p ) {
-			$out[] = '| {{{' . $i . '|}}}';
-			$i++;
-		}
-
-		$out[] = '</includeonly>';
-
-		return implode( "\n", $out );
-	}
-
-	/* =====================================================================
-	 * SUBOBJECT DISPLAY
-	 * ===================================================================== */
-
-	private function generateSubobjectDisplaySections( EffectiveCategoryModel $category ): array {
-		$required = $category->getRequiredSubobjects();
-		$optional = $category->getOptionalSubobjects();
-
-		$all = array_unique( array_merge( $required, $optional ) );
-		if ( empty( $all ) ) {
-			return [];
-		}
-
-		$out = [];
-
-		foreach ( $all as $subName ) {
-			$sub = $this->subobjectStore->readSubobject( $subName );
-			if ( !$sub instanceof SubobjectModel ) {
-				wfLogWarning( "SemanticSchemas: Missing subobject definition '$subName'" );
-				continue;
-			}
-
-			$label = $sub->getLabel() ?: $sub->getName();
-			$props = $sub->getAllProperties();
-			if ( empty( $props ) ) {
-				continue;
-			}
-
-			$out[] = '=== ' . $label . ' ===';
-			$out[] = '';
-			$out[] = '{| class="wikitable s2-subobject-table"';
-			$out[] = '|-';
-
-			/* header row */
-			foreach ( $props as $p ) {
-				$lab = NamingHelper::generatePropertyLabel( $p );
-				$out[] = '! ' . $lab;
-			}
-
-			/* SMW #ask invocation */
-			$askQuery = '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] '
-				. '[[Has subobject type::Subobject:' . $subName . ']]';
-			$out[] = $askQuery;
-
-			foreach ( $props as $p ) {
-				$out[] = ' | ?' . $p;
-			}
-
-			$rowTemplate = 'Subobject/' . $subName . '/row';
-
-			$out[] = ' | format=template';
-			$out[] = ' | template=' . $rowTemplate;
-			$out[] = ' | default=<tr><td colspan="' . count( $props ) . '">No entries yet.</td></tr>';
-			$out[] = '}}';
-			$out[] = '|}';
-			$out[] = '';
-		}
-
-		return $out;
 	}
 
 	/* =====================================================================
@@ -387,44 +379,35 @@ class TemplateGenerator {
 
 		/* Dispatcher */
 		try {
-			$content = $this->generateDispatcherTemplate( $effective );
+			$content = $this->generateDispatcherTemplate( $effective, $resolver );
 			$this->updateTemplate( $name, $content );
 		} catch ( \Exception $e ) {
 			$errors[] = "Error generating dispatcher template for $name: " . $e->getMessage();
 		}
 
-		/* Subobject templates — collect from the full chain */
-		$subs = array_merge(
-			$effective->getRequiredSubobjects(),
-			$effective->getOptionalSubobjects()
-		);
-		$subs = array_unique( $subs );
-
-		foreach ( $subs as $subName ) {
-			try {
-				$sub = $this->subobjectStore->readSubobject( $subName );
-				if ( !$sub instanceof SubobjectModel ) {
-					$errors[] = "Missing subobject '$subName'";
-					continue;
-				}
-
-				/* semantic template */
-				$content = $this->generateSubobjectTemplate( $sub );
-				$this->updateTemplate( 'Subobject/' . $sub->getName(), $content );
-
-				/* row template */
-				$rowContent = $this->generateSubobjectRowTemplate( $sub );
-				$this->updateTemplate( 'Subobject/' . $sub->getName() . '/row', $rowContent );
-
-			} catch ( \Exception $e ) {
-				$errors[] = "Error generating templates for subobject '$subName': " . $e->getMessage();
-			}
+		/* Subobject template — every category gets one */
+		try {
+			$content = $this->generateSubobjectTemplate( $effective );
+			$this->updateTemplate( $name . '/subobject', $content );
+		} catch ( \Exception $e ) {
+			$errors[] = "Error generating subobject template for $name: " . $e->getMessage();
 		}
 
 		return [
-			'success' => empty( $errors ),
+			'success' => !$errors,
 			'errors' => $errors
 		];
+	}
+
+	/**
+	 * Sort FieldModel[] alphabetically by name (in place).
+	 *
+	 * @param FieldModel[] &$fields
+	 */
+	private static function sortFieldsByName( array &$fields ): void {
+		usort( $fields, static fn ( FieldModel $a, FieldModel $b ) =>
+			strcmp( $a->getName(), $b->getName() )
+		);
 	}
 
 	/* =====================================================================

@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Special;
 
-use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
@@ -31,16 +30,13 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 		$services = $this->getServiceContainer();
 		$this->pageCreator = new PageCreator(
 			$services->getWikiPageFactory(),
-			$services->getDeletePageFactory()
 		);
 		$propertyStore = new WikiPropertyStore(
 			$this->pageCreator,
 			$services->getConnectionProvider(),
-			$services->getContentLanguage()
 		);
 		$this->categoryStore = new WikiCategoryStore(
 			$this->pageCreator,
-			$propertyStore,
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);
@@ -71,7 +67,7 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 	 */
 	public function testSingleCategoryWithNamespaceIncludesNamespaceInRedirect(): void {
 		$catName = 'NsCat' . uniqid();
-		$this->createCategory( $catName, [ 'targetNamespace' => 'User' ] );
+		$this->createCategory( $catName, "[[Has target namespace::User]]" );
 		$this->createFormPage( $catName );
 
 		// SMW needs to process semantic data before categoryStore can read targetNamespace
@@ -155,7 +151,9 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 
 	public function testAddCategoryDoesNotDuplicateExistingTemplate(): void {
 		$cat1 = 'DupA' . uniqid();
+		$cat2 = 'DupB' . uniqid();
 		$this->createCategory( $cat1 );
+		$this->createCategory( $cat2 );
 
 		$pageName = 'DupPage' . uniqid();
 		$title = Title::makeTitleSafe( NS_MAIN, $pageName );
@@ -170,8 +168,6 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 		$this->executeJobs();
 
 		// Add same category again plus a new one
-		$cat2 = 'DupB' . uniqid();
-		$this->createCategory( $cat2 );
 		$this->executeCreatePage( $pageName, [ $cat1, $cat2 ] );
 
 		$content = $this->getPageContent( $title );
@@ -185,56 +181,11 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 	}
 
 	/* =========================================================================
-	 * PARENT-TO-CHILD CATEGORY REPLACEMENT
-	 * ========================================================================= */
-
-	/**
-	 * @group Broken
-	 * SMW semantic data (parent categories) not available in test context
-	 * after executeJobs(). The inheritance resolver cannot find parent
-	 * relationships because SMW's deferred processing does not complete
-	 * within the test transaction.
-	 */
-	public function testChildCategoryReplacesParentTemplateCall(): void {
-		$parent = 'Parent' . uniqid();
-		$child = 'Child' . uniqid();
-		$this->createCategory( $parent );
-		$this->createCategory( $child, [ 'parents' => [ $parent ] ] );
-
-		// SMW needs to process the parent relationship
-		$this->executeJobs();
-
-		$pageName = 'InheritPage' . uniqid();
-		$title = Title::makeTitleSafe( NS_MAIN, $pageName );
-
-		// Create page with parent template
-		$this->pageCreator->createOrUpdatePage(
-			$title,
-			"{{" . $parent . "\n|has_name=Test\n}}",
-			'Initial page'
-		);
-
-		$this->executeJobs();
-
-		// Add child category (should replace parent)
-		$this->executeCreatePage( $pageName, [ $child ] );
-
-		$content = $this->getPageContent( $title );
-		$this->assertStringContainsString( '{{' . $child, $content,
-			'Child template should be present' );
-		$this->assertStringNotContainsString( '{{' . $parent, $content,
-			'Parent template should be replaced' );
-		$this->assertStringContainsString( 'has_name=Test', $content,
-			'Parent params should be preserved' );
-	}
-
-	/* =========================================================================
 	 * VALIDATION
 	 * ========================================================================= */
 
 	public function testEmptyPageNameShowsError(): void {
 		$cat = 'ValCat' . uniqid();
-		$this->createCategory( $cat );
 
 		$context = $this->executeCreatePage( '', [ $cat ] );
 
@@ -253,9 +204,9 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 	 * Helpers
 	 * ========================================================================= */
 
-	private function createCategory( string $name, array $data = [] ): void {
-		$category = new CategoryModel( $name, $data );
-		$this->categoryStore->writeCategory( $category );
+	private function createCategory( string $name, string $content = "" ): void {
+		$title = Title::makeTitle( NS_CATEGORY, $name );
+		$this->pageCreator->createOrUpdatePage( $title, $content, '' );
 	}
 
 	private function createFormPage( string $categoryName ): void {

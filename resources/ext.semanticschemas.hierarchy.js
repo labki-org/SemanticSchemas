@@ -275,7 +275,7 @@
 	}
 
 	/* =======================================================================
-	 * SUBGROUP TABLE
+	 * SUBOBJECT TABLE
 	 * ======================================================================= */
 
 	function renderSubobjectTable( $container, data ) {
@@ -304,8 +304,8 @@
 					.append(
 						$( '<td>' ).append(
 							s.subobjectTitle ?
-								buildLink( s.subobjectTitle, 'Subobject' ) :
-								stripPrefix( s.subobjectTitle, 'Subobject' ) || '—'
+								buildLink( s.subobjectTitle, 'Category' ) :
+								stripPrefix( s.subobjectTitle, 'Category' ) || '—'
 						)
 					)
 					.append(

@@ -33,58 +33,34 @@ Category pages support the following semantic properties to define their schema:
   [[Has target namespace::Main]]
   ```
 
-### Inheritance
+### Field Declarations
 
-#### `Property:Has parent category`
+Fields are declared using subobjects on the category page. Property fields use `@category=Property field` and subobject fields use `@category=Subobject field`.
+
+#### `Property:For property`
+- **Type:** Page (Property namespace)
+- **Purpose:** References the property a field declaration is for
+- **Example:**
+  ```wiki
+  {{#subobject:
+   |@category=Property field
+   | For property = Property:Has full name
+   | Is required = true
+   | Has sort order = 1
+  }}
+  ```
+
+#### `Property:For category`
 - **Type:** Page (Category namespace)
-- **Purpose:** Defines parent categories for inheritance
-- **Multiple:** Yes (supports multiple inheritance)
+- **Purpose:** References the category a subobject field declaration is for
 - **Example:**
   ```wiki
-  [[Has parent category::Category:Entity]]
-  [[Has parent category::Category:Living Thing]]
-  ```
-
-### Properties
-
-#### `Property:Has required property`
-- **Type:** Page (Property namespace)
-- **Purpose:** Properties that must be filled when creating a page in this category
-- **Multiple:** Yes
-- **Example:**
-  ```wiki
-  [[Has required property::Property:Has full name]]
-  [[Has required property::Property:Has email]]
-  ```
-
-#### `Property:Has optional property`
-- **Type:** Page (Property namespace)
-- **Purpose:** Properties that may be filled when creating a page in this category
-- **Multiple:** Yes
-- **Example:**
-  ```wiki
-  [[Has optional property::Property:Has phone]]
-  [[Has optional property::Property:Has website]]
-  ```
-
-### Subobjects
-
-#### `Property:Has required subobject`
-- **Type:** Page (Subobject namespace)
-- **Purpose:** Subobjects that must be present on pages in this category
-- **Multiple:** Yes
-- **Example:**
-  ```wiki
-  [[Has required subobject::Subobject:Publication]]
-  ```
-
-#### `Property:Has optional subobject`
-- **Type:** Page (Subobject namespace)
-- **Purpose:** Subobjects that may be present on pages in this category
-- **Multiple:** Yes
-- **Example:**
-  ```wiki
-  [[Has optional subobject::Subobject:Award]]
+  {{#subobject:
+   |@category=Subobject field
+   | For category = Category:Publication
+   | Is required = false
+   | Has sort order = 1
+  }}
   ```
 
 ### Display Configuration
@@ -106,9 +82,9 @@ Category pages support the following semantic properties to define their schema:
 Category:Person
 ----
 <!-- SemanticSchemas Start -->
+[[Category:Entity]]
 [[Display label::Person]]
 [[Has description::Represents a person in the system]]
-[[Has parent category::Category:Entity]]
 [[Has required property::Property:Has full name]]
 [[Has required property::Property:Has email]]
 [[Has optional property::Property:Has phone]]
@@ -327,7 +303,6 @@ Subobject:Publication
 | `Display label` | Text | No | No | Human-readable label |
 | `Has description` | Text | No | No | Category description |
 | `Has target namespace` | Text | No | No | Target namespace |
-| `Has parent category` | Category | Yes | No | Parent categories |
 | `Has required property` | Property | Yes | No | Required properties |
 | `Has optional property` | Property | Yes | No | Optional properties |
 | `Has required subobject` | Subobject | Yes | No | Required subobjects |
@@ -380,7 +355,7 @@ This ensures that:
 
 ### Inheritance
 
-- **Categories:** Support multiple inheritance via `Has parent category`
+- **Categories:** Support multiple inheritance via `[[Category:]]`
 - **Properties:** Support single inheritance via `Subproperty of`
 - **Subobjects:** No inheritance support
 

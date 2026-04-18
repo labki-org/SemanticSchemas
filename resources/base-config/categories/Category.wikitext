@@ -1,16 +1,53 @@
 <!-- SemanticSchemas Start -->
 [[Has description::Defines the schema metadata for categories managed by SemanticSchemas.]]
 [[Has target namespace::Category]]
-[[Has required property::Property:Has description]]
-[[Has optional property::Property:Display label]]
-[[Has optional property::Property:Has target namespace]]
-[[Has optional property::Property:Has parent category]]
-[[Has optional property::Property:Has required property]]
-[[Has optional property::Property:Has optional property]]
-[[Has optional property::Property:Has required subobject]]
-[[Has optional property::Property:Has optional subobject]]
-[[Has optional property::Property:Has display format]]
-[[Has optional property::Property:Has display template]]
-[[Has optional property::Property:Show backlinks for]]
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has description
+ | Is required = true
+ | Has sort order = 1
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Display label
+ | Is required = false
+ | Has sort order = 2
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has target namespace
+ | Is required = false
+ | Has sort order = 3
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has display format
+ | Is required = false
+ | Has sort order = 4
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has display template
+ | Is required = false
+ | Has sort order = 5
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Show backlinks for
+ | Is required = false
+ | Has sort order = 6
+}}
+{{#subobject:
+ |@category=Subobject field
+ | For category = Category:Property field
+ | Is required = false
+ | Has sort order = 1
+}}
+{{#subobject:
+ |@category=Subobject field
+ | For category = Category:Subobject field
+ | Is required = false
+ | Has sort order = 2
+}}
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed]]

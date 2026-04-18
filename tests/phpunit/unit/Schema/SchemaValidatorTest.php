@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Unit\Schema;
 
-use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use PHPUnit\Framework\TestCase;
 
@@ -24,7 +23,7 @@ class SchemaValidatorTest extends TestCase {
 
 	public function testValidSchemaPassesValidation(): void {
 		$schema = $this->getValidSchema();
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertEmpty( $errors, 'Valid schema should have no errors' );
 	}
 
@@ -32,7 +31,7 @@ class SchemaValidatorTest extends TestCase {
 		$schema = $this->getValidSchema();
 		unset( $schema['schemaVersion'] );
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors, 'Missing schemaVersion should produce error' );
 		$this->assertStringContainsString( 'schemaVersion', $errors[0] );
 	}
@@ -43,7 +42,7 @@ class SchemaValidatorTest extends TestCase {
 			'properties' => [],
 		];
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'categories', $errors[0] );
 	}
@@ -54,7 +53,7 @@ class SchemaValidatorTest extends TestCase {
 			'categories' => [],
 		];
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'properties', $errors[0] );
 	}
@@ -65,11 +64,10 @@ class SchemaValidatorTest extends TestCase {
 
 	public function testEmptyCategoryNameReturnsError(): void {
 		$schema = $this->getValidSchema();
-		$schema['categories'][''] = [ 'properties' => [ 'required' => [] ] ];
+		$schema['categories'][''] = [ 'properties' => [] ];
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors, 'Empty category name should produce error' );
-		// The error comes from CategoryModel constructor via exception
 		$foundEmptyError = false;
 		foreach ( $errors as $error ) {
 			if ( stripos( $error, 'empty' ) !== false || stripos( $error, 'name' ) !== false ) {
@@ -84,9 +82,8 @@ class SchemaValidatorTest extends TestCase {
 		$schema = $this->getValidSchema();
 		$schema['categories']['TestCategory']['parents'] = 'NotAnArray';
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors, 'Invalid parent type should produce error' );
-		// Look for parent-related error message
 		$foundError = false;
 		foreach ( $errors as $error ) {
 			if ( stripos( $error, 'parent' ) !== false || stripos( $error, 'array' ) !== false ) {
@@ -101,26 +98,18 @@ class SchemaValidatorTest extends TestCase {
 		$schema = $this->getValidSchema();
 		$schema['categories']['TestCategory']['parents'] = [ 'NonExistentParent' ];
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'NonExistentParent', $errors[0] );
 		$this->assertStringContainsString( 'does not exist', $errors[0] );
 	}
 
-	public function testNonExistentRequiredPropertyReturnsError(): void {
+	public function testNonExistentPropertyReturnsError(): void {
 		$schema = $this->getValidSchema();
-		$schema['categories']['TestCategory']['properties']['required'][] = 'Undefined Property';
+		$schema['categories']['TestCategory']['properties'][] =
+			[ 'name' => 'Undefined Property', 'required' => true ];
 
-		$errors = $this->validator->validateSchema( $schema );
-		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'Undefined Property', $errors[0] );
-	}
-
-	public function testNonExistentOptionalPropertyReturnsError(): void {
-		$schema = $this->getValidSchema();
-		$schema['categories']['TestCategory']['properties']['optional'][] = 'Undefined Property';
-
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'Undefined Property', $errors[0] );
 	}
@@ -133,7 +122,7 @@ class SchemaValidatorTest extends TestCase {
 		$schema = $this->getValidSchema();
 		unset( $schema['properties']['Has name']['datatype'] );
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'datatype', $errors[0] );
 	}
@@ -142,7 +131,7 @@ class SchemaValidatorTest extends TestCase {
 		$schema = $this->getValidSchema();
 		$schema['properties']['Has name']['allowedValues'] = 'NotAnArray';
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'allowedValues', $errors[0] );
 		$this->assertStringContainsString( 'array', $errors[0] );
@@ -156,14 +145,14 @@ class SchemaValidatorTest extends TestCase {
 		$schema = $this->getValidSchema();
 		$schema['categories']['CategoryA'] = [
 			'parents' => [ 'CategoryB' ],
-			'properties' => [ 'required' => [], 'optional' => [] ],
+			'properties' => [],
 		];
 		$schema['categories']['CategoryB'] = [
 			'parents' => [ 'CategoryA' ],
-			'properties' => [ 'required' => [], 'optional' => [] ],
+			'properties' => [],
 		];
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'Circular', $errors[0] );
 	}
@@ -172,18 +161,18 @@ class SchemaValidatorTest extends TestCase {
 		$schema = $this->getValidSchema();
 		$schema['categories']['CatA'] = [
 			'parents' => [ 'CatB' ],
-			'properties' => [ 'required' => [], 'optional' => [] ],
+			'properties' => [],
 		];
 		$schema['categories']['CatB'] = [
 			'parents' => [ 'CatC' ],
-			'properties' => [ 'required' => [], 'optional' => [] ],
+			'properties' => [],
 		];
 		$schema['categories']['CatC'] = [
 			'parents' => [ 'CatA' ],
-			'properties' => [ 'required' => [], 'optional' => [] ],
+			'properties' => [],
 		];
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'Circular', $errors[0] );
 	}
@@ -200,7 +189,7 @@ class SchemaValidatorTest extends TestCase {
 			],
 		];
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'name', $errors[0] );
 	}
@@ -213,7 +202,7 @@ class SchemaValidatorTest extends TestCase {
 			],
 		];
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
 		$this->assertStringContainsString( 'NonExistent Property', $errors[0] );
 	}
@@ -222,32 +211,30 @@ class SchemaValidatorTest extends TestCase {
 	 * SUBOBJECT VALIDATION
 	 * ========================================================================= */
 
-	public function testUndefinedSubobjectInCategoryReturnsError(): void {
+	public function testUndefinedSubobjectCategoryReturnsError(): void {
 		$schema = $this->getValidSchema();
 		$schema['categories']['TestCategory']['subobjects'] = [
-			'required' => [ 'UndefinedSubobject' ],
-			'optional' => [],
+			[ 'name' => 'NonexistentCategory', 'required' => true ],
 		];
 
-		$errors = $this->validator->validateSchema( $schema );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
 		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'UndefinedSubobject', $errors[0] );
+		$this->assertStringContainsString( 'NonexistentCategory', $errors[0] );
 	}
 
-	public function testSubobjectWithDuplicatePropertyListsReturnsError(): void {
+	public function testDefinedSubobjectCategoryPassesValidation(): void {
 		$schema = $this->getValidSchema();
-		$schema['subobjects'] = [
-			'TestSubobject' => [
-				'properties' => [
-					'required' => [ 'Has name' ],
-					'optional' => [ 'Has name' ],
-				],
+		$schema['categories']['Address'] = [
+			'properties' => [
+				[ 'name' => 'Has name', 'required' => true ],
 			],
 		];
+		$schema['categories']['TestCategory']['subobjects'] = [
+			[ 'name' => 'Address', 'required' => true ],
+		];
 
-		$errors = $this->validator->validateSchema( $schema );
-		$this->assertNotEmpty( $errors );
-		$this->assertStringContainsString( 'both required and optional', $errors[0] );
+		$errors = $this->validator->validateSchemaWithSeverity( $schema )['errors'];
+		$this->assertEmpty( $errors );
 	}
 
 	/* =========================================================================
@@ -259,8 +246,7 @@ class SchemaValidatorTest extends TestCase {
 		// Add a category without display/forms config to trigger warnings
 		$schema['categories']['BareBones'] = [
 			'properties' => [
-				'required' => [ 'Has name' ],
-				'optional' => [],
+				[ 'name' => 'Has name', 'required' => true ],
 			],
 		];
 
@@ -272,34 +258,17 @@ class SchemaValidatorTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * CUSTOM VALIDATORS
-	 * ========================================================================= */
-
-	public function testCustomValidatorIsInvoked(): void {
-		$customCalled = false;
-		$this->validator->registerCustomValidator( static function ( $schema ) use ( &$customCalled ) {
-			$customCalled = true;
-			return [ 'errors' => [ 'Custom error' ], 'warnings' => [] ];
-		} );
-
-		$result = $this->validator->validateSchemaWithSeverity( $this->getValidSchema() );
-		$this->assertTrue( $customCalled, 'Custom validator should be called' );
-		$this->assertContains( 'Custom error', $result['errors'] );
-	}
-
-	/* =========================================================================
 	 * META-CATEGORY WARNING SUPPRESSION
 	 * ========================================================================= */
 
 	public function testMetaCategoryDoesNotTriggerMissingDisplayFormWarnings(): void {
 		$schema = [
-			'schemaVersion' => SchemaLoader::SCHEMA_VERSION,
+			'schemaVersion' => SchemaValidator::SCHEMA_VERSION,
 			'categories' => [
 				'Category' => [
 					'targetNamespace' => 'Category',
 					'properties' => [
-						'required' => [ 'Has name' ],
-						'optional' => [],
+						[ 'name' => 'Has name', 'required' => true ],
 					],
 				],
 			],
@@ -331,8 +300,8 @@ class SchemaValidatorTest extends TestCase {
 					'description' => 'A test category',
 					'parents' => [],
 					'properties' => [
-						'required' => [ 'Has name' ],
-						'optional' => [ 'Has description' ],
+						[ 'name' => 'Has name', 'required' => true ],
+						[ 'name' => 'Has description', 'required' => false ],
 					],
 					'display' => [
 						'header' => [ 'Has name' ],

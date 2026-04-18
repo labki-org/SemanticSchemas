@@ -47,7 +47,7 @@ class CategoryHierarchyService {
 		];
 
 		$allCategories = $this->categoryStore->getAllCategories();
-		if ( empty( $allCategories ) ) {
+		if ( !$allCategories ) {
 			return $result;
 		}
 
@@ -103,7 +103,7 @@ class CategoryHierarchyService {
 		];
 
 		$allCategories = $this->categoryStore->getAllCategories();
-		if ( empty( $allCategories ) ) {
+		if ( !$allCategories ) {
 			// No existing categories → standalone root
 			$result['nodes'][$fullName] = [
 				'title' => $fullName,
@@ -135,7 +135,6 @@ class CategoryHierarchyService {
 			$allCategories
 		);
 
-		// Extract inherited subobjects
 		$result['inheritedSubobjects'] = $this->extractVirtualInheritedSubobjects(
 			$parents,
 			$allCategories
@@ -237,7 +236,7 @@ class CategoryHierarchyService {
 		array $parents,
 		array $all
 	): array {
-		if ( empty( $parents ) ) {
+		if ( !$parents ) {
 			return [];
 		}
 
@@ -257,18 +256,15 @@ class CategoryHierarchyService {
 	/**
 	 * Collect inherited subobjects for a category that does not yet exist.
 	 *
-	 * Same as extractVirtualInheritedProperties but for subobject definitions.
-	 *
 	 * @param string[] $parents Parent category names (no namespace prefix)
 	 * @param array<string,\MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel> $all
-	 *   All existing CategoryModels keyed by name
 	 * @return array List of inherited subobject descriptors
 	 */
 	private function extractVirtualInheritedSubobjects(
 		array $parents,
 		array $all
 	): array {
-		if ( empty( $parents ) ) {
+		if ( !$parents ) {
 			return [];
 		}
 
@@ -311,14 +307,14 @@ class CategoryHierarchyService {
 
 			$source = "Category:$ancestor";
 
-			foreach ( $model->getTaggedProperties() as $tagged ) {
-				if ( !isset( $seen[$tagged['name']] ) ) {
+			foreach ( $model->getPropertyFields() as $field ) {
+				if ( !isset( $seen[$field->getName()] ) ) {
 					$output[] = [
-						'propertyTitle' => 'Property:' . $tagged['name'],
+						'propertyTitle' => 'Property:' . $field->getName(),
 						'sourceCategory' => $source,
-						'required' => $tagged['required'],
+						'required' => $field->isRequired(),
 					];
-					$seen[$tagged['name']] = true;
+					$seen[$field->getName()] = true;
 				}
 			}
 		}
@@ -346,16 +342,17 @@ class CategoryHierarchyService {
 
 			$source = "Category:$ancestor";
 
-			foreach ( $model->getTaggedSubobjects() as $tagged ) {
-				if ( !isset( $seen[$tagged['name']] ) ) {
+			foreach ( $model->getSubobjectFields() as $field ) {
+				if ( !isset( $seen[$field->getName()] ) ) {
 					$output[] = [
-						'subobjectTitle' => 'Subobject:' . $tagged['name'],
+						'subobjectTitle' => 'Category:' . $field->getName(),
 						'sourceCategory' => $source,
-						'required' => $tagged['required'],
+						'required' => $field->isRequired(),
 					];
-					$seen[$tagged['name']] = true;
+					$seen[$field->getName()] = true;
 				}
 			}
 		}
 	}
+
 }

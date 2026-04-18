@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\SemanticSchemas\Store;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
+use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\MainConfigNames;
@@ -23,22 +24,16 @@ class WikiCategoryStore {
 
 	use SMWDataExtractor;
 
-	private const MARKER_START = '<!-- SemanticSchemas Start -->';
-	private const MARKER_END = '<!-- SemanticSchemas End -->';
-
 	private PageCreator $pageCreator;
-	private WikiPropertyStore $propertyStore;
 	private IConnectionProvider $connectionProvider;
 	private Config $mainConfig;
 
 	public function __construct(
 		PageCreator $pageCreator,
-		WikiPropertyStore $propertyStore,
 		IConnectionProvider $connectionProvider,
 		Config $mainConfig
 	) {
 		$this->pageCreator = $pageCreator;
-		$this->propertyStore = $propertyStore;
 		$this->connectionProvider = $connectionProvider;
 		$this->mainConfig = $mainConfig;
 	}
@@ -60,38 +55,6 @@ class WikiCategoryStore {
 	}
 
 	/* -------------------------------------------------------------------------
-	 * WRITE PUBLIC
-	 * ------------------------------------------------------------------------- */
-
-	public function writeCategory( CategoryModel $category ): bool {
-		$title = $this->pageCreator->makeTitle( $category->getName(), NS_CATEGORY );
-		if ( !$title ) {
-			return false;
-		}
-
-		$existing = $this->pageCreator->getPageContent( $title ) ?? '';
-
-		$metadata = $this->generateSemanticBlock( $category );
-
-		$newContent = $this->pageCreator->updateWithinMarkers(
-			$existing,
-			$metadata,
-			self::MARKER_START,
-			self::MARKER_END
-		);
-
-		if ( !str_contains( $newContent, '[[Category:' . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]' ) ) {
-			$newContent .= "\n[[Category:" . Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY . ']]';
-		}
-
-		return $this->pageCreator->createOrUpdatePage(
-			$title,
-			$newContent,
-			'SemanticSchemas: Update category schema metadata'
-		);
-	}
-
-	/* -------------------------------------------------------------------------
 	 * ENUMERATION
 	 * ------------------------------------------------------------------------- */
 
@@ -103,15 +66,15 @@ class WikiCategoryStore {
 		$res = $dbr->newSelectQueryBuilder()
 			->select( 'page_title' )
 			->from( 'page' )
-			->where( [ 'page_namespace' => NS_CATEGORY ] )
+			->where( [
+				'page_namespace' => NS_CATEGORY,
+				$dbr->expr( 'page_title', '!=', Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY )
+			] )
 			->caller( __METHOD__ )
 			->fetchResultSet();
 
 		foreach ( $res as $row ) {
 			$name = str_replace( '_', ' ', $row->page_title );
-			if ( $name === Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY ) {
-				continue;
-			}
 			$cat = $this->readCategory( $name );
 			if ( $cat ) {
 				$out[$name] = $cat;
@@ -216,27 +179,28 @@ class WikiCategoryStore {
 		$subject = \SMW\DIWikiPage::newFromTitle( $title );
 		$sdata = $store->getSemanticData( $subject );
 
-		return [
-			'label' => $this->smwFetchOne( $sdata, 'Display label' ) ?? $categoryName,
-			'description' => $this->smwFetchOne( $sdata, 'Has description' ) ?? '',
-			'targetNamespace' => $this->smwFetchOne( $sdata, 'Has target namespace' ) ?? null,
+		# strip namespace prefix from parent categories
+		$parents = array_map(
+			static fn ( string $parentName ) => explode( ':', $parentName, 2 )[1],
+			array_keys( $title->getParentCategories() )
+		);
 
-			'parents' => $this->smwFetchMany( $sdata, 'Has parent category', 'category' ),
+		$out = $this->smwLoadProperties( $sdata, CategoryModel::SMW_PROPERTIES );
 
-			'properties' => [
-				'required' => $this->smwFetchMany( $sdata, 'Has required property', 'property' ),
-				'optional' => $this->smwFetchMany( $sdata, 'Has optional property', 'property' ),
-			],
+		$out['label'] ??= $categoryName;
+		$out['description'] ??= '';
+		$out['parents'] = $parents;
 
-			'subobjects' => [
-				'required' => $this->smwFetchMany( $sdata, 'Has required subobject', 'subobject' ),
-				'optional' => $this->smwFetchMany( $sdata, 'Has optional subobject', 'subobject' ),
-			],
+		$out['properties'] = $this->smwFetchFieldReferences(
+			$sdata, FieldModel::TYPE_PROPERTY
+		);
+		$out['subobjects'] = $this->smwFetchFieldReferences(
+			$sdata, FieldModel::TYPE_SUBOBJECT
+		);
 
-			'backlinksFor' => $this->smwFetchMany( $sdata, 'Show backlinks for', 'property' ),
+		$out['display'] = $this->loadDisplayConfig( $sdata );
 
-			'display' => $this->loadDisplayConfig( $sdata ),
-		];
+		return $out;
 	}
 
 	private function loadDisplayConfig( $semanticData ): array {
@@ -252,61 +216,5 @@ class WikiCategoryStore {
 		}
 
 		return $out;
-	}
-
-	/* -------------------------------------------------------------------------
-	 * WRITE: semantic block
-	 * ------------------------------------------------------------------------- */
-
-	private function generateSemanticBlock( CategoryModel $cat ): string {
-		$lines = [];
-
-		if ( $cat->getDescription() !== '' ) {
-			$lines[] = '[[Has description::' . $cat->getDescription() . ']]';
-		}
-
-		if ( $cat->getTargetNamespace() !== null ) {
-			$lines[] = '[[Has target namespace::' . $cat->getTargetNamespace() . ']]';
-		}
-
-		// Parent categories
-		foreach ( $cat->getParents() as $p ) {
-			$lines[] = "[[Has parent category::Category:$p]]";
-		}
-
-		// Display format
-		if ( $cat->getDisplayFormat() !== null ) {
-			$lines[] = '[[Has display format::' . $cat->getDisplayFormat() . ']]';
-		}
-
-		// Display template
-		if ( $cat->getDisplayTemplate() !== null ) {
-			$lines[] = '[[Has display template::' . $cat->getDisplayTemplate() . ']]';
-		}
-
-		// Backlink properties
-		foreach ( $cat->getBacklinksFor() as $prop ) {
-			$lines[] = "[[Show backlinks for::Property:$prop]]";
-		}
-
-		// Required/optional properties
-		foreach ( $cat->getRequiredProperties() as $prop ) {
-			$lines[] = "[[Has required property::Property:$prop]]";
-		}
-
-		foreach ( $cat->getOptionalProperties() as $prop ) {
-			$lines[] = "[[Has optional property::Property:$prop]]";
-		}
-
-		// Subobjects
-		foreach ( $cat->getRequiredSubobjects() as $sg ) {
-			$lines[] = "[[Has required subobject::Subobject:$sg]]";
-		}
-
-		foreach ( $cat->getOptionalSubobjects() as $sg ) {
-			$lines[] = "[[Has optional subobject::Subobject:$sg]]";
-		}
-
-		return implode( "\n", $lines );
 	}
 }

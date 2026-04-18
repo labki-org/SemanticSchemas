@@ -11,7 +11,6 @@ use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\Html\Html;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
@@ -26,7 +25,7 @@ use ObjectCacheFactory;
  * - Overview: Dashboard with category status and sync state
  * - Validate: Check wiki state for errors and modifications
  * - Generate: Regenerate templates/forms/displays
- * - Hierarchy: Visualize category inheritance and subobjects
+ * - Hierarchy: Visualize category inheritance
  *
  * Architecture:
  * - Schema is treated as the source of truth
@@ -49,7 +48,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 	private WikiCategoryStore $categoryStore;
 	private WikiPropertyStore $propertyStore;
-	private WikiSubobjectStore $subobjectStore;
 	private TemplateGenerator $templateGenerator;
 	private FormGenerator $formGenerator;
 	private OntologyInspector $inspector;
@@ -66,23 +64,20 @@ class SpecialSemanticSchemas extends SpecialPage {
 	public function __construct(
 		WikiCategoryStore $categoryStore,
 		WikiPropertyStore $propertyStore,
-		WikiSubobjectStore $subobjectStore,
 		TemplateGenerator $templateGenerator,
 		FormGenerator $formGenerator,
 		OntologyInspector $inspector,
 		StateManager $stateManager,
-		PageHashComputer $hashComputer,
 		ObjectCacheFactory $objectCacheFactory
 	) {
 		parent::__construct( 'SemanticSchemas', 'editinterface' );
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
-		$this->subobjectStore = $subobjectStore;
 		$this->templateGenerator = $templateGenerator;
 		$this->formGenerator = $formGenerator;
 		$this->inspector = $inspector;
 		$this->stateManager = $stateManager;
-		$this->hashComputer = $hashComputer;
+		$this->hashComputer = new PageHashComputer();
 		$this->objectCacheFactory = $objectCacheFactory;
 	}
 
@@ -210,7 +205,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * - Dispatcher template (always regenerated)
 	 * - Semantic template (always regenerated)
 	 * - Display template (conditional - only if not user-customized)
-	 * - Subobject templates (always regenerated)
 	 *
 	 * After generation, redirects to the Form page.
 	 */
@@ -222,7 +216,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		if ( $categoryName === '' ) {
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-generate-form-no-category' )->text()
+				htmlspecialchars( $this->msg( 'semanticschemas-generate-form-no-category' )->text(), ENT_QUOTES )
 			) );
 			return;
 		}
@@ -230,9 +224,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 		// Check rate limit
 		if ( $this->checkRateLimit( 'generate-form' ) ) {
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-ratelimit-exceeded' )
+				htmlspecialchars( $this->msg( 'semanticschemas-ratelimit-exceeded' )
 					->params( $this->getRateLimitPerHour() )
-					->text()
+					->text(), ENT_QUOTES )
 			) );
 			return;
 		}
@@ -242,7 +236,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		if ( $category === null ) {
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-generate-form-no-schema' )->params( $categoryName )->text()
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-generate-form-no-schema' )
+						->params( $categoryName )->text(),
+				ENT_QUOTES
+				)
 			) );
 			return;
 		}
@@ -259,20 +257,20 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			if ( !$templateResult['success'] ) {
 				$output->addHTML( Html::errorBox(
-					$this->msg( 'semanticschemas-generate-form-failed' )
+					htmlspecialchars( $this->msg( 'semanticschemas-generate-form-failed' )
 						->params( $categoryName, implode( ', ', $templateResult['errors'] ) )
-						->text()
+						->text(), ENT_QUOTES )
 				) );
 				return;
 			}
 
-			$formSuccess = $this->formGenerator->generateAndSaveAllForms( $effective );
+			$formSuccess = $this->formGenerator->generateAndSaveAllForms( $effective, $resolver );
 
 			if ( !$formSuccess ) {
 				$output->addHTML( Html::errorBox(
-					$this->msg( 'semanticschemas-generate-form-failed' )
+					htmlspecialchars( $this->msg( 'semanticschemas-generate-form-failed' )
 						->params( $categoryName, 'Failed to save form' )
-						->text()
+						->text(), ENT_QUOTES )
 				) );
 				return;
 			}
@@ -296,7 +294,11 @@ class SpecialSemanticSchemas extends SpecialPage {
 			}
 
 			$output->addHTML( Html::successBox(
-				$this->msg( 'semanticschemas-form-generated' )->params( $categoryName )->text()
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-form-generated' )
+						->params( $categoryName )->text(),
+					ENT_QUOTES
+				)
 			) );
 
 		} catch ( \Exception $e ) {
@@ -306,9 +308,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 			] );
 
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-generate-form-failed' )
+				htmlspecialchars( $this->msg( 'semanticschemas-generate-form-failed' )
 					->params( $categoryName, $e->getMessage() )
-					->text()
+					->text(), ENT_QUOTES )
 			) );
 		}
 	}
@@ -319,27 +321,29 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return string HTML
 	 */
 	private function renderInstallConfigBanner(): string {
-		$step1 = Html::rawElement( 'li', [],
-			$this->msg( 'semanticschemas-install-config-banner-step1' )->text() .
-			Html::rawElement( 'pre', [],
-				'php maintenance/run.php update' )
-		);
-		$step2 = Html::rawElement( 'li', [],
-			$this->msg( 'semanticschemas-install-config-banner-step2' )->text() .
-			Html::rawElement( 'pre', [],
-				'php maintenance/run.php runJobs' )
-		);
+		$step1 = Html::openElement( 'li' ) .
+			htmlspecialchars( $this->msg( 'semanticschemas-install-config-banner-step1' )->text(), ENT_QUOTES ) .
+			Html::element( 'pre', [],
+				'php maintenance/run.php update' ) .
+			Html::closeElement( 'li' );
 
-		$content = Html::rawElement(
-			'div',
-			[ 'class' => 'semanticschemas-install-banner' ],
+		$step2 = Html::openElement( 'li' ) .
+			htmlspecialchars( $this->msg( 'semanticschemas-install-config-banner-step2' )->text(), ENT_QUOTES ) .
+			Html::element( 'pre', [],
+				'php maintenance/run.php runJobs' ) .
+			Html::closeElement( 'li' );
+
+		$content = Html::openElement( 'div', [ 'class' => 'semanticschemas-install-banner' ] ) .
 			Html::element(
 				'strong',
 				[],
 				$this->msg( 'semanticschemas-install-config-banner-title' )->text()
 			) .
-			Html::rawElement( 'ol', [], $step1 . $step2 )
-		);
+			Html::openElement( 'ol' ) .
+			$step1 .
+			$step2 .
+			Html::closeElement( 'ol' ) .
+			Html::closeElement( 'div' );
 
 		return Html::warningBox( $content );
 	}
@@ -373,26 +377,28 @@ class SpecialSemanticSchemas extends SpecialPage {
 		foreach ( $tabs as $action => $data ) {
 			$url = $this->getPageTitle( $action )->getLocalURL();
 			$isActive = ( $action === $currentAction );
-			$links .= Html::rawElement(
+			$links .= Html::openElement(
 				'a',
 				[
 					'href' => $url,
 					'class' => 'semanticschemas-tab' . ( $isActive ? ' is-active' : '' ),
 					'aria-current' => $isActive ? 'page' : null,
-				],
-				Html::rawElement( 'span', [ 'class' => 'semanticschemas-tab-label' ], $data['label'] ) .
-				Html::rawElement( 'span', [ 'class' => 'semanticschemas-tab-subtext' ], $data['subtext'] )
-			);
+				] ) .
+				Html::element( 'span', [ 'class' => 'semanticschemas-tab-label' ], $data['label'] ) .
+				Html::element( 'span', [ 'class' => 'semanticschemas-tab-subtext' ], $data['subtext'] ) .
+				Html::closeElement( 'a' );
 		}
 
-		$nav = Html::rawElement(
+		$nav = Html::openElement(
 			'nav',
-			[ 'class' => 'semanticschemas-tabs', 'role' => 'tablist' ],
-			$links
-		);
+			[ 'class' => 'semanticschemas-tabs', 'role' => 'tablist' ] ) .
+			$links .
+			Html::closeElement( 'nav' );
 
 		$this->getOutput()->addHTML(
-			Html::rawElement( 'div', [ 'class' => 'semanticschemas-shell' ], $nav )
+			Html::openElement( 'div', [ 'class' => 'semanticschemas-shell' ] ) .
+			$nav .
+			Html::closeElement( 'div' )
 		);
 	}
 
@@ -403,7 +409,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return string
 	 */
 	private function wrapShell( string $html ): string {
-		return Html::rawElement( 'div', [ 'class' => 'semanticschemas-shell' ], $html );
+		return Html::openElement( 'div', [ 'class' => 'semanticschemas-shell' ] ) .
+			$html .
+			Html::closeElement( 'div' );
 	}
 
 	/**
@@ -446,7 +454,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * @return string
 	 */
 	private function renderList( array $items ): string {
-		if ( empty( $items ) ) {
+		if ( !$items ) {
 			return '';
 		}
 
@@ -593,15 +601,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	}
 
 	/**
-	 * Resolve the namespace ID used for Semantic MediaWiki properties.
-	 *
-	 * @return int
-	 */
-	private function getPropertyNamespace(): int {
-		return defined( 'SMW_NS_PROPERTY' ) ? constant( 'SMW_NS_PROPERTY' ) : NS_MAIN;
-	}
-
-	/**
 	 * Render the hero section for the overview page.
 	 *
 	 * @param bool $isDirty Whether the schema is out of sync
@@ -623,28 +622,26 @@ class SpecialSemanticSchemas extends SpecialPage {
 			)
 			: '';
 
-		$heroContent = Html::rawElement(
-			'div',
-			[],
+		$heroContent = Html::openElement( 'div' ) .
 			Html::element(
 				'h1',
 				[],
 				$this->msg( 'semanticschemas' )->text() . ' — ' . $this->msg( 'semanticschemas-overview' )->text()
 			) .
-			Html::element( 'p', [], $this->msg( 'semanticschemas-overview-hero-description' )->text() )
-		);
+			Html::element( 'p', [], $this->msg( 'semanticschemas-overview-hero-description' )->text() ) .
+			Html::closeElement( 'div' );
 
-		$heroStatus = Html::rawElement(
-			'div',
-			[ 'class' => 'semanticschemas-hero-status' ],
-			Html::rawElement(
+		$heroStatus = Html::openElement( 'div', [ 'class' => 'semanticschemas-hero-status' ] ) .
+			Html::openElement(
 				'span',
-				[ 'class' => 'semanticschemas-status-chip ' . ( $isDirty ? 'is-dirty' : 'is-clean' ) ],
-				$statusMessage
-			) . $generateLink
-		);
+				[ 'class' => 'semanticschemas-status-chip ' . ( $isDirty ? 'is-dirty' : 'is-clean' ) ] ) .
+			htmlspecialchars( $statusMessage, ENT_QUOTES ) .
+			$generateLink .
+			Html::closeElement( 'div' );
 
-		return Html::rawElement( 'div', [ 'class' => 'semanticschemas-hero' ], $heroContent . $heroStatus );
+		return Html::openElement( 'div', [ 'class' => 'semanticschemas-hero' ] ) .
+			$heroContent . $heroStatus .
+			Html::closeElement( 'div' );
 	}
 
 	/**
@@ -657,7 +654,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function renderSummaryGrid( array $stats, array $state ): string {
 		$categoryCount = (int)( $stats['categoryCount'] ?? 0 );
 		$propertyCount = (int)( $stats['propertyCount'] ?? 0 );
-		$subobjectCount = (int)( $stats['subobjectCount'] ?? 0 );
 		$lang = $this->getLanguage();
 
 		return Html::rawElement(
@@ -670,10 +666,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$this->renderStatCard(
 				$this->msg( 'semanticschemas-label-properties' )->text(),
 				$lang->formatNum( $propertyCount ),
-			) .
-			$this->renderStatCard(
-				$this->msg( 'semanticschemas-label-subobjects' )->text(),
-				$lang->formatNum( $subobjectCount ),
 			) .
 			$this->renderStatCard(
 				$this->msg( 'semanticschemas-label-last-change' )->text(),
@@ -737,7 +729,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 				$modifiedPages[$pageName] = true;
 			}
 
-			foreach ( $category->getAllProperties() as $propertyName ) {
+			foreach ( $category->getPropertyFields() as $field ) {
+				$propertyName = $field->getName();
 				$propPageName = "Property:$propertyName";
 				if ( isset( $modifiedPages[$propPageName] ) ) {
 					continue;
@@ -773,8 +766,8 @@ class SpecialSemanticSchemas extends SpecialPage {
 			return true;
 		}
 
-		foreach ( $category->getAllProperties() as $propName ) {
-			if ( isset( $modifiedPages["Property:$propName"] ) ) {
+		foreach ( $category->getPropertyFields() as $field ) {
+			if ( isset( $modifiedPages["Property:" . $field->getName()] ) ) {
 				return true;
 			}
 		}
@@ -806,7 +799,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function getCategoryStatusTable(): string {
 		$categories = $this->categoryStore->getAllCategories();
 
-		if ( empty( $categories ) ) {
+		if ( !$categories ) {
 			return Html::rawElement(
 				'div',
 				[ 'class' => 'semanticschemas-empty-state' ],
@@ -823,7 +816,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$html .= Html::element( 'th', [], 'Category' );
 		$html .= Html::element( 'th', [], 'Parents' );
 		$html .= Html::element( 'th', [], 'Properties' );
-		$html .= Html::element( 'th', [], 'Template' );
+		$html .= Html::element( 'th', [], 'Semantic' );
 		$html .= Html::element( 'th', [], 'Form' );
 		$html .= Html::element( 'th', [], $this->msg( 'semanticschemas-status-modified-outside' )->text() );
 		$html .= Html::closeElement( 'tr' );
@@ -837,7 +830,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$html .= Html::openElement( 'tr' );
 			$html .= Html::element( 'td', [], $name );
 			$html .= Html::element( 'td', [], (string)count( $category->getParents() ) );
-			$html .= Html::element( 'td', [], (string)count( $category->getAllProperties() ) );
+			$html .= Html::element( 'td', [], (string)count( $category->getPropertyFields() ) );
 			$html .= Html::rawElement(
 				'td',
 				[],
@@ -887,20 +880,25 @@ class SpecialSemanticSchemas extends SpecialPage {
 			$this->msg( 'semanticschemas-validate-description' )->text()
 		);
 
-		if ( empty( $result['errors'] ) ) {
-			$body .= Html::successBox( $this->msg( 'semanticschemas-validate-success' )->text() );
+		if ( !$result['errors'] ) {
+			$body .= Html::successBox(
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-validate-success' )->text(),
+					ENT_QUOTES
+				)
+			);
 		} else {
 			$body .= Html::element( 'h3', [], $this->msg( 'semanticschemas-validate-errors' )->text() );
 			$body .= $this->renderList( $result['errors'] );
 		}
 
-		if ( !empty( $result['warnings'] ) ) {
+		if ( $result['warnings'] ) {
 			$body .= Html::element( 'h3', [], $this->msg( 'semanticschemas-validate-warnings' )->text() );
 			$body .= $this->renderList( $result['warnings'] );
 		}
 
 		$modifiedPages = $result['modifiedPages'] ?? [];
-		if ( !empty( $modifiedPages ) ) {
+		if ( $modifiedPages ) {
 			$body .= Html::element(
 				'h3',
 				[],
@@ -913,7 +911,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$output->addHTML(
 			$this->wrapShell(
-				Html::rawElement( 'div', [ 'class' => 'semanticschemas-card' ], $body )
+				Html::openElement( 'div', [ 'class' => 'semanticschemas-card' ] ) .
+				$body .
+				Html::closeElement( 'div' )
 			)
 		);
 	}
@@ -1006,7 +1006,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	}
 
 	/**
-	 * Compute hashes for all schema entities (categories, properties, subobjects).
+	 * Compute hashes for all schema entities (categories, properties).
 	 *
 	 * @return array<string, string> Map of page names to their computed hashes
 	 */
@@ -1021,11 +1021,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		foreach ( $this->propertyStore->getAllProperties() as $property ) {
 			$name = $property->getName();
 			$pageHashes["Property:$name"] = $this->hashComputer->computePropertyModelHash( $property );
-		}
-
-		foreach ( $this->subobjectStore->getAllSubobjects() as $subobject ) {
-			$name = $subobject->getName();
-			$pageHashes["Subobject:$name"] = $this->hashComputer->computeSubobjectModelHash( $subobject );
 		}
 
 		return $pageHashes;
@@ -1068,9 +1063,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		if ( $this->checkRateLimit( 'generate' ) ) {
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-ratelimit-exceeded' )
+				htmlspecialchars( $this->msg( 'semanticschemas-ratelimit-exceeded' )
 					->params( $this->getRateLimitPerHour() )
-					->text()
+					->text(), ENT_QUOTES )
 			) );
 			return;
 		}
@@ -1079,9 +1074,9 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$categories = $this->getTargetCategories( $categoryName );
 
-		if ( empty( $categories ) ) {
+		if ( !$categories ) {
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-generate-no-categories' )->text()
+				htmlspecialchars( $this->msg( 'semanticschemas-generate-no-categories' )->text(), ENT_QUOTES )
 			) );
 			return;
 		}
@@ -1119,7 +1114,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 					$this->templateGenerator->generateAllTemplates(
 						$category, $resolver
 					);
-					$this->formGenerator->generateAndSaveAllForms( $effective );
+					$this->formGenerator->generateAndSaveAllForms( $effective, $resolver );
 
 					$successCount++;
 				} catch ( \Exception $e ) {
@@ -1138,7 +1133,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			$pageHashes = $this->computeAllSchemaHashes();
 
-			if ( !empty( $pageHashes ) ) {
+			if ( $pageHashes ) {
 				$this->stateManager->setPageHashes( $pageHashes );
 				$this->stateManager->clearDirty();
 			}
@@ -1152,19 +1147,23 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 			$output->addHTML(
 				Html::successBox(
-					$this->msg( 'semanticschemas-generate-success' )
+					htmlspecialchars( $this->msg( 'semanticschemas-generate-success' )
 						->numParams( $successCount, $totalCount )
-						->text()
+						->text(), ENT_QUOTES )
 				)
 			);
 		} catch ( \Exception $e ) {
 			$this->logOperation( 'generate', 'Generation exception: ' . $e->getMessage(), [
 				'exception' => get_class( $e ),
-				'categoryFilter' => $categoryName ?? '',
+				'categoryFilter' => $categoryName,
 			] );
 
 			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-generate-error' )->params( $e->getMessage() )->text()
+				htmlspecialchars(
+					$this->msg( 'semanticschemas-generate-error' )
+						->params( $e->getMessage() )->text(),
+					ENT_QUOTES
+				)
 			) );
 		} finally {
 			$this->closeProgressContainer();

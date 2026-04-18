@@ -23,9 +23,6 @@ Thumbs.db
 # PHPUnit
 phpunit.xml
 
-# Phan
-/.phan/stubs/
-
 # PHPCS
 .phpcs-cache
 
@@ -44,7 +41,8 @@ phpunit.xml
 
 # Claude Code
 CLAUDE.md
+/.planning/
 
 # core
 /core/
-
+/extensions/

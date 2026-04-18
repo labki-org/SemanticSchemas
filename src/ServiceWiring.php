@@ -4,18 +4,18 @@ use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\PropertyInputMapper;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\OntologyInspector;
-use MediaWiki\Extension\SemanticSchemas\Schema\SchemaLoader;
 use MediaWiki\Extension\SemanticSchemas\Schema\SchemaValidator;
 use MediaWiki\Extension\SemanticSchemas\Service\CategoryHierarchyService;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
-use MediaWiki\Extension\SemanticSchemas\Store\PageHashComputer;
 use MediaWiki\Extension\SemanticSchemas\Store\StateManager;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiSubobjectStore;
 use MediaWiki\MediaWikiServices;
 
-/** @phpcs-require-sorted-array */
+/**
+ * @phpcs-require-sorted-array
+ * @phan-file-suppress PhanUnreferencedClosure
+ */
 return [
 
 	'SemanticSchemas.CategoryHierarchyService' => static function (
@@ -33,7 +33,6 @@ return [
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->get( 'SemanticSchemas.PropertyInputMapper' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' )
 		);
 	},
 
@@ -43,9 +42,7 @@ return [
 		return new OntologyInspector(
 			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
 			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
 			$services->get( 'SemanticSchemas.StateManager' ),
-			$services->get( 'SemanticSchemas.PageHashComputer' ),
 			$services->get( 'SemanticSchemas.SchemaValidator' )
 		);
 	},
@@ -55,17 +52,6 @@ return [
 	): PageCreator {
 		return new PageCreator(
 			$services->getWikiPageFactory(),
-			$services->getDeletePageFactory()
-		);
-	},
-
-	'SemanticSchemas.PageHashComputer' => static function (
-		MediaWikiServices $services
-	): PageHashComputer {
-		return new PageHashComputer(
-			$services->get( 'SemanticSchemas.WikiCategoryStore' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' )
 		);
 	},
 
@@ -73,12 +59,6 @@ return [
 		MediaWikiServices $services
 	): PropertyInputMapper {
 		return new PropertyInputMapper();
-	},
-
-	'SemanticSchemas.SchemaLoader' => static function (
-		MediaWikiServices $services
-	): SchemaLoader {
-		return new SchemaLoader();
 	},
 
 	'SemanticSchemas.SchemaValidator' => static function (
@@ -100,8 +80,8 @@ return [
 	): TemplateGenerator {
 		return new TemplateGenerator(
 			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->get( 'SemanticSchemas.WikiSubobjectStore' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' )
+			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
+			$services->getContentLanguage()
 		);
 	},
 
@@ -110,7 +90,6 @@ return [
 	): WikiCategoryStore {
 		return new WikiCategoryStore(
 			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->get( 'SemanticSchemas.WikiPropertyStore' ),
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);
@@ -122,16 +101,6 @@ return [
 		return new WikiPropertyStore(
 			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->getConnectionProvider(),
-			$services->getContentLanguage()
-		);
-	},
-
-	'SemanticSchemas.WikiSubobjectStore' => static function (
-		MediaWikiServices $services
-	): WikiSubobjectStore {
-		return new WikiSubobjectStore(
-			$services->get( 'SemanticSchemas.PageCreator' ),
-			$services->getConnectionProvider()
 		);
 	},
 
