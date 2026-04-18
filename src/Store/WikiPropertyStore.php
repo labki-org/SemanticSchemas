@@ -51,13 +51,10 @@ class WikiPropertyStore {
 			'label' => NamingHelper::generatePropertyLabel( $canonical ),
 			'description' => '',
 			'allowedValues' => [],
-			'subpropertyOf' => null,
 			'allowedCategory' => null,
 			'allowedNamespace' => null,
 			'allowsMultipleValues' => false,
-			'renderTemplate' => null,
 			'inputType' => null,
-			'inverseLabel' => null,
 			'hidden' => false,
 		];
 
