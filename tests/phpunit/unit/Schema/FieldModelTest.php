@@ -15,14 +15,14 @@ class FieldModelTest extends TestCase {
 	 * CONSTRUCTION
 	 * ========================================================================= */
 
-	public function testPropertyFactory(): void {
+	public function testCreateProperty(): void {
 		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY );
 		$this->assertSame( 'Has name', $field->getName() );
 		$this->assertTrue( $field->isRequired() );
 		$this->assertSame( FieldModel::TYPE_PROPERTY, $field->getFieldType() );
 	}
 
-	public function testSubobjectFactory(): void {
+	public function testCreateSubobject(): void {
 		$field = new FieldModel( 'Author', false, FieldModel::TYPE_SUBOBJECT );
 		$this->assertSame( 'Author', $field->getName() );
 		$this->assertFalse( $field->isRequired() );
