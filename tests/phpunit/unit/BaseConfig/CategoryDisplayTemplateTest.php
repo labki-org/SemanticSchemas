@@ -415,7 +415,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$this->assertStringContainsString(
 			'?Subcategory of',
 			$content,
-			'collect-ancestors must query ?Subcategory of (SMW auto-property for category-to-category hierarchy; ?Category fires only on non-Category pages)'
+			'collect-ancestors must query ?Subcategory of to walk the category hierarchy'
 		);
 		$this->assertStringContainsString(
 			'{{Category/collect-ancestors-L1',
