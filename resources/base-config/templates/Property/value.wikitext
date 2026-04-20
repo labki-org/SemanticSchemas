@@ -1,0 +1,21 @@
+<includeonly>{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:{{{prop|}}}}}}}</includeonly><noinclude>
+Returns a property's value on a page. Works uniformly for a regular page
+or a subobject fragment (e.g. `MyBook#_abc123`).
+
+This is a Tier A primitive — returns a plain string (empty if the page
+has no value for the property) for use in custom display markup.
+
+Accepts either a namespaced (`Property:Has_title`) or bare (`Has_title`)
+property reference.
+
+Parameters:
+* prop - The property page reference
+* page - The page or subobject fragment to read the value from; defaults
+         to {{FULLPAGENAME}}
+
+Example (regular page):
+ {{Property/value|prop=Has_title|page=MyBook}}
+
+Example (subobject fragment, typically inside a subobject-instances row template):
+ {{Property/value|prop=Has_chapter_title|page={{{1}}}}}
+</noinclude>

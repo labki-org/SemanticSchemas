@@ -1,0 +1,17 @@
+<includeonly>Category:{{{1|}}}{{#arraymap:{{#show:Category:{{{1|}}}|?Subcategory of|link=none|sep=,}}|,|@@p@@|{{#ifeq:{{PAGENAME:@@p@@}}|SemanticSchemas-managed||{{!}}{{!}}{{Category/ancestors-L1|{{PAGENAME:@@p@@}}}}}}|}}</includeonly><noinclude>
+Returns the given category and all its ancestors as a `||`-separated list.
+
+Output format: `Category:X||Category:Y||Category:Z` (namespace-prefixed).
+Ancestor walk uses SMW's `?Subcategory of` auto-property (populated from
+native `[[Category:Parent]]` categorylinks). The `SemanticSchemas-managed`
+marker category is filtered out.
+
+Depth is bounded at 5 levels via the `L1..L4` chain (MediaWiki forbids
+template self-recursion; finite unrolling sidesteps that).
+
+Parameter 1: category name (without namespace prefix).
+
+Used by inverse-ask queries such as `[[-Has subobject::{{Category/ancestors|X}}]]`
+to gather property-field or subobject-field declarations across the
+inheritance chain in one query.
+</noinclude>

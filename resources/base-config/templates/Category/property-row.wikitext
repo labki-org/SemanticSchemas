@@ -1,0 +1,32 @@
+<includeonly>{{#ifexist:Template:Category/property-row/{{PAGENAME:{{{prop|}}}}}
+ |{{Category/property-row/{{PAGENAME:{{{prop|}}}}}|prop={{{prop|}}}|page={{{page|{{FULLPAGENAME}}}}}}}
+ |{{#if:{{Property/value|prop={{{prop|}}}|page={{{page|{{FULLPAGENAME}}}}}}}|{{!}}-
+! {{Property/label|prop={{{prop|}}}}}
+{{!}} {{Property/value|prop={{{prop|}}}|page={{{page|{{FULLPAGENAME}}}}}}}}}
+}}</includeonly><noinclude>
+Renders one table row (`|-`, `!label`, `|value`) for a single property
+on a page. Empty values are skipped entirely (no blank row).
+
+This is a Tier B element renderer — it produces markup using Tier A
+primitives (`Property/label`, `Property/value`) and is the primary
+override point for per-property customization.
+
+Three ways to customize:
+
+1. **Global override** — edit this template. All property rows wiki-wide
+   will change.
+
+2. **Per-property override** — create `Template:Category/property-row/<PropName>`
+   (e.g. `Template:Category/property-row/Has_email`). This template gets
+   `prop=` and `page=` parameters and full responsibility for emitting
+   its row. It is invoked via #ifexist dispatch whenever this template
+   is called for that property.
+
+3. **Replace the whole row-rendering pathway** — set `Has display template`
+   on the category (see docs/user-guide/customizing-display.md).
+
+Parameters:
+* prop - The property page reference (namespaced or bare)
+* page - The page or subobject fragment to read the value from;
+         defaults to {{FULLPAGENAME}}
+</noinclude>

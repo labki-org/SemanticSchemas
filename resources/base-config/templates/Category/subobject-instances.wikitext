@@ -1,0 +1,43 @@
+<includeonly>{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[{{{subcat|}}}]]
+ | link=none
+ | format=template
+ | template={{{row-template|Category/subobject-instance}}}
+ | userparam={{PAGENAME:{{{subcat|}}}}}
+ | sort=Has sort order
+ | order=asc
+}}</includeonly><noinclude>
+Iterates the subobject instances of one type on a given page, rendering
+each through a user-supplied row template.
+
+This is a Tier A primitive — it owns the inverse-ask + sort pattern but
+delegates per-instance markup to the row template.
+
+Parameters:
+* subcat       - The subobject category (e.g. `Category:Chapter`)
+* page         - The parent page whose instances should be listed; defaults
+                 to {{FULLPAGENAME}}
+* row-template - Template to render each instance; defaults to
+                 `Category/subobject-instance` (which reuses Category/table).
+                 The row template receives the subobject fragment as
+                 {{{1}}} (SMW's first positional arg) and the subcategory
+                 name (without `Category:` prefix) as {{{#userparam}}}.
+
+Example (default — renders as mini-tables):
+ {{Category/subobject-instances|subcat=Category:Chapter|page=MyBook}}
+
+Example (custom card layout):
+ {{Category/subobject-instances
+   |subcat=Category:Chapter
+   |page=MyBook
+   |row-template=BookChapterCard
+ }}
+
+And Template:BookChapterCard:
+ <div class="chapter-card">
+   <h3>{{Property/value|prop=Has_chapter_title|page={{{1}}}}}</h3>
+   <p>{{Property/value|prop=Has_summary|page={{{1}}}}}</p>
+ </div>
+
+Instances are sorted by `?Has sort order` ascending. Override the row
+template itself if you need a different sort or filter.
+</noinclude>

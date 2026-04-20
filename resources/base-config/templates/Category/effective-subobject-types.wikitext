@@ -1,0 +1,18 @@
+<includeonly>{{#ask: [[-Has subobject::{{Category/ancestors|{{{category|}}}}}]] [[Category:Subobject field]] | mainlabel=- | ?For category= | format=plainlist | link=none | sep=, }}</includeonly><noinclude>
+Returns the comma-separated list of subobject category names declared on
+a category, including those inherited from ancestor categories.
+
+Output format: `Category:Chapter,Category:Review`
+
+This is a Tier A primitive — returns data, not markup. Each result is a
+Category page that groups subobject instances of that type.
+
+Parameter:
+* category - The category name (without `Category:` prefix)
+
+Example (iterate and render a section per subobject type):
+ {{#arraymap:{{Category/effective-subobject-types|category=Book}}|,|@@sub@@|
+   <h3>{{Category/label|category={{PAGENAME:@@sub@@}}}}</h3>
+   {{Category/subobject-instances|subcat=@@sub@@|page={{FULLPAGENAME}}}}
+ |\n}}
+</noinclude>

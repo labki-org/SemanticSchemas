@@ -15,72 +15,80 @@ use PHPUnit\Framework\TestCase;
  */
 class CategoryDisplayTemplateTest extends TestCase {
 
-	private const TEMPLATE_DIR = __DIR__ . '/../../../../resources/base-config/templates/Category';
+	private const TEMPLATE_BASE = __DIR__ . '/../../../../resources/base-config/templates';
+	private const TEMPLATE_DIR = self::TEMPLATE_BASE . '/Category';
 
 	/* =========================================================================
-	 * DISPLAY-ROWS: EMPTY VALUE HIDING
-	 * Replaces: testPropertyRowsWrappedInIfCondition,
-	 *           testMultiplePropertiesEachHaveIfCondition,
-	 *           testOptionalPropertiesAlsoHaveIfCondition,
-	 *           testCustomRenderTemplateStillWrappedInIf
+	 * DISPLAY-ROWS: COMPOSES PRIMITIVES
+	 * Empty-value hiding, pipe-escape syntax, and property-value lookup now
+	 * live in Category/property-row + Property/value (tested below).
 	 * ========================================================================= */
 
-	public function testDisplayRowsUsesIfToHideEmptyValues(): void {
+	public function testDisplayRowsComposesEffectivePropertiesAndPropertyRow(): void {
 		$content = $this->loadTemplate( 'display-rows' );
 
 		$this->assertStringContainsString(
-			'{{#if:{{#show:{{{page|{{FULLPAGENAME}}}}}',
+			'{{Category/effective-properties|category={{{category|}}}}}',
 			$content,
-			'display-rows must use #if with #show to conditionally render rows'
+			'display-rows must iterate the effective property list via Category/effective-properties'
+		);
+		$this->assertStringContainsString(
+			'{{Category/property-row|prop=@@prop@@|page={{{page|{{FULLPAGENAME}}}}}}}',
+			$content,
+			'display-rows must delegate per-row rendering to Category/property-row'
 		);
 	}
 
 	/* =========================================================================
-	 * DISPLAY-ROWS: TABLE ROW SYNTAX
-	 * Replaces: testPropertyRowUsesMagicWordPipeEscape
+	 * PROPERTY-ROW (Tier B renderer)
 	 * ========================================================================= */
 
-	public function testDisplayRowsUsesPipeEscapeForTableSyntax(): void {
-		$content = $this->loadTemplate( 'display-rows' );
+	public function testPropertyRowUsesIfToHideEmptyValues(): void {
+		$content = $this->loadTemplate( 'property-row' );
+
+		$this->assertStringContainsString(
+			'{{#if:{{Property/value|prop={{{prop|}}}|page={{{page|{{FULLPAGENAME}}}}}}}',
+			$content,
+			'property-row must gate row emission on Property/value being non-empty'
+		);
+	}
+
+	public function testPropertyRowUsesPipeEscapeForTableSyntax(): void {
+		$content = $this->loadTemplate( 'property-row' );
 
 		$this->assertStringContainsString( '{{!}}-', $content,
-			'display-rows must use {{!}}- for table row separators' );
+			'property-row must use {{!}}- for table row separators' );
 		$this->assertStringContainsString( '{{!}}', $content,
-			'display-rows must use {{!}} for table cell separators' );
+			'property-row must use {{!}} for table cell separators' );
 	}
 
-	/* =========================================================================
-	 * DISPLAY-ROWS: PROPERTY DISCOVERY VIA ANCESTORS
-	 * Replaces: testValueExpressionPassedToRenderTemplate (value rendering)
-	 * ========================================================================= */
-
-	public function testDisplayRowsDiscoversPropertiesViaAncestorChain(): void {
-		$content = $this->loadTemplate( 'display-rows' );
+	public function testPropertyRowDispatchesToPerPropertyOverride(): void {
+		$content = $this->loadTemplate( 'property-row' );
 
 		$this->assertStringContainsString(
-			'{{Category/collect-ancestors|{{{category|}}}}}',
+			'{{#ifexist:Template:Category/property-row/{{PAGENAME:{{{prop|}}}}}',
 			$content,
-			'display-rows must walk the ancestor chain to discover inherited properties'
+			'property-row must check for a per-property override template via #ifexist'
+		);
+		$this->assertStringContainsString(
+			'{{Category/property-row/{{PAGENAME:{{{prop|}}}}}|prop={{{prop|}}}|page={{{page|{{FULLPAGENAME}}}}}}}',
+			$content,
+			'property-row must invoke the per-property override with prop= and page= when it exists'
 		);
 	}
 
-	public function testDisplayRowsShowsPropertyValues(): void {
-		$content = $this->loadTemplate( 'display-rows' );
+	public function testPropertyRowRendersDefaultUsingPrimitives(): void {
+		$content = $this->loadTemplate( 'property-row' );
 
 		$this->assertStringContainsString(
-			'{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}',
+			'{{Property/label|prop={{{prop|}}}}}',
 			$content,
-			'display-rows must use #show to retrieve property values from the target page'
+			'property-row default render must use Property/label for the header cell'
 		);
-	}
-
-	public function testDisplayRowsShowsPropertyLabels(): void {
-		$content = $this->loadTemplate( 'display-rows' );
-
 		$this->assertStringContainsString(
-			'{{#show:@@prop@@|?Display label|default={{PAGENAME:@@prop@@}}}}',
+			'{{Property/value|prop={{{prop|}}}|page={{{page|{{FULLPAGENAME}}}}}}}',
 			$content,
-			'display-rows must show the property display label with a fallback to the page name'
+			'property-row default render must use Property/value for the value cell'
 		);
 	}
 
@@ -220,98 +228,24 @@ class CategoryDisplayTemplateTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * SUBOBJECTS: DISCOVERY QUERY
+	 * SUBOBJECTS: COMPOSES PRIMITIVES
+	 * The inverse-ask discovery, plainlist/mainlabel handling, sort, and
+	 * format=template wiring all live in Category/effective-subobject-types
+	 * and Category/subobject-instances (tested below).
 	 * ========================================================================= */
 
-	public function testSubobjectsDiscoversTypesViaSubobjectField(): void {
+	public function testSubobjectsComposesEffectiveTypesAndSubobjectInstances(): void {
 		$content = $this->loadTemplate( 'subobjects' );
 
 		$this->assertStringContainsString(
-			'[[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]]',
+			'{{Category/effective-subobject-types|category={{{category|}}}}}',
 			$content,
-			'subobjects must walk the ancestor chain and filter Subobject field subobjects'
+			'subobjects must iterate effective subobject types via Category/effective-subobject-types'
 		);
 		$this->assertStringContainsString(
-			'?For category=',
+			'{{Category/subobject-instances|subcat=@@subcat@@|page={{{page|{{FULLPAGENAME}}}}}}}',
 			$content,
-			'subobjects must read the For category printout with empty-label suffix'
-		);
-	}
-
-	public function testSubobjectsUsesPlainlistWithMainlabelSuppressed(): void {
-		$content = $this->loadTemplate( 'subobjects' );
-
-		$this->assertStringContainsString(
-			'mainlabel=-',
-			$content,
-			'subobjects discovery query must suppress the mainlabel so the CSV contains only For category values'
-		);
-		$this->assertStringContainsString(
-			'format=plainlist',
-			$content,
-			'subobjects query must use plainlist (format=list wraps values in <span> markup)'
-		);
-	}
-
-	/* =========================================================================
-	 * SUBOBJECTS: INSTANCE RENDERING
-	 * ========================================================================= */
-
-	public function testSubobjectsInstanceRenderingUsesTemplate(): void {
-		$content = $this->loadTemplate( 'subobjects' );
-
-		$this->assertStringContainsString(
-			'format=template',
-			$content,
-			'subobjects must render each instance via format=template'
-		);
-		$this->assertStringContainsString(
-			'template=Category/subobject-instance',
-			$content,
-			'subobjects must use Category/subobject-instance as the row template'
-		);
-		$this->assertStringContainsString(
-			'userparam={{PAGENAME:@@subcat@@}}',
-			$content,
-			'subobjects must pass the subobject category name (without Category: prefix) via userparam'
-		);
-	}
-
-	public function testSubobjectsSortsBySortOrder(): void {
-		$content = $this->loadTemplate( 'subobjects' );
-
-		$this->assertStringContainsString(
-			'sort=Has sort order',
-			$content,
-			'subobjects must sort by Has sort order so user-defined ordering is preserved'
-		);
-		$this->assertStringContainsString(
-			'order=asc',
-			$content,
-			'subobjects must sort ascending'
-		);
-	}
-
-	public function testSubobjectsUsesLiteralPipesInNestedAsk(): void {
-		$content = $this->loadTemplate( 'subobjects' );
-
-		// Inside an enclosing #arraymap, {{!}} evaluated at render time
-		// confuses arraymap's formula splitter and produces "empty condition"
-		// warnings. Literal | is safe because MW protects pipes inside {{...}}.
-		$this->assertStringNotContainsString(
-			'{{!}} format=template',
-			$content,
-			'nested #ask inside #arraymap must use literal | for its parameter separators, not {{!}}'
-		);
-	}
-
-	public function testSubobjectsPassesSubjectAsPlainText(): void {
-		$content = $this->loadTemplate( 'subobjects' );
-
-		$this->assertStringContainsString(
-			'link=none',
-			$content,
-			'subobjects must set link=none so the subobject fragment reaches subobject-instance as plain text'
+			'subobjects must delegate per-type instance rendering to Category/subobject-instances'
 		);
 	}
 
@@ -324,7 +258,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 			'subobjects must use an HTML <h3> tag (arraymap trims the leading newline wikitext === needs)'
 		);
 		$this->assertStringNotContainsString(
-			'=== {{#show:',
+			'=== ',
 			$content,
 			'subobjects must not use wikitext === headings (render as literal after arraymap trims newline)'
 		);
@@ -406,21 +340,156 @@ class CategoryDisplayTemplateTest extends TestCase {
 	}
 
 	/* =========================================================================
-	 * COLLECT-ANCESTORS
+	 * ANCESTORS (formerly collect-ancestors)
 	 * ========================================================================= */
 
-	public function testCollectAncestorsWalksParentChain(): void {
-		$content = $this->loadTemplate( 'collect-ancestors' );
+	public function testAncestorsWalksParentChain(): void {
+		$content = $this->loadTemplate( 'ancestors' );
 
 		$this->assertStringContainsString(
 			'?Subcategory of',
 			$content,
-			'collect-ancestors must query ?Subcategory of to walk the category hierarchy'
+			'ancestors must query ?Subcategory of to walk the category hierarchy'
 		);
 		$this->assertStringContainsString(
-			'{{Category/collect-ancestors-L1',
+			'{{Category/ancestors-L1',
 			$content,
-			'collect-ancestors must delegate to L1 for deeper levels'
+			'ancestors must delegate to L1 for deeper levels'
+		);
+	}
+
+	/* =========================================================================
+	 * TIER A: EFFECTIVE-PROPERTIES
+	 * ========================================================================= */
+
+	public function testEffectivePropertiesQueriesPropertyFieldsAcrossAncestors(): void {
+		$content = $this->loadTemplate( 'effective-properties' );
+
+		$this->assertStringContainsString(
+			'[[-Has subobject::{{Category/ancestors|{{{category|}}}}}]] [[Category:Property field]]',
+			$content,
+			'effective-properties must walk the ancestor chain and filter Property field subobjects'
+		);
+		$this->assertStringContainsString(
+			'?For property=',
+			$content,
+			'effective-properties must read the For property printout with empty-label suffix'
+		);
+	}
+
+	public function testEffectivePropertiesUsesPlainlistWithMainlabelSuppressed(): void {
+		$content = $this->loadTemplate( 'effective-properties' );
+
+		$this->assertStringContainsString( 'mainlabel=-', $content,
+			'effective-properties must suppress the mainlabel' );
+		$this->assertStringContainsString( 'format=plainlist', $content,
+			'effective-properties must use plainlist format to avoid <span> markup' );
+		$this->assertStringContainsString( 'sep=,', $content,
+			'effective-properties must separate entries with comma for arraymap consumption' );
+	}
+
+	/* =========================================================================
+	 * TIER A: EFFECTIVE-SUBOBJECT-TYPES
+	 * ========================================================================= */
+
+	public function testEffectiveSubobjectTypesQueriesSubobjectFieldsAcrossAncestors(): void {
+		$content = $this->loadTemplate( 'effective-subobject-types' );
+
+		$this->assertStringContainsString(
+			'[[-Has subobject::{{Category/ancestors|{{{category|}}}}}]] [[Category:Subobject field]]',
+			$content,
+			'effective-subobject-types must walk the ancestor chain and filter Subobject field subobjects'
+		);
+		$this->assertStringContainsString(
+			'?For category=',
+			$content,
+			'effective-subobject-types must read the For category printout with empty-label suffix'
+		);
+	}
+
+	public function testEffectiveSubobjectTypesUsesPlainlistWithMainlabelSuppressed(): void {
+		$content = $this->loadTemplate( 'effective-subobject-types' );
+
+		$this->assertStringContainsString( 'mainlabel=-', $content );
+		$this->assertStringContainsString( 'format=plainlist', $content );
+		$this->assertStringContainsString( 'sep=,', $content );
+	}
+
+	/* =========================================================================
+	 * TIER A: SUBOBJECT-INSTANCES
+	 * ========================================================================= */
+
+	public function testSubobjectInstancesUsesFormatTemplate(): void {
+		$content = $this->loadTemplate( 'subobject-instances' );
+
+		$this->assertStringContainsString(
+			'format=template',
+			$content,
+			'subobject-instances must dispatch each instance via SMW format=template'
+		);
+		$this->assertStringContainsString(
+			'template={{{row-template|Category/subobject-instance}}}',
+			$content,
+			'subobject-instances must accept a row-template= parameter, defaulting to Category/subobject-instance'
+		);
+		$this->assertStringContainsString(
+			'userparam={{PAGENAME:{{{subcat|}}}}}',
+			$content,
+			'subobject-instances must pass the subobject category name (without Category: prefix) via userparam'
+		);
+	}
+
+	public function testSubobjectInstancesSortsBySortOrder(): void {
+		$content = $this->loadTemplate( 'subobject-instances' );
+
+		$this->assertStringContainsString( 'sort=Has sort order', $content,
+			'subobject-instances must sort by Has sort order' );
+		$this->assertStringContainsString( 'order=asc', $content,
+			'subobject-instances must sort ascending' );
+	}
+
+	public function testSubobjectInstancesPassesSubjectAsPlainText(): void {
+		$content = $this->loadTemplate( 'subobject-instances' );
+
+		$this->assertStringContainsString( 'link=none', $content,
+			'subobject-instances must set link=none so fragments reach the row template as plain text' );
+	}
+
+	/* =========================================================================
+	 * TIER A: CATEGORY/LABEL
+	 * ========================================================================= */
+
+	public function testCategoryLabelShowsDisplayLabelWithFallback(): void {
+		$content = $this->loadTemplate( 'label' );
+
+		$this->assertStringContainsString(
+			'{{#show:Category:{{{category|}}}|?Display label|default={{{category|}}}}}',
+			$content,
+			'Category/label must show Display label with fallback to the raw category name'
+		);
+	}
+
+	/* =========================================================================
+	 * TIER A: PROPERTY/LABEL + PROPERTY/VALUE
+	 * ========================================================================= */
+
+	public function testPropertyLabelShowsDisplayLabelWithFallback(): void {
+		$content = $this->loadPropertyTemplate( 'label' );
+
+		$this->assertStringContainsString(
+			'{{#show:{{{prop|}}}|?Display label|default={{PAGENAME:{{{prop|}}}}}}}',
+			$content,
+			'Property/label must show Display label with fallback to PAGENAME of the property ref'
+		);
+	}
+
+	public function testPropertyValueShowsPropertyOnPage(): void {
+		$content = $this->loadPropertyTemplate( 'value' );
+
+		$this->assertStringContainsString(
+			'{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:{{{prop|}}}}}}}',
+			$content,
+			'Property/value must #show the property on the target page (defaulting page to FULLPAGENAME)'
 		);
 	}
 
@@ -430,6 +499,12 @@ class CategoryDisplayTemplateTest extends TestCase {
 
 	private function loadTemplate( string $name ): string {
 		$path = self::TEMPLATE_DIR . '/' . $name . '.wikitext';
+		$this->assertFileExists( $path );
+		return file_get_contents( $path );
+	}
+
+	private function loadPropertyTemplate( string $name ): string {
+		$path = self::TEMPLATE_BASE . '/Property/' . $name . '.wikitext';
 		$this->assertFileExists( $path );
 		return file_get_contents( $path );
 	}

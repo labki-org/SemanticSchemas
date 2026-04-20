@@ -62,6 +62,16 @@
 			}
 		},
 		{
+			"page": "Category/property-row",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/property-row.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Category/table",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
@@ -82,50 +92,110 @@
 			}
 		},
 		{
-			"page": "Category/collect-ancestors",
+			"page": "Category/label",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors.wikitext"
+				"importFrom": "templates/Category/label.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L1",
+			"page": "Category/effective-properties",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L1.wikitext"
+				"importFrom": "templates/Category/effective-properties.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L2",
+			"page": "Category/effective-subobject-types",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L2.wikitext"
+				"importFrom": "templates/Category/effective-subobject-types.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L3",
+			"page": "Category/subobject-instances",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L3.wikitext"
+				"importFrom": "templates/Category/subobject-instances.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L4",
+			"page": "Property/label",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L4.wikitext"
+				"importFrom": "templates/Property/label.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Property/value",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Property/value.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/ancestors",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/ancestors.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/ancestors-L1",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/ancestors-L1.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/ancestors-L2",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/ancestors-L2.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/ancestors-L3",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/ancestors-L3.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/ancestors-L4",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/ancestors-L4.wikitext"
 			},
 			"options": {
 				"replaceable": true

@@ -1,17 +1,19 @@
-<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Property field]] | mainlabel=- | ?For property= | format=plainlist | link=none | sep=, }}|,|@@prop@@|{{#if:{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
-! {{#show:@@prop@@|?Display label|default={{PAGENAME:@@prop@@}}}}
-{{!}} {{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}}}|\n}}</includeonly><noinclude>
+<includeonly>{{#arraymap:{{Category/effective-properties|category={{{category|}}}}}|,|@@prop@@|{{Category/property-row|prop=@@prop@@|page={{{page|{{FULLPAGENAME}}}}}}}|\n}}</includeonly><noinclude>
 Renders property value rows for a SemanticSchemas category display.
 
-Discovers all properties (including inherited) by walking the ancestor
-chain via Category/collect-ancestors, querying Property field subobjects
-on each ancestor category, then rendering a table row for each property
-whose value is non-empty on the target page.
+Iterates the effective property list (including inherited) via
+`Category/effective-properties`, then delegates per-row rendering to
+`Category/property-row` (which handles the default layout + per-property
+overrides).
+
+To customize row rendering:
+* Change row layout globally: edit `Template:Category/property-row`
+* Change layout for one property: create `Template:Category/property-row/<PropName>`
+* Change the whole property list: edit `Template:Category/effective-properties`
+  (unusual — most users want the per-property or global overrides above)
 
 Parameters:
-* category - The category name (without namespace prefix)
-* page - The page (or subobject fragment, e.g. "ParentPage#_hash")
-         to read property values from. Defaults to {{FULLPAGENAME}},
-         making this template usable both for the current page and
-         for rendering subobject instances via Category/subobject-instance.
+* category - The category name (without `Category:` prefix)
+* page     - The page (or subobject fragment) to read property values
+             from; defaults to {{FULLPAGENAME}}.
 </noinclude>

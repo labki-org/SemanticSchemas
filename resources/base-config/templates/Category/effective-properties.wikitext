@@ -1,0 +1,18 @@
+<includeonly>{{#ask: [[-Has subobject::{{Category/ancestors|{{{category|}}}}}]] [[Category:Property field]] | mainlabel=- | ?For property= | format=plainlist | link=none | sep=, }}</includeonly><noinclude>
+Returns the comma-separated list of property page names declared on a
+category, including those inherited from ancestor categories.
+
+Output format: `Property:Has_title,Property:Has_author,Property:Has_isbn`
+
+This is a Tier A primitive — returns data, not markup. Use it to drive
+custom display logic without having to learn the inverse-ask +
+ancestor-walk pattern yourself.
+
+Parameter:
+* category - The category name (without `Category:` prefix)
+
+Example (iterate and render each property's value):
+ {{#arraymap:{{Category/effective-properties|category=Book}}|,|@@p@@|
+   {{Property/label|prop=@@p@@}}: {{Property/value|prop=@@p@@|page={{FULLPAGENAME}}}}
+ |\n}}
+</noinclude>

@@ -1,22 +1,24 @@
-<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]] | mainlabel=- | ?For category= | format=plainlist | link=none | sep=, }}|,|@@subcat@@|<h3>{{#show:@@subcat@@|?Display label|default={{PAGENAME:@@subcat@@}}}}</h3>
-{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[@@subcat@@]]
- | link=none
- | format=template
- | template=Category/subobject-instance
- | userparam={{PAGENAME:@@subcat@@}}
- | sort=Has sort order
- | order=asc
-}}|\n}}</includeonly><noinclude>
-Renders subobject sections for a category. For each subobject type
-declared on the category (or any ancestor, via Category/collect-ancestors),
-emits a heading and an #ask that renders each instance through
-Category/subobject-instance (which itself reuses Category/table).
+<includeonly>{{#arraymap:{{Category/effective-subobject-types|category={{{category|}}}}}|,|@@subcat@@|<h3>{{Category/label|category={{PAGENAME:@@subcat@@}}}}</h3>
+{{Category/subobject-instances|subcat=@@subcat@@|page={{{page|{{FULLPAGENAME}}}}}}}|\n}}</includeonly><noinclude>
+Renders subobject sections for a SemanticSchemas category display.
 
-Subobject types are discovered from Subobject field declarations on the
-ancestor chain: {{#ask: [[-Has subobject::<ancestors>]] [[Category:Subobject field]] | ?For category}}.
+Iterates the effective subobject-type list (including inherited) via
+`Category/effective-subobject-types`, emits an `<h3>` heading per type
+via `Category/label`, and delegates per-type instance rendering to
+`Category/subobject-instances` (which defaults to `Category/subobject-instance`
+as the row template — reuses Category/table for each instance).
+
+To customize:
+* Change which instances render: pass a different `row-template=`
+  argument (requires forking this template)
+* Change instance layout: override `Template:Category/subobject-instance`
+  globally, OR provide a custom `row-template` to
+  `Category/subobject-instances` in your own display code
+* Change the heading style: edit this template, or compose your own
+  from the primitives on a custom display page
 
 Parameters:
 * category - The category name whose subobject types should be rendered
-* page - The parent page whose subobject instances should be listed;
-         defaults to {{FULLPAGENAME}}.
+* page     - The parent page whose subobject instances should be listed;
+             defaults to {{FULLPAGENAME}}.
 </noinclude>

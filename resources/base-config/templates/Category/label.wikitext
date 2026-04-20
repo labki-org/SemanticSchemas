@@ -1,0 +1,13 @@
+<includeonly>{{#show:Category:{{{category|}}}|?Display label|default={{{category|}}}}}</includeonly><noinclude>
+Returns a category's display label, falling back to the raw category
+name if no `Display label` annotation is set.
+
+This is a Tier A primitive — returns a plain string for use in headings,
+breadcrumbs, or any custom display markup.
+
+Parameter:
+* category - The category name (without `Category:` prefix)
+
+Example:
+ <h1>{{Category/label|category=Book}}</h1>
+</noinclude>

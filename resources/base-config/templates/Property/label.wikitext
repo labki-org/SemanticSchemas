@@ -1,0 +1,17 @@
+<includeonly>{{#show:{{{prop|}}}|?Display label|default={{PAGENAME:{{{prop|}}}}}}}</includeonly><noinclude>
+Returns a property's display label, falling back to the raw property
+name (without `Property:` prefix) if no `Display label` annotation is set.
+
+This is a Tier A primitive — returns a plain string for use in table
+headers, form labels, or any custom display markup.
+
+Accepts either a namespaced (`Property:Has_title`) or bare (`Has_title`)
+property reference.
+
+Parameter:
+* prop - The property page reference
+
+Example:
+ {{Property/label|prop=Property:Has_title}}      → "Title"
+ {{Property/label|prop=Property:Uncontrolled}}   → "Uncontrolled"  (no Display label set)
+</noinclude>

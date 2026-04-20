@@ -155,6 +155,39 @@ class BaseConfigIntegrityTest extends TestCase {
 		$cases = [];
 		foreach ( glob( "$dir/*.wikitext" ) as $path ) {
 			$filename = basename( $path );
+			// Convention: PascalCase filenames are render templates (SMW format=template
+			// entries that receive {{{value}}}); lowercase filenames are primitives
+			// (receive {{{prop}}} etc. — see testPropertyPrimitiveAcceptsPropParameter).
+			if ( !ctype_upper( $filename[0] ) ) {
+				continue;
+			}
+			$cases[$filename] = [ $filename, file_get_contents( $path ) ];
+		}
+		return $cases;
+	}
+
+	/**
+	 * @dataProvider providePropertyPrimitiveFiles
+	 */
+	public function testPropertyPrimitiveAcceptsPropParameter(
+		string $filename,
+		string $content
+	): void {
+		$this->assertStringContainsString(
+			'{{{prop',
+			$content,
+			"Property primitive $filename must accept a {{{prop}}} parameter"
+		);
+	}
+
+	public static function providePropertyPrimitiveFiles(): array {
+		$dir = self::BASE_CONFIG_DIR . '/templates/Property';
+		$cases = [];
+		foreach ( glob( "$dir/*.wikitext" ) as $path ) {
+			$filename = basename( $path );
+			if ( ctype_upper( $filename[0] ) ) {
+				continue;
+			}
 			$cases[$filename] = [ $filename, file_get_contents( $path ) ];
 		}
 		return $cases;
