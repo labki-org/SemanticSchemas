@@ -332,6 +332,16 @@
 			}
 		},
 		{
+			"page": "Is hidden",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Is_hidden.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Is required",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
