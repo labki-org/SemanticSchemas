@@ -413,9 +413,9 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'collect-ancestors' );
 
 		$this->assertStringContainsString(
-			'?Category',
+			'?Subcategory of',
 			$content,
-			'collect-ancestors must query ?Category (SMW auto-property from native categorylinks) to walk the chain'
+			'collect-ancestors must query ?Subcategory of (SMW auto-property for category-to-category hierarchy; ?Category fires only on non-Category pages)'
 		);
 		$this->assertStringContainsString(
 			'{{Category/collect-ancestors-L1',
