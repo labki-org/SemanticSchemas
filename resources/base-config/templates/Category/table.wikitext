@@ -1,8 +1,8 @@
 <includeonly>{| class="wikitable source-semanticschemas"
 {{Category/display-header | category={{{category|}}} }}
 {{Category/display-rows | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}
-{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse | {{{category|}}} }}|}}
-|}{{#ifeq:{{{subobjects|yes}}}|yes|
+{{#ifeq:{{{nested|no}}}|no|{{Category/render-reverse | {{{category|}}} }}|}}
+|}{{#ifeq:{{{nested|no}}}|no|
 {{Category/subobjects | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}|}}</includeonly><noinclude>
 Dynamic table display template for SemanticSchemas categories.
 
@@ -15,6 +15,12 @@ Parameters:
          {{FULLPAGENAME}}; Category/subobject-instance passes a
          subobject fragment here so the same template renders
          individual subobject instances.
-* subobjects - Set to "no" to suppress the subobject sections
-         (used by Category/subobject-instance to prevent recursion).
+* nested - Set to "yes" when Category/table is being re-entered to
+         render a subobject instance (the "mini-table" inside an
+         enclosing Category/table render). In that mode the Backlinks
+         (render-reverse) and subobject sections are suppressed because
+         (a) {{FULLPAGENAME}} still points at the parent page, so
+         backlinks would duplicate per instance, and (b) we want to
+         stop the subobject-section recursion at depth 1. Defaults to
+         "no" (top-level render — emit full chrome).
 </noinclude>

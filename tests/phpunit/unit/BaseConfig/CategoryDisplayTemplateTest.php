@@ -305,37 +305,43 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'subobject-instance' );
 
 		$this->assertStringContainsString(
-			'subobjects=no',
+			'nested=yes',
 			$content,
-			'subobject-instance must pass subobjects=no to prevent Category/table from recursing into nested subobjects'
+			'subobject-instance must pass nested=yes to suppress Category/table chrome meant for top-level renders'
 		);
 	}
 
 	/* =========================================================================
-	 * TABLE / SIDEBOX: RENDER-REVERSE GATING
+	 * TABLE / SIDEBOX: NESTED-RENDER GATING
 	 * ========================================================================= */
 
-	public function testTableGatesRenderReverseOnSubobjectsParam(): void {
+	public function testTableGatesChromeOnNestedParam(): void {
 		$content = $this->loadTemplate( 'table' );
 
-		// render-reverse hardcodes {{FULLPAGENAME}} for backlink lookups, so
-		// when Category/subobject-instance re-enters table with subobjects=no,
-		// an ungated render-reverse would duplicate the parent page's
-		// Backlinks section inside every subobject mini-table.
+		// render-reverse and subobjects sections both use {{FULLPAGENAME}} for
+		// backlink/instance lookups. When subobject-instance re-enters
+		// Category/table with nested=yes to render a mini-table, those
+		// sections would incorrectly show the parent page's backlinks
+		// / subobjects inside every instance. Gating suppresses them.
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse',
+			'{{#ifeq:{{{nested|no}}}|no|{{Category/render-reverse',
 			$content,
-			'table must gate Category/render-reverse on subobjects=yes to keep backlinks out of subobject instances'
+			'table must gate Category/render-reverse on nested=no to keep backlinks out of subobject instances'
+		);
+		$this->assertStringContainsString(
+			'{{#ifeq:{{{nested|no}}}|no|',
+			$content,
+			'table must gate the subobject sections on nested=no as well'
 		);
 	}
 
-	public function testSideboxGatesRenderReverseOnSubobjectsParam(): void {
+	public function testSideboxGatesChromeOnNestedParam(): void {
 		$content = $this->loadTemplate( 'sidebox' );
 
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse',
+			'{{#ifeq:{{{nested|no}}}|no|{{Category/render-reverse',
 			$content,
-			'sidebox must gate Category/render-reverse on subobjects=yes for the same reason as table'
+			'sidebox must gate Category/render-reverse on nested=no for the same reason as table'
 		);
 	}
 

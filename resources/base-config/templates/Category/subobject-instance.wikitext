@@ -1,7 +1,7 @@
-<includeonly>{{Category/table | category={{{#userparam|}}} | page={{{1|}}} | subobjects=no }}</includeonly><noinclude>
+<includeonly>{{Category/table | category={{{#userparam|}}} | page={{{1|}}} | nested=yes }}</includeonly><noinclude>
 Renders a single subobject instance as a full Category/table.
 
-Called from Category/subobjects via {{#ask: | format=template | template=Category/subobject-instance | userparam=<SubCat>}}:
+Called from Category/subobject-instances via {{#ask: | format=template | template=Category/subobject-instance | userparam=<SubCat>}}:
 
 * {{{1}}}            - the subobject's fragment identifier (e.g. "ParentPage#_abc123")
 * {{{#userparam}}} - the subobject's category name (without namespace prefix).
@@ -9,6 +9,7 @@ Called from Category/subobjects via {{#ask: | format=template | template=Categor
                        userparam option passed via #ask.
 
 Reuses Category/table so subobjects render with the exact same look as
-the parent category page. subobjects=no stops recursion into nested
-subobjects.
+the parent category page. `nested=yes` tells Category/table this is a
+mini-table render: suppress Backlinks and subobject sections that only
+make sense at the top level.
 </noinclude>

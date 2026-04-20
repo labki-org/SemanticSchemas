@@ -1,8 +1,8 @@
 <includeonly>{| class="wikitable source-semanticschemas-sidebox" style="float: right; clear: right; margin: 0 0 1em 1em; width: 300px; background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"
 {{Category/display-header | category={{{category|}}} }}
 {{Category/display-rows | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}
-{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse | {{{category|}}} }}|}}
-|}{{#ifeq:{{{subobjects|yes}}}|yes|
+{{#ifeq:{{{nested|no}}}|no|{{Category/render-reverse | {{{category|}}} }}|}}
+|}{{#ifeq:{{{nested|no}}}|no|
 {{Category/subobjects | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}|}}</includeonly><noinclude>
 Dynamic sidebox display template for SemanticSchemas categories.
 
@@ -13,5 +13,6 @@ Parameters:
 * category - The category name (without namespace prefix)
 * page - Target page to read property values from. Defaults to
          {{FULLPAGENAME}}.
-* subobjects - Set to "no" to suppress the subobject sections.
+* nested - Set to "yes" to suppress Backlinks + subobject sections
+         (see Category/table for full rationale).
 </noinclude>
