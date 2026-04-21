@@ -88,25 +88,6 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 	}
 
 	/* =========================================================================
-	 * PAGE EXISTENCE
-	 * ========================================================================= */
-
-	public function testPageExistsReturnsFalseForNonExistentPage(): void {
-		$title = Title::makeTitle( NS_MAIN, 'NonExistentPage_' . uniqid() );
-
-		$this->assertFalse( $title->exists(), 'Pre-condition: MW confirms page does not exist' );
-		$this->assertFalse( $this->pageCreator->pageExists( $title ) );
-	}
-
-	public function testPageExistsReturnsTrueForExistingPage(): void {
-		$title = Title::makeTitle( NS_MAIN, 'ExistsPage_' . uniqid() );
-		$this->pageCreator->createOrUpdatePage( $title, 'Some content', 'Create' );
-		$this->assertTrue( $title->exists(), 'Pre-condition: MW confirms page exists' );
-
-		$this->assertTrue( $this->pageCreator->pageExists( $title ) );
-	}
-
-	/* =========================================================================
 	 * PAGE CONTENT READING
 	 * ========================================================================= */
 

@@ -44,7 +44,7 @@ class WikiCategoryStore {
 
 	public function readCategory( string $categoryName ): ?CategoryModel {
 		$title = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
-		if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
+		if ( !$title || !$title->exists() ) {
 			return null;
 		}
 

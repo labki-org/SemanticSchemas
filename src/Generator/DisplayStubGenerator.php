@@ -242,7 +242,7 @@ class DisplayStubGenerator {
 	 */
 	public function displayStubExists( string $categoryName ): bool {
 		$title = $this->pageCreator->makeTitle( $categoryName . "/display", NS_TEMPLATE );
-		return $title && $this->pageCreator->pageExists( $title );
+		return $title && $title->exists();
 	}
 
 	/**
@@ -272,7 +272,7 @@ class DisplayStubGenerator {
 		}
 
 		// Template doesn't exist - create it
-		if ( !$this->pageCreator->pageExists( $title ) ) {
+		if ( !$title->exists() ) {
 			$this->generateDisplayContent( $category, $resolver );
 			return [
 				'status' => 'created',

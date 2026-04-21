@@ -412,7 +412,7 @@ class FormGenerator {
 
 	public function formExists( string $categoryName ): bool {
 		$t = $this->pageCreator->makeTitle( $categoryName, \PF_NS_FORM );
-		return $t && $this->pageCreator->pageExists( $t );
+		return $t && $t->exists();
 	}
 
 	/**
