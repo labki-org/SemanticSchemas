@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Full legal name of a person.]]
+[[Display label::Full name]]
+<!-- SemanticSchemas End -->

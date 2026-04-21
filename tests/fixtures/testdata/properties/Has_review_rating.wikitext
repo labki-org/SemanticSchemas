@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Number]]
+[[Has description::Aggregate review rating for a work (1-5).]]
+[[Display label::Review rating]]
+<!-- SemanticSchemas End -->

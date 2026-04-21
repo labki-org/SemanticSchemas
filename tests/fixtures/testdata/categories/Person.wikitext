@@ -1,0 +1,35 @@
+<!-- SemanticSchemas Start -->
+[[Has description::A person — author, reviewer, or other human entity. Renders as a floating sidebox.]]
+[[Display label::Person]]
+[[Has display format::sidebox]]
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has full name
+ | Is required = true
+ | Has sort order = 1
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has email
+ | Is required = false
+ | Has sort order = 2
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has website
+ | Is required = false
+ | Has sort order = 3
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has pubyear
+ | Is required = false
+ | Has sort order = 4
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has internal id
+ | Is required = false
+ | Has sort order = 5
+}}
+<!-- SemanticSchemas End -->

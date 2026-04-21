@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::Person who wrote the review.]]
+[[Display label::Reviewer]]
+[[Allows value from category::Person]]
+<!-- SemanticSchemas End -->

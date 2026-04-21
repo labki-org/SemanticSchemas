@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Email]]
+[[Has description::Email address.]]
+[[Display label::Email]]
+<!-- SemanticSchemas End -->

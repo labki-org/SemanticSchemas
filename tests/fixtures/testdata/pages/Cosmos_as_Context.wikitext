@@ -1,0 +1,7 @@
+{{Article
+| has_title = Cosmos as Context
+| has_author = Carl Sagan
+| has_pubyear = 1980
+| has_journal = Scientific American
+| has_doi = https://doi.org/10.1038/scientificamerican1980-12
+}}

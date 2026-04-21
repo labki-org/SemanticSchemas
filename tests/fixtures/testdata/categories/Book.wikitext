@@ -1,0 +1,48 @@
+<!-- SemanticSchemas Start -->
+[[Has description::A book-length work with chapters and reader reviews.]]
+[[Display label::Book]]
+[[Has display format::table]]
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has author
+ | Is required = true
+ | Has sort order = 10
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has ISBN
+ | Is required = false
+ | Has sort order = 11
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has genre
+ | Is required = false
+ | Has sort order = 12
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has tag
+ | Is required = false
+ | Has sort order = 13
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Is available
+ | Is required = false
+ | Has sort order = 14
+}}
+{{#subobject:
+ |@category=Subobject field
+ | For category = Category:Chapter
+ | Is required = false
+ | Has sort order = 1
+}}
+{{#subobject:
+ |@category=Subobject field
+ | For category = Category:Review
+ | Is required = false
+ | Has sort order = 2
+}}
+<!-- SemanticSchemas End -->
+[[Category:Work]]

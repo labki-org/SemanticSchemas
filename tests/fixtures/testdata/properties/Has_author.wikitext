@@ -1,0 +1,7 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Has description::The author of a work.]]
+[[Display label::Author]]
+[[Allows value from category::Person]]
+[[Allows multiple values::true]]
+<!-- SemanticSchemas End -->

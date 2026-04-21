@@ -1,0 +1,22 @@
+<!-- SemanticSchemas Start -->
+[[Has description::A chapter within a book. Used as a subobject type, not a top-level page.]]
+[[Display label::Chapter]]
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has chapter title
+ | Is required = true
+ | Has sort order = 1
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has sort order
+ | Is required = true
+ | Has sort order = 2
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has chapter summary
+ | Is required = false
+ | Has sort order = 3
+}}
+<!-- SemanticSchemas End -->

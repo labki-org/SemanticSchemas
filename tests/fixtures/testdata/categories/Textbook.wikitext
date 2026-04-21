@@ -1,0 +1,19 @@
+<!-- SemanticSchemas Start -->
+[[Has description::A textbook — a book used for teaching a subject. Uses a custom display layout.]]
+[[Display label::Textbook]]
+[[Has display format::none]]
+[[Has display template::TextbookDisplay]]
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has subject
+ | Is required = true
+ | Has sort order = 20
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has edition
+ | Is required = false
+ | Has sort order = 21
+}}
+<!-- SemanticSchemas End -->
+[[Category:Book]]

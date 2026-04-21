@@ -1,0 +1,24 @@
+<!-- SemanticSchemas Start -->
+[[Has description::A journal article or short-form published work.]]
+[[Display label::Article]]
+[[Has display format::table]]
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has author
+ | Is required = true
+ | Has sort order = 10
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has journal
+ | Is required = true
+ | Has sort order = 11
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Has DOI
+ | Is required = false
+ | Has sort order = 12
+}}
+<!-- SemanticSchemas End -->
+[[Category:Work]]
