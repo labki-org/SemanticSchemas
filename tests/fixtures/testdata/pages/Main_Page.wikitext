@@ -39,11 +39,17 @@ out the specific behavior it demonstrates, so you know what to look for.
 === People ===
 
 * '''[[J. R. R. Tolkien]]''' — a [[:Category:Person]] instance with the
- '''sidebox''' display format. Also demonstrates the '''per-property
- row override''': [[Template:Category/property-row/Has email]] exists,
- so the email renders as a bold <code>mailto:</code> link rather than
- plain text — no other template touched. Look at [[Frank Herbert]],
- [[Carl Sagan]], and [[Thomas Cormen]] for more Person instances.
+ '''sidebox''' display format. Also demonstrates two more features:
+ * '''Per-property row override''': [[Template:Category/property-row/Has email]]
+   exists, so the email renders as a bold <code>mailto:</code> link rather
+   than plain text — no other template touched.
+ * '''Backlinks''': [[:Category:Person]] declares
+   <code>show_backlinks_for = Has author</code> plus
+   <code>[[:Property:Has author]]</code> has an
+   <code>Inverse property label</code> of "Authored", so each Person sidebox
+   ends with an "Authored ..." row listing works they wrote.
+ Look at [[Frank Herbert]], [[Carl Sagan]], and [[Thomas Cormen]] for more
+ Person instances.
 
 == Schema shape ==
 

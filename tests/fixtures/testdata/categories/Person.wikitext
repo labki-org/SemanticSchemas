@@ -1,7 +1,8 @@
 {{Category
-| has_description = A person — author, reviewer, or other human entity. Renders as a floating sidebox.
+| has_description = A person — author, reviewer, or other human entity. Renders as a floating sidebox with a Backlinks section listing works authored or reviewed.
 | display_label = Person
 | has_display_format = sidebox
+| show_backlinks_for = Has author
 }}
 
 {{Property field/subobject | for_property = Has full name   | is_required = true  }}

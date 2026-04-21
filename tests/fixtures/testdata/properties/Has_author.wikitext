@@ -4,4 +4,5 @@
 [[Display label::Author]]
 [[Allows value from category::Person]]
 [[Allows multiple values::true]]
+[[Inverse property label::Authored]]
 <!-- SemanticSchemas End -->
