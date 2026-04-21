@@ -127,27 +127,6 @@ class PageCreator {
 	}
 
 	/* =====================================================================
-	 * TITLE CREATION
-	 * ===================================================================== */
-
-	/**
-	 * Construct a safe Title.
-	 */
-	public function makeTitle( string $text, int $namespace ): ?Title {
-		$text = trim( $text );
-		if ( $text === '' ) {
-			return null;
-		}
-
-		try {
-			return Title::makeTitleSafe( $namespace, $text );
-		} catch ( \Exception $e ) {
-			wfLogWarning( "SemanticSchemas: Title creation failed for '$text': " . $e->getMessage() );
-			return null;
-		}
-	}
-
-	/* =====================================================================
 	 * CACHE PURGE
 	 * ===================================================================== */
 

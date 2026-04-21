@@ -24,16 +24,13 @@ class WikiCategoryStore {
 
 	use SMWDataExtractor;
 
-	private PageCreator $pageCreator;
 	private IConnectionProvider $connectionProvider;
 	private Config $mainConfig;
 
 	public function __construct(
-		PageCreator $pageCreator,
 		IConnectionProvider $connectionProvider,
 		Config $mainConfig
 	) {
-		$this->pageCreator = $pageCreator;
 		$this->connectionProvider = $connectionProvider;
 		$this->mainConfig = $mainConfig;
 	}
@@ -43,7 +40,7 @@ class WikiCategoryStore {
 	 * ------------------------------------------------------------------------- */
 
 	public function readCategory( string $categoryName ): ?CategoryModel {
-		$title = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
+		$title = Title::makeTitleSafe( NS_CATEGORY, $categoryName );
 		if ( !$title || !$title->exists() ) {
 			return null;
 		}

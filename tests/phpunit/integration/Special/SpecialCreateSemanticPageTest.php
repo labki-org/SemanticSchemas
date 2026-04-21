@@ -4,7 +4,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Special;
 
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Request\FauxRequest;
 use MediaWiki\Title\Title;
 use MediaWikiIntegrationTestCase;
@@ -31,12 +30,7 @@ class SpecialCreateSemanticPageTest extends MediaWikiIntegrationTestCase {
 		$this->pageCreator = new PageCreator(
 			$services->getWikiPageFactory(),
 		);
-		$propertyStore = new WikiPropertyStore(
-			$this->pageCreator,
-			$services->getConnectionProvider(),
-		);
 		$this->categoryStore = new WikiCategoryStore(
-			$this->pageCreator,
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);
