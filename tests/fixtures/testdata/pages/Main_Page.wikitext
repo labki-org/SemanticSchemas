@@ -44,10 +44,12 @@ out the specific behavior it demonstrates, so you know what to look for.
    exists, so the email renders as a bold <code>mailto:</code> link rather
    than plain text — no other template touched.
  * '''Backlinks''': [[:Category:Person]] declares
-   <code>show_backlinks_for = Has author</code> plus
-   <code>[[:Property:Has author]]</code> has an
-   <code>Inverse property label</code> of "Authored", so each Person sidebox
-   ends with an "Authored ..." row listing works they wrote.
+   <code>show_backlinks_for = Has author, Has reviewer</code>, and each of
+   those properties carries an <code>Inverse property label</code>
+   ("Authored" / "Reviewed"). Every Person sidebox ends with "Authored" and
+   "Reviewed" rows listing works they wrote or reviewed. See [[Carl Sagan]]
+   (authored [[Cosmos as Context]], reviewed [[Dune]]) or [[Thomas Cormen]]
+   (authored [[Introduction to Algorithms]], reviewed [[Dune]]).
  Look at [[Frank Herbert]], [[Carl Sagan]], and [[Thomas Cormen]] for more
  Person instances.
 
