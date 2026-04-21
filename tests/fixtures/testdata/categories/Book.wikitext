@@ -1,48 +1,16 @@
-<!-- SemanticSchemas Start -->
-[[Has description::A book-length work with chapters and reader reviews.]]
-[[Display label::Book]]
-[[Has display format::table]]
-{{#subobject:
- |@category=Property field
- | For property = Property:Has author
- | Is required = true
- | Has sort order = 10
+{{Category
+| has_description = A book-length work with chapters and reader reviews.
+| display_label = Book
+| has_display_format = table
 }}
-{{#subobject:
- |@category=Property field
- | For property = Property:Has ISBN
- | Is required = false
- | Has sort order = 11
-}}
-{{#subobject:
- |@category=Property field
- | For property = Property:Has genre
- | Is required = false
- | Has sort order = 12
-}}
-{{#subobject:
- |@category=Property field
- | For property = Property:Has tag
- | Is required = false
- | Has sort order = 13
-}}
-{{#subobject:
- |@category=Property field
- | For property = Property:Is available
- | Is required = false
- | Has sort order = 14
-}}
-{{#subobject:
- |@category=Subobject field
- | For category = Category:Chapter
- | Is required = false
- | Has sort order = 1
-}}
-{{#subobject:
- |@category=Subobject field
- | For category = Category:Review
- | Is required = false
- | Has sort order = 2
-}}
-<!-- SemanticSchemas End -->
+
+{{Property field/subobject | for_property = Has author    | is_required = true  }}
+{{Property field/subobject | for_property = Has ISBN      | is_required = false }}
+{{Property field/subobject | for_property = Has genre     | is_required = false }}
+{{Property field/subobject | for_property = Has tag       | is_required = false }}
+{{Property field/subobject | for_property = Is available  | is_required = false }}
+
+{{Subobject field/subobject | for_category = Chapter | is_required = false }}
+{{Subobject field/subobject | for_category = Review  | is_required = false }}
+
 [[Category:Work]]

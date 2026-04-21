@@ -1,10 +1,6 @@
-<!-- SemanticSchemas Start -->
-[[Has description::Mixin category that adds an aggregate review rating. Combined with Book via ReviewedBook for multiple inheritance.]]
-[[Display label::Reviewed]]
-{{#subobject:
- |@category=Property field
- | For property = Property:Has review rating
- | Is required = false
- | Has sort order = 30
+{{Category
+| has_description = Mixin category that adds an aggregate review rating. Combined with Book via ReviewedBook for multiple inheritance.
+| display_label = Reviewed
 }}
-<!-- SemanticSchemas End -->
+
+{{Property field/subobject | for_property = Has review rating | is_required = false }}

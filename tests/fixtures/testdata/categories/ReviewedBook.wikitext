@@ -1,7 +1,8 @@
-<!-- SemanticSchemas Start -->
-[[Has description::A book with an aggregate review rating. Demonstrates multiple inheritance (Book + Reviewed).]]
-[[Display label::Reviewed book]]
-[[Has display format::table]]
-<!-- SemanticSchemas End -->
+{{Category
+| has_description = A book with an aggregate review rating. Demonstrates multiple inheritance (Book + Reviewed).
+| display_label = Reviewed book
+| has_display_format = table
+}}
+
 [[Category:Book]]
 [[Category:Reviewed]]

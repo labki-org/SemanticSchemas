@@ -1,29 +1,10 @@
-<!-- SemanticSchemas Start -->
-[[Has description::Abstract parent for any published work. Defines common fields inherited by Book, Article, etc.]]
-[[Display label::Work]]
-[[Has display format::table]]
-{{#subobject:
- |@category=Property field
- | For property = Property:Has title
- | Is required = true
- | Has sort order = 1
+{{Category
+| has_description = Abstract parent for any published work. Defines common fields inherited by Book, Article, etc.
+| display_label = Work
+| has_display_format = table
 }}
-{{#subobject:
- |@category=Property field
- | For property = Property:Has subtitle
- | Is required = false
- | Has sort order = 2
-}}
-{{#subobject:
- |@category=Property field
- | For property = Property:Has description
- | Is required = false
- | Has sort order = 3
-}}
-{{#subobject:
- |@category=Property field
- | For property = Property:Has pubyear
- | Is required = false
- | Has sort order = 4
-}}
-<!-- SemanticSchemas End -->
+
+{{Property field/subobject | for_property = Has title       | is_required = true  }}
+{{Property field/subobject | for_property = Has subtitle    | is_required = false }}
+{{Property field/subobject | for_property = Has description | is_required = false }}
+{{Property field/subobject | for_property = Has pubyear     | is_required = false }}
