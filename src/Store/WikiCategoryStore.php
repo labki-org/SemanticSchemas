@@ -23,6 +23,7 @@ use Wikimedia\Rdbms\Subquery;
 class WikiCategoryStore {
 
 	use SMWDataExtractor;
+
 	private IConnectionProvider $connectionProvider;
 	private Config $mainConfig;
 
