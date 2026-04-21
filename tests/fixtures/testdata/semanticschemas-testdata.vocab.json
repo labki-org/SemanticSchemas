@@ -249,6 +249,12 @@
 			"namespace": "NS_MAIN",
 			"contents": { "importFrom": "pages/Cosmos_as_Context.wikitext" },
 			"options": { "replaceable": true }
+		},
+		{
+			"page": "Main Page",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/Main_Page.wikitext" },
+			"options": { "replaceable": true }
 		}
 	]
 }
