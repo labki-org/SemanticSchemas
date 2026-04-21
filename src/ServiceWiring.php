@@ -100,7 +100,6 @@ return [
 		MediaWikiServices $services
 	): WikiCategoryStore {
 		return new WikiCategoryStore(
-			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);
