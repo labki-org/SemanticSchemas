@@ -24,16 +24,13 @@ class WikiCategoryStore {
 
 	use SMWDataExtractor;
 
-	private PageCreator $pageCreator;
 	private IConnectionProvider $connectionProvider;
 	private Config $mainConfig;
 
 	public function __construct(
-		PageCreator $pageCreator,
 		IConnectionProvider $connectionProvider,
 		Config $mainConfig
 	) {
-		$this->pageCreator = $pageCreator;
 		$this->connectionProvider = $connectionProvider;
 		$this->mainConfig = $mainConfig;
 	}
@@ -43,7 +40,7 @@ class WikiCategoryStore {
 	 * ------------------------------------------------------------------------- */
 
 	public function readCategory( string $categoryName ): ?CategoryModel {
-		$title = $this->pageCreator->makeTitle( $categoryName, NS_CATEGORY );
+		$title = Title::makeTitleSafe( NS_CATEGORY, $categoryName );
 		if ( !$title || !$title->exists() ) {
 			return null;
 		}
@@ -74,7 +71,7 @@ class WikiCategoryStore {
 			->fetchResultSet();
 
 		foreach ( $res as $row ) {
-			$name = str_replace( '_', ' ', $row->page_title );
+			$name = Title::makeTitle( NS_CATEGORY, $row->page_title )->getText();
 			$cat = $this->readCategory( $name );
 			if ( $cat ) {
 				$out[$name] = $cat;
@@ -181,7 +178,7 @@ class WikiCategoryStore {
 
 		# strip namespace prefix from parent categories
 		$parents = array_map(
-			static fn ( string $parentName ) => explode( ':', $parentName, 2 )[1],
+			static fn ( string $parentName ) => Title::newFromText( $parentName )->getText(),
 			array_keys( $title->getParentCategories() )
 		);
 
