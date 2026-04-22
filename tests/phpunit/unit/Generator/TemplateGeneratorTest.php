@@ -952,6 +952,69 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( ' | order=asc', $dispatcher );
 	}
 
+	public function testDispatcherRoutesSubobjectThroughCategoryLevelCustomTemplate(): void {
+		$chapter = new CategoryModel( 'Chapter', [
+			'properties' => [
+				new FieldModel( 'Has chapter title', true, FieldModel::TYPE_PROPERTY ),
+			],
+			// Category-level default: applies wherever Chapter appears as a
+			// subobject, unless a parent overrides via its Subobject field.
+			'display' => [ 'subobjectTemplate' => 'ChapterTable' ],
+		] );
+		$book = new CategoryModel( 'Book', [
+			'subobjects' => [
+				new FieldModel( 'Chapter', false, FieldModel::TYPE_SUBOBJECT ),
+			],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Book' => $book,
+			'Chapter' => $chapter,
+		] );
+		$effective = $resolver->getEffectiveCategory( 'Book' );
+
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective, $resolver );
+
+		$this->assertStringContainsString(
+			'{{ChapterTable | category=Chapter | page={{FULLPAGENAME}} }}',
+			$dispatcher
+		);
+		$this->assertStringNotContainsString(
+			'template=Chapter/subobject-row',
+			$dispatcher
+		);
+	}
+
+	public function testDispatcherFieldLevelSubobjectTemplateOverridesCategoryLevel(): void {
+		$chapter = new CategoryModel( 'Chapter', [
+			'properties' => [
+				new FieldModel( 'Has chapter title', true, FieldModel::TYPE_PROPERTY ),
+			],
+			'display' => [ 'subobjectTemplate' => 'ChapterTable' ],
+		] );
+		$book = new CategoryModel( 'Book', [
+			'subobjects' => [
+				// Parent-scoped override — Book wants its Chapters in a
+				// different layout than Chapter's own default.
+				new FieldModel(
+					'Chapter', false, FieldModel::TYPE_SUBOBJECT, null, 'BookChapterGrid'
+				),
+			],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Book' => $book,
+			'Chapter' => $chapter,
+		] );
+		$effective = $resolver->getEffectiveCategory( 'Book' );
+
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective, $resolver );
+
+		$this->assertStringContainsString(
+			'{{BookChapterGrid | category=Chapter | page={{FULLPAGENAME}} }}',
+			$dispatcher
+		);
+		$this->assertStringNotContainsString( 'ChapterTable', $dispatcher );
+	}
+
 	public function testDispatcherRoutesSubobjectThroughCustomDisplayTemplate(): void {
 		$chapter = new CategoryModel( 'Chapter', [
 			'properties' => [

@@ -420,11 +420,16 @@ class TemplateGenerator {
 				continue;
 			}
 
-			// Field-level custom display template wins: hand the whole
-			// section off to the user's template. It receives category= and
-			// page= and takes full control — can do its own #ask and
-			// aggregate all instances into one table, grid, timeline, etc.
-			$custom = $subField->getSubobjectDisplayTemplate();
+			$sub = $resolver->getEffectiveCategory( $subName );
+
+			// Priority: parent's Subobject field override > subcat's own
+			// category-level default > auto-generated per-instance rows.
+			// When either custom template is set, hand the whole section
+			// off — the template receives category= and page= and takes
+			// full control (can do its own #ask and aggregate all
+			// instances into one table, grid, timeline, etc.).
+			$custom = $subField->getSubobjectDisplayTemplate()
+				?? $sub->getSubobjectDisplayTemplate();
 			if ( $custom !== null ) {
 				$out[] = '{{' . $custom
 					. ' | category=' . $subName
@@ -433,7 +438,6 @@ class TemplateGenerator {
 				continue;
 			}
 
-			$sub = $resolver->getEffectiveCategory( $subName );
 			$fields = $sub->getPropertyFields();
 			self::sortFieldsByName( $fields );
 

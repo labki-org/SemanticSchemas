@@ -153,20 +153,41 @@ template per subobject type, which renders each instance as its own
 labeled table. Great for a handful of complex subobjects; noisy when
 you have many simple ones and want a single compact view.
 
-On the Subobject field declaration (inside the parent category), set
-`has_subobject_display_template`:
+Two places to declare the override (mirrors `Has render template` for
+property fields — per-property default + per-field override):
+
+**Category-level default** (on Category:Chapter itself). Applies
+wherever Chapter appears as a subobject, in any parent category:
 
 ```wikitext
-{{!-- Category:Book --}}
+{{!-- Category:Chapter --}}
+[[Has subobject display template::ChapterTable]]
+```
+
+**Per-parent override** (on the Subobject field declaration in the
+parent category). Wins over the category-level default when set —
+useful when one parent needs a different layout than Chapter's own
+preference:
+
+```wikitext
+{{!-- Category:Anthology --}}
 {{Subobject field/subobject
  | for_category = Chapter
- | is_required = false
- | has_subobject_display_template = ChapterTable
+ | has_subobject_display_template = AnthologyChapterGrid
 }}
 ```
 
-When set, the dispatcher replaces the per-instance `#ask` pipeline for
-that subobject field with a single call:
+Priority chain, applied when the dispatcher renders the subobject
+section:
+
+1. Parent's Subobject field `has_subobject_display_template`
+   (per-parent override)
+2. Subobject category's own `Has subobject display template`
+   (per-category default)
+3. Auto-generated `<Subcat>/subobject-row` (per-instance mini-tables)
+
+When either custom template is set, the dispatcher replaces the entire
+per-instance `#ask` pipeline with a single call:
 
 ```wikitext
 {{ChapterTable | category=Chapter | page={{FULLPAGENAME}} }}
@@ -194,15 +215,17 @@ fits. Minimal two-template pattern for "one unified table":
 
 ```wikitext
 {{!-- Template:ChapterTable/row --}}
-<includeonly>|-
+<includeonly>
+|-
 | {{{title|}}}
 | {{{summary|}}}</includeonly>
 ```
 
-The override is per-parent-field: `Book`'s Chapters can render via
-`ChapterTable`, while `Anthology`'s Chapters keep the default
-per-instance tables — you declare the behavior on each parent's
-Subobject field. Parallels `has_render_template` for property fields.
+The leading newline inside `<includeonly>` is load-bearing: SMW
+concatenates template invocations with no separator, so without it
+the `|-` row separator would land on the same line as the previous
+row's last cell and MediaWiki's wikitable parser would collapse
+everything into a single row.
 
 ## Primitive reference
 
