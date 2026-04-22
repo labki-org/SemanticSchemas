@@ -74,6 +74,16 @@ class CategoryDisplayTemplateTest extends TestCase {
 		);
 	}
 
+	public function testDisplayRowsSkipsHiddenProperties(): void {
+		$content = $this->loadTemplate( 'display-rows' );
+
+		$this->assertStringContainsString(
+			'{{#ifeq:{{#show:@@prop@@|?Is hidden}}|true||',
+			$content,
+			'display-rows must skip rows for properties flagged Is hidden=true'
+		);
+	}
+
 	public function testDisplayRowsShowsPropertyLabels(): void {
 		$content = $this->loadTemplate( 'display-rows' );
 

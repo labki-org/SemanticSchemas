@@ -235,6 +235,46 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringNotContainsString( ' | label_', $result );
 	}
 
+	public function testDispatcherSkipsHiddenPropertiesFromDisplayBake(): void {
+		$hiddenProp = new PropertyModel( 'Has sort order', [
+			'datatype' => 'Number',
+			'hidden' => true,
+		] );
+		$visibleProp = new PropertyModel( 'Has name', [
+			'datatype' => 'Text',
+		] );
+
+		$propertyStore = $this->createMock( WikiPropertyStore::class );
+		$propertyStore->method( 'readProperty' )->willReturnMap( [
+			[ 'Has sort order', $hiddenProp ],
+			[ 'Has name', $visibleProp ],
+		] );
+
+		$language = $this->createMock( Language::class );
+		$language->method( 'getFormattedNsText' )->willReturn( 'Category' );
+
+		$generator = new TemplateGenerator(
+			$this->createMock( PageCreator::class ),
+			$propertyStore,
+			$language
+		);
+
+		$category = new CategoryModel( 'Chapter', [
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has sort order', false, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
+		$result = $generator->generateDispatcherTemplate( $effective );
+
+		// Visible property is baked; hidden property is skipped from display
+		// (but still present in the semantic template, where it's needed for storage).
+		$this->assertStringContainsString( ' | props=has_name', $result );
+		$this->assertStringNotContainsString( 'has_sort_order', strstr( $result, '{{Category/table' ) );
+		$this->assertStringContainsString( 'has_sort_order', strstr( $result, '{{Chapter/semantic', true ) . strstr( $result, '{{Chapter/semantic' ) );
+	}
+
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [

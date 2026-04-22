@@ -251,19 +251,23 @@ class TemplateGenerator {
 			$out[] = ' | category=' . $name;
 			$out[] = ' | label=' . $effective->getLabel();
 
-			if ( $allFields !== [] ) {
-				$paramNames = [];
-				$labelLines = [];
-				$valueLines = [];
-				foreach ( $allFields as $field ) {
-					$propName = $field->getName();
-					$param = $field->getParameterName();
-					$paramNames[] = $param;
-					$labelLines[] = ' | label_' . $param . '='
-						. $this->resolvePropertyLabel( $propName );
-					$valueLines[] = ' | val_' . $param . '='
-						. $this->buildDisplayValueExpression( $propName, $param );
+			$paramNames = [];
+			$labelLines = [];
+			$valueLines = [];
+			foreach ( $allFields as $field ) {
+				$propName = $field->getName();
+				$prop = $this->propertyStore->readProperty( $propName );
+				if ( $prop instanceof PropertyModel && $prop->isHidden() ) {
+					continue;
 				}
+				$param = $field->getParameterName();
+				$paramNames[] = $param;
+				$labelLines[] = ' | label_' . $param . '='
+					. $this->resolvePropertyLabel( $propName );
+				$valueLines[] = ' | val_' . $param . '='
+					. $this->buildDisplayValueExpression( $propName, $param );
+			}
+			if ( $paramNames !== [] ) {
 				$out[] = ' | props=' . implode( ',', $paramNames );
 				$out = array_merge( $out, $labelLines, $valueLines );
 			}

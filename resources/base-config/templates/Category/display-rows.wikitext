@@ -1,10 +1,11 @@
-<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Property field]] | mainlabel=- | ?For property= | format=plainlist | link=none | sep=, }}|,|@@prop@@|{{#if:{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
+<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Property field]] | mainlabel=- | ?For property= | format=plainlist | link=none | sep=, }}|,|@@prop@@|{{#ifeq:{{#show:@@prop@@|?Is hidden}}|true||{{#if:{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
 ! {{#show:@@prop@@|?Display label|default={{PAGENAME:@@prop@@}}}}
-{{!}} {{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}}}|\n}}</includeonly><noinclude>
+{{!}} {{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}}}}}|\n}}</includeonly><noinclude>
 Renders property value rows via dynamic SMW discovery — walks the
 ancestor chain via `Category/collect-ancestors`, resolves the effective
 property-field list through an inverse `#ask`, then `#show`s each
-property's label and value on the target page.
+property's label and value on the target page. Properties flagged
+`Is hidden = true` on their property page are skipped.
 
 This is the dynamic-discovery path. Auto-generated category dispatcher
 templates bypass this and iterate a baked property list inline in
