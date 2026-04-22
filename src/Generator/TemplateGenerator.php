@@ -13,6 +13,7 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\Language\Language;
+use Mediawiki\Title\Title;
 
 /**
  * Generates core templates for proper Semantic MediaWiki functioning.
@@ -357,7 +358,7 @@ class TemplateGenerator {
 			throw new InvalidArgumentException( "Template name cannot be empty" );
 		}
 
-		$title = $this->pageCreator->makeTitle( $name, NS_TEMPLATE );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, $name );
 		if ( !$title ) {
 			wfLogWarning( "SemanticSchemas: Failed to create Title for template '$name'" );
 			return false;
@@ -378,7 +379,7 @@ class TemplateGenerator {
 	 */
 	public function semanticTemplateExists( string $categoryName ): bool {
 		$templateName = trim( $categoryName ) . '/semantic';
-		$title = $this->pageCreator->makeTitle( $templateName, NS_TEMPLATE );
-		return $title && $this->pageCreator->pageExists( $title );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, $templateName );
+		return $title && $title->exists();
 	}
 }

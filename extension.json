@@ -52,6 +52,9 @@
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\SemanticSchemas\\": "src/"
 	},
+	"TestAutoloadNamespaces": {
+		"MediaWiki\\Extension\\SemanticSchemas\\Tests\\": "tests/phpunit/"
+	},
 	"ResourceModules": {
 		"ext.semanticschemas.styles": {
 			"styles": [

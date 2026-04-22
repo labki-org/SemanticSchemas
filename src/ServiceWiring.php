@@ -89,7 +89,6 @@ return [
 		MediaWikiServices $services
 	): WikiCategoryStore {
 		return new WikiCategoryStore(
-			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);
@@ -99,7 +98,6 @@ return [
 		MediaWikiServices $services
 	): WikiPropertyStore {
 		return new WikiPropertyStore(
-			$services->get( 'SemanticSchemas.PageCreator' ),
 			$services->getConnectionProvider(),
 		);
 	},

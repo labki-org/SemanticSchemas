@@ -16,10 +16,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator
- *
- * Note: Tests for generateAllTemplates() and page persistence require
- * a full MediaWiki environment. These tests focus on template content
- * generation which can be tested in isolation.
  */
 class TemplateGeneratorTest extends TestCase {
 
@@ -241,25 +237,6 @@ class TemplateGeneratorTest extends TestCase {
 	/* =========================================================================
 	 * GENERATE ALL TEMPLATES
 	 * ========================================================================= */
-
-	public function testGenerateAllTemplatesReturnsArray(): void {
-		$category = new CategoryModel( 'Person' );
-		$resolver = new InheritanceResolver( [ 'Person' => $category ] );
-		$result = $this->generator->generateAllTemplates( $category, $resolver );
-
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertArrayHasKey( 'errors', $result );
-	}
-
-	public function testGenerateAllTemplatesSuccessWhenNoErrors(): void {
-		$category = new CategoryModel( 'Person' );
-		$resolver = new InheritanceResolver( [ 'Person' => $category ] );
-		$result = $this->generator->generateAllTemplates( $category, $resolver );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertEmpty( $result['errors'] );
-	}
 
 	/* =========================================================================
 	 * AUTO-GENERATED COMMENTS

@@ -102,12 +102,8 @@ class PageCreator {
 	}
 
 	/* =====================================================================
-	 * PAGE EXISTENCE & READ
+	 * PAGE READ
 	 * ===================================================================== */
-
-	public function pageExists( Title $title ): bool {
-		return $title->exists();
-	}
 
 	public function getPageContent( Title $title ): ?string {
 		if ( !$title->exists() ) {
@@ -126,27 +122,6 @@ class PageCreator {
 
 		} catch ( \Exception $e ) {
 			wfLogWarning( "SemanticSchemas: Failed reading page '{$title->getPrefixedText()}': " . $e->getMessage() );
-			return null;
-		}
-	}
-
-	/* =====================================================================
-	 * TITLE CREATION
-	 * ===================================================================== */
-
-	/**
-	 * Construct a safe Title.
-	 */
-	public function makeTitle( string $text, int $namespace ): ?Title {
-		$text = trim( $text );
-		if ( $text === '' ) {
-			return null;
-		}
-
-		try {
-			return Title::makeTitleSafe( $namespace, $text );
-		} catch ( \Exception $e ) {
-			wfLogWarning( "SemanticSchemas: Title creation failed for '$text': " . $e->getMessage() );
 			return null;
 		}
 	}

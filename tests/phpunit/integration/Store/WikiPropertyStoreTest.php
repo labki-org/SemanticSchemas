@@ -25,7 +25,6 @@ class WikiPropertyStoreTest extends MediaWikiIntegrationTestCase {
 			$services->getWikiPageFactory(),
 		);
 		$this->propertyStore = new WikiPropertyStore(
-			$this->pageCreator,
 			$services->getConnectionProvider(),
 		);
 	}

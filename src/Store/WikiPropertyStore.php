@@ -19,14 +19,11 @@ class WikiPropertyStore {
 
 	use SMWDataExtractor;
 
-	private PageCreator $pageCreator;
 	private IConnectionProvider $connectionProvider;
 
 	public function __construct(
-		PageCreator $pageCreator,
 		IConnectionProvider $connectionProvider,
 	) {
-		$this->pageCreator = $pageCreator;
 		$this->connectionProvider = $connectionProvider;
 	}
 
@@ -37,8 +34,8 @@ class WikiPropertyStore {
 	public function readProperty( string $propertyName ): ?PropertyModel {
 		$canonical = $this->canonicalize( $propertyName );
 
-		$title = $this->pageCreator->makeTitle( $canonical, SMW_NS_PROPERTY );
-		if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
+		$title = Title::makeTitleSafe( SMW_NS_PROPERTY, $canonical );
+		if ( !$title || !$title->exists() ) {
 			return null;
 		}
 

@@ -4,15 +4,15 @@ namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Store;
 
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
+use MediaWiki\Extension\SemanticSchemas\Tests\SMWIntegrationTestCase;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Title\Title;
-use MediaWikiIntegrationTestCase;
 
 /**
  * @covers \MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore
  * @group Database
  */
-class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
+class WikiCategoryStoreTest extends SMWIntegrationTestCase {
 
 	private WikiCategoryStore $categoryStore;
 	private PageCreator $pageCreator;
@@ -25,7 +25,6 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 			$services->getWikiPageFactory(),
 		);
 		$this->categoryStore = new WikiCategoryStore(
-			$this->pageCreator,
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);
@@ -66,7 +65,7 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		$this->pageCreator->createOrUpdatePage( $btitle, $bcontent, "b" );
 		$this->pageCreator->createOrUpdatePage( $testcat, '[[Category:A]] [[Category:B]]', "c" );
 
-		$this->runJobs();
+		$this->runSMWUpdates();
 
 		$managed = $this->categoryStore->getManagedParents( $testcat );
 		$this->assertArrayEquals( $expected, $managed );
@@ -81,7 +80,7 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 			"]]",
 			'' );
 
-		$this->runJobs();
+		$this->runSMWUpdates();
 
 		$cats = $this->categoryStore->getAllCategories();
 		$this->assertArrayEquals(
@@ -90,4 +89,18 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 		);
 	}
 
+	public function testReadCategoryFromSMW() {
+		$expected = uniqid( 'Hey' );
+		$content = "[[Has description::$expected]] " .
+			"[[Category:" .
+			Constants::SEMANTICSCHEMAS_MANAGED_CATEGORY .
+			"]]";
+		$title = Title::makeTitleSafe( NS_CATEGORY, "TestCategory" );
+		$this->pageCreator->createOrUpdatePage( $title, $content, "" );
+
+		$this->runSMWUpdates();
+
+		$catModel = $this->categoryStore->readCategory( "TestCategory" );
+		$this->assertEquals( $expected, $catModel->getDescription() );
+	}
 }

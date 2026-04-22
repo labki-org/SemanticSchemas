@@ -14,14 +14,17 @@ class StateManagerTest extends TestCase {
 
 	private ?string $storedPageContent = null;
 
+	public function setUp(): void {
+		parent::setUp();
+		// Clear stored page content between each test
+		$this->storedPageContent = null;
+	}
+
 	private function createStateManager(): StateManager {
 		$mockTitle = $this->createMock( Title::class );
+		$mockTitle->method( 'exists' )->willReturnCallback( fn ()=>$this->storedPageContent !== null );
 
 		$mockPageCreator = $this->createMock( PageCreator::class );
-		$mockPageCreator->method( 'makeTitle' )->willReturn( $mockTitle );
-		$mockPageCreator->method( 'pageExists' )->willReturnCallback( function () {
-			return $this->storedPageContent !== null;
-		} );
 		$mockPageCreator->method( 'getPageContent' )->willReturnCallback( function () {
 			return $this->storedPageContent;
 		} );
@@ -32,7 +35,14 @@ class StateManagerTest extends TestCase {
 			}
 		);
 
-		return new StateManager( $mockPageCreator );
+		$mockManager = $this->getMockBuilder( StateManager::class )
+			->onlyMethods( [ 'getPageTitle' ] )
+			->setConstructorArgs( [ $mockPageCreator ] )
+			->getMock();
+
+		$mockManager->method( 'getPageTitle' )->willReturn( $mockTitle );
+
+		return $mockManager;
 	}
 
 	/* =========================================================================

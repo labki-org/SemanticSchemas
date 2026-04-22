@@ -2,6 +2,8 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Store;
 
+use Mediawiki\Title\Title;
+
 /**
  * StateManager
  * ------------
@@ -24,8 +26,8 @@ class StateManager {
 	 * @return array
 	 */
 	public function getState(): array {
-		$title = $this->pageCreator->makeTitle( self::STATE_PAGE, NS_MEDIAWIKI );
-		if ( $title === null || !$this->pageCreator->pageExists( $title ) ) {
+		$title = $this->getPageTitle();
+		if ( !$title->exists() ) {
 			return $this->getDefaultState();
 		}
 
@@ -41,6 +43,17 @@ class StateManager {
 
 		// Merge with defaults to ensure all keys exist
 		return array_merge( $this->getDefaultState(), $state );
+	}
+
+	/**
+	 * Get the title of the state page
+	 *
+	 * (Only a separate method to make it mockable during tests)
+	 *
+	 * @return Title
+	 */
+	public function getPageTitle(): Title {
+		return Title::makeTitle( NS_MEDIAWIKI, self::STATE_PAGE );
 	}
 
 	/**
@@ -65,10 +78,7 @@ class StateManager {
 	 * @return bool
 	 */
 	private function saveState( array $state ): bool {
-		$title = $this->pageCreator->makeTitle( self::STATE_PAGE, NS_MEDIAWIKI );
-		if ( $title === null ) {
-			return false;
-		}
+		$title = $this->getPageTitle();
 
 		$json = json_encode( $state, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE );
 		$summary = 'SemanticSchemas: Update state tracking';
