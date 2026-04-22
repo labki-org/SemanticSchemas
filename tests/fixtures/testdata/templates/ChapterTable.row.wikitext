@@ -1,15 +1,12 @@
 <noinclude>
-One row of Template:ChapterTable. Receives projected subobject values
-via SMW's `format=template | named args=yes`. Emits wikitable row
-syntax only (no frame), so the enclosing `ChapterTable` can compose
-all rows inside one `{| ... |}`.
-
-The leading newline before `{{!}}-` is load-bearing: SMW concatenates
-template invocations with no separator, so without it the row
-separator would land on the same line as the previous row's last cell
-and MediaWiki's wikitable parser would collapse everything into a
-single row.
+One row of `ChapterTable`. Receives projected subobject values via
+SMW's `format=template | named args=yes`. The leading newline inside
+`<includeonly>` is load-bearing: SMW concatenates row-template
+invocations with no separator, so without it the `|-` row separator
+would land on the same line as the previous row's last cell and
+MediaWiki's wikitable parser would collapse everything into a single
+row.
 </noinclude><includeonly>
-{{!}}-
-{{!}} {{{title|}}}
-{{!}} {{{summary|}}}</includeonly>
+|-
+| {{{title|}}}
+| {{{summary|}}}</includeonly>

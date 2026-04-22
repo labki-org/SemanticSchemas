@@ -202,9 +202,21 @@
 			"options": { "replaceable": true }
 		},
 		{
+			"page": "ChapterTable/open",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterTable.open.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
 			"page": "ChapterTable/row",
 			"namespace": "NS_TEMPLATE",
 			"contents": { "importFrom": "templates/ChapterTable.row.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterTable/close",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterTable.close.wikitext" },
 			"options": { "replaceable": true }
 		},
 

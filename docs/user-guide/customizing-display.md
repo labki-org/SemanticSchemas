@@ -195,22 +195,28 @@ per-instance `#ask` pipeline with a single call:
 
 Your template takes full control — do its own `#ask`, wrap all results
 in one frame, or format them as a card grid, timeline, or whatever
-fits. Minimal two-template pattern for "one unified table":
+fits. The SMW `format=template` idiom splits the rendering across four
+small templates:
 
 ```wikitext
 {{!-- Template:ChapterTable --}}
-<includeonly>{| class="wikitable source-semanticschemas"
-! Title !! Summary
-{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[Category:{{{category|}}}]]
+<includeonly>{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[Category:{{{category|}}}]]
  | ?Has chapter title=title
  | ?Has chapter summary=summary
  | format=template
+ | introtemplate=ChapterTable/open
  | template=ChapterTable/row
+ | outrotemplate=ChapterTable/close
  | named args=yes
  | sort=Has sort order
  | order=asc
-}}
-|}</includeonly>
+}}</includeonly>
+```
+
+```wikitext
+{{!-- Template:ChapterTable/open --}}
+<includeonly>{| class="wikitable source-semanticschemas"
+! Title !! Summary</includeonly>
 ```
 
 ```wikitext
@@ -221,11 +227,25 @@ fits. Minimal two-template pattern for "one unified table":
 | {{{summary|}}}</includeonly>
 ```
 
-The leading newline inside `<includeonly>` is load-bearing: SMW
-concatenates template invocations with no separator, so without it
-the `|-` row separator would land on the same line as the previous
-row's last cell and MediaWiki's wikitable parser would collapse
-everything into a single row.
+```wikitext
+{{!-- Template:ChapterTable/close --}}
+<includeonly>
+|}</includeonly>
+```
+
+Two patterns worth calling out:
+
+* '''Conditional frame via `introtemplate`/`outrotemplate`:''' SMW
+  invokes the intro and outro templates once each — but ''only'' when
+  the `#ask` yields ≥1 result. That means parent pages that inherit
+  the Chapter subobject field but declare no instances leave no trace:
+  no orphan header, no empty frame. Zero extra queries — the suppression
+  falls out of SMW's built-in behavior.
+* '''Leading newline in the row template''' (inside `<includeonly>`)
+  is load-bearing: SMW concatenates row invocations with no separator,
+  so without it the `|-` row separator would land on the same line as
+  the previous row's last cell and MediaWiki's wikitable parser would
+  collapse everything into a single row.
 
 ## Primitive reference
 
