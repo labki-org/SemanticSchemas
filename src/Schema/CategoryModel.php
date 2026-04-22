@@ -400,16 +400,8 @@ class CategoryModel {
 	}
 
 	/**
-	 * Category-level default template for rendering this category's
-	 * instances when they appear as subobjects of some parent page.
-	 * Mirrors `PropertyModel::getRenderTemplate()` — a property's
-	 * per-property-default render template that applies wherever the
-	 * property is used.
-	 *
-	 * Priority at the dispatcher: the parent's Subobject field's
-	 * `has_subobject_display_template` (per-parent override) wins over
-	 * this value; this value wins over the auto-generated
-	 * `<Subcat>/subobject-row` default.
+	 * Category-level default for rendering this category's instances
+	 * when they appear as subobjects on a parent page. Null when not set.
 	 */
 	public function getSubobjectDisplayTemplate(): ?string {
 		return $this->subobjectDisplayTemplate;

@@ -256,10 +256,7 @@ class PropertyModel {
 	}
 
 	/**
-	 * Property-level default render template. Wrapped as
-	 * `{{<template> | value=<raw> }}` by the generator for every category
-	 * that uses this property, unless a field-level `has_render_template`
-	 * on a specific `{{Property field/subobject}}` overrides it.
+	 * Property-level default for the value-render template. Null when not set.
 	 */
 	public function getRenderTemplate(): ?string {
 		return $this->renderTemplate;

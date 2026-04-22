@@ -11,32 +11,8 @@
 {{Category/property-row | prop=Is available        | value={{{is_available|}}}}}
 {{Category/table-footer | category={{{category|Textbook}}} | subobjects=no | backlinks=no}}
 </div></includeonly><noinclude>
-Custom display template for Category:Textbook.
-
-Demonstrates Level 3 customization from docs/user-guide/customizing-display.md:
-`Has display template=TextbookDisplay` on Category:Textbook makes the
-dispatcher forward every effective field as a named param and delegate
-rendering entirely to this template.
-
-Two patterns on display:
-
-* '''Direct param access''' for hero-card fields — `{{{has_title|}}}`
-  etc. resolve to the baked values with zero SMW queries. Page-typed
-  values like `has_author` are wrapped in `Property/Page` for the
-  wikilink (matching the dispatcher's Page-type default).
-* '''Explicit primitive composition''' for the `Details` table —
-  `Category/table-header` + one `Category/property-row` per non-hero
-  field + `Category/table-footer`. Same contract the auto-generated
-  dispatcher uses. Rows pass `prop=` instead of a hard-coded `label=`,
-  so `Category/property-row` resolves the site-wide display label via
-  `#show:Property:<name>|?Display label`. Tradeoff: one `#show` per
-  row, versus zero queries when the dispatcher bakes labels in — fine
-  for a handful of fields, noticeable beyond ~20.
-
-Parameters:
-* category - The category name (passed by the dispatcher). Defaults to
-             "Textbook" for direct invocation.
-* has_title, has_subtitle, has_subject, has_edition, has_author,
-  has_pubyear, has_isbn, has_genre, has_tag, is_available — the
-  effective Textbook fields, forwarded by the dispatcher.
+Custom display template for Category:Textbook (Level 3 example; see
+docs/user-guide/customizing-display.md). Hero fields use direct
+`{{{has_*|}}}` param access; the Details table composes primitives
+with `prop=` for dynamic label resolution.
 </noinclude>

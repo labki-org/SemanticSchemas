@@ -2,48 +2,29 @@
 
 SemanticSchemas renders each content page through a **layered template
 system**. The default layout is generated automatically from the
-category's schema; you can opt into customization at three levels of
+category's schema; you can opt into customization at four levels of
 increasing scope.
 
 ## How rendering works
 
-When a content page in `Category:Book` renders, it invokes the
-auto-generated `Template:Book` dispatcher, which:
+When a page in `Category:Book` renders, the auto-generated
+`Template:Book` dispatcher:
 
-1. Calls `{{Book/semantic | …}}` — emits `[[Has X::Y]]` annotations so
+1. Calls `{{Book/semantic | … }}` — emits `[[Has X::Y]]` annotations so
    SMW stores the data.
-2. Emits an explicit three-part composition for the display:
-   - `{{Category/table-header | category=Book | label=… }}` — opens
-     the wikitable frame and the title row.
-   - One `{{Category/property-row | label=Title | value={{{has_title|}}} }}`
-     call per effective property, with the label and value expression
-     baked in.
-   - `{{Category/table-footer | category=Book | subobjects=no | backlinks=… }}`
-     — closes the frame and emits the optional backlinks / subobjects
-     blocks.
-3. Inlines a `#ask` block per subobject category (`=== Chapter ===`
-   etc.), projecting subobject values straight into the auto-generated
-   `<Subcat>/subobject-row` template (which uses the same header /
-   property-row / footer shape).
-4. The backlinks block (when the category declares
-   `Show backlinks for`) is pre-baked into `backlink_section=` on the
-   footer call, with inverse property labels resolved at generation
-   time.
+2. Composes the display from three shared primitives: a
+   `Category/table-header` call, one `Category/property-row` per
+   effective property (label and value expression baked in), and a
+   `Category/table-footer` call with backlinks pre-resolved.
+3. Emits a `#ask` block per subobject category, projecting values into
+   the auto-generated `<Subcat>/subobject-row` template (same
+   header / rows / footer shape).
 
-The composable primitives — `Category/table-header`,
-`Category/table-footer`, `Category/sidebox-header`,
-`Category/sidebox-footer`, `Category/property-row`,
-`Category/display-header`, `Category/backlink-row`,
-`Category/backlinks-header`, `Category/render-reverse` — are all
-shared wiki pages you can edit to change the site-wide look. Every
-category that uses them picks up the change on its next render.
-`Category/table` and `Category/sidebox` remain as higher-level
-convenience templates that wrap header + dynamic rows + footer, used
-by `Category/subobject-instance` and by custom wikitext that wants
-auto-discovery.
-
-The dispatcher is regenerated automatically when a category's schema
-changes (`maintenance/regenerateArtifacts.php`). You don't edit it.
+All primitives live on shared wiki pages — edit them to change the
+site-wide look. See the [Primitive reference](#primitive-reference) for
+the full inventory. The dispatcher itself is regenerated automatically
+when a category's schema changes (`maintenance/regenerateArtifacts.php`);
+you don't edit it.
 
 ## Levels of customization
 
@@ -58,55 +39,45 @@ property, optional backlinks, optional subobject sections.
 **Use case**: "`Has email` should render as a `mailto:` link;
 `Has website` as an external link."
 
-You can set `Has render template` at two levels:
+Set `Has render template` at whichever level fits:
 
-**Property-level default** — on the Property page itself. Applies
-wherever the property is used, in every category:
+| Level | Where | Scope |
+|-------|-------|-------|
+| Property-level default | On the Property page itself | Every category that uses the property |
+| Field-level override | On the `{{Property field/subobject}}` call inside one category | That category only |
 
 ```wikitext
-{{!-- Property:Has email --}}
+{{!-- Property:Has email — property-level default --}}
 [[Has type::Email]]
 [[Has render template::Property/Email]]
 ```
 
-**Field-level override** — on the `{{Property field/subobject}}` call
-inside a specific category. Applies only in that category; overrides
-the property's default when set:
-
 ```wikitext
-{{!-- Category:Staff --}}
+{{!-- Category:Staff — field-level override --}}
 {{Property field/subobject
  | for_property = Has email
  | has_render_template = Property/ObfuscatedEmail
 }}
 ```
 
-Priority when the generator bakes the value expression:
+**Resolution order** (generator bakes whichever wins into the row):
 
-1. Field-level `has_render_template` (per-category override)
-2. Property-level `Has render template` (per-property default)
+1. Field-level `has_render_template`
+2. Property-level `Has render template`
 3. `Property/Page` auto-default for Page-typed properties
 4. Bare value
 
-The dispatcher bakes whichever wins into the property row:
+Shipped renderers:
 
-```wikitext
-{{Category/property-row | label=Email | value={{Property/Email | value={{{has_email|}}} }}}}
-```
-
-Shipped value renderers:
-
-| Template          | Purpose                                  |
-|-------------------|------------------------------------------|
-| `Property/Default`| Plain text (the default for non-Page types) |
-| `Property/Page`   | Wikilinks (auto-selected for Page-typed properties) |
-| `Property/Email`  | `[mailto:value value]`                   |
-| `Property/Link`   | `[value value]` (external URL)           |
+| Template           | Purpose                                             |
+|--------------------|-----------------------------------------------------|
+| `Property/Default` | Plain text (default for non-Page types)             |
+| `Property/Page`    | Wikilinks (auto-selected for Page-typed properties) |
+| `Property/Email`   | `[mailto:value value]`                              |
+| `Property/Link`    | `[value value]` (external URL)                      |
 
 Write your own by creating `Template:Property/<Name>` that takes a
-single `value` parameter. Then reference it via `Has render template`
-at whichever level makes sense — property-level for "this property
-always looks like this", field-level for category-specific variations.
+single `value` parameter.
 
 ### Level 3 — Fully custom display template
 
@@ -121,8 +92,8 @@ On the category, set:
 
 `Has display template` overrides `Has display format`: when a custom
 template is set, the default `Category/table` (or `Category/sidebox`)
-call is suppressed and only your template is called, regardless of the
-format value. Your template receives every field as a named parameter:
+call is suppressed. Your template receives every field as a named
+parameter:
 
 ```wikitext
 {{!-- Template:TextbookDisplay --}}
@@ -141,62 +112,54 @@ format value. Your template receives every field as a named parameter:
 </includeonly>
 ```
 
-You can compose any of the primitives below.
+Compose any of the primitives in the [Primitive reference](#primitive-reference).
 
 ### Level 4 — Custom subobject display template
 
 **Use case**: "Show all of a Book's Chapters as rows of one unified
 table, not as a separate mini-table per chapter."
 
-Default behavior: the dispatcher generates a `<Subcat>/subobject-row`
-template per subobject type, which renders each instance as its own
-labeled table. Great for a handful of complex subobjects; noisy when
-you have many simple ones and want a single compact view.
+Default behavior: the dispatcher generates one `<Subcat>/subobject-row`
+per subobject type, which renders each instance as its own labeled
+table. Great for a handful of complex subobjects; noisy for many
+simple ones.
 
-Two places to declare the override (mirrors `Has render template` for
-property fields — per-property default + per-field override):
+Declare the override at either level (parallel to Level 2):
 
-**Category-level default** (on Category:Chapter itself). Applies
-wherever Chapter appears as a subobject, in any parent category:
+| Level | Where | Scope |
+|-------|-------|-------|
+| Category-level default | On `Category:Chapter` | Wherever Chapter appears as a subobject |
+| Per-parent override | On the `{{Subobject field/subobject}}` call in the parent category | One parent only |
 
 ```wikitext
-{{!-- Category:Chapter --}}
+{{!-- Category:Chapter — category-level default --}}
 [[Has subobject display template::ChapterTable]]
 ```
 
-**Per-parent override** (on the Subobject field declaration in the
-parent category). Wins over the category-level default when set —
-useful when one parent needs a different layout than Chapter's own
-preference:
-
 ```wikitext
-{{!-- Category:Anthology --}}
+{{!-- Category:Anthology — per-parent override --}}
 {{Subobject field/subobject
  | for_category = Chapter
  | has_subobject_display_template = AnthologyChapterGrid
 }}
 ```
 
-Priority chain, applied when the dispatcher renders the subobject
-section:
+**Resolution order**:
 
 1. Parent's Subobject field `has_subobject_display_template`
-   (per-parent override)
 2. Subobject category's own `Has subobject display template`
-   (per-category default)
 3. Auto-generated `<Subcat>/subobject-row` (per-instance mini-tables)
 
-When either custom template is set, the dispatcher replaces the entire
-per-instance `#ask` pipeline with a single call:
+When either custom template is set, the dispatcher replaces the
+per-instance pipeline with a single call:
 
 ```wikitext
 {{ChapterTable | category=Chapter | page={{FULLPAGENAME}} }}
 ```
 
-Your template takes full control — do its own `#ask`, wrap all results
-in one frame, or format them as a card grid, timeline, or whatever
-fits. The SMW `format=template` idiom splits the rendering across four
-small templates:
+Your template does its own `#ask` and decides how to frame the
+results. The SMW `format=template` idiom lets you split the rendering
+across four small templates to share the frame across rows:
 
 ```wikitext
 {{!-- Template:ChapterTable --}}
@@ -233,86 +196,52 @@ small templates:
 |}</includeonly>
 ```
 
-Two patterns worth calling out:
-
-* '''Conditional frame via `introtemplate`/`outrotemplate`:''' SMW
-  invokes the intro and outro templates once each — but ''only'' when
-  the `#ask` yields ≥1 result. That means parent pages that inherit
-  the Chapter subobject field but declare no instances leave no trace:
-  no orphan header, no empty frame. Zero extra queries — the suppression
-  falls out of SMW's built-in behavior.
-* '''Leading newline in the row template''' (inside `<includeonly>`)
-  is load-bearing: SMW concatenates row invocations with no separator,
-  so without it the `|-` row separator would land on the same line as
-  the previous row's last cell and MediaWiki's wikitable parser would
-  collapse everything into a single row.
+SMW invokes `introtemplate`/`outrotemplate` once each — but *only*
+when the `#ask` yields ≥1 result. Parent pages that inherit the field
+but declare no instances render nothing: no orphan header, no empty
+frame, zero extra queries.
 
 ## Primitive reference
 
 These templates are stable and meant to be called from custom display
-wikitext.
+wikitext. Costs noted per call per page render.
 
-### Value renderers — cheap
+### Value renderers
 
 Take values as parameters; no SMW lookups.
 
 ```wikitext
 {{Property/Page  | value=Frank Herbert, J. R. R. Tolkien}}
-  → Frank Herbert, J. R. R. Tolkien     (each item linked)
-
 {{Property/Email | value=author@example.org}}
-  → mailto link
-
 {{Property/Link  | value=https://example.org}}
-  → external link
 ```
 
-### Frame primitives — cheap
+### Frame + row primitives
 
-Open and close the standard table / sidebox frame with the category
-title row baked in. Pair with per-row primitives in between:
+Open/close the standard frame with the category title row baked in;
+emit rows between them.
 
 ```wikitext
 {{Category/table-header | category=Book | label=Book }}
-{{Category/property-row | label=Title  | value={{{has_title|}}} }}
-{{Category/property-row | label=Author | value={{Property/Page | value={{{has_author|}}} }} }}
-{{Category/table-footer | category=Book | subobjects=no | backlinks=no }}
-```
-
-| Primitive                 | Parameters                                         | What it does                                                                          |
-|---------------------------|----------------------------------------------------|---------------------------------------------------------------------------------------|
-| `Category/table-header`   | `category`, `label`                                | Opens `{| class="wikitable …"` and the category title row.                            |
-| `Category/table-footer`   | `category`, `page`, `subobjects`, `backlinks`, `backlink_section` | Closes `|}` + optional backlinks block + optional subobjects block.                   |
-| `Category/sidebox-header` | `category`, `label`                                | Same as `table-header` but wrapped in the floating-sidebar CSS.                       |
-| `Category/sidebox-footer` | same as `table-footer`                             | Closes the sidebox.                                                                   |
-
-Writing a custom high-level template (e.g. `Category/card-grid`) is
-"open your frame, emit one `property-row` per field, close your frame"
-— a simple `| label= | value=` contract for the row primitive, no
-dynamic-name param gymnastics needed.
-
-### Row primitives — cheap
-
-Render a single row inside a wikitable. Hidden when the value is empty
-or no backlinks exist.
-
-```wikitext
-{{Category/table-header | category=Book | label=Book }}
-{{Category/property-row | label=Title   | value={{{has_title|}}} }}
-{{Category/property-row | prop=Has author | value={{Property/Page | value={{{has_author|}}} }} }}
+{{Category/property-row | label=Title        | value={{{has_title|}}} }}
+{{Category/property-row | prop=Has author    | value={{Property/Page | value={{{has_author|}}} }} }}
 {{Category/backlink-row | prop=Has author    | label=Authored }}
 {{Category/backlink-row | prop=Has reviewer  | label=Reviewed }}
 {{Category/table-footer | category=Book | subobjects=no | backlinks=no }}
 ```
 
-`Category/property-row` takes either a baked `label=` (what the
-auto-generated dispatcher passes, zero queries) or a `prop=` (property
-name, one `#show:Property:<name>|?Display label` per row). Use `prop=`
-in hand-written templates to pick up the site-wide display label
-without hard-coding it.
+| Primitive                 | Parameters                                          | Cost                                                 |
+|---------------------------|-----------------------------------------------------|------------------------------------------------------|
+| `Category/table-header`   | `category`, `label`                                 | Free                                                 |
+| `Category/table-footer`   | `category`, `page`, `subobjects`, `backlinks`, `backlink_section` | Free                                                 |
+| `Category/sidebox-header` | same as `table-header`                              | Free                                                 |
+| `Category/sidebox-footer` | same as `table-footer`                              | Free                                                 |
+| `Category/property-row`   | `value` + either `label` (baked) or `prop` (dynamic)| Free with `label`; 1 `#show` with `prop`             |
+| `Category/backlink-row`   | `prop`, `label`                                     | 1 `#ask` count + 1 `#ask` list (inherent)            |
 
-`Category/backlink-row` runs one `#ask` count + one `#ask` list per
-call (inherent to "who points to me").
+Rows are hidden when the value is empty or no backlinks exist. Use
+`prop=` in hand-written templates to pick up the site-wide display
+label without hard-coding it.
 
 ### Subobject rendering
 
@@ -320,12 +249,10 @@ call (inherent to "who points to me").
 {{Category/subobject-list | category=Chapter | page={{FULLPAGENAME}} }}
 ```
 
-Renders all `Category:Chapter` subobjects on the given page through
-the auto-generated `Chapter/subobject-row` template (which uses the
-same baked-params fast path as the top-level dispatcher). One `#ask`
-total, regardless of how many chapters.
+Renders all `Category:Chapter` subobjects on the page through the
+auto-generated `Chapter/subobject-row`. One `#ask` total.
 
-### Cross-page value lookup — expensive per use
+### Cross-page value lookup
 
 When you need a property value from *another* page (or a specific
 subobject fragment):
@@ -336,9 +263,9 @@ subobject fragment):
 {{Property/value | prop=Has chapter title | page=Dune#_abc123 }}
 ```
 
-This is a thin wrapper around `{{#show:page|?Prop}}` and pays one
-SMW query per call. Each `#show` also persists a query-dependency
-subobject in SMW, so use sparingly in hot-rendering paths.
+Thin wrapper around `{{#show:page|?Prop}}`. **Costs one SMW query and
+one persistent query-dependency subobject per call** — use sparingly
+on rendered pages.
 
 ### Whole-category displays — dynamic discovery
 
@@ -347,21 +274,18 @@ subobject in SMW, so use sparingly in hot-rendering paths.
 {{Category/sidebox | category=Book | page={{FULLPAGENAME}} }}
 ```
 
-These compose `table-header` / `sidebox-header` + `Category/display-rows`
-+ `table-footer` / `sidebox-footer`. `display-rows` walks the
-category's ancestor chain via `Category/ancestors` and discovers
-every effective property through SMW lookups. Useful for prototyping a
-display, but pays ~5 queries per inheritance level + ~3 queries per
-property. Prefer the auto-generated `{{Book|…}}` dispatcher (which
-emits explicit `property-row` calls with the schema already baked in)
-for production wikitext.
+Compose `table-header` / `sidebox-header` + `Category/display-rows`
+(ancestor-walk + per-property `#show`) + footer. Useful for
+prototyping; pays ~5 queries per inheritance level + ~3 queries per
+property. Production wikitext should rely on the auto-generated
+dispatcher instead.
 
 ## Worked example: tool inventory with required training
 
-Suppose a wiki tracks rooms full of equipment. Each piece of equipment
-has its own page (`[[Drill press]]`, `[[Laser cutter]]`) with a
+A wiki tracks rooms full of equipment. Each tool page
+(`[[Drill press]]`, `[[Laser cutter]]`) carries a
 `[[Has training required::Power tool safety]]` annotation. Each room
-is a `Category:ToolRoom` page that lists which tools are present:
+is a `Category:ToolRoom` page listing which tools are present:
 
 ```wikitext
 {{!-- Category:ToolRoom --}}
@@ -371,20 +295,16 @@ is a `Category:ToolRoom` page that lists which tools are present:
 [[Category:SemanticSchemas-managed]]
 ```
 
-The default display gives one row per field, with `Has tool` showing
-as a comma-separated list of wikilinks (because Page-typed fields use
-`Property/Page` automatically). That's serviceable but doesn't tell
-the safety officer what training a tool requires until they click in.
-
-You have two ways to enrich the rendering, depending on scope.
+The default display lists `Has tool` as comma-separated wikilinks
+(Page-typed fields use `Property/Page` automatically), but doesn't
+tell the safety officer what training each tool requires.
 
 ### Path A — change one field's renderer
 
-Use this when the change is local to one field and applies wherever
-that field appears. The default table layout stays.
+Use when the change is local to one field. The default table layout
+stays.
 
-Write a renderer template that takes the comma-separated value and
-expands each item with its training:
+Write a renderer that expands each tool with its training:
 
 ```wikitext
 {{!-- Template:Property/ToolWithTraining --}}
@@ -393,7 +313,7 @@ expands each item with its training:
 |<br/>}}</includeonly>
 ```
 
-Then point the field at it on the category page:
+Point the field at it on the category page:
 
 ```wikitext
 {{Property field/subobject
@@ -403,20 +323,15 @@ Then point the field at it on the category page:
 }}
 ```
 
-That's the entire change. The dispatcher regenerates with
-`{{Category/property-row | label=Tool | value={{Property/ToolWithTraining|value={{{has_tool|}}} }}}}`
-in place of the default row; every other field still renders the
-default way. Cost per render is the same shape as before plus one
-`Property/value` lookup per tool listed (each is a `#show`).
-
-The same renderer is reusable: another category can attach
-`has_render_template = Property/ToolWithTraining` to its own
-`Has equipment` field and get identical behavior.
+The dispatcher regenerates with the renderer wrapping the tool value;
+every other field still renders the default way. The same renderer
+composes — another category can attach it to its own `Has equipment`
+field for identical behavior.
 
 ### Path B — replace the entire ToolRoom display
 
-Use this when the layout itself is different — separate sections,
-custom HTML, conditional content based on multiple fields.
+Use when the layout itself diverges — separate sections, custom HTML,
+conditional content across fields.
 
 ```wikitext
 {{!-- Category:DangerousToolRoom --}}
@@ -428,8 +343,8 @@ custom HTML, conditional content based on multiple fields.
 [[Category:SemanticSchemas-managed]]
 ```
 
-Then write the display template. Every field arrives as a parameter,
-so own-page values cost zero queries:
+Every field arrives as a parameter, so own-page values cost zero
+queries:
 
 ```wikitext
 {{!-- Template:DangerousToolRoom/display --}}
@@ -458,22 +373,17 @@ so own-page values cost zero queries:
 </includeonly>
 ```
 
-Notice what each piece does:
+`{{{has_tool|}}}` is free (template parameter); `{{Property/value}}`
+pays one `#show` per tool (unavoidable — training lives on tool
+pages); `Category/property-row` and `Category/backlink-row` reuse the
+site-wide look.
 
-- `{{{has_tool|}}}` — the page's tool list, free (it's a template parameter).
-- `{{Property/value|prop=Has training required|page=@@t@@}}` — cross-page lookup for each tool, one `#show` each. Unavoidable since training data lives on tool pages.
-- `{{Category/property-row | … }}` — composes a standard row with the same look as the default layout. Hidden when value is empty.
-- `{{Category/backlink-row | … }}` — composes a backlink section for "what links here via Has location".
-
-Adding a fourth field's customization here means editing this one
-template — no chain of templates to copy through.
-
-### When to choose which
+### Choosing between paths
 
 | Path | Scope of change | Files to author |
 |------|-----------------|-----------------|
-| A — field renderer | One field's value expression | 1 template + 1 annotation on the existing field |
-| B — custom display | The whole category's layout | 1 template + 1 annotation (`Has display template::…`) on the category; `Has display format` is ignored when a custom template is set |
+| A — field renderer | One field's value expression | 1 template + 1 annotation on the field |
+| B — custom display | The whole category's layout | 1 template + `Has display template::…` on the category |
 
 Path A composes — multiple fields can each have their own renderer,
 and the default table still hosts them. Reach for Path B when the
@@ -481,37 +391,21 @@ layout itself diverges, not just one cell.
 
 ## Performance notes
 
-The auto-generated dispatcher's value lookups, label lookups, ancestor
-walks, and inverse-label lookups are all resolved at **template-
-generation time**, not at page-render time. The cost of rendering a
-content page is roughly:
-
-- One `#ask` per subobject category that the page declares
-- One `#ask` count + one `#ask` list per declared backlink property
-  (only counted when results exist)
-- SMW's per-annotation storage diff (proportional to total properties
-  emitted, including subobjects)
-
-Anything you author that uses `{{#show:…}}`, `{{Property/value|…}}`,
-or `{{Category/render-reverse}}` (dynamic discovery) adds ~one
-SMW query and one persistent query-dependency subobject per call.
-For a page rendered many times, each such call re-fires on every
-re-render.
-
-When customizing, prefer **passing values as parameters** (the
-dispatcher's pattern) over **looking values up at render time**. The
-shipped row and value primitives all take values as parameters; the
-custom display template you write receives every field as a parameter
-already.
+The dispatcher's value, label, ancestor, and inverse-label lookups
+all resolve at **template-generation time**. Rendering a content page
+costs roughly one `#ask` per declared subobject category, one
+`#ask`-count + one `#ask`-list per backlink property, and SMW's
+per-annotation storage diff. See the Primitive reference for
+per-primitive costs; `{{#show:…}}`, `{{Property/value|…}}`, and
+`{{Category/render-reverse}}` each pay one query + one persistent
+query-dependency subobject per call on every re-render.
 
 ## Notes on upgrades
 
-- All shipped base-config templates have `replaceable: true`. Editing
-  them directly will be overwritten on next install/update. To
-  customize globally, copy to a different name (e.g.
-  `Template:MyWiki/property-row`) and reference that.
-- Per-category overrides via `Has display template` are stored as
-  category metadata and are **not** affected by base-config refresh.
-  This is the recommended customization path.
-- Per-field render templates via `Has render template` are stored on
-  the field's subobject and survive upgrades.
+- All shipped base-config templates have `replaceable: true`. Direct
+  edits are overwritten on next install/update. To customize globally,
+  copy to a different name (e.g. `Template:MyWiki/property-row`) and
+  reference that.
+- Per-category overrides via `Has display template` and per-field
+  `Has render template` are stored as category / subobject metadata
+  and survive base-config refresh.

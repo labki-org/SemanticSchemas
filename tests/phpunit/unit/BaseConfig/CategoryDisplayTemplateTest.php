@@ -228,12 +228,10 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$this->assertStringContainsString( '{{Category/display-header', $content );
 	}
 
-	public function testSideboxFooterClosesFrameAndHandlesSubobjects(): void {
+	public function testSideboxFooterDelegatesToTableFooter(): void {
 		$content = $this->loadTemplate( 'sidebox-footer' );
 
-		$this->assertStringContainsString( '|}', $content );
-		$this->assertStringContainsString( '{{Category/subobjects', $content );
-		$this->assertStringContainsString( '{{Category/render-reverse', $content );
+		$this->assertStringContainsString( '{{Category/table-footer', $content );
 	}
 
 	public function testSideboxTemplateComposesHeaderFooterForDynamicPath(): void {
@@ -491,14 +489,13 @@ class CategoryDisplayTemplateTest extends TestCase {
 		);
 	}
 
-	public function testSideboxFooterGatesRenderReverseOnBacklinksFlagWithSubobjectsFallback(): void {
+	public function testSideboxFooterForwardsBacklinksFlag(): void {
 		$content = $this->loadTemplate( 'sidebox-footer' );
 
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes'
-				. '|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
+			'backlinks={{{backlinks|{{{subobjects|yes}}}}}}',
 			$content,
-			'sidebox-footer must gate backlinks block; backlink_section fast path before render-reverse fallback'
+			'sidebox-footer must forward backlinks flag (with subobjects fallback) to table-footer'
 		);
 	}
 

@@ -83,10 +83,7 @@ class FieldModel implements JsonSerializable {
 
 	/**
 	 * Construct a FieldModel from an SMW subobject's semantic data.
-	 *
-	 * Reads the reference property, required flag, sort order, and
-	 * optional render template from the subobject. Returns null if the
-	 * reference property is missing.
+	 * Returns null if the reference property is missing.
 	 *
 	 * @param \SMW\SemanticData $subData A single subobject's semantic data
 	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
@@ -186,28 +183,15 @@ class FieldModel implements JsonSerializable {
 	}
 
 	/**
-	 * Optional per-field wikitext template wrapper for rendering this
-	 * field's value. When set, TemplateGenerator wraps the baked
-	 * `val_<param>` expression in `{{<renderTemplate> | value=<raw> }}`.
-	 *
-	 * Declared on the category page via
-	 *   {{Property field/subobject | for_property = X | has_render_template = Template:Foo }}
+	 * Per-field override for the value-render template. Null when not set.
 	 */
 	public function getRenderTemplate(): ?string {
 		return $this->renderTemplate;
 	}
 
 	/**
-	 * Optional wikitext template for rendering the entire subobject
-	 * section of this field's subcategory. When set on a TYPE_SUBOBJECT
-	 * field, TemplateGenerator emits a single
-	 *   {{<subobjectDisplayTemplate> | category=<Subcat> | page={{FULLPAGENAME}} }}
-	 * call in place of the default `#ask | format=template | template=<Subcat>/subobject-row`
-	 * pipeline — so the custom template can aggregate all subobject
-	 * instances into one table, card grid, or any other layout.
-	 *
-	 * Declared on the category page via
-	 *   {{Subobject field/subobject | for_category = X | has_subobject_display_template = Template:Foo }}
+	 * Per-parent override for the subobject-section display template
+	 * (only meaningful on TYPE_SUBOBJECT fields). Null when not set.
 	 */
 	public function getSubobjectDisplayTemplate(): ?string {
 		return $this->subobjectDisplayTemplate;

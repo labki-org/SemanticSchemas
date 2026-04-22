@@ -1,17 +1,7 @@
-<includeonly>{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse | {{{category|}}} }}}}|}}
-|}{{#ifeq:{{{subobjects|yes}}}|yes|
-{{Category/subobjects | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}|}}</includeonly><noinclude>
-Closes a SemanticSchemas sidebox opened by `Category/sidebox-header`.
-Same footer behavior as `Category/table-footer` — kept as a separate
-template so sidebox and table chrome can diverge without coupling.
-
-Parameters:
-* category        - The category name. Required.
-* page            - Target page for subobjects lookup. Defaults to
-                    {{FULLPAGENAME}}.
-* backlinks       - "no" to suppress the backlinks row.
-* subobjects      - "no" to suppress the nested Category/subobjects
-                    block.
-* backlink_section - Pre-baked backlinks wikitext; used in place of
-                    the dynamic Category/render-reverse lookup when set.
+<includeonly>{{Category/table-footer | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} | subobjects={{{subobjects|yes}}} | backlinks={{{backlinks|{{{subobjects|yes}}}}}} | backlink_section={{{backlink_section|}}} }}</includeonly><noinclude>
+Closes a sidebox opened by `Category/sidebox-header`. Delegates to
+`Category/table-footer` — the close-frame + backlinks + subobjects
+logic is identical; this template exists as the sidebox counterpart
+to `sidebox-header` so the dispatcher can name the pair consistently.
+Parameters are forwarded verbatim (see `Category/table-footer`).
 </noinclude>
