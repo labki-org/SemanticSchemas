@@ -114,7 +114,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$this->assertStringNotContainsString(
 			'Special:FormEdit',
 			$content,
-			'display-header must not include an edit link - rendered inside subobject mini-tables where it does not apply'
+			'display-header must not include an edit link; rendered inside subobject tables where it does not apply'
 		);
 	}
 
@@ -254,13 +254,13 @@ class CategoryDisplayTemplateTest extends TestCase {
 		);
 	}
 
-	public function testRenderReverseShowsBacklinksHeader(): void {
+	public function testRenderReverseComposesBacklinksHeaderPrimitive(): void {
 		$content = $this->loadTemplate( 'render-reverse' );
 
 		$this->assertStringContainsString(
-			'{{!}} Backlinks',
+			'{{Category/backlinks-header}}',
 			$content,
-			'render-reverse must show a Backlinks header'
+			'render-reverse must compose the Category/backlinks-header primitive'
 		);
 	}
 

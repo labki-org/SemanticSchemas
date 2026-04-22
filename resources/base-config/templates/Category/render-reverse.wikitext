@@ -1,24 +1,17 @@
 <includeonly>{{#ifexpr: 0{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|+{{#ask:[[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]]|format=count}}|}} > 0 |
 {{!}}-
-! colspan="2" style="background-color: #eaecf0; text-align: center; font-size: 0.9em;" {{!}} Backlinks
+{{Category/backlinks-header}}
 {{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|{{Category/backlink-row | prop=@@prop@@ | label={{#show:@@prop@@|?Inverse property label|default={{PAGENAME:@@prop@@}}}} }}|\n}}}}</includeonly><noinclude>
-Renders backlink rows for properties linking to the current page,
-discovered dynamically from the category's `Show backlinks for`
-annotation.
+Dynamic-discovery backlinks block. Discovers the category's
+`Show backlinks for` list via `#show` and renders one
+`Category/backlink-row` per property. Skipped entirely when no
+property has incoming links.
 
-Composes Category/backlink-row, one per discovered property. Wraps in
-an aggregate count check so the "Backlinks" header only appears when
-at least one property has results.
-
-This is the dynamic-discovery path. Auto-generated dispatcher
-templates bypass it: the generator pre-builds the entire backlinks
-block (header + rows) and passes it as `backlink_section=` to
-Category/sidebox or Category/table, which emits it directly. That
-avoids the runtime `#show:Category:X|?Show backlinks for` and the
-per-property `#show:@@prop@@|?Inverse property label` lookups.
-
-Use this template directly only in hand-written custom display
-wikitext when you want runtime discovery.
+Auto-generated dispatchers bypass this path — they pre-build the
+entire backlinks block with labels baked at generation time and
+forward it via `backlink_section=` on `Category/table` /
+`Category/sidebox`. Call this template directly only from
+hand-written custom displays that want runtime discovery.
 
 Parameter 1: category name (without namespace prefix).
 </noinclude>

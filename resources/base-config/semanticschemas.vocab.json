@@ -192,6 +192,16 @@
 			}
 		},
 		{
+			"page": "Category/backlinks-header",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/backlinks-header.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Category/subobject-list",
 			"namespace": "NS_TEMPLATE",
 			"contents": {

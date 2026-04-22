@@ -327,13 +327,6 @@ class TemplateGenerator {
 	}
 
 	/**
-	 * Bake the entire backlinks block — header row + per-property
-	 * `Category/backlink-row` calls — as a single `backlink_section=`
-	 * parameter. Inverse property labels are resolved at generation time
-	 * (no `#show` per render). One `#ifexpr` aggregates the per-property
-	 * count checks so the header only appears when at least one backlink
-	 * exists.
-	 *
 	 * Emitted inline rather than via per-property `backlink_label_<p>=`
 	 * params because `#arraymap` parameter forwarding through
 	 * `Category/sidebox` -> `Category/render-reverse` doesn't reliably
@@ -351,16 +344,11 @@ class TemplateGenerator {
 		foreach ( $props as $propName ) {
 			$countTerms[] = '+{{#ask:[[' . $propName
 				. '::{{FULLPAGENAME}}]]|format=count}}';
-			$prop = $this->propertyStore->readProperty( $propName );
-			$label = ( $prop instanceof PropertyModel && $prop->getInverseLabel() !== '' )
-				? $prop->getInverseLabel()
-				: $propName;
 			$rowCalls[] = '{{Category/backlink-row|prop=' . $propName
-				. '|label=' . $label . '}}';
+				. '|label=' . $this->resolveInversePropertyLabel( $propName ) . '}}';
 		}
 		$section = '{{#ifexpr: 0' . implode( '', $countTerms ) . " > 0 |{{!}}-\n"
-			. '! colspan="2" style="background-color: #eaecf0; '
-			. 'text-align: center; font-size: 0.9em;" {{!}} Backlinks' . "\n"
+			. '{{Category/backlinks-header}}' . "\n"
 			. implode( "\n", $rowCalls ) . '}}';
 		return [ ' | backlink_section=' . $section ];
 	}
@@ -497,6 +485,19 @@ class TemplateGenerator {
 			return $prop->getLabel();
 		}
 		return NamingHelper::generatePropertyLabel( $propertyName );
+	}
+
+	/**
+	 * Resolve a property's inverse-label (used in backlink headings),
+	 * falling back to the property name when no Inverse property label
+	 * is set.
+	 */
+	private function resolveInversePropertyLabel( string $propertyName ): string {
+		$prop = $this->propertyStore->readProperty( $propertyName );
+		if ( $prop instanceof PropertyModel && $prop->getInverseLabel() !== '' ) {
+			return $prop->getInverseLabel();
+		}
+		return $propertyName;
 	}
 
 	/**
