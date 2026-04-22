@@ -311,12 +311,8 @@ class TemplateGenerator {
 			$param = $field->getParameterName();
 			$paramNames[] = $param;
 			$labelLines[] = ' | label_' . $param . '=' . $this->resolvePropertyLabel( $propName );
-			$valueExpr = $this->buildDisplayValueExpression( $propName, $param );
-			$renderTpl = $field->getRenderTemplate();
-			if ( $renderTpl !== null ) {
-				$valueExpr = '{{' . $renderTpl . ' | value=' . $valueExpr . ' }}';
-			}
-			$valueLines[] = ' | val_' . $param . '=' . $valueExpr;
+			$valueLines[] = ' | val_' . $param . '='
+				. $this->buildRenderedValueExpression( $field, $prop, $param );
 		}
 		if ( $paramNames === [] ) {
 			return [];
@@ -326,6 +322,33 @@ class TemplateGenerator {
 			$labelLines,
 			$valueLines
 		);
+	}
+
+	/**
+	 * Apply the field's render template (or the auto-selected default for
+	 * Page-typed properties) around the namespace-prefixed value expression.
+	 *
+	 * Priority:
+	 *   1. Field's explicit `Has render template` annotation.
+	 *   2. `Property/Page` for Page-typed properties (so page values render
+	 *      as wikilinks — matches main-branch DisplayStubGenerator
+	 *      behavior, which auto-selected Property/Page in PropertyModel).
+	 *   3. No wrapper (bare value expression).
+	 */
+	private function buildRenderedValueExpression(
+		FieldModel $field,
+		?PropertyModel $prop,
+		string $paramName
+	): string {
+		$valueExpr = $this->buildDisplayValueExpression( $field->getName(), $paramName );
+		$renderTpl = $field->getRenderTemplate();
+		if ( $renderTpl === null && $prop instanceof PropertyModel && $prop->isPageType() ) {
+			$renderTpl = 'Property/Page';
+		}
+		if ( $renderTpl === null ) {
+			return $valueExpr;
+		}
+		return '{{' . $renderTpl . ' | value=' . $valueExpr . ' }}';
 	}
 
 	/**
