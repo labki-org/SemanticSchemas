@@ -114,7 +114,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$this->assertStringNotContainsString(
 			'Special:FormEdit',
 			$content,
-			'display-header must not include an edit link — used in subobject rendering too where the link does not apply'
+			'display-header must not include an edit link — rendered inside subobject mini-tables where it does not apply'
 		);
 	}
 
@@ -457,9 +457,10 @@ class CategoryDisplayTemplateTest extends TestCase {
 		// while still wanting backlinks, so gate on `backlinks` with
 		// `subobjects` as the default for backward compat.
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
+			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes'
+				. '|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
 			$content,
-			'table must gate backlinks block on backlinks flag, with backlink_section fast path before render-reverse fallback'
+			'table must gate backlinks block; backlink_section fast path before render-reverse fallback'
 		);
 	}
 
@@ -467,9 +468,10 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'sidebox' );
 
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
+			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes'
+				. '|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
 			$content,
-			'sidebox must gate backlinks block on backlinks flag, with backlink_section fast path before render-reverse fallback'
+			'sidebox must gate backlinks block; backlink_section fast path before render-reverse fallback'
 		);
 	}
 
