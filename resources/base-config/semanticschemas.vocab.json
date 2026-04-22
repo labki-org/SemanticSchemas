@@ -92,50 +92,50 @@
 			}
 		},
 		{
-			"page": "Category/collect-ancestors",
+			"page": "Category/ancestors",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors.wikitext"
+				"importFrom": "templates/Category/ancestors.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L1",
+			"page": "Category/ancestors-L1",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L1.wikitext"
+				"importFrom": "templates/Category/ancestors-L1.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L2",
+			"page": "Category/ancestors-L2",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L2.wikitext"
+				"importFrom": "templates/Category/ancestors-L2.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L3",
+			"page": "Category/ancestors-L3",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L3.wikitext"
+				"importFrom": "templates/Category/ancestors-L3.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L4",
+			"page": "Category/ancestors-L4",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L4.wikitext"
+				"importFrom": "templates/Category/ancestors-L4.wikitext"
 			},
 			"options": {
 				"replaceable": true
@@ -166,6 +166,36 @@
 			"namespace": "NS_TEMPLATE",
 			"contents": {
 				"importFrom": "templates/Category/subobject-instance.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/property-row",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/property-row.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/backlink-row",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/backlink-row.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/subobject-list",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/subobject-list.wikitext"
 			},
 			"options": {
 				"replaceable": true

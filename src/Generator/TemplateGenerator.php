@@ -327,11 +327,17 @@ class TemplateGenerator {
 	}
 
 	/**
-	 * Bake the category's declared backlink properties + their inverse
-	 * labels into `backlink_props=` / `backlink_label_<param>=` lines.
-	 * Consumed by Category/render-reverse's fast path — eliminates the
-	 * `#show:Category:X|?Show backlinks for` lookup and the per-property
-	 * `#show:@@prop@@|?Inverse property label` lookups.
+	 * Bake the entire backlinks block — header row + per-property
+	 * `Category/backlink-row` calls — as a single `backlink_section=`
+	 * parameter. Inverse property labels are resolved at generation time
+	 * (no `#show` per render). One `#ifexpr` aggregates the per-property
+	 * count checks so the header only appears when at least one backlink
+	 * exists.
+	 *
+	 * Emitted inline rather than via per-property `backlink_label_<p>=`
+	 * params because `#arraymap` parameter forwarding through
+	 * `Category/sidebox` -> `Category/render-reverse` doesn't reliably
+	 * preserve `{{{name|default}}}` lookups across the nested call.
 	 *
 	 * @return string[]
 	 */
@@ -340,21 +346,23 @@ class TemplateGenerator {
 		if ( $props === [] ) {
 			return [];
 		}
-		$paramNames = [];
-		$labelLines = [];
+		$countTerms = [];
+		$rowCalls = [];
 		foreach ( $props as $propName ) {
-			$param = NamingHelper::propertyToParameter( $propName );
-			$paramNames[] = $param;
+			$countTerms[] = '+{{#ask:[[' . $propName
+				. '::{{FULLPAGENAME}}]]|format=count}}';
 			$prop = $this->propertyStore->readProperty( $propName );
 			$label = ( $prop instanceof PropertyModel && $prop->getInverseLabel() !== '' )
 				? $prop->getInverseLabel()
 				: $propName;
-			$labelLines[] = ' | backlink_label_' . $param . '=' . $label;
+			$rowCalls[] = '{{Category/backlink-row|prop=' . $propName
+				. '|label=' . $label . '}}';
 		}
-		return array_merge(
-			[ ' | backlink_props=' . implode( ',', $paramNames ) ],
-			$labelLines
-		);
+		$section = '{{#ifexpr: 0' . implode( '', $countTerms ) . " > 0 |{{!}}-\n"
+			. '! colspan="2" style="background-color: #eaecf0; '
+			. 'text-align: center; font-size: 0.9em;" {{!}} Backlinks' . "\n"
+			. implode( "\n", $rowCalls ) . '}}';
+		return [ ' | backlink_section=' . $section ];
 	}
 
 	/**

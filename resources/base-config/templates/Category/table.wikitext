@@ -1,9 +1,7 @@
 <includeonly>{| class="wikitable source-semanticschemas"
 {{Category/display-header | category={{{category|}}} | label={{{label|}}} }}
-{{#if:{{{props|}}}|{{#arraymap:{{{props|}}}|,|@@p@@|{{#if:{{{val_@@p@@|}}}|{{!}}-
-! {{{label_@@p@@|@@p@@}}}
-{{!}} {{{val_@@p@@|}}}}}|\n}}|{{Category/display-rows | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}}}
-{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{Category/render-reverse | {{{category|}}} | backlink_props={{{backlink_props|}}}{{#arraymap:{{{backlink_props|}}}|,|@@p@@|{{!}} backlink_label_@@p@@={{{backlink_label_@@p@@{{!}}}}}|}} }}|}}
+{{#if:{{{props|}}}|{{#arraymap:{{{props|}}}|,|@@p@@|{{Category/property-row | label={{{label_@@p@@|@@p@@}}} | value={{{val_@@p@@|}}} }}|\n}}|{{Category/display-rows | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}}}
+{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse | {{{category|}}} }}}}|}}
 |}{{#ifeq:{{{subobjects|yes}}}|yes|
 {{Category/subobjects | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}|}}</includeonly><noinclude>
 Dynamic table display template for SemanticSchemas categories.

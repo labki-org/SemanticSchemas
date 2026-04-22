@@ -1,0 +1,26 @@
+<includeonly>{{#ifexpr: {{#ask: [[{{PAGENAME:{{{prop|}}}}}::{{FULLPAGENAME}}]] | format=count }} > 0 |{{!}}-
+! {{{label|{{PAGENAME:{{{prop|}}}}}}}}
+{{!}} {{#ask: [[{{PAGENAME:{{{prop|}}}}}::{{FULLPAGENAME}}]] | format=list }}|}}</includeonly><noinclude>
+Renders one backlink row — all pages that point to the current page
+via a given property:
+
+ |-
+ ! label
+ | Page1, Page2, Page3
+
+Skipped when no pages link via that property. Composable with
+Category/property-row in custom display tables:
+
+ {| class="wikitable"
+ {{Category/property-row | label=Author | value={{Property/Page | value={{{has_author|}}} }} }}
+ {{Category/backlink-row | prop=Has author | label=Authored }}
+ |}
+
+Costs two `#ask` queries per call — one count check + one list. Used
+internally by Category/render-reverse; call directly when you want a
+single backlink section without the aggregate "Backlinks" header row.
+
+Parameters:
+* prop  - Property page reference (namespaced or bare, e.g. `Has author`).
+* label - Optional display label. Defaults to the property's page name.
+</noinclude>

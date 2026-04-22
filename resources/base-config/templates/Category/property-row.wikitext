@@ -1,0 +1,26 @@
+<includeonly>{{#if:{{{value|}}}|{{!}}-
+! {{{label|}}}
+{{!}} {{{value|}}}|}}</includeonly><noinclude>
+Renders one property row in a SemanticSchemas display table:
+
+ |-
+ ! label
+ | value
+
+Skipped entirely when `value` is empty — callers don't need to guard.
+
+This is the building block Category/table and Category/sidebox use for
+each baked property. Compose it directly in hand-written custom display
+templates:
+
+ {| class="wikitable"
+ {{Category/property-row | label=Title | value={{{has_title|}}} }}
+ {{Category/property-row | label=Author | value={{Property/Page | value={{{has_author|}}} }} }}
+ |}
+
+Parameters:
+* label - Display label for the row (left column).
+* value - Rendered value expression (right column). Pass a formatted
+          string or the output of Property/Page, Property/Email, etc.
+          If empty, the whole row is suppressed.
+</noinclude>

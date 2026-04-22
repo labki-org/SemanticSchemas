@@ -1,36 +1,24 @@
-<includeonly>{{#if:{{{backlink_props|}}}|{{#ifexpr: 0{{#arraymap:{{{backlink_props}}}|,|@@p@@|+{{#ask:[[{{PAGENAME:@@p@@}}::{{FULLPAGENAME}}]]|format=count}}|}} > 0 |
+<includeonly>{{#ifexpr: 0{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|+{{#ask:[[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]]|format=count}}|}} > 0 |
 {{!}}-
 ! colspan="2" style="background-color: #eaecf0; text-align: center; font-size: 0.9em;" {{!}} Backlinks
-{{#arraymap:{{{backlink_props}}}|,|@@p@@|{{#ifexpr: {{#ask: [[{{PAGENAME:@@p@@}}::{{FULLPAGENAME}}]] | format=count }} > 0 |{{!}}-
-! {{{backlink_label_@@p@@|@@p@@}}}
-{{!}} {{#ask: [[{{PAGENAME:@@p@@}}::{{FULLPAGENAME}}]] | format=list }}}}|\n}}}}|{{#ifexpr: 0{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|+{{#ask:[[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]]|format=count}}|}} > 0 |
-{{!}}-
-! colspan="2" style="background-color: #eaecf0; text-align: center; font-size: 0.9em;" {{!}} Backlinks
-{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|{{#ifexpr: {{#ask: [[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]] | format=count }} > 0 |{{!}}-
-! {{#show:@@prop@@|?Inverse property label|default={{PAGENAME:@@prop@@}}}}
-{{!}} {{#ask: [[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]] | format=list }}}}|\n}}}}}}</includeonly><noinclude>
-Renders backlink rows for properties linking to the current page.
+{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|{{Category/backlink-row | prop=@@prop@@ | label={{#show:@@prop@@|?Inverse property label|default={{PAGENAME:@@prop@@}}}} }}|\n}}}}</includeonly><noinclude>
+Renders backlink rows for properties linking to the current page,
+discovered dynamically from the category's `Show backlinks for`
+annotation.
 
-Two paths:
+Composes Category/backlink-row, one per discovered property. Wraps in
+an aggregate count check so the "Backlinks" header only appears when
+at least one property has results.
 
-* '''Fast path (baked)''' — when the caller passes `backlink_props`
-  (comma-separated parameter-name list) and optional
-  `backlink_label_<param>` labels, iterates the baked list inline. No
-  `#show` for the property list; no `#show` per property for the
-  inverse label. Still runs one `#ask` per property to find links
-  (inherent). Dispatcher templates for categories that declare
-  `Show backlinks for` use this path.
-* '''Dynamic fallback''' — when `backlink_props` is absent, discovers
-  the property list from the category's `Show backlinks for`
-  annotation and resolves each property's `Inverse property label`
-  at render time. Used when hand-written templates invoke
-  `Category/render-reverse` without baked params.
+This is the dynamic-discovery path. Auto-generated dispatcher
+templates bypass it: the generator pre-builds the entire backlinks
+block (header + rows) and passes it as `backlink_section=` to
+Category/sidebox or Category/table, which emits it directly. That
+avoids the runtime `#show:Category:X|?Show backlinks for` and the
+per-property `#show:@@prop@@|?Inverse property label` lookups.
 
-Only renders the Backlinks header row when at least one declared
-property has non-empty results (aggregate count check).
+Use this template directly only in hand-written custom display
+wikitext when you want runtime discovery.
 
-Parameters:
-* 1                    - Category name (dynamic path only).
-* backlink_props       - Baked comma-separated param-name list.
-* backlink_label_<p>   - Per-property label (falls back to param name).
+Parameter 1: category name (without namespace prefix).
 </noinclude>

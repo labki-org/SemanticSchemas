@@ -1,4 +1,4 @@
-<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]] | mainlabel=- | ?For category= | format=plainlist | link=none | sep=, }}|,|@@subcat@@|<h3>{{#show:@@subcat@@|?Display label|default={{PAGENAME:@@subcat@@}}}}</h3>
+<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/ancestors|{{{category|}}}}}]] [[Category:Subobject field]] | mainlabel=- | ?For category= | format=plainlist | link=none | sep=, }}|,|@@subcat@@|<h3>{{#show:@@subcat@@|?Display label|default={{PAGENAME:@@subcat@@}}}}</h3>
 {{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[@@subcat@@]]
  | link=none
  | format=template
@@ -8,7 +8,7 @@
  | order=asc
 }}|\n}}</includeonly><noinclude>
 Renders subobject sections for a category. For each subobject type
-declared on the category (or any ancestor, via Category/collect-ancestors),
+declared on the category (or any ancestor, via Category/ancestors),
 emits a heading and an #ask that renders each instance through
 Category/subobject-instance (which itself reuses Category/table).
 

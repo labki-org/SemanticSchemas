@@ -1,4 +1,4 @@
-<includeonly>Category:{{{1|}}}{{#arraymap:{{#show:Category:{{{1|}}}|?Subcategory of|link=none|sep=,}}|,|@@p@@|{{#ifeq:{{PAGENAME:@@p@@}}|SemanticSchemas-managed||{{!}}{{!}}{{Category/collect-ancestors-L1|{{PAGENAME:@@p@@}}}}}}|}}</includeonly><noinclude>
+<includeonly>Category:{{{1|}}}{{#arraymap:{{#show:Category:{{{1|}}}|?Subcategory of|link=none|sep=,}}|,|@@p@@|{{#ifeq:{{PAGENAME:@@p@@}}|SemanticSchemas-managed||{{!}}{{!}}{{Category/ancestors-L1|{{PAGENAME:@@p@@}}}}}}|}}</includeonly><noinclude>
 Collects a category and all its ancestors as a || separated list.
 
 Output format: Category:X||Category:Y||Category:Z

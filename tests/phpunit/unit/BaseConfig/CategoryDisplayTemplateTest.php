@@ -58,7 +58,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'display-rows' );
 
 		$this->assertStringContainsString(
-			'{{Category/collect-ancestors|{{{category|}}}}}',
+			'{{Category/ancestors|{{{category|}}}}}',
 			$content,
 			'display-rows must walk the ancestor chain to discover inherited properties'
 		);
@@ -108,13 +108,13 @@ class CategoryDisplayTemplateTest extends TestCase {
 		);
 	}
 
-	public function testDisplayHeaderContainsEditLink(): void {
+	public function testDisplayHeaderHasNoEditLink(): void {
 		$content = $this->loadTemplate( 'display-header' );
 
-		$this->assertStringContainsString(
-			'Special:FormEdit/{{{category|}}}',
+		$this->assertStringNotContainsString(
+			'Special:FormEdit',
 			$content,
-			'display-header must include an edit link via Special:FormEdit'
+			'display-header must not include an edit link — used in subobject rendering too where the link does not apply'
 		);
 	}
 
@@ -292,7 +292,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'subobjects' );
 
 		$this->assertStringContainsString(
-			'[[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]]',
+			'[[-Has subobject::{{Category/ancestors|{{{category|}}}}}]] [[Category:Subobject field]]',
 			$content,
 			'subobjects must walk the ancestor chain and filter Subobject field subobjects'
 		);
@@ -457,9 +457,9 @@ class CategoryDisplayTemplateTest extends TestCase {
 		// while still wanting backlinks, so gate on `backlinks` with
 		// `subobjects` as the default for backward compat.
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{Category/render-reverse',
+			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
 			$content,
-			'table must gate Category/render-reverse on backlinks flag, defaulting to subobjects value'
+			'table must gate backlinks block on backlinks flag, with backlink_section fast path before render-reverse fallback'
 		);
 	}
 
@@ -467,9 +467,9 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'sidebox' );
 
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{Category/render-reverse',
+			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
 			$content,
-			'sidebox must gate Category/render-reverse on backlinks flag, defaulting to subobjects value'
+			'sidebox must gate backlinks block on backlinks flag, with backlink_section fast path before render-reverse fallback'
 		);
 	}
 
@@ -478,17 +478,17 @@ class CategoryDisplayTemplateTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testCollectAncestorsWalksParentChain(): void {
-		$content = $this->loadTemplate( 'collect-ancestors' );
+		$content = $this->loadTemplate( 'ancestors' );
 
 		$this->assertStringContainsString(
 			'?Subcategory of',
 			$content,
-			'collect-ancestors must query ?Subcategory of to walk the category hierarchy'
+			'ancestors must query ?Subcategory of to walk the category hierarchy'
 		);
 		$this->assertStringContainsString(
-			'{{Category/collect-ancestors-L1',
+			'{{Category/ancestors-L1',
 			$content,
-			'collect-ancestors must delegate to L1 for deeper levels'
+			'ancestors must delegate to L1 for deeper levels'
 		);
 	}
 
