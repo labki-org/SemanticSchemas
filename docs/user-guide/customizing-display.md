@@ -81,13 +81,13 @@ a property table."
 On the category, set:
 
 ```wikitext
-[[Has display format::none]]
 [[Has display template::Template:TextbookDisplay]]
 ```
 
-`Has display format = none` suppresses the default `Category/table`
-call, then `Has display template` swaps in your template. Your template
-receives every field as a named parameter:
+`Has display template` overrides `Has display format`: when a custom
+template is set, the default `Category/table` (or `Category/sidebox`)
+call is suppressed and only your template is called, regardless of the
+format value. Your template receives every field as a named parameter:
 
 ```wikitext
 {{!-- Template:TextbookDisplay --}}
@@ -248,7 +248,6 @@ custom HTML, conditional content based on multiple fields.
 {{Property field/subobject | for_property = Has tool | is_required = true }}
 {{Property field/subobject | for_property = Has hazard level | is_required = true }}
 {{Property field/subobject | for_property = Has capacity | is_required = false }}
-[[Has display format::none]]
 [[Has display template::Template:DangerousToolRoom/display]]
 [[Category:SemanticSchemas-managed]]
 ```
@@ -298,7 +297,7 @@ template — no chain of templates to copy through.
 | Path | Scope of change | Files to author |
 |------|-----------------|-----------------|
 | A — field renderer | One field's value expression | 1 template + 1 annotation on the existing field |
-| B — custom display | The whole category's layout | 1 template + 2 annotations (`Has display format::none`, `Has display template::…`) on the category |
+| B — custom display | The whole category's layout | 1 template + 1 annotation (`Has display template::…`) on the category; `Has display format` is ignored when a custom template is set |
 
 Path A composes — multiple fields can each have their own renderer,
 and the default table still hosts them. Reach for Path B when the

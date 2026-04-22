@@ -634,7 +634,7 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringNotContainsString( '{{Category/sidebox', $result );
 	}
 
-	public function testDispatcherIncludesCustomDisplayTemplate(): void {
+	public function testDispatcherCustomTemplateSuppressesFormat(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
 				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
@@ -644,23 +644,10 @@ class TemplateGeneratorTest extends TestCase {
 		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
 		$result = $this->generator->generateDispatcherTemplate( $effective );
 
-		// Should have both dynamic display AND custom template
-		$this->assertStringContainsString( "{{Category/table\n | category=Person", $result );
-		$this->assertStringContainsString( '{{Person/custom', $result );
-	}
-
-	public function testDispatcherCustomTemplateOnlyWithFormatNone(): void {
-		$category = new CategoryModel( 'Person', [
-			'properties' => [
-				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
-			],
-			'display' => [ 'format' => 'none', 'template' => 'Template:Person/custom' ],
-		] );
-		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
-		$result = $this->generator->generateDispatcherTemplate( $effective );
-
-		// Only custom template, no format template
+		// Custom template wins: format block is suppressed even though
+		// Has display format defaults to table.
 		$this->assertStringNotContainsString( '{{Category/table', $result );
+		$this->assertStringNotContainsString( '{{Category/sidebox', $result );
 		$this->assertStringContainsString( '{{Person/custom', $result );
 	}
 
@@ -682,7 +669,8 @@ class TemplateGeneratorTest extends TestCase {
 		$effective = $resolver->getEffectiveCategory( 'Student' );
 		$result = $this->generator->generateDispatcherTemplate( $effective );
 
-		$this->assertStringContainsString( "{{Category/table\n | category=Student", $result );
+		// Inherited custom template still wins over the default format.
+		$this->assertStringNotContainsString( '{{Category/table', $result );
 		$this->assertStringContainsString( '{{Student/custom', $result );
 	}
 

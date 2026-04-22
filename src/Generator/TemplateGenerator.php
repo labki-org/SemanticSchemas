@@ -247,8 +247,12 @@ class TemplateGenerator {
 	 * template call so its Category/subobjects block is suppressed —
 	 * dispatcher emits per-subcat baked `#ask` sections inline instead.
 	 *
-	 * When the category has a custom display template, that is called
-	 * after the format template (or alone if format=none).
+	 * A custom display template wins outright: if `Has display template` is
+	 * set, the format-template block is suppressed and only the custom
+	 * template is called. This keeps users from having to also set
+	 * `Has display format = none` to avoid both rendering — PageForms
+	 * requires the format field to exist, so its value is simply ignored
+	 * when a custom template is present.
 	 *
 	 * @param EffectiveCategoryModel $effective
 	 * @param FieldModel[] $allFields Sorted effective fields
@@ -260,33 +264,33 @@ class TemplateGenerator {
 		array $allFields,
 		?InheritanceResolver $resolver = null
 	): array {
-		$name = $effective->getName();
-		$format = $effective->getDisplayFormat() ?? 'table';
-		$out = [];
-
-		if ( $format !== 'none' ) {
-			$out[] = '{{Category/' . $format;
-			$out[] = ' | category=' . $name;
-			$out[] = ' | label=' . $effective->getLabel();
-			if ( $resolver !== null ) {
-				// Dispatcher handles subobjects inline via projected #ask; suppress
-				// Category/table's nested Category/subobjects block. Backlinks
-				// default falls back to subobjects, so set explicitly: yes when
-				// the category declares backlink properties, no otherwise —
-				// skipping Category/render-reverse's initial #show lookup.
-				$out[] = ' | subobjects=no';
-				$out[] = ' | backlinks=' . ( $effective->getBacklinksFor() === [] ? 'no' : 'yes' );
-			}
-			$out = array_merge( $out, $this->buildBakedPropLines( $allFields ) );
-			$out = array_merge( $out, $this->buildBakedBacklinkLines( $effective ) );
-			$out[] = '}}';
-		}
-
 		$displayTemplate = $effective->getDisplayTemplate();
 		if ( $displayTemplate !== null ) {
 			$templateName = preg_replace( '/^Template:/', '', $displayTemplate );
-			$out = array_merge( $out, $this->generateTemplateCall( $templateName, $allFields ) );
+			return $this->generateTemplateCall( $templateName, $allFields );
 		}
+
+		$format = $effective->getDisplayFormat() ?? 'table';
+		if ( $format === 'none' ) {
+			return [];
+		}
+
+		$out = [];
+		$out[] = '{{Category/' . $format;
+		$out[] = ' | category=' . $effective->getName();
+		$out[] = ' | label=' . $effective->getLabel();
+		if ( $resolver !== null ) {
+			// Dispatcher handles subobjects inline via projected #ask; suppress
+			// Category/table's nested Category/subobjects block. Backlinks
+			// default falls back to subobjects, so set explicitly: yes when
+			// the category declares backlink properties, no otherwise —
+			// skipping Category/render-reverse's initial #show lookup.
+			$out[] = ' | subobjects=no';
+			$out[] = ' | backlinks=' . ( $effective->getBacklinksFor() === [] ? 'no' : 'yes' );
+		}
+		$out = array_merge( $out, $this->buildBakedPropLines( $allFields ) );
+		$out = array_merge( $out, $this->buildBakedBacklinkLines( $effective ) );
+		$out[] = '}}';
 
 		return $out;
 	}
