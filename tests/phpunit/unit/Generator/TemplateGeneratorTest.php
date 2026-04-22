@@ -776,9 +776,10 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '| template=Address/subobject-row', $dispatcher );
 		$this->assertStringContainsString( '| named args=yes', $dispatcher );
 		$this->assertStringContainsString( ' | subobjects=no', $dispatcher );
-		// backlinks defaults to subobjects, which the dispatcher has just set to
-		// no; pass it explicitly as yes to keep render-reverse on top-level pages.
-		$this->assertStringContainsString( ' | backlinks=yes', $dispatcher );
+		// backlinks defaults to subobjects; dispatcher sets it explicitly.
+		// Category with no `Show backlinks for` gets backlinks=no — skips
+		// the Category/render-reverse call and its initial #show lookup.
+		$this->assertStringContainsString( ' | backlinks=no', $dispatcher );
 	}
 
 	public function testDispatcherOmitsSubobjectSectionsWithoutResolver(): void {

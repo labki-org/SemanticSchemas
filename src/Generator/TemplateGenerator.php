@@ -270,13 +270,15 @@ class TemplateGenerator {
 			$out[] = ' | label=' . $effective->getLabel();
 			if ( $resolver !== null ) {
 				// Dispatcher handles subobjects inline via projected #ask; suppress
-				// Category/table's nested Category/subobjects block. backlinks=yes
-				// is needed because backlinks' default falls back to subobjects,
-				// and we still want Category/render-reverse to fire on top-level pages.
+				// Category/table's nested Category/subobjects block. Backlinks
+				// default falls back to subobjects, so set explicitly: yes when
+				// the category declares backlink properties, no otherwise —
+				// skipping Category/render-reverse's initial #show lookup.
 				$out[] = ' | subobjects=no';
-				$out[] = ' | backlinks=yes';
+				$out[] = ' | backlinks=' . ( $effective->getBacklinksFor() === [] ? 'no' : 'yes' );
 			}
 			$out = array_merge( $out, $this->buildBakedPropLines( $allFields ) );
+			$out = array_merge( $out, $this->buildBakedBacklinkLines( $effective ) );
 			$out[] = '}}';
 		}
 
@@ -321,6 +323,37 @@ class TemplateGenerator {
 			[ ' | props=' . implode( ',', $paramNames ) ],
 			$labelLines,
 			$valueLines
+		);
+	}
+
+	/**
+	 * Bake the category's declared backlink properties + their inverse
+	 * labels into `backlink_props=` / `backlink_label_<param>=` lines.
+	 * Consumed by Category/render-reverse's fast path — eliminates the
+	 * `#show:Category:X|?Show backlinks for` lookup and the per-property
+	 * `#show:@@prop@@|?Inverse property label` lookups.
+	 *
+	 * @return string[]
+	 */
+	private function buildBakedBacklinkLines( EffectiveCategoryModel $effective ): array {
+		$props = $effective->getBacklinksFor();
+		if ( $props === [] ) {
+			return [];
+		}
+		$paramNames = [];
+		$labelLines = [];
+		foreach ( $props as $propName ) {
+			$param = NamingHelper::propertyToParameter( $propName );
+			$paramNames[] = $param;
+			$prop = $this->propertyStore->readProperty( $propName );
+			$label = ( $prop instanceof PropertyModel && $prop->getInverseLabel() !== '' )
+				? $prop->getInverseLabel()
+				: $propName;
+			$labelLines[] = ' | backlink_label_' . $param . '=' . $label;
+		}
+		return array_merge(
+			[ ' | backlink_props=' . implode( ',', $paramNames ) ],
+			$labelLines
 		);
 	}
 
