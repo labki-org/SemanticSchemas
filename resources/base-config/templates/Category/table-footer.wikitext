@@ -1,0 +1,20 @@
+<includeonly>{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse | {{{category|}}} }}}}|}}
+|}{{#ifeq:{{{subobjects|yes}}}|yes|
+{{Category/subobjects | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}|}}</includeonly><noinclude>
+Closes a SemanticSchemas category display wikitable opened by
+`Category/table-header`. Emits the optional backlinks section, closes
+the `{|` frame, and optionally appends the subobjects block.
+
+Parameters:
+* category        - The category name. Required.
+* page            - Target page for the subobjects lookup. Defaults to
+                    {{FULLPAGENAME}}.
+* backlinks       - "no" to suppress the backlinks row. Defaults to
+                    `{{{subobjects|yes}}}` for back-compat.
+* subobjects      - "no" to suppress the nested Category/subobjects
+                    block (auto-generated dispatchers set this because
+                    they emit inline subobject sections).
+* backlink_section - Pre-baked backlinks wikitext. When set, used in
+                    place of the dynamic Category/render-reverse
+                    lookup.
+</noinclude>

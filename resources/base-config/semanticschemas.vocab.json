@@ -82,10 +82,50 @@
 			}
 		},
 		{
+			"page": "Category/table-header",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/table-header.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/table-footer",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/table-footer.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Category/sidebox",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
 				"importFrom": "templates/Category/sidebox.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/sidebox-header",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/sidebox-header.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/sidebox-footer",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/sidebox-footer.wikitext"
 			},
 			"options": {
 				"replaceable": true

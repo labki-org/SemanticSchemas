@@ -130,95 +130,100 @@ class CategoryDisplayTemplateTest extends TestCase {
 
 	/* =========================================================================
 	 * TABLE FORMAT
-	 * Replaces: testContainsWikitableMarkup
+	 * Dispatcher fast path composes table-header + N property-row + table-footer
+	 * directly. Category/table itself is now the dynamic-discovery variant
+	 * used by subobject-instance and hand-written custom wikitext.
 	 * ========================================================================= */
 
-	public function testTableTemplateHasWikitableMarkup(): void {
-		$content = $this->loadTemplate( 'table' );
+	public function testTableHeaderOpensWikitableFrame(): void {
+		$content = $this->loadTemplate( 'table-header' );
 
 		$this->assertStringContainsString( '{| class="wikitable', $content );
-		$this->assertStringContainsString( '|}', $content );
-	}
-
-	public function testTableTemplateComposesSubTemplates(): void {
-		$content = $this->loadTemplate( 'table' );
-
-		$this->assertStringContainsString( '{{Category/display-header', $content );
-		$this->assertStringContainsString( '{{Category/display-rows', $content );
-		$this->assertStringContainsString( '{{Category/render-reverse', $content );
-	}
-
-	public function testTableTemplateHasBakedRowFastPath(): void {
-		$content = $this->loadTemplate( 'table' );
-
 		$this->assertStringContainsString(
-			'{{#if:{{{props|}}}',
+			'{{Category/display-header',
 			$content,
-			'table must branch on presence of baked props to take the fast path'
-		);
-		$this->assertStringContainsString(
-			'{{{val_@@p@@|}}}',
-			$content,
-			'table fast path must look up per-property values via dynamic param name'
-		);
-		$this->assertStringContainsString(
-			'{{{label_@@p@@|@@p@@}}}',
-			$content,
-			'table fast path must look up per-property labels, falling back to the param name'
+			'table-header must compose display-header for the title row'
 		);
 	}
 
-	public function testTableTemplateForwardsBakedLabelToHeader(): void {
-		$content = $this->loadTemplate( 'table' );
+	public function testTableHeaderForwardsBakedLabelToDisplayHeader(): void {
+		$content = $this->loadTemplate( 'table-header' );
 
 		$this->assertStringContainsString(
 			'label={{{label|}}}',
 			$content,
-			'table must forward baked label to display-header'
+			'table-header must forward baked label to display-header'
 		);
+	}
+
+	public function testTableFooterClosesFrameAndHandlesSubobjects(): void {
+		$content = $this->loadTemplate( 'table-footer' );
+
+		$this->assertStringContainsString( '|}', $content );
+		$this->assertStringContainsString(
+			'{{Category/subobjects',
+			$content,
+			'table-footer must optionally compose the subobjects block'
+		);
+		$this->assertStringContainsString(
+			'{{Category/render-reverse',
+			$content,
+			'table-footer must fall back to render-reverse when no backlink_section is baked'
+		);
+	}
+
+	public function testTableFooterAcceptsBakedBacklinkSection(): void {
+		$content = $this->loadTemplate( 'table-footer' );
+
+		$this->assertStringContainsString(
+			'{{{backlink_section|}}}',
+			$content,
+			'table-footer must accept a pre-baked backlink_section from the dispatcher'
+		);
+	}
+
+	public function testTableTemplateComposesHeaderFooterForDynamicPath(): void {
+		$content = $this->loadTemplate( 'table' );
+
+		$this->assertStringContainsString( '{{Category/table-header', $content );
+		$this->assertStringContainsString( '{{Category/display-rows', $content );
+		$this->assertStringContainsString( '{{Category/table-footer', $content );
 	}
 
 	/* =========================================================================
 	 * SIDEBOX FORMAT
 	 * ========================================================================= */
 
-	public function testSideboxTemplateHasWikitableMarkup(): void {
-		$content = $this->loadTemplate( 'sidebox' );
-
-		$this->assertStringContainsString( '{| class="wikitable', $content );
-		$this->assertStringContainsString( '|}', $content );
-	}
-
-	public function testSideboxTemplateHasFloatStyling(): void {
-		$content = $this->loadTemplate( 'sidebox' );
+	public function testSideboxHeaderHasFloatStyling(): void {
+		$content = $this->loadTemplate( 'sidebox-header' );
 
 		$this->assertStringContainsString( 'float: right', $content,
-			'sidebox must float to the right' );
+			'sidebox-header must float to the right' );
 		$this->assertStringContainsString( 'width: 300px', $content,
-			'sidebox must have a fixed width' );
+			'sidebox-header must have a fixed width' );
 	}
 
-	public function testSideboxTemplateComposesSubTemplates(): void {
-		$content = $this->loadTemplate( 'sidebox' );
+	public function testSideboxHeaderOpensFrameAndComposesDisplayHeader(): void {
+		$content = $this->loadTemplate( 'sidebox-header' );
 
+		$this->assertStringContainsString( '{| class="wikitable', $content );
 		$this->assertStringContainsString( '{{Category/display-header', $content );
-		$this->assertStringContainsString( '{{Category/display-rows', $content );
+	}
+
+	public function testSideboxFooterClosesFrameAndHandlesSubobjects(): void {
+		$content = $this->loadTemplate( 'sidebox-footer' );
+
+		$this->assertStringContainsString( '|}', $content );
+		$this->assertStringContainsString( '{{Category/subobjects', $content );
 		$this->assertStringContainsString( '{{Category/render-reverse', $content );
 	}
 
-	public function testSideboxTemplateHasBakedRowFastPath(): void {
+	public function testSideboxTemplateComposesHeaderFooterForDynamicPath(): void {
 		$content = $this->loadTemplate( 'sidebox' );
 
-		$this->assertStringContainsString(
-			'{{#if:{{{props|}}}',
-			$content,
-			'sidebox must branch on presence of baked props'
-		);
-		$this->assertStringContainsString(
-			'{{{val_@@p@@|}}}',
-			$content,
-			'sidebox fast path must look up per-property values via dynamic param name'
-		);
+		$this->assertStringContainsString( '{{Category/sidebox-header', $content );
+		$this->assertStringContainsString( '{{Category/display-rows', $content );
+		$this->assertStringContainsString( '{{Category/sidebox-footer', $content );
 	}
 
 	/* =========================================================================
@@ -446,32 +451,32 @@ class CategoryDisplayTemplateTest extends TestCase {
 	 * TABLE / SIDEBOX: RENDER-REVERSE GATING
 	 * ========================================================================= */
 
-	public function testTableGatesRenderReverseOnBacklinksFlagWithSubobjectsFallback(): void {
-		$content = $this->loadTemplate( 'table' );
+	public function testTableFooterGatesRenderReverseOnBacklinksFlagWithSubobjectsFallback(): void {
+		$content = $this->loadTemplate( 'table-footer' );
 
 		// render-reverse hardcodes {{FULLPAGENAME}} for backlink lookups, so
-		// when Category/<Name>/subobject-row re-enters table, an ungated
-		// render-reverse would duplicate the parent page's Backlinks section
-		// inside every subobject mini-table. Dispatcher's fast path passes
-		// subobjects=no (to suppress the nested Category/subobjects block)
-		// while still wanting backlinks, so gate on `backlinks` with
-		// `subobjects` as the default for backward compat.
+		// when the dispatcher's subobject-row re-enters table-footer, an
+		// ungated render-reverse would duplicate the parent page's Backlinks
+		// section inside every subobject mini-table. Dispatcher's subobject
+		// path passes backlinks=no; its main path passes subobjects=no (to
+		// suppress the nested Category/subobjects block) while still wanting
+		// backlinks, so gate on `backlinks` with `subobjects` as the default.
 		$this->assertStringContainsString(
 			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes'
 				. '|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
 			$content,
-			'table must gate backlinks block; backlink_section fast path before render-reverse fallback'
+			'table-footer must gate backlinks block; backlink_section fast path before render-reverse fallback'
 		);
 	}
 
-	public function testSideboxGatesRenderReverseOnBacklinksFlagWithSubobjectsFallback(): void {
-		$content = $this->loadTemplate( 'sidebox' );
+	public function testSideboxFooterGatesRenderReverseOnBacklinksFlagWithSubobjectsFallback(): void {
+		$content = $this->loadTemplate( 'sidebox-footer' );
 
 		$this->assertStringContainsString(
 			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes'
 				. '|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
 			$content,
-			'sidebox must gate backlinks block; backlink_section fast path before render-reverse fallback'
+			'sidebox-footer must gate backlinks block; backlink_section fast path before render-reverse fallback'
 		);
 	}
 

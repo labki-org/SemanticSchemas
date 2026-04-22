@@ -177,10 +177,11 @@ class TemplateGeneratorTest extends TestCase {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( "{{Category/table\n | category=Person", $result );
+		$this->assertStringContainsString( "{{Category/table-header\n | category=Person", $result );
+		$this->assertStringContainsString( "{{Category/table-footer\n | category=Person", $result );
 	}
 
-	public function testDispatcherBakesEffectiveLabelIntoFormatCall(): void {
+	public function testDispatcherBakesEffectiveLabelIntoHeaderCall(): void {
 		$category = new CategoryModel( 'Person', [
 			'label' => 'Human being',
 		] );
@@ -189,7 +190,7 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( ' | label=Human being', $result );
 	}
 
-	public function testDispatcherBakesPropertyListIntoFormatCall(): void {
+	public function testDispatcherEmitsOneExplicitPropertyRowPerField(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
 				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
@@ -198,11 +199,16 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 		$result = $this->generateDispatcher( $category );
 
-		// Property params are sorted alphabetically by property name ("email" < "name").
-		$this->assertStringContainsString( ' | props=has_email,has_name', $result );
+		// Alphabetical by param name: has_email, has_name. Row order in the
+		// generated table must match.
+		$emailPos = strpos( $result, '{{Category/property-row | label=Email' );
+		$namePos = strpos( $result, '{{Category/property-row | label=Name' );
+		$this->assertNotFalse( $emailPos, 'Email row should be emitted' );
+		$this->assertNotFalse( $namePos, 'Name row should be emitted' );
+		$this->assertLessThan( $namePos, $emailPos, 'Rows emitted in sorted order' );
 	}
 
-	public function testDispatcherBakesPerPropertyValuePassthrough(): void {
+	public function testDispatcherBakesValueExpressionIntoPropertyRow(): void {
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
 				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
@@ -210,12 +216,16 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( ' | val_has_name={{{has_name|}}}', $result );
+		$this->assertStringContainsString(
+			'{{Category/property-row | label=Name | value={{{has_name|}}}}}',
+			$result
+		);
 	}
 
-	public function testDispatcherBakesPerPropertyLabelFallback(): void {
+	public function testDispatcherBakesLabelFallbackIntoPropertyRow(): void {
 		// With no WikiPropertyStore-resolved label, the label falls back to
-		// NamingHelper::generatePropertyLabel ("Has name" → "Name").
+		// NamingHelper::generatePropertyLabel ("Has name" → "Name"), baked
+		// directly into the property-row call's label= param.
 		$category = new CategoryModel( 'Person', [
 			'properties' => [
 				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
@@ -223,16 +233,20 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( ' | label_has_name=Name', $result );
+		$this->assertStringContainsString(
+			'{{Category/property-row | label=Name |',
+			$result
+		);
 	}
 
-	public function testDispatcherOmitsPropsParamWhenNoFields(): void {
+	public function testDispatcherEmitsNoPropertyRowsWhenNoFields(): void {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringNotContainsString( ' | props=', $result );
-		$this->assertStringNotContainsString( ' | val_', $result );
-		$this->assertStringNotContainsString( ' | label_', $result );
+		$this->assertStringNotContainsString( '{{Category/property-row', $result );
+		// Header + footer are still emitted — only the row list is empty.
+		$this->assertStringContainsString( '{{Category/table-header', $result );
+		$this->assertStringContainsString( '{{Category/table-footer', $result );
 	}
 
 	public function testDispatcherWrapsValueInFieldRenderTemplateWhenSet(): void {
@@ -244,9 +258,10 @@ class TemplateGeneratorTest extends TestCase {
 		$result = $this->generateDispatcher( $category );
 
 		$this->assertStringContainsString(
-			' | val_has_email={{Property/Email | value={{{has_email|}}} }}',
+			'{{Category/property-row | label=Email'
+				. ' | value={{Property/Email | value={{{has_email|}}} }}}}',
 			$result,
-			'fields with a render template bake their value inside the template wrapper'
+			'fields with a render template wrap the value inside the template'
 		);
 	}
 
@@ -258,7 +273,10 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( ' | val_has_name={{{has_name|}}}', $result );
+		$this->assertStringContainsString(
+			'{{Category/property-row | label=Name | value={{{has_name|}}}}}',
+			$result
+		);
 	}
 
 	public function testDispatcherUsesPropertyRenderTemplateWhenFieldHasNone(): void {
@@ -278,7 +296,7 @@ class TemplateGeneratorTest extends TestCase {
 		$result = $gen->generateDispatcherTemplate( $effective );
 
 		$this->assertStringContainsString(
-			' | val_has_email={{Property/Email | value={{{has_email|}}} }}',
+			' | value={{Property/Email | value={{{has_email|}}} }}',
 			$result,
 			'property-level Has render template is used when field sets none'
 		);
@@ -306,11 +324,11 @@ class TemplateGeneratorTest extends TestCase {
 		$result = $gen->generateDispatcherTemplate( $effective );
 
 		$this->assertStringContainsString(
-			' | val_has_email={{Property/ObfuscatedEmail | value={{{has_email|}}} }}',
+			' | value={{Property/ObfuscatedEmail | value={{{has_email|}}} }}',
 			$result,
 			'field-level has_render_template overrides property-level default'
 		);
-		$this->assertStringNotContainsString( 'Property/Email |', $result );
+		$this->assertStringNotContainsString( '{{Property/Email |', $result );
 	}
 
 	public function testDispatcherPropertyRenderTemplateBeatsPageTypeDefault(): void {
@@ -370,12 +388,23 @@ class TemplateGeneratorTest extends TestCase {
 		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
 		$result = $generator->generateDispatcherTemplate( $effective );
 
-		// Visible property is baked; hidden property is skipped from display
-		// (but still present in the semantic template, where it's needed for storage).
-		$this->assertStringContainsString( ' | props=has_name', $result );
-		$tableCall = strstr( $result, '{{Category/table' );
-		$this->assertStringNotContainsString( 'has_sort_order', $tableCall );
-		$this->assertStringContainsString( 'has_sort_order', $result );
+		// Visible property gets a property-row; hidden property is skipped
+		// from display (but still present in the semantic template, where
+		// it's needed for storage).
+		$this->assertStringContainsString(
+			'{{Category/property-row | label=Name | value=',
+			$result
+		);
+		$this->assertStringNotContainsString(
+			'{{Category/property-row | label=Sort order',
+			$result
+		);
+		$this->assertStringNotContainsString(
+			' | value={{{has_sort_order|}}}',
+			$result,
+			'hidden property must not appear as a property-row value'
+		);
+		$this->assertStringContainsString( 'has_sort_order = {{{has_sort_order|}}}', $result );
 	}
 
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
@@ -648,7 +677,10 @@ class TemplateGeneratorTest extends TestCase {
 
 		$this->assertStringContainsString( '{{Student/semantic', $result );
 		$this->assertStringNotContainsString( '{{Person/semantic', $result );
-		$this->assertStringContainsString( "{{Category/table\n | category=Student", $result );
+		$this->assertStringContainsString(
+			"{{Category/table-header\n | category=Student",
+			$result
+		);
 		$this->assertStringContainsString( '[[Category:Student]]', $result );
 	}
 
@@ -693,8 +725,12 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( "{{Category/sidebox\n | category=Person", $result );
-		$this->assertStringNotContainsString( '{{Category/table', $result );
+		$this->assertStringContainsString(
+			"{{Category/sidebox-header\n | category=Person",
+			$result
+		);
+		$this->assertStringContainsString( '{{Category/sidebox-footer', $result );
+		$this->assertStringNotContainsString( '{{Category/table-header', $result );
 	}
 
 	public function testDispatcherSkipsFormatTemplateWhenNone(): void {
@@ -947,7 +983,7 @@ class TemplateGeneratorTest extends TestCase {
 		return $method->invoke( $this->generator, $sub );
 	}
 
-	public function testSubobjectRowTemplateWrapsCategoryTable(): void {
+	public function testSubobjectRowTemplateUsesHeaderFooterPrimitives(): void {
 		$chapter = new CategoryModel( 'Chapter', [
 			'properties' => [
 				new FieldModel( 'Has chapter title', true, FieldModel::TYPE_PROPERTY ),
@@ -958,13 +994,14 @@ class TemplateGeneratorTest extends TestCase {
 
 		$result = $this->callGenerateSubobjectRowTemplate( $effective );
 
-		$this->assertStringContainsString( '{{Category/table', $result );
+		$this->assertStringContainsString( '{{Category/table-header', $result );
+		$this->assertStringContainsString( '{{Category/table-footer', $result );
 		$this->assertStringContainsString( ' | category=Chapter', $result );
 		$this->assertStringContainsString( ' | subobjects=no', $result );
 		$this->assertStringContainsString( ' | backlinks=no', $result );
-		$this->assertStringContainsString( ' | props=has_chapter_title', $result );
 		$this->assertStringContainsString(
-			' | val_has_chapter_title={{{has_chapter_title|}}}',
+			'{{Category/property-row | label=Chapter Title'
+				. ' | value={{{has_chapter_title|}}}}}',
 			$result
 		);
 	}

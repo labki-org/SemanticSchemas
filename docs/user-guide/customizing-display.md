@@ -12,21 +12,35 @@ auto-generated `Template:Book` dispatcher, which:
 
 1. Calls `{{Book/semantic | …}}` — emits `[[Has X::Y]]` annotations so
    SMW stores the data.
-2. Calls `{{Category/table | category=Book | label=… | props=… | val_X=… | label_X=… }}`
-   with **the category's effective schema baked into parameters**. No
-   SMW lookup needed for property values on the same page — they come
-   from the template arguments the user passed.
+2. Emits an explicit three-part composition for the display:
+   - `{{Category/table-header | category=Book | label=… }}` — opens
+     the wikitable frame and the title row.
+   - One `{{Category/property-row | label=Title | value={{{has_title|}}} }}`
+     call per effective property, with the label and value expression
+     baked in.
+   - `{{Category/table-footer | category=Book | subobjects=no | backlinks=… }}`
+     — closes the frame and emits the optional backlinks / subobjects
+     blocks.
 3. Inlines a `#ask` block per subobject category (`=== Chapter ===`
    etc.), projecting subobject values straight into the auto-generated
-   `<Subcat>/subobject-row` template.
-4. Inlines the backlinks block (when the category declares
-   `Show backlinks for`), with the inverse property labels resolved at
-   generation time.
+   `<Subcat>/subobject-row` template (which uses the same header /
+   property-row / footer shape).
+4. The backlinks block (when the category declares
+   `Show backlinks for`) is pre-baked into `backlink_section=` on the
+   footer call, with inverse property labels resolved at generation
+   time.
 
-`Category/table` (and the floating-sidebar variant `Category/sidebox`)
-compose three building blocks: `Category/display-header`,
-`Category/property-row`, and `Category/render-reverse`. All three are
-documented below as reusable primitives.
+The composable primitives — `Category/table-header`,
+`Category/table-footer`, `Category/sidebox-header`,
+`Category/sidebox-footer`, `Category/property-row`,
+`Category/display-header`, `Category/backlink-row`,
+`Category/backlinks-header`, `Category/render-reverse` — are all
+shared wiki pages you can edit to change the site-wide look. Every
+category that uses them picks up the change on its next render.
+`Category/table` and `Category/sidebox` remain as higher-level
+convenience templates that wrap header + dynamic rows + footer, used
+by `Category/subobject-instance` and by custom wikitext that wants
+auto-discovery.
 
 The dispatcher is regenerated automatically when a category's schema
 changes (`maintenance/regenerateArtifacts.php`). You don't edit it.
@@ -74,10 +88,10 @@ Priority when the generator bakes the value expression:
 3. `Property/Page` auto-default for Page-typed properties
 4. Bare value
 
-The dispatcher bakes whichever wins around the value:
+The dispatcher bakes whichever wins into the property row:
 
 ```wikitext
-val_has_email = {{Property/Email | value={{{has_email|}}} }}
+{{Category/property-row | label=Email | value={{Property/Email | value={{{has_email|}}} }}}}
 ```
 
 Shipped value renderers:
@@ -145,18 +159,42 @@ Take values as parameters; no SMW lookups.
   → external link
 ```
 
+### Frame primitives — cheap
+
+Open and close the standard table / sidebox frame with the category
+title row baked in. Pair with per-row primitives in between:
+
+```wikitext
+{{Category/table-header | category=Book | label=Book }}
+{{Category/property-row | label=Title  | value={{{has_title|}}} }}
+{{Category/property-row | label=Author | value={{Property/Page | value={{{has_author|}}} }} }}
+{{Category/table-footer | category=Book | subobjects=no | backlinks=no }}
+```
+
+| Primitive                 | Parameters                                         | What it does                                                                          |
+|---------------------------|----------------------------------------------------|---------------------------------------------------------------------------------------|
+| `Category/table-header`   | `category`, `label`                                | Opens `{| class="wikitable …"` and the category title row.                            |
+| `Category/table-footer`   | `category`, `page`, `subobjects`, `backlinks`, `backlink_section` | Closes `|}` + optional backlinks block + optional subobjects block.                   |
+| `Category/sidebox-header` | `category`, `label`                                | Same as `table-header` but wrapped in the floating-sidebar CSS.                       |
+| `Category/sidebox-footer` | same as `table-footer`                             | Closes the sidebox.                                                                   |
+
+Writing a custom high-level template (e.g. `Category/card-grid`) is
+"open your frame, emit one `property-row` per field, close your frame"
+— a simple `| label= | value=` contract for the row primitive, no
+dynamic-name param gymnastics needed.
+
 ### Row primitives — cheap
 
 Render a single row inside a wikitable. Hidden when the value is empty
 or no backlinks exist.
 
 ```wikitext
-{| class="wikitable"
+{{Category/table-header | category=Book | label=Book }}
 {{Category/property-row | label=Title  | value={{{has_title|}}} }}
 {{Category/property-row | label=Author | value={{Property/Page | value={{{has_author|}}} }} }}
 {{Category/backlink-row | prop=Has author    | label=Authored }}
 {{Category/backlink-row | prop=Has reviewer  | label=Reviewed }}
-|}
+{{Category/table-footer | category=Book | subobjects=no | backlinks=no }}
 ```
 
 `Category/backlink-row` runs one `#ask` count + one `#ask` list per
@@ -188,18 +226,21 @@ This is a thin wrapper around `{{#show:page|?Prop}}` and pays one
 SMW query per call. Each `#show` also persists a query-dependency
 subobject in SMW, so use sparingly in hot-rendering paths.
 
-### Whole-category displays
+### Whole-category displays — dynamic discovery
 
 ```wikitext
 {{Category/table   | category=Book | page={{FULLPAGENAME}} }}
 {{Category/sidebox | category=Book | page={{FULLPAGENAME}} }}
 ```
 
-When called without baked params, these walk the category's ancestor
-chain via `Category/ancestors` and discover every effective property
-through SMW lookups. Useful for prototyping a display, but pays
-~5 queries per inheritance level + ~3 queries per property. Prefer
-the auto-generated `{{Book|…}}` dispatcher in production wikitext.
+These compose `table-header` / `sidebox-header` + `Category/display-rows`
++ `table-footer` / `sidebox-footer`. `display-rows` walks the
+category's ancestor chain via `Category/ancestors` and discovers
+every effective property through SMW lookups. Useful for prototyping a
+display, but pays ~5 queries per inheritance level + ~3 queries per
+property. Prefer the auto-generated `{{Book|…}}` dispatcher (which
+emits explicit `property-row` calls with the schema already baked in)
+for production wikitext.
 
 ## Worked example: tool inventory with required training
 
@@ -249,10 +290,10 @@ Then point the field at it on the category page:
 ```
 
 That's the entire change. The dispatcher regenerates with
-`val_has_tool={{Property/ToolWithTraining|value={{{has_tool|}}} }}`
-baked in; every other field still renders the default way. Cost per
-render is the same shape as before plus one `Property/value` lookup
-per tool listed (each is a `#show`).
+`{{Category/property-row | label=Tool | value={{Property/ToolWithTraining|value={{{has_tool|}}} }}}}`
+in place of the default row; every other field still renders the
+default way. Cost per render is the same shape as before plus one
+`Property/value` lookup per tool listed (each is a `#show`).
 
 The same renderer is reusable: another category can attach
 `has_render_template = Property/ToolWithTraining` to its own

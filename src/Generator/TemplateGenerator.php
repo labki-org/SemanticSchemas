@@ -237,22 +237,27 @@ class TemplateGenerator {
 	/**
 	 * Generate the dynamic display section of the dispatcher template.
 	 *
-	 * Emits a call to the appropriate format template (Category/table,
-	 * Category/sidebox, etc.) with the effective schema baked in as
-	 * params: category label, ordered property list, and per-property
-	 * label + value expression. The format template's fast path iterates
-	 * these without issuing SMW queries.
+	 * Emits a three-part composition:
+	 *   1. `Category/<format>-header` call (opens the frame + title row).
+	 *   2. One explicit `Category/property-row` call per visible field,
+	 *      with the effective label + rendered value baked in.
+	 *   3. `Category/<format>-footer` call (optional backlink section +
+	 *      closes the frame + optional dynamic subobjects block).
 	 *
-	 * When a resolver is passed, also sets `subobjects=no` on the format
-	 * template call so its Category/subobjects block is suppressed —
-	 * dispatcher emits per-subcat baked `#ask` sections inline instead.
+	 * Explicit per-row emission replaces the earlier flat-param /
+	 * `#arraymap` pattern: no more `props=`, `val_<p>=`, `label_<p>=`
+	 * indirection. The dispatcher becomes ~linear to read and custom
+	 * high-level templates only need a simple `| label= | value=`
+	 * contract for the row primitive.
+	 *
+	 * When a resolver is passed, also sets `subobjects=no` on the footer
+	 * so its Category/subobjects block is suppressed — dispatcher emits
+	 * per-subcat baked `#ask` sections inline via generateSubobjectSections.
 	 *
 	 * A custom display template wins outright: if `Has display template` is
-	 * set, the format-template block is suppressed and only the custom
-	 * template is called. This keeps users from having to also set
-	 * `Has display format = none` to avoid both rendering — PageForms
-	 * requires the format field to exist, so its value is simply ignored
-	 * when a custom template is present.
+	 * set, the header/rows/footer block is suppressed and only the custom
+	 * template is called. PageForms requires the format field to exist,
+	 * so its value is simply ignored when a custom template is present.
 	 *
 	 * @param EffectiveCategoryModel $effective
 	 * @param FieldModel[] $allFields Sorted effective fields
@@ -276,19 +281,24 @@ class TemplateGenerator {
 		}
 
 		$out = [];
-		$out[] = '{{Category/' . $format;
+		$out[] = '{{Category/' . $format . '-header';
 		$out[] = ' | category=' . $effective->getName();
 		$out[] = ' | label=' . $effective->getLabel();
+		$out[] = '}}';
+
+		$out = array_merge( $out, $this->buildPropertyRowLines( $allFields ) );
+
+		$out[] = '{{Category/' . $format . '-footer';
+		$out[] = ' | category=' . $effective->getName();
 		if ( $resolver !== null ) {
 			// Dispatcher handles subobjects inline via projected #ask; suppress
-			// Category/table's nested Category/subobjects block. Backlinks
-			// default falls back to subobjects, so set explicitly: yes when
-			// the category declares backlink properties, no otherwise —
-			// skipping Category/render-reverse's initial #show lookup.
+			// the footer's nested Category/subobjects block. Backlinks default
+			// follows subobjects, so set explicitly: yes when the category
+			// declares backlink properties, no otherwise — skipping
+			// Category/render-reverse's initial #show lookup.
 			$out[] = ' | subobjects=no';
 			$out[] = ' | backlinks=' . ( $effective->getBacklinksFor() === [] ? 'no' : 'yes' );
 		}
-		$out = array_merge( $out, $this->buildBakedPropLines( $allFields ) );
 		$out = array_merge( $out, $this->buildBakedBacklinkLines( $effective ) );
 		$out[] = '}}';
 
@@ -296,18 +306,16 @@ class TemplateGenerator {
 	}
 
 	/**
-	 * Build the `props=...` / `label_<p>=...` / `val_<p>=...` lines shared
-	 * by the dispatcher's format-template call and by each per-category
-	 * `/subobject-row` template. Skips fields whose property is marked
-	 * `Is hidden = true`.
+	 * Emit one `{{Category/property-row | label=... | value=... }}` line
+	 * per visible field. Skips fields whose property is marked
+	 * `Is hidden = true`. Shared by the dispatcher's dynamic display and
+	 * each per-category `/subobject-row` template.
 	 *
 	 * @param FieldModel[] $fields
 	 * @return string[]
 	 */
-	private function buildBakedPropLines( array $fields ): array {
-		$paramNames = [];
-		$labelLines = [];
-		$valueLines = [];
+	private function buildPropertyRowLines( array $fields ): array {
+		$lines = [];
 		foreach ( $fields as $field ) {
 			$propName = $field->getName();
 			$prop = $this->propertyStore->readProperty( $propName );
@@ -315,19 +323,11 @@ class TemplateGenerator {
 				continue;
 			}
 			$param = $field->getParameterName();
-			$paramNames[] = $param;
-			$labelLines[] = ' | label_' . $param . '=' . $this->resolvePropertyLabel( $propName );
-			$valueLines[] = ' | val_' . $param . '='
-				. $this->buildRenderedValueExpression( $field, $prop, $param );
+			$label = $this->resolvePropertyLabel( $propName );
+			$value = $this->buildRenderedValueExpression( $field, $prop, $param );
+			$lines[] = '{{Category/property-row | label=' . $label . ' | value=' . $value . '}}';
 		}
-		if ( $paramNames === [] ) {
-			return [];
-		}
-		return array_merge(
-			[ ' | props=' . implode( ',', $paramNames ) ],
-			$labelLines,
-			$valueLines
-		);
+		return $lines;
 	}
 
 	/**
@@ -459,10 +459,14 @@ class TemplateGenerator {
 	/**
 	 * Generate the `/subobject-row` template for a category.
 	 *
-	 * Wraps Category/table with baked props from the effective model and
-	 * `subobjects=no | backlinks=no`. Values arrive as named params from
+	 * Emits an explicit `table-header` + per-field `property-row` +
+	 * `table-footer` composition. Values arrive as named params from
 	 * SMW's `format=template | ?Prop=alias | named args=yes` projection
 	 * used by generateSubobjectSections.
+	 *
+	 * `subobjects=no` and `backlinks=no` on the footer suppress the
+	 * nested blocks — a subobject row is a single inline row, not a
+	 * full category page.
 	 */
 	private function generateSubobjectRowTemplate( EffectiveCategoryModel $sub ): string {
 		$name = $sub->getName();
@@ -473,12 +477,15 @@ class TemplateGenerator {
 		$out[] = '<noinclude>';
 		$out[] = '<!-- AUTO-GENERATED by SemanticSchemas - DO NOT EDIT MANUALLY -->';
 		$out[] = 'Subobject-row template for Category:' . $name;
-		$out[] = '</noinclude><includeonly>{{Category/table';
+		$out[] = '</noinclude><includeonly>{{Category/table-header';
 		$out[] = ' | category=' . $name;
 		$out[] = ' | label=' . $sub->getLabel();
+		$out[] = '}}';
+		$out = array_merge( $out, $this->buildPropertyRowLines( $fields ) );
+		$out[] = '{{Category/table-footer';
+		$out[] = ' | category=' . $name;
 		$out[] = ' | subobjects=no';
 		$out[] = ' | backlinks=no';
-		$out = array_merge( $out, $this->buildBakedPropLines( $fields ) );
 		$out[] = '}}</includeonly>';
 
 		return implode( "\n", $out );
