@@ -1,5 +1,6 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Page]]
+[[Allows value from namespace::Template]]
 [[Has description::Custom template for rendering this property's value in display tables (e.g. Template:Property/Email for mailto links).]]
 [[Display label::Render template]]
 <!-- SemanticSchemas End -->

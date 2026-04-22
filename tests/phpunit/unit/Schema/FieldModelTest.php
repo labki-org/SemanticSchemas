@@ -51,6 +51,42 @@ class FieldModelTest extends TestCase {
 		);
 	}
 
+	public function testRenderTemplateDefaultsToNull(): void {
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY );
+		$this->assertNull( $field->getRenderTemplate() );
+	}
+
+	public function testRenderTemplateStoredWhenProvided(): void {
+		$field = new FieldModel(
+			'Has email', false, FieldModel::TYPE_PROPERTY, 'Property/Email'
+		);
+		$this->assertSame( 'Property/Email', $field->getRenderTemplate() );
+	}
+
+	public function testRenderTemplateEmptyStringNormalizesToNull(): void {
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY, '' );
+		$this->assertNull( $field->getRenderTemplate() );
+	}
+
+	public function testJsonSerializeIncludesRenderTemplateWhenSet(): void {
+		$field = new FieldModel(
+			'Has email', false, FieldModel::TYPE_PROPERTY, 'Property/Email'
+		);
+		$this->assertSame(
+			[
+				'name' => 'Has email',
+				'required' => false,
+				'renderTemplate' => 'Property/Email',
+			],
+			$field->jsonSerialize()
+		);
+	}
+
+	public function testJsonSerializeOmitsRenderTemplateWhenNull(): void {
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY );
+		$this->assertArrayNotHasKey( 'renderTemplate', $field->jsonSerialize() );
+	}
+
 	/* =========================================================================
 	 * filter()
 	 * ========================================================================= */

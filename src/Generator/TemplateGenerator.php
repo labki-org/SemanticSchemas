@@ -311,8 +311,12 @@ class TemplateGenerator {
 			$param = $field->getParameterName();
 			$paramNames[] = $param;
 			$labelLines[] = ' | label_' . $param . '=' . $this->resolvePropertyLabel( $propName );
-			$valueLines[] = ' | val_' . $param . '='
-				. $this->buildDisplayValueExpression( $propName, $param );
+			$valueExpr = $this->buildDisplayValueExpression( $propName, $param );
+			$renderTpl = $field->getRenderTemplate();
+			if ( $renderTpl !== null ) {
+				$valueExpr = '{{' . $renderTpl . ' | value=' . $valueExpr . ' }}';
+			}
+			$valueLines[] = ' | val_' . $param . '=' . $valueExpr;
 		}
 		if ( $paramNames === [] ) {
 			return [];

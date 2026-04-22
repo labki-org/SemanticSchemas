@@ -52,8 +52,14 @@ class FieldModel implements JsonSerializable {
 	private string $name;
 	private bool $required;
 	private string $fieldType;
+	private ?string $renderTemplate;
 
-	public function __construct( string $name, bool $required, string $fieldType ) {
+	public function __construct(
+		string $name,
+		bool $required,
+		string $fieldType,
+		?string $renderTemplate = null
+	) {
 		if ( !isset( self::FIELD_CONFIG[$fieldType] ) ) {
 			throw new InvalidArgumentException(
 				"Invalid field type '$fieldType'. Must be one of: "
@@ -63,13 +69,17 @@ class FieldModel implements JsonSerializable {
 		$this->name = $name;
 		$this->required = $required;
 		$this->fieldType = $fieldType;
+		$this->renderTemplate = ( $renderTemplate !== null && trim( $renderTemplate ) !== '' )
+			? trim( $renderTemplate )
+			: null;
 	}
 
 	/**
 	 * Construct a FieldModel from an SMW subobject's semantic data.
 	 *
-	 * Reads the reference property, required flag, and sort order
-	 * from the subobject. Returns null if the reference property is missing.
+	 * Reads the reference property, required flag, sort order, and
+	 * optional render template from the subobject. Returns null if the
+	 * reference property is missing.
 	 *
 	 * @param \SMW\SemanticData $subData A single subobject's semantic data
 	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
@@ -88,9 +98,10 @@ class FieldModel implements JsonSerializable {
 		$required = self::smwFetchBoolean( $subData, 'Is required' );
 		$sortRaw = self::smwFetchOne( $subData, 'Has sort order' );
 		$sort = (int)( $sortRaw ?? 0 );
+		$renderTemplate = self::smwFetchOne( $subData, 'Has render template', 'template' );
 
 		return [
-			'field' => new self( $ref, $required, $fieldType ),
+			'field' => new self( $ref, $required, $fieldType, $renderTemplate ),
 			'sort' => $sort,
 		];
 	}
@@ -162,16 +173,32 @@ class FieldModel implements JsonSerializable {
 		return NamingHelper::propertyToParameter( $this->name );
 	}
 
+	/**
+	 * Optional per-field wikitext template wrapper for rendering this
+	 * field's value. When set, TemplateGenerator wraps the baked
+	 * `val_<param>` expression in `{{<renderTemplate> | value=<raw> }}`.
+	 *
+	 * Declared on the category page via
+	 *   {{Property field/subobject | for_property = X | has_render_template = Template:Foo }}
+	 */
+	public function getRenderTemplate(): ?string {
+		return $this->renderTemplate;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * SERIALIZATION
 	 * ---------------------------------------------------------------------- */
 
-	/** @return array{name:string, required:bool} */
+	/** @return array{name:string, required:bool, renderTemplate?:string} */
 	public function jsonSerialize(): array {
-		return [
+		$out = [
 			'name' => $this->name,
 			'required' => $this->required,
 		];
+		if ( $this->renderTemplate !== null ) {
+			$out['renderTemplate'] = $this->renderTemplate;
+		}
+		return $out;
 	}
 
 }

@@ -235,6 +235,32 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringNotContainsString( ' | label_', $result );
 	}
 
+	public function testDispatcherWrapsValueInFieldRenderTemplateWhenSet(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY, 'Property/Email' ),
+			],
+		] );
+		$result = $this->generateDispatcher( $category );
+
+		$this->assertStringContainsString(
+			' | val_has_email={{Property/Email | value={{{has_email|}}} }}',
+			$result,
+			'fields with a render template bake their value inside the template wrapper'
+		);
+	}
+
+	public function testDispatcherEmitsBareValueWhenNoRenderTemplate(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$result = $this->generateDispatcher( $category );
+
+		$this->assertStringContainsString( ' | val_has_name={{{has_name|}}}', $result );
+	}
+
 	public function testDispatcherSkipsHiddenPropertiesFromDisplayBake(): void {
 		$hiddenProp = new PropertyModel( 'Has sort order', [
 			'datatype' => 'Number',
