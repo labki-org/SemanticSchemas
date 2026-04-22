@@ -269,7 +269,12 @@ class TemplateGenerator {
 			$out[] = ' | category=' . $name;
 			$out[] = ' | label=' . $effective->getLabel();
 			if ( $resolver !== null ) {
+				// Dispatcher handles subobjects inline via projected #ask; suppress
+				// Category/table's nested Category/subobjects block. backlinks=yes
+				// is needed because backlinks' default falls back to subobjects,
+				// and we still want Category/render-reverse to fire on top-level pages.
 				$out[] = ' | subobjects=no';
+				$out[] = ' | backlinks=yes';
 			}
 			$out = array_merge( $out, $this->buildBakedPropLines( $allFields ) );
 			$out[] = '}}';
