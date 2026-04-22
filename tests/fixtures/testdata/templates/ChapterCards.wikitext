@@ -1,0 +1,32 @@
+<includeonly>{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[Category:{{{category|Chapter}}}]]
+ | ?Has chapter title=title
+ | ?Has chapter summary=summary
+ | ?Has sort order=order
+ | format=template
+ | template=ChapterCards/row
+ | named args=yes
+ | link=none
+ | mainlabel=-
+ | sort=Has sort order
+ | order=asc
+}}</includeonly><noinclude>
+Alternative subobject display for chapters: one bordered card per
+chapter instead of one shared wikitable. Used by Category:ReviewedBook
+via a field-level `has_subobject_display_template = ChapterCards`
+override on the Chapter subobject field. This wins over Chapter's own
+category-level default (`Has subobject display template = ChapterTable`).
+
+Side-by-side comparison on the fixture wiki:
+* [[The Hobbit]] (Category:Book) - chapters render via ChapterTable
+  (subobject-category default) - one shared wikitable.
+* [[Dune]] (Category:ReviewedBook) - chapters render via ChapterCards
+  (field-level override) - one green-bordered card per chapter.
+
+Empty-case suppression: `format=template` with no rows emits nothing,
+same as ChapterTable's `introtemplate`/`outrotemplate` idiom.
+
+Parameters:
+* category - Subobject category name (defaults to "Chapter").
+* page     - Parent page to read chapters from (defaults to
+             {{FULLPAGENAME}}).
+</noinclude>

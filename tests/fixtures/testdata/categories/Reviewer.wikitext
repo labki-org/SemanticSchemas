@@ -1,0 +1,8 @@
+{{Category
+| has_description = A person who writes book reviews. Subcategory of Person that overrides the Has email field-level render template to obfuscate addresses (reviewers publish widely; we don't surface their mailto: links).
+| display_label = Reviewer
+}}
+
+{{Property field/subobject | for_property = Has email | is_required = false | has_render_template = Property/ObfuscatedEmail }}
+
+[[Category:Person]]

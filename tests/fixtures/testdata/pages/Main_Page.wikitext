@@ -13,21 +13,36 @@ out the specific behavior it demonstrates, so you know what to look for.
  instance. Look for: effective properties from [[:Category:Work]]
  (title, subtitle, pubyear) merged with Book's own (author, ISBN,
  genre, tag, availability). Three [[:Category:Chapter]] subobjects
- rendered in sort order. "Edit with form" tab should populate every
- field; chapters should appear in the multi-instance section of the
- form, not in free text.
+ rendered via [[Template:ChapterTable]] — the '''category-level default'''
+ subobject display ([[:Category:Chapter]] declares
+ <code>Has subobject display template = ChapterTable</code>, so all
+ three chapters appear as rows of one shared wikitable). Compare with
+ Dune below.
 * '''[[Dune]]''' — a [[:Category:ReviewedBook]] instance demonstrating
- '''multiple inheritance''' (Book + Reviewed). Look for: Book's full
- property table plus ''Review rating'' from [[:Category:Reviewed]].
- Three chapters ''and'' two reviews, each rendered with reviewer +
- rating + comment, both sections sorted.
+ '''multiple inheritance''' (Book + Reviewed) and a '''field-level
+ subobject-display override'''. Look for:
+ ** Book's full property table plus ''Review rating'' from
+    [[:Category:Reviewed]].
+ ** Three chapters rendered as green-bordered cards via
+    [[Template:ChapterCards]] — not the ChapterTable used by The Hobbit.
+    [[:Category:ReviewedBook]] re-declares the Chapter subobject field
+    with <code>has_subobject_display_template = ChapterCards</code>,
+    and the field-level attribute wins over Chapter's own category
+    default.
+ ** Two reviews rendered per-instance, each with a '''star rating'''.
+    [[:Property:Has rating]] sets
+    <code>Has render template = Property/Stars</code> at the property
+    level, so every review row displays ★☆ stars without Review
+    having to touch the rating field.
 * '''[[Introduction to Algorithms]]''' — a [[:Category:Textbook]]
  instance demonstrating a '''fully custom display template'''.
  [[:Category:Textbook]] sets <code>Has display format = none</code>
  and <code>Has display template = TextbookDisplay</code>, so rendering
- is delegated to [[Template:TextbookDisplay]]. Look for: green-bordered
- box with custom header + spotlight fields, followed by the full
- effective property table composed via <code>Category/display-rows</code>.
+ is delegated to [[Template:TextbookDisplay]]. This page also has no
+ chapter subobjects — look for the absence of any Chapter heading or
+ empty table frame (ChapterTable's
+ <code>introtemplate</code>/<code>outrotemplate</code> emit nothing
+ when the <code>#ask</code> yields zero results).
 
 === Articles ===
 
@@ -38,22 +53,33 @@ out the specific behavior it demonstrates, so you know what to look for.
 
 === People ===
 
-* '''[[J. R. R. Tolkien]]''' — a [[:Category:Person]] instance with the
- '''sidebox''' display format. Also demonstrates two more features:
- * '''Per-property value render template''': [[:Category:Person]] declares
-   <code>has_render_template = Property/Email</code> on the Has email field
-   and <code>has_render_template = Property/Link</code> on Has website, so
-   the email cell renders as a <code>mailto:</code> link and the website
-   cell as an external hyperlink — no other template touched.
- * '''Backlinks''': [[:Category:Person]] declares
-   <code>show_backlinks_for = Has author, Has reviewer</code>, and each of
-   those properties carries an <code>Inverse property label</code>
-   ("Authored" / "Reviewed"). Every Person sidebox ends with "Authored" and
-   "Reviewed" rows listing works they wrote or reviewed. See [[Carl Sagan]]
-   (authored [[Cosmos as Context]], reviewed [[Dune]]) or [[Thomas Cormen]]
-   (authored [[Introduction to Algorithms]], reviewed [[Dune]]).
- Look at [[Frank Herbert]], [[Carl Sagan]], and [[Thomas Cormen]] for more
- Person instances.
+Two sibling Person-family categories highlight the Level 2 render-template
+resolution chain (field-level override > property-level default > auto-
+default > bare):
+
+* '''[[J. R. R. Tolkien]]''' / '''[[Frank Herbert]]''' —
+ [[:Category:Person]] instances. Email renders as a live
+ <code>mailto:</code> link because [[:Property:Has email]] sets
+ <code>Has render template = Property/Email</code> at the
+ '''property level''' and Person does not override it. Website uses a
+ '''field-level-only''' override on Person
+ (<code>has_render_template = Property/Link</code>; the property page
+ sets no default).
+* '''[[Carl Sagan]]''' / '''[[Thomas Cormen]]''' — [[:Category:Reviewer]]
+ instances (subcategory of Person). Same
+ <code>sagan@example.org</code> address, but rendered as
+ <code>sagan [at] example.org</code> because
+ [[:Category:Reviewer]] declares
+ <code>has_render_template = Property/ObfuscatedEmail</code> on its
+ Has email field — a '''field-level override''' that wins over the
+ property-level default used by Person.
+
+Every Person/Reviewer sidebox also ends with '''Authored''' and
+'''Reviewed''' backlink rows
+(<code>show_backlinks_for = Has author, Has reviewer</code>, with
+inverse labels resolved from the property pages). Sagan authored
+[[Cosmos as Context]] and reviewed [[Dune]]; Cormen authored
+[[Introduction to Algorithms]] and reviewed [[Dune]].
 
 == Schema shape ==
 
@@ -62,13 +88,21 @@ Category hierarchy (arrows point from child to parent):
  Work ← Book ← Textbook
  Work ← Book ← ReviewedBook → Reviewed
  Work ← Article
- Person (standalone; sidebox display)
+ Person ← Reviewer (sidebox display, obfuscated email)
  Chapter, Review (subobject-only types)
 
 == Things worth clicking ==
 
-* Any Person page → verify [[mailto:tolkien@example.org|mailto links]]
- render bold (per-property override).
+* [[J. R. R. Tolkien]] vs [[Carl Sagan]] → compare email cells;
+ property-level default (<code>mailto:</code>) vs field-level override
+ (<code>[at]</code>) on the same property.
+* [[The Hobbit]] vs [[Dune]] → compare Chapter sections; category-level
+ default (ChapterTable) vs field-level override (ChapterCards) on the
+ same subobject category.
+* [[Dune]] → confirm star rendering on review ratings (property-level
+ <code>Has render template</code> on [[:Property:Has rating]]).
+* [[Introduction to Algorithms]] → confirm zero visible Chapter/Review
+ headings despite inheriting both subobject fields.
 * [[:Category:Work]] → inherited properties roll up through the hierarchy.
 * [[Special:FormEdit/Book/The Hobbit]] → every field pre-populated;
  chapters in their own multi-instance section.
@@ -80,9 +114,10 @@ Category hierarchy (arrows point from child to parent):
 
 == Customization reference ==
 
-See [[mw:Extension:SemanticSchemas|Extension:SemanticSchemas]] docs
-or <code>docs/user-guide/customizing-display.md</code> in the repo
-for the four levels of display customization. Levels 2 (per-property
-row) and 4 (fully custom display template) are live on this wiki.
+See <code>docs/user-guide/customizing-display.md</code> in the repo
+for the four levels of display customization. All four — default
+format, per-field/per-property render template, fully custom display
+template, and custom subobject display template — are live on this
+wiki, with field-level overrides demonstrated for Levels 2 and 4.
 
 __NOTOC__

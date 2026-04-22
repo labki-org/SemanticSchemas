@@ -188,11 +188,29 @@
 			"contents": { "importFrom": "categories/Person.wikitext" },
 			"options": { "replaceable": true }
 		},
+		{
+			"page": "Reviewer",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Reviewer.wikitext" },
+			"options": { "replaceable": true }
+		},
 
 		{
 			"page": "TextbookDisplay",
 			"namespace": "NS_TEMPLATE",
 			"contents": { "importFrom": "templates/TextbookDisplay.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Property/ObfuscatedEmail",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/Property/ObfuscatedEmail.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Property/Stars",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/Property/Stars.wikitext" },
 			"options": { "replaceable": true }
 		},
 		{
@@ -217,6 +235,18 @@
 			"page": "ChapterTable/close",
 			"namespace": "NS_TEMPLATE",
 			"contents": { "importFrom": "templates/ChapterTable.close.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterCards",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterCards.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterCards/row",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterCards.row.wikitext" },
 			"options": { "replaceable": true }
 		},
 

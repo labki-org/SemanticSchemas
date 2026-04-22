@@ -1,4 +1,4 @@
-{{Person
+{{Reviewer
 | has_full_name = Thomas H. Cormen
 | has_email = cormen@example.org
 | has_pubyear = 1956

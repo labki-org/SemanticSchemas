@@ -49,7 +49,7 @@ Set `Has render template` at whichever level fits:
 ```wikitext
 {{!-- Property:Has email — property-level default --}}
 [[Has type::Email]]
-[[Has render template::Property/Email]]
+[[Has render template::Template:Property/Email]]
 ```
 
 ```wikitext
@@ -59,6 +59,14 @@ Set `Has render template` at whichever level fits:
  | has_render_template = Property/ObfuscatedEmail
 }}
 ```
+
+**Namespace note**: direct annotations on a Property page use a bare
+`[[Has render template::...]]` value, so the `Template:` prefix is
+required — SMW otherwise stores the page reference in the main
+namespace and the generator (which requires `NS_TEMPLATE`) skips it.
+Field-level declarations on a category don't need the prefix:
+`{{Property field/subobject}}` auto-adds `Template:` when the value
+is unprefixed.
 
 **Resolution order** (generator bakes whichever wins into the row):
 
