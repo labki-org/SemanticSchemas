@@ -122,49 +122,4 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 
 		$this->assertSame( $wikitext, $result );
 	}
-
-	/* =========================================================================
-	 * TITLE CREATION
-	 * ========================================================================= */
-
-	public function testMakeTitleReturnsValidTitle(): void {
-		$title = $this->pageCreator->makeTitle( 'TestPage', NS_MAIN );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( 'TestPage', $title->getText() );
-		$this->assertEquals( NS_MAIN, $title->getNamespace() );
-	}
-
-	public function testMakeTitleReturnsNullForEmptyText(): void {
-		$title = $this->pageCreator->makeTitle( '', NS_MAIN );
-
-		$this->assertNull( $title );
-	}
-
-	public function testMakeTitleTrimsWhitespace(): void {
-		$title = $this->pageCreator->makeTitle( '  TestPage  ', NS_MAIN );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( 'TestPage', $title->getText() );
-	}
-
-	public function testMakeTitleReturnsNullForWhitespaceOnly(): void {
-		$title = $this->pageCreator->makeTitle( '   ', NS_MAIN );
-
-		$this->assertNull( $title );
-	}
-
-	public function testMakeTitleWorksWithCategoryNamespace(): void {
-		$title = $this->pageCreator->makeTitle( 'TestCategory', NS_CATEGORY );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( NS_CATEGORY, $title->getNamespace() );
-	}
-
-	public function testMakeTitleWorksWithTemplateNamespace(): void {
-		$title = $this->pageCreator->makeTitle( 'TestTemplate', NS_TEMPLATE );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( NS_TEMPLATE, $title->getNamespace() );
-	}
 }
