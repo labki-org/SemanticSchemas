@@ -177,7 +177,62 @@ class TemplateGeneratorTest extends TestCase {
 		$category = new CategoryModel( 'Person' );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( '{{Category/table | category=Person}}', $result );
+		$this->assertStringContainsString( "{{Category/table\n | category=Person", $result );
+	}
+
+	public function testDispatcherBakesEffectiveLabelIntoFormatCall(): void {
+		$category = new CategoryModel( 'Person', [
+			'label' => 'Human being',
+		] );
+		$result = $this->generateDispatcher( $category );
+
+		$this->assertStringContainsString( ' | label=Human being', $result );
+	}
+
+	public function testDispatcherBakesPropertyListIntoFormatCall(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$result = $this->generateDispatcher( $category );
+
+		// Property params are sorted alphabetically by property name ("email" < "name").
+		$this->assertStringContainsString( ' | props=has_email,has_name', $result );
+	}
+
+	public function testDispatcherBakesPerPropertyValuePassthrough(): void {
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$result = $this->generateDispatcher( $category );
+
+		$this->assertStringContainsString( ' | val_has_name={{{has_name|}}}', $result );
+	}
+
+	public function testDispatcherBakesPerPropertyLabelFallback(): void {
+		// With no WikiPropertyStore-resolved label, the label falls back to
+		// NamingHelper::generatePropertyLabel ("Has name" → "Name").
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$result = $this->generateDispatcher( $category );
+
+		$this->assertStringContainsString( ' | label_has_name=Name', $result );
+	}
+
+	public function testDispatcherOmitsPropsParamWhenNoFields(): void {
+		$category = new CategoryModel( 'Person' );
+		$result = $this->generateDispatcher( $category );
+
+		$this->assertStringNotContainsString( ' | props=', $result );
+		$this->assertStringNotContainsString( ' | val_', $result );
+		$this->assertStringNotContainsString( ' | label_', $result );
 	}
 
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
@@ -450,7 +505,7 @@ class TemplateGeneratorTest extends TestCase {
 
 		$this->assertStringContainsString( '{{Student/semantic', $result );
 		$this->assertStringNotContainsString( '{{Person/semantic', $result );
-		$this->assertStringContainsString( '{{Category/table | category=Student}}', $result );
+		$this->assertStringContainsString( "{{Category/table\n | category=Student", $result );
 		$this->assertStringContainsString( '[[Category:Student]]', $result );
 	}
 
@@ -495,7 +550,7 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 		$result = $this->generateDispatcher( $category );
 
-		$this->assertStringContainsString( '{{Category/sidebox | category=Person}}', $result );
+		$this->assertStringContainsString( "{{Category/sidebox\n | category=Person", $result );
 		$this->assertStringNotContainsString( '{{Category/table', $result );
 	}
 
@@ -523,7 +578,7 @@ class TemplateGeneratorTest extends TestCase {
 		$result = $this->generator->generateDispatcherTemplate( $effective );
 
 		// Should have both dynamic display AND custom template
-		$this->assertStringContainsString( '{{Category/table | category=Person}}', $result );
+		$this->assertStringContainsString( "{{Category/table\n | category=Person", $result );
 		$this->assertStringContainsString( '{{Person/custom', $result );
 	}
 
@@ -560,7 +615,7 @@ class TemplateGeneratorTest extends TestCase {
 		$effective = $resolver->getEffectiveCategory( 'Student' );
 		$result = $this->generator->generateDispatcherTemplate( $effective );
 
-		$this->assertStringContainsString( '{{Category/table | category=Student}}', $result );
+		$this->assertStringContainsString( "{{Category/table\n | category=Student", $result );
 		$this->assertStringContainsString( '{{Student/custom', $result );
 	}
 

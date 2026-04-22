@@ -1,8 +1,11 @@
 <includeonly>|-
-! colspan="2" style="background-color: #eaecf0; text-align: center;" | {{#show:Category:{{{category|}}}|?Display label|default={{{category|}}}}} <span style="float: right; font-weight: normal; font-size: 0.8em;">[[Special:FormEdit/{{{category|}}}/{{FULLPAGENAME}}|edit]]</span></includeonly><noinclude>
+! colspan="2" style="background-color: #eaecf0; text-align: center;" | {{#if:{{{label|}}}|{{{label}}}|{{#show:Category:{{{category|}}}|?Display label|default={{{category|}}}}}}} <span style="float: right; font-weight: normal; font-size: 0.8em;">[[Special:FormEdit/{{{category|}}}/{{FULLPAGENAME}}|edit]]</span></includeonly><noinclude>
 Renders the header row for a SemanticSchemas category display table.
 Shows the category's display label (or name as fallback) and an edit link.
 
-Parameter:
-* category - The category name (without namespace prefix)
+Parameters:
+* category - The category name (without namespace prefix). Required.
+* label    - Optional baked display label. When set, skips the
+             `#show:Category:X|?Display label` lookup. Auto-generated
+             dispatcher templates pass this.
 </noinclude>

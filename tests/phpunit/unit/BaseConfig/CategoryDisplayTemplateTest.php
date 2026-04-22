@@ -108,6 +108,16 @@ class CategoryDisplayTemplateTest extends TestCase {
 		);
 	}
 
+	public function testDisplayHeaderUsesBakedLabelWhenProvided(): void {
+		$content = $this->loadTemplate( 'display-header' );
+
+		$this->assertStringContainsString(
+			'{{#if:{{{label|}}}|{{{label}}}|',
+			$content,
+			'display-header must short-circuit the Display-label lookup when the caller passes a baked label'
+		);
+	}
+
 	/* =========================================================================
 	 * TABLE FORMAT
 	 * Replaces: testContainsWikitableMarkup
@@ -126,6 +136,36 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$this->assertStringContainsString( '{{Category/display-header', $content );
 		$this->assertStringContainsString( '{{Category/display-rows', $content );
 		$this->assertStringContainsString( '{{Category/render-reverse', $content );
+	}
+
+	public function testTableTemplateHasBakedRowFastPath(): void {
+		$content = $this->loadTemplate( 'table' );
+
+		$this->assertStringContainsString(
+			'{{#if:{{{props|}}}',
+			$content,
+			'table must branch on presence of baked props to take the fast path'
+		);
+		$this->assertStringContainsString(
+			'{{{val_@@p@@|}}}',
+			$content,
+			'table fast path must look up per-property values via dynamic param name'
+		);
+		$this->assertStringContainsString(
+			'{{{label_@@p@@|@@p@@}}}',
+			$content,
+			'table fast path must look up per-property labels, falling back to the param name'
+		);
+	}
+
+	public function testTableTemplateForwardsBakedLabelToHeader(): void {
+		$content = $this->loadTemplate( 'table' );
+
+		$this->assertStringContainsString(
+			'label={{{label|}}}',
+			$content,
+			'table must forward baked label to display-header'
+		);
 	}
 
 	/* =========================================================================
@@ -154,6 +194,21 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$this->assertStringContainsString( '{{Category/display-header', $content );
 		$this->assertStringContainsString( '{{Category/display-rows', $content );
 		$this->assertStringContainsString( '{{Category/render-reverse', $content );
+	}
+
+	public function testSideboxTemplateHasBakedRowFastPath(): void {
+		$content = $this->loadTemplate( 'sidebox' );
+
+		$this->assertStringContainsString(
+			'{{#if:{{{props|}}}',
+			$content,
+			'sidebox must branch on presence of baked props'
+		);
+		$this->assertStringContainsString(
+			'{{{val_@@p@@|}}}',
+			$content,
+			'sidebox fast path must look up per-property values via dynamic param name'
+		);
 	}
 
 	/* =========================================================================

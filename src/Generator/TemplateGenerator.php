@@ -226,9 +226,13 @@ class TemplateGenerator {
 	 * Generate the dynamic display section of the dispatcher template.
 	 *
 	 * Emits a call to the appropriate format template (Category/table,
-	 * Category/sidebox, etc.) which discovers properties dynamically from
-	 * the SMW store. If the category has a custom display template, that
-	 * is called after the format template (or alone if format is 'none').
+	 * Category/sidebox, etc.) with the effective schema baked in as
+	 * params: category label, ordered property list, and per-property
+	 * label + value expression. The format template's fast path iterates
+	 * these without issuing SMW queries.
+	 *
+	 * When the category has a custom display template, that is called
+	 * after the format template (or alone if format=none).
 	 *
 	 * @param EffectiveCategoryModel $effective
 	 * @param FieldModel[] $allFields Sorted effective fields
@@ -242,13 +246,31 @@ class TemplateGenerator {
 		$format = $effective->getDisplayFormat() ?? 'table';
 		$out = [];
 
-		// Dynamic format template (table, sidebox, etc.)
-		// Properties are discovered from the SMW store at render time
 		if ( $format !== 'none' ) {
-			$out[] = '{{Category/' . $format . ' | category=' . $name . '}}';
+			$out[] = '{{Category/' . $format;
+			$out[] = ' | category=' . $name;
+			$out[] = ' | label=' . $effective->getLabel();
+
+			if ( $allFields !== [] ) {
+				$paramNames = [];
+				$labelLines = [];
+				$valueLines = [];
+				foreach ( $allFields as $field ) {
+					$propName = $field->getName();
+					$param = $field->getParameterName();
+					$paramNames[] = $param;
+					$labelLines[] = ' | label_' . $param . '='
+						. $this->resolvePropertyLabel( $propName );
+					$valueLines[] = ' | val_' . $param . '='
+						. $this->buildDisplayValueExpression( $propName, $param );
+				}
+				$out[] = ' | props=' . implode( ',', $paramNames );
+				$out = array_merge( $out, $labelLines, $valueLines );
+			}
+
+			$out[] = '}}';
 		}
 
-		// Custom display template (called after format, or alone if format=none)
 		$displayTemplate = $effective->getDisplayTemplate();
 		if ( $displayTemplate !== null ) {
 			$templateName = preg_replace( '/^Template:/', '', $displayTemplate );
@@ -256,6 +278,48 @@ class TemplateGenerator {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Resolve a property's display label, falling back to a generated
+	 * label when the property has no wiki page yet.
+	 */
+	private function resolvePropertyLabel( string $propertyName ): string {
+		$prop = $this->propertyStore->readProperty( $propertyName );
+		if ( $prop instanceof PropertyModel ) {
+			return $prop->getLabel();
+		}
+		return NamingHelper::generatePropertyLabel( $propertyName );
+	}
+
+	/**
+	 * Build the display-value expression forwarded as `val_<param>` to a
+	 * format template. For Page-typed properties with an allowed namespace,
+	 * re-adds the namespace prefix when the form value is missing one so
+	 * displayed links resolve correctly — matches the main-branch
+	 * DisplayStubGenerator behavior. Idempotent: values that already have
+	 * a namespace are passed through unchanged.
+	 */
+	private function buildDisplayValueExpression( string $propertyName, string $paramName ): string {
+		$prop = $this->propertyStore->readProperty( $propertyName );
+		if ( !$prop instanceof PropertyModel ) {
+			return '{{{' . $paramName . '|}}}';
+		}
+
+		$allowedNamespace = $prop->getAllowedNamespace();
+		if ( !$prop->isPageType() || $allowedNamespace === null || $allowedNamespace === '' ) {
+			return '{{{' . $paramName . '|}}}';
+		}
+
+		if ( $prop->allowsMultipleValues() ) {
+			return '{{#arraymap:{{{' . $paramName . '|}}}|,|@@item@@|'
+				. '{{#ifeq:{{FULLPAGENAME:@@item@@}}|{{PAGENAME:@@item@@}}|'
+				. $allowedNamespace . ':}}@@item@@|,&#32;}}';
+		}
+
+		return '{{#if:{{{' . $paramName . '|}}}|'
+			. '{{#ifeq:{{FULLPAGENAME:{{{' . $paramName . '|}}}}}|{{PAGENAME:{{{' . $paramName . '|}}}}}'
+			. '|' . $allowedNamespace . ':}}{{{' . $paramName . '|}}}|}}';
 	}
 
 	/* =====================================================================
