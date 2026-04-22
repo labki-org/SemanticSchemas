@@ -40,9 +40,11 @@ out the specific behavior it demonstrates, so you know what to look for.
 
 * '''[[J. R. R. Tolkien]]''' — a [[:Category:Person]] instance with the
  '''sidebox''' display format. Also demonstrates two more features:
- * '''Per-property row override''': [[Template:Category/property-row/Has email]]
-   exists, so the email renders as a bold <code>mailto:</code> link rather
-   than plain text — no other template touched.
+ * '''Per-property value render template''': [[:Category:Person]] declares
+   <code>has_render_template = Property/Email</code> on the Has email field
+   and <code>has_render_template = Property/Link</code> on Has website, so
+   the email cell renders as a <code>mailto:</code> link and the website
+   cell as an external hyperlink — no other template touched.
  * '''Backlinks''': [[:Category:Person]] declares
    <code>show_backlinks_for = Has author, Has reviewer</code>, and each of
    those properties carries an <code>Inverse property label</code>

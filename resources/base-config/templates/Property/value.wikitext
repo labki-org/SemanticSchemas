@@ -1,0 +1,22 @@
+<includeonly>{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:{{{prop|}}}}}}}</includeonly><noinclude>
+Convenience primitive: returns the value of a property on a page.
+
+Thin wrapper around `{{#show: page | ?Prop }}`. Use in hand-written
+custom display templates (pages where `Has display template` points to
+user wikitext) so authors don't have to remember `#show` syntax or the
+`{{PAGENAME:}}` trick for stripping `Property:` prefixes.
+
+Auto-generated dispatcher templates do not use this — they bake values
+inline for the fast path — so there is no per-render overhead to
+keeping this around.
+
+Parameters:
+* prop - Property page reference (namespaced `Property:Has_title` or
+         bare `Has_title` both accepted).
+* page - Page (or subobject fragment, e.g. `MyPage#_abc`) to read the
+         value from. Defaults to {{FULLPAGENAME}}.
+
+Example — in a custom display template:
+ '''Title:''' {{Property/value|prop=Has_title}}
+ '''Chapter summary:''' {{Property/value|prop=Has_chapter_summary|page={{{1}}}}}
+</noinclude>

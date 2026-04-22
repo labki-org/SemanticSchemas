@@ -6,7 +6,7 @@
 }}
 
 {{Property field/subobject | for_property = Has full name   | is_required = true  }}
-{{Property field/subobject | for_property = Has email       | is_required = false }}
-{{Property field/subobject | for_property = Has website     | is_required = false }}
+{{Property field/subobject | for_property = Has email       | is_required = false | has_render_template = Property/Email }}
+{{Property field/subobject | for_property = Has website     | is_required = false | has_render_template = Property/Link  }}
 {{Property field/subobject | for_property = Has pubyear     | is_required = false }}
 {{Property field/subobject | for_property = Has internal id | is_required = false }}

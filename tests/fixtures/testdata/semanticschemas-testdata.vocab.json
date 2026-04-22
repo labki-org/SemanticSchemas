@@ -195,12 +195,6 @@
 			"contents": { "importFrom": "templates/TextbookDisplay.wikitext" },
 			"options": { "replaceable": true }
 		},
-		{
-			"page": "Category/property-row/Has email",
-			"namespace": "NS_TEMPLATE",
-			"contents": { "importFrom": "templates/property-row/Has_email.wikitext" },
-			"options": { "replaceable": true }
-		},
 
 		{
 			"page": "J. R. R. Tolkien",
