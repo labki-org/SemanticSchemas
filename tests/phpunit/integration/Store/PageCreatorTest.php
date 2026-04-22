@@ -88,25 +88,6 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 	}
 
 	/* =========================================================================
-	 * PAGE EXISTENCE
-	 * ========================================================================= */
-
-	public function testPageExistsReturnsFalseForNonExistentPage(): void {
-		$title = Title::makeTitle( NS_MAIN, 'NonExistentPage_' . uniqid() );
-
-		$this->assertFalse( $title->exists(), 'Pre-condition: MW confirms page does not exist' );
-		$this->assertFalse( $this->pageCreator->pageExists( $title ) );
-	}
-
-	public function testPageExistsReturnsTrueForExistingPage(): void {
-		$title = Title::makeTitle( NS_MAIN, 'ExistsPage_' . uniqid() );
-		$this->pageCreator->createOrUpdatePage( $title, 'Some content', 'Create' );
-		$this->assertTrue( $title->exists(), 'Pre-condition: MW confirms page exists' );
-
-		$this->assertTrue( $this->pageCreator->pageExists( $title ) );
-	}
-
-	/* =========================================================================
 	 * PAGE CONTENT READING
 	 * ========================================================================= */
 
@@ -140,50 +121,5 @@ class PageCreatorTest extends MediaWikiIntegrationTestCase {
 		$result = $this->pageCreator->getPageContent( $title );
 
 		$this->assertSame( $wikitext, $result );
-	}
-
-	/* =========================================================================
-	 * TITLE CREATION
-	 * ========================================================================= */
-
-	public function testMakeTitleReturnsValidTitle(): void {
-		$title = $this->pageCreator->makeTitle( 'TestPage', NS_MAIN );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( 'TestPage', $title->getText() );
-		$this->assertEquals( NS_MAIN, $title->getNamespace() );
-	}
-
-	public function testMakeTitleReturnsNullForEmptyText(): void {
-		$title = $this->pageCreator->makeTitle( '', NS_MAIN );
-
-		$this->assertNull( $title );
-	}
-
-	public function testMakeTitleTrimsWhitespace(): void {
-		$title = $this->pageCreator->makeTitle( '  TestPage  ', NS_MAIN );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( 'TestPage', $title->getText() );
-	}
-
-	public function testMakeTitleReturnsNullForWhitespaceOnly(): void {
-		$title = $this->pageCreator->makeTitle( '   ', NS_MAIN );
-
-		$this->assertNull( $title );
-	}
-
-	public function testMakeTitleWorksWithCategoryNamespace(): void {
-		$title = $this->pageCreator->makeTitle( 'TestCategory', NS_CATEGORY );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( NS_CATEGORY, $title->getNamespace() );
-	}
-
-	public function testMakeTitleWorksWithTemplateNamespace(): void {
-		$title = $this->pageCreator->makeTitle( 'TestTemplate', NS_TEMPLATE );
-
-		$this->assertInstanceOf( Title::class, $title );
-		$this->assertEquals( NS_TEMPLATE, $title->getNamespace() );
 	}
 }

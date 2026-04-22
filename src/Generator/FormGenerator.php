@@ -10,6 +10,7 @@ use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
+use Mediawiki\Title\Title;
 
 /**
  * FormGenerator
@@ -283,7 +284,7 @@ class FormGenerator {
 			throw new \InvalidArgumentException( "Form name cannot be empty" );
 		}
 
-		$title = $this->pageCreator->makeTitle( $name, \PF_NS_FORM );
+		$title = Title::makeTitleSafe( \PF_NS_FORM, $name );
 		if ( !$title ) {
 			wfLogWarning( "SemanticSchemas: Unable to create form title for '$name'" );
 			return false;
@@ -411,8 +412,8 @@ class FormGenerator {
 	}
 
 	public function formExists( string $categoryName ): bool {
-		$t = $this->pageCreator->makeTitle( $categoryName, \PF_NS_FORM );
-		return $t && $this->pageCreator->pageExists( $t );
+		$t = Title::makeTitleSafe( \PF_NS_FORM, $categoryName );
+		return $t && $t->exists();
 	}
 
 	/**

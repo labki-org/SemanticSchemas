@@ -25,7 +25,6 @@ class WikiCategoryStoreTest extends SMWIntegrationTestCase {
 			$services->getWikiPageFactory(),
 		);
 		$this->categoryStore = new WikiCategoryStore(
-			$this->pageCreator,
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);

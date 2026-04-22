@@ -8,6 +8,7 @@ use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
+use Mediawiki\Title\Title;
 use MediaWikiIntegrationTestCase;
 
 /**
@@ -63,7 +64,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		$gen->generateOrUpdateDisplayStub( $category );
 
-		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, "$categoryName/display" );
 		$this->assertNotNull( $title );
 		$content = $this->pageCreator->getPageContent( $title );
 		$this->assertNotNull( $content, 'Display template should have been created' );
@@ -249,7 +250,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		$gen->generateOrUpdateDisplayStub( $category );
 
-		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, "$catName/display" );
 		$content = $this->pageCreator->getPageContent( $title );
 
 		// Backlinks header
@@ -279,7 +280,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		$gen->generateOrUpdateDisplayStub( $category );
 
-		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, "$catName/display" );
 		$content = $this->pageCreator->getPageContent( $title );
 
 		// Falls back to property name when no inverse label set
@@ -304,7 +305,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		$gen->generateOrUpdateDisplayStub( $category );
 
-		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, "$catName/display" );
 		$content = $this->pageCreator->getPageContent( $title );
 
 		$this->assertStringNotContainsString( '{{#ask:', $content );
@@ -329,7 +330,7 @@ class DisplayStubGeneratorTest extends MediaWikiIntegrationTestCase {
 
 		$gen->generateOrUpdateDisplayStub( $category );
 
-		$title = $this->pageCreator->makeTitle( "$catName/display", NS_TEMPLATE );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, "$catName/display" );
 		$content = $this->pageCreator->getPageContent( $title );
 
 		$this->assertStringNotContainsString( '{{#ask:', $content );

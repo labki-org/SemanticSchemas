@@ -20,8 +20,6 @@ class DisplayStubGeneratorTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$pageCreator = $this->createMock( PageCreator::class );
-		$pageCreator->method( 'pageExists' )
-			->willReturn( false );
 		$propertyStore = $this->createMock( WikiPropertyStore::class );
 		$language = $this->createMock( Language::class );
 		$language->method( 'getFormattedNsText' )

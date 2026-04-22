@@ -9,6 +9,7 @@ use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\Language\Language;
+use Mediawiki\Title\Title;
 
 /**
  * Generates static display templates for Categories.
@@ -114,7 +115,7 @@ class DisplayStubGenerator {
 		?InheritanceResolver $resolver = null
 	): string {
 		$categoryName = $category->getName();
-		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, "$categoryName/display" );
 		if ( !$title ) {
 			return '';
 		}
@@ -241,8 +242,8 @@ class DisplayStubGenerator {
 	 * @return bool
 	 */
 	public function displayStubExists( string $categoryName ): bool {
-		$title = $this->pageCreator->makeTitle( $categoryName . "/display", NS_TEMPLATE );
-		return $title && $this->pageCreator->pageExists( $title );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, $categoryName . "/display" );
+		return $title && $title->exists();
 	}
 
 	/**
@@ -262,7 +263,7 @@ class DisplayStubGenerator {
 		?InheritanceResolver $resolver = null
 	): array {
 		$categoryName = $category->getName();
-		$title = $this->pageCreator->makeTitle( "$categoryName/display", NS_TEMPLATE );
+		$title = Title::makeTitleSafe( NS_TEMPLATE, "$categoryName/display" );
 
 		if ( !$title ) {
 			return [
@@ -272,7 +273,7 @@ class DisplayStubGenerator {
 		}
 
 		// Template doesn't exist - create it
-		if ( !$this->pageCreator->pageExists( $title ) ) {
+		if ( !$title->exists() ) {
 			$this->generateDisplayContent( $category, $resolver );
 			return [
 				'status' => 'created',
