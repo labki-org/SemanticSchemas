@@ -25,7 +25,6 @@ class WikiCategoryStoreTest extends MediaWikiIntegrationTestCase {
 			$services->getWikiPageFactory(),
 		);
 		$this->categoryStore = new WikiCategoryStore(
-			$this->pageCreator,
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);

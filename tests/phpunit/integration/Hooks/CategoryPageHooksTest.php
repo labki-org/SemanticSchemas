@@ -8,7 +8,6 @@ use MediaWiki\Extension\SemanticSchemas\Hooks\CategoryPageHooks;
 use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\Extension\SemanticSchemas\Store\WikiCategoryStore;
-use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
@@ -51,12 +50,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		$this->pageCreator = new PageCreator(
 			$wikiPageFactory,
 		);
-		$propertyStore = new WikiPropertyStore(
-			$this->pageCreator,
-			$services->getConnectionProvider(),
-		);
 		$this->categoryStore = new WikiCategoryStore(
-			$this->pageCreator,
 			$services->getConnectionProvider(),
 			$services->getMainConfig()
 		);
