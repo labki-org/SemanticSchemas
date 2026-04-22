@@ -1,7 +1,7 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Page]]
 [[Allows value from namespace::Template]]
-[[Has description::Custom template for rendering this property's value in display tables (e.g. Template:Property/Email for mailto links).]]
+[[Has description::Custom template for rendering this property's value in display tables (e.g. Template:Property/Email for mailto links). Set on a Property page for a default that applies wherever the property is used, or on a Property field/subobject in a category to override the default for that category.]]
 [[Display label::Render template]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]

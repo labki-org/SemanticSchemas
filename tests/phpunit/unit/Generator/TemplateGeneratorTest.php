@@ -261,6 +261,82 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( ' | val_has_name={{{has_name|}}}', $result );
 	}
 
+	public function testDispatcherUsesPropertyRenderTemplateWhenFieldHasNone(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has email' => new PropertyModel( 'Has email', [
+				'datatype' => 'Email',
+				'renderTemplate' => 'Property/Email',
+			] ),
+		] );
+
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				new FieldModel( 'Has email', false, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
+		$result = $gen->generateDispatcherTemplate( $effective );
+
+		$this->assertStringContainsString(
+			' | val_has_email={{Property/Email | value={{{has_email|}}} }}',
+			$result,
+			'property-level Has render template is used when field sets none'
+		);
+	}
+
+	public function testDispatcherFieldRenderTemplateOverridesPropertyLevel(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has email' => new PropertyModel( 'Has email', [
+				'datatype' => 'Email',
+				'renderTemplate' => 'Property/Email',
+			] ),
+		] );
+
+		$category = new CategoryModel( 'Person', [
+			'properties' => [
+				new FieldModel(
+					'Has email',
+					false,
+					FieldModel::TYPE_PROPERTY,
+					'Property/ObfuscatedEmail'
+				),
+			],
+		] );
+		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
+		$result = $gen->generateDispatcherTemplate( $effective );
+
+		$this->assertStringContainsString(
+			' | val_has_email={{Property/ObfuscatedEmail | value={{{has_email|}}} }}',
+			$result,
+			'field-level has_render_template overrides property-level default'
+		);
+		$this->assertStringNotContainsString( 'Property/Email |', $result );
+	}
+
+	public function testDispatcherPropertyRenderTemplateBeatsPageTypeDefault(): void {
+		$gen = $this->generatorWithProperties( [
+			'Has author' => new PropertyModel( 'Has author', [
+				'datatype' => 'Page',
+				'renderTemplate' => 'Property/AuthorCard',
+			] ),
+		] );
+
+		$category = new CategoryModel( 'Book', [
+			'properties' => [
+				new FieldModel( 'Has author', true, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$effective = new EffectiveCategoryModel( $category->getName(), $category->toArray() );
+		$result = $gen->generateDispatcherTemplate( $effective );
+
+		$this->assertStringContainsString(
+			'{{Property/AuthorCard | value=',
+			$result,
+			'property-level render template wins over the Page-type Property/Page default'
+		);
+		$this->assertStringNotContainsString( '{{Property/Page |', $result );
+	}
+
 	public function testDispatcherSkipsHiddenPropertiesFromDisplayBake(): void {
 		$hiddenProp = new PropertyModel( 'Has sort order', [
 			'datatype' => 'Number',

@@ -39,22 +39,42 @@ Set `Has display format = table` (or `sidebox`) on the category. Done.
 You get the standard layout: header row, one row per effective
 property, optional backlinks, optional subobject sections.
 
-### Level 2 — Per-field render template
+### Level 2 — Per-property or per-field render template
 
 **Use case**: "`Has email` should render as a `mailto:` link;
 `Has website` as an external link."
 
-On the Field declaration (a `Subobject field` or `Property field`
-attached to the category), set `Has render template`:
+You can set `Has render template` at two levels:
+
+**Property-level default** — on the Property page itself. Applies
+wherever the property is used, in every category:
 
 ```wikitext
+{{!-- Property:Has email --}}
+[[Has type::Email]]
+[[Has render template::Property/Email]]
+```
+
+**Field-level override** — on the `{{Property field/subobject}}` call
+inside a specific category. Applies only in that category; overrides
+the property's default when set:
+
+```wikitext
+{{!-- Category:Staff --}}
 {{Property field/subobject
  | for_property = Has email
- | has_render_template = Property/Email
+ | has_render_template = Property/ObfuscatedEmail
 }}
 ```
 
-The dispatcher bakes the chosen render template around the value:
+Priority when the generator bakes the value expression:
+
+1. Field-level `has_render_template` (per-category override)
+2. Property-level `Has render template` (per-property default)
+3. `Property/Page` auto-default for Page-typed properties
+4. Bare value
+
+The dispatcher bakes whichever wins around the value:
 
 ```wikitext
 val_has_email = {{Property/Email | value={{{has_email|}}} }}
@@ -71,7 +91,8 @@ Shipped value renderers:
 
 Write your own by creating `Template:Property/<Name>` that takes a
 single `value` parameter. Then reference it via `Has render template`
-on the field.
+at whichever level makes sense — property-level for "this property
+always looks like this", field-level for category-specific variations.
 
 ### Level 3 — Fully custom display template
 

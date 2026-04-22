@@ -34,6 +34,7 @@ class PropertyModel {
 		'inputType' => [ 'Has input type', 'text' ],
 		'hidden' => [ 'Is hidden', 'boolean' ],
 		'inverseLabel' => [ 'Inverse property label', 'text' ],
+		'renderTemplate' => [ 'Has render template', 'template' ],
 	];
 
 	private string $name;
@@ -52,6 +53,7 @@ class PropertyModel {
 
 	private bool $hidden;
 	private string $inverseLabel;
+	private ?string $renderTemplate;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
@@ -126,6 +128,12 @@ class PropertyModel {
 		$this->inverseLabel = isset( $data['inverseLabel'] )
 			? trim( (string)$data['inverseLabel'] )
 			: '';
+
+		/* -------------------- Render template -------------------- */
+		$rt = $data['renderTemplate'] ?? null;
+		$this->renderTemplate = ( $rt !== null && trim( (string)$rt ) !== '' )
+			? trim( (string)$rt )
+			: null;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -247,6 +255,16 @@ class PropertyModel {
 		return $this->inverseLabel;
 	}
 
+	/**
+	 * Property-level default render template. Wrapped as
+	 * `{{<template> | value=<raw> }}` by the generator for every category
+	 * that uses this property, unless a field-level `has_render_template`
+	 * on a specific `{{Property field/subobject}}` overrides it.
+	 */
+	public function getRenderTemplate(): ?string {
+		return $this->renderTemplate;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */
@@ -263,6 +281,7 @@ class PropertyModel {
 			'inputType' => $this->inputType,
 			'hidden' => $this->hidden ?: null,
 			'inverseLabel' => $this->inverseLabel !== '' ? $this->inverseLabel : null,
+			'renderTemplate' => $this->renderTemplate,
 		];
 
 		// Remove nulls + empty arrays, but preserve boolean false

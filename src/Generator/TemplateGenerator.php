@@ -358,15 +358,17 @@ class TemplateGenerator {
 	}
 
 	/**
-	 * Apply the field's render template (or the auto-selected default for
-	 * Page-typed properties) around the namespace-prefixed value expression.
+	 * Apply the effective render template around the namespace-prefixed
+	 * value expression.
 	 *
 	 * Priority:
-	 *   1. Field's explicit `Has render template` annotation.
-	 *   2. `Property/Page` for Page-typed properties (so page values render
-	 *      as wikilinks — matches main-branch DisplayStubGenerator
-	 *      behavior, which auto-selected Property/Page in PropertyModel).
-	 *   3. No wrapper (bare value expression).
+	 *   1. Field's `has_render_template` on the `{{Property field/subobject}}`
+	 *      call (per-category, per-field override).
+	 *   2. Property's `Has render template` on the Property page itself
+	 *      (per-property default, applies wherever the property is used).
+	 *   3. `Property/Page` for Page-typed properties (type-based default,
+	 *      so page values render as wikilinks).
+	 *   4. No wrapper (bare value expression).
 	 */
 	private function buildRenderedValueExpression(
 		FieldModel $field,
@@ -375,6 +377,9 @@ class TemplateGenerator {
 	): string {
 		$valueExpr = $this->buildDisplayValueExpression( $field->getName(), $paramName );
 		$renderTpl = $field->getRenderTemplate();
+		if ( $renderTpl === null && $prop instanceof PropertyModel ) {
+			$renderTpl = $prop->getRenderTemplate();
+		}
 		if ( $renderTpl === null && $prop instanceof PropertyModel && $prop->isPageType() ) {
 			$renderTpl = 'Property/Page';
 		}
