@@ -419,6 +419,20 @@ class TemplateGenerator {
 			if ( !$resolver->hasCategory( $subName ) ) {
 				continue;
 			}
+
+			// Field-level custom display template wins: hand the whole
+			// section off to the user's template. It receives category= and
+			// page= and takes full control — can do its own #ask and
+			// aggregate all instances into one table, grid, timeline, etc.
+			$custom = $subField->getSubobjectDisplayTemplate();
+			if ( $custom !== null ) {
+				$out[] = '{{' . $custom
+					. ' | category=' . $subName
+					. ' | page={{FULLPAGENAME}}'
+					. ' }}';
+				continue;
+			}
+
 			$sub = $resolver->getEffectiveCategory( $subName );
 			$fields = $sub->getPropertyFields();
 			self::sortFieldsByName( $fields );

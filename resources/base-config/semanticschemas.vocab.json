@@ -402,6 +402,16 @@
 			}
 		},
 		{
+			"page": "Has subobject display template",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_subobject_display_template.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Has type",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {

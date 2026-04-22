@@ -143,6 +143,67 @@ format value. Your template receives every field as a named parameter:
 
 You can compose any of the primitives below.
 
+### Level 4 — Custom subobject display template
+
+**Use case**: "Show all of a Book's Chapters as rows of one unified
+table, not as a separate mini-table per chapter."
+
+Default behavior: the dispatcher generates a `<Subcat>/subobject-row`
+template per subobject type, which renders each instance as its own
+labeled table. Great for a handful of complex subobjects; noisy when
+you have many simple ones and want a single compact view.
+
+On the Subobject field declaration (inside the parent category), set
+`has_subobject_display_template`:
+
+```wikitext
+{{!-- Category:Book --}}
+{{Subobject field/subobject
+ | for_category = Chapter
+ | is_required = false
+ | has_subobject_display_template = ChapterTable
+}}
+```
+
+When set, the dispatcher replaces the per-instance `#ask` pipeline for
+that subobject field with a single call:
+
+```wikitext
+{{ChapterTable | category=Chapter | page={{FULLPAGENAME}} }}
+```
+
+Your template takes full control — do its own `#ask`, wrap all results
+in one frame, or format them as a card grid, timeline, or whatever
+fits. Minimal two-template pattern for "one unified table":
+
+```wikitext
+{{!-- Template:ChapterTable --}}
+<includeonly>{| class="wikitable source-semanticschemas"
+! Title !! Summary
+{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[Category:{{{category|}}}]]
+ | ?Has chapter title=title
+ | ?Has chapter summary=summary
+ | format=template
+ | template=ChapterTable/row
+ | named args=yes
+ | sort=Has sort order
+ | order=asc
+}}
+|}</includeonly>
+```
+
+```wikitext
+{{!-- Template:ChapterTable/row --}}
+<includeonly>|-
+| {{{title|}}}
+| {{{summary|}}}</includeonly>
+```
+
+The override is per-parent-field: `Book`'s Chapters can render via
+`ChapterTable`, while `Anthology`'s Chapters keep the default
+per-instance tables — you declare the behavior on each parent's
+Subobject field. Parallels `has_render_template` for property fields.
+
 ## Primitive reference
 
 These templates are stable and meant to be called from custom display

@@ -10,7 +10,7 @@
 {{Property field/subobject | for_property = Has tag       | is_required = false }}
 {{Property field/subobject | for_property = Is available  | is_required = false }}
 
-{{Subobject field/subobject | for_category = Chapter | is_required = false }}
+{{Subobject field/subobject | for_category = Chapter | is_required = false | has_subobject_display_template = ChapterTable }}
 {{Subobject field/subobject | for_category = Review  | is_required = false }}
 
 [[Category:Work]]

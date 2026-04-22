@@ -53,12 +53,14 @@ class FieldModel implements JsonSerializable {
 	private bool $required;
 	private string $fieldType;
 	private ?string $renderTemplate;
+	private ?string $subobjectDisplayTemplate;
 
 	public function __construct(
 		string $name,
 		bool $required,
 		string $fieldType,
-		?string $renderTemplate = null
+		?string $renderTemplate = null,
+		?string $subobjectDisplayTemplate = null
 	) {
 		if ( !isset( self::FIELD_CONFIG[$fieldType] ) ) {
 			throw new InvalidArgumentException(
@@ -71,6 +73,11 @@ class FieldModel implements JsonSerializable {
 		$this->fieldType = $fieldType;
 		$this->renderTemplate = ( $renderTemplate !== null && trim( $renderTemplate ) !== '' )
 			? trim( $renderTemplate )
+			: null;
+		$this->subobjectDisplayTemplate = (
+			$subobjectDisplayTemplate !== null && trim( $subobjectDisplayTemplate ) !== ''
+		)
+			? trim( $subobjectDisplayTemplate )
 			: null;
 	}
 
@@ -99,9 +106,14 @@ class FieldModel implements JsonSerializable {
 		$sortRaw = self::smwFetchOne( $subData, 'Has sort order' );
 		$sort = (int)( $sortRaw ?? 0 );
 		$renderTemplate = self::smwFetchOne( $subData, 'Has render template', 'template' );
+		$subobjectDisplayTemplate = self::smwFetchOne(
+			$subData, 'Has subobject display template', 'template'
+		);
 
 		return [
-			'field' => new self( $ref, $required, $fieldType, $renderTemplate ),
+			'field' => new self(
+				$ref, $required, $fieldType, $renderTemplate, $subobjectDisplayTemplate
+			),
 			'sort' => $sort,
 		];
 	}
@@ -185,11 +197,29 @@ class FieldModel implements JsonSerializable {
 		return $this->renderTemplate;
 	}
 
+	/**
+	 * Optional wikitext template for rendering the entire subobject
+	 * section of this field's subcategory. When set on a TYPE_SUBOBJECT
+	 * field, TemplateGenerator emits a single
+	 *   {{<subobjectDisplayTemplate> | category=<Subcat> | page={{FULLPAGENAME}} }}
+	 * call in place of the default `#ask | format=template | template=<Subcat>/subobject-row`
+	 * pipeline — so the custom template can aggregate all subobject
+	 * instances into one table, card grid, or any other layout.
+	 *
+	 * Declared on the category page via
+	 *   {{Subobject field/subobject | for_category = X | has_subobject_display_template = Template:Foo }}
+	 */
+	public function getSubobjectDisplayTemplate(): ?string {
+		return $this->subobjectDisplayTemplate;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * SERIALIZATION
 	 * ---------------------------------------------------------------------- */
 
-	/** @return array{name:string, required:bool, renderTemplate?:string} */
+	/**
+	 * @return array{name:string, required:bool, renderTemplate?:string, subobjectDisplayTemplate?:string}
+	 */
 	public function jsonSerialize(): array {
 		$out = [
 			'name' => $this->name,
@@ -197,6 +227,9 @@ class FieldModel implements JsonSerializable {
 		];
 		if ( $this->renderTemplate !== null ) {
 			$out['renderTemplate'] = $this->renderTemplate;
+		}
+		if ( $this->subobjectDisplayTemplate !== null ) {
+			$out['subobjectDisplayTemplate'] = $this->subobjectDisplayTemplate;
 		}
 		return $out;
 	}

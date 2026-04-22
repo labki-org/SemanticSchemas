@@ -195,6 +195,18 @@
 			"contents": { "importFrom": "templates/TextbookDisplay.wikitext" },
 			"options": { "replaceable": true }
 		},
+		{
+			"page": "ChapterTable",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterTable.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterTable/row",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterTable.row.wikitext" },
+			"options": { "replaceable": true }
+		},
 
 		{
 			"page": "J. R. R. Tolkien",

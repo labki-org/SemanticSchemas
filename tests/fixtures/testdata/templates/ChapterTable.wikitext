@@ -1,0 +1,30 @@
+<includeonly>{| class="wikitable source-semanticschemas"
+! Title !! Summary
+{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[Category:{{{category|Chapter}}}]]
+ | ?Has chapter title=title
+ | ?Has chapter summary=summary
+ | format=template
+ | template=ChapterTable/row
+ | named args=yes
+ | link=none
+ | mainlabel=-
+ | sort=Has sort order
+ | order=asc
+}}
+|}</includeonly><noinclude>
+Demo template for custom subobject display (Level 4 in
+docs/user-guide/customizing-display.md).
+
+Book's Chapter subobject field sets
+`has_subobject_display_template = ChapterTable`, so the Book dispatcher
+routes the whole Chapter section here instead of invoking the default
+per-instance Chapter/subobject-row pipeline. Result: all chapters
+appear as rows of one shared wikitable, not as a stack of separate
+mini-tables.
+
+Parameters:
+* category - The subobject category name (passed by the dispatcher).
+             Defaults to "Chapter" for direct invocation.
+* page     - The parent page whose subobjects to render; defaults to
+             {{FULLPAGENAME}}.
+</noinclude>

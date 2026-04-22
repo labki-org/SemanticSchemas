@@ -952,6 +952,46 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( ' | order=asc', $dispatcher );
 	}
 
+	public function testDispatcherRoutesSubobjectThroughCustomDisplayTemplate(): void {
+		$chapter = new CategoryModel( 'Chapter', [
+			'properties' => [
+				new FieldModel( 'Has chapter title', true, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$book = new CategoryModel( 'Book', [
+			'subobjects' => [
+				// Field-level has_subobject_display_template wins over the
+				// default per-subobject /subobject-row pipeline.
+				new FieldModel(
+					'Chapter', false, FieldModel::TYPE_SUBOBJECT, null, 'ChapterTable'
+				),
+			],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Book' => $book,
+			'Chapter' => $chapter,
+		] );
+		$effective = $resolver->getEffectiveCategory( 'Book' );
+
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective, $resolver );
+
+		// Single template call in place of the #ask pipeline — user's
+		// template takes full control of the subobject section.
+		$this->assertStringContainsString(
+			'{{ChapterTable | category=Chapter | page={{FULLPAGENAME}} }}',
+			$dispatcher
+		);
+		// Default pipeline is suppressed for this subobject type.
+		$this->assertStringNotContainsString(
+			'template=Chapter/subobject-row',
+			$dispatcher
+		);
+		$this->assertStringNotContainsString(
+			'intro=<h3>Chapter</h3>',
+			$dispatcher
+		);
+	}
+
 	/**
 	 * Helper: call the private generateSubobjectTemplate method via reflection.
 	 */
