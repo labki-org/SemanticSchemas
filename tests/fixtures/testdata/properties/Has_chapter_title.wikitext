@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Title of a chapter.]]
+[[Display label::Chapter title]]
+<!-- SemanticSchemas End -->

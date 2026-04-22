@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Free-form review comment.]]
+[[Display label::Comment]]
+[[Has input type::textarea]]
+<!-- SemanticSchemas End -->

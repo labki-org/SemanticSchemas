@@ -1,0 +1,24 @@
+<includeonly><div class="textbook-display" style="border: 2px solid #2e7d32; padding: 1em; margin: 1em 0; background: #f1f8e9;">
+<h2 style="margin-top: 0;">{{Property/value|prop=Property:Has title|page={{FULLPAGENAME}}}}<!-- --><small style="color: #555;"> &mdash; {{Property/value|prop=Property:Has subtitle|page={{FULLPAGENAME}}}}</small></h2>
+<p><strong>Subject:</strong> {{Property/value|prop=Property:Has subject|page={{FULLPAGENAME}}}} &middot; <strong>Edition:</strong> {{Property/value|prop=Property:Has edition|page={{FULLPAGENAME}}}}</p>
+<p><strong>By</strong> {{Property/value|prop=Property:Has author|page={{FULLPAGENAME}}}} &middot; <strong>Published</strong> {{Property/value|prop=Property:Has pubyear|page={{FULLPAGENAME}}}}</p>
+
+<h3>All properties</h3>
+{| class="wikitable"
+{{Category/display-rows | category={{{category|Textbook}}} | page={{FULLPAGENAME}} }}
+|}
+</div></includeonly><noinclude>
+Custom display template for Category:Textbook.
+
+Demonstrates Level 4 customization from docs/user-guide/customizing-display.md:
+Has display format=none + Has display template=TextbookDisplay on the
+Category:Textbook page delegates all rendering to this template.
+
+Parameters:
+* category - The category name (passed by the dispatcher). Defaults to
+             "Textbook" for direct invocation.
+
+Uses Category/display-rows to render the full effective property table
+through the normal layered templates, after emitting a custom header
+and spotlight fields above.
+</noinclude>

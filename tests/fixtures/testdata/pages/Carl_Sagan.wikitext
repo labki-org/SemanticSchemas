@@ -1,0 +1,9 @@
+{{Person
+| has_full_name = Carl Edward Sagan
+| has_email = sagan@example.org
+| has_website = https://www.carlsagan.com
+| has_pubyear = 1934
+| has_internal_id = P-0003
+}}
+
+Astronomer, planetary scientist, and science communicator.

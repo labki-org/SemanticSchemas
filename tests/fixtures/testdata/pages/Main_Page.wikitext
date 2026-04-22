@@ -1,0 +1,86 @@
+= SemanticSchemas test wiki =
+
+This wiki was seeded by <code>php maintenance/importTestData.php</code>
+with a Library/Books domain designed to exercise every feature of the
+SemanticSchemas extension. Each entry below links to a page and calls
+out the specific behavior it demonstrates, so you know what to look for.
+
+== Content pages ==
+
+=== Books ===
+
+* '''[[The Hobbit]]''' — a single-inheritance [[:Category:Book]]
+ instance. Look for: effective properties from [[:Category:Work]]
+ (title, subtitle, pubyear) merged with Book's own (author, ISBN,
+ genre, tag, availability). Three [[:Category:Chapter]] subobjects
+ rendered in sort order. "Edit with form" tab should populate every
+ field; chapters should appear in the multi-instance section of the
+ form, not in free text.
+* '''[[Dune]]''' — a [[:Category:ReviewedBook]] instance demonstrating
+ '''multiple inheritance''' (Book + Reviewed). Look for: Book's full
+ property table plus ''Review rating'' from [[:Category:Reviewed]].
+ Three chapters ''and'' two reviews, each rendered with reviewer +
+ rating + comment, both sections sorted.
+* '''[[Introduction to Algorithms]]''' — a [[:Category:Textbook]]
+ instance demonstrating a '''fully custom display template'''.
+ [[:Category:Textbook]] sets <code>Has display format = none</code>
+ and <code>Has display template = TextbookDisplay</code>, so rendering
+ is delegated to [[Template:TextbookDisplay]]. Look for: green-bordered
+ box with custom header + spotlight fields, followed by the full
+ effective property table composed via <code>Category/display-rows</code>.
+
+=== Articles ===
+
+* '''[[Cosmos as Context]]''' — a [[:Category:Article]] sibling of
+ [[:Category:Book]] under [[:Category:Work]]. Confirms ''Work''
+ properties inherit into Article independently of Book. Also
+ demonstrates the <code>URL</code>-typed property (<code>Has DOI</code>).
+
+=== People ===
+
+* '''[[J. R. R. Tolkien]]''' — a [[:Category:Person]] instance with the
+ '''sidebox''' display format. Also demonstrates two more features:
+ * '''Per-property row override''': [[Template:Category/property-row/Has email]]
+   exists, so the email renders as a bold <code>mailto:</code> link rather
+   than plain text — no other template touched.
+ * '''Backlinks''': [[:Category:Person]] declares
+   <code>show_backlinks_for = Has author, Has reviewer</code>, and each of
+   those properties carries an <code>Inverse property label</code>
+   ("Authored" / "Reviewed"). Every Person sidebox ends with "Authored" and
+   "Reviewed" rows listing works they wrote or reviewed. See [[Carl Sagan]]
+   (authored [[Cosmos as Context]], reviewed [[Dune]]) or [[Thomas Cormen]]
+   (authored [[Introduction to Algorithms]], reviewed [[Dune]]).
+ Look at [[Frank Herbert]], [[Carl Sagan]], and [[Thomas Cormen]] for more
+ Person instances.
+
+== Schema shape ==
+
+Category hierarchy (arrows point from child to parent):
+
+ Work ← Book ← Textbook
+ Work ← Book ← ReviewedBook → Reviewed
+ Work ← Article
+ Person (standalone; sidebox display)
+ Chapter, Review (subobject-only types)
+
+== Things worth clicking ==
+
+* Any Person page → verify [[mailto:tolkien@example.org|mailto links]]
+ render bold (per-property override).
+* [[:Category:Work]] → inherited properties roll up through the hierarchy.
+* [[Special:FormEdit/Book/The Hobbit]] → every field pre-populated;
+ chapters in their own multi-instance section.
+* [[Special:FormEdit/ReviewedBook/Dune]] → both chapters and reviews
+ as separate multi-instance sections.
+* [[Special:Ask]] with <code>[[Category:Book]]|?Has title|?Has genre</code>
+ → returns Book, Textbook, and ReviewedBook instances via category
+ inheritance (all three are children of [[:Category:Book]]).
+
+== Customization reference ==
+
+See [[mw:Extension:SemanticSchemas|Extension:SemanticSchemas]] docs
+or <code>docs/user-guide/customizing-display.md</code> in the repo
+for the four levels of display customization. Levels 2 (per-property
+row) and 4 (fully custom display template) are live on this wiki.
+
+__NOTOC__

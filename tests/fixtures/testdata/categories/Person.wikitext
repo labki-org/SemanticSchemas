@@ -1,0 +1,12 @@
+{{Category
+| has_description = A person — author, reviewer, or other human entity. Renders as a floating sidebox with a Backlinks section listing works authored or reviewed.
+| display_label = Person
+| has_display_format = sidebox
+| show_backlinks_for = Has author, Has reviewer
+}}
+
+{{Property field/subobject | for_property = Has full name   | is_required = true  }}
+{{Property field/subobject | for_property = Has email       | is_required = false }}
+{{Property field/subobject | for_property = Has website     | is_required = false }}
+{{Property field/subobject | for_property = Has pubyear     | is_required = false }}
+{{Property field/subobject | for_property = Has internal id | is_required = false }}

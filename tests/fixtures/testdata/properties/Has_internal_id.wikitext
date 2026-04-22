@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Internal identifier (not shown in default display).]]
+[[Display label::Internal ID]]
+[[Is hidden::true]]
+<!-- SemanticSchemas End -->

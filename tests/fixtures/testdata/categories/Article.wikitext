@@ -1,0 +1,11 @@
+{{Category
+| has_description = A journal article or short-form published work.
+| display_label = Article
+| has_display_format = table
+}}
+
+{{Property field/subobject | for_property = Has author  | is_required = true  }}
+{{Property field/subobject | for_property = Has journal | is_required = true  }}
+{{Property field/subobject | for_property = Has DOI     | is_required = false }}
+
+[[Category:Work]]

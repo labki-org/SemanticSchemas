@@ -1,0 +1,16 @@
+{{Category
+| has_description = A book-length work with chapters and reader reviews.
+| display_label = Book
+| has_display_format = table
+}}
+
+{{Property field/subobject | for_property = Has author    | is_required = true  }}
+{{Property field/subobject | for_property = Has ISBN      | is_required = false }}
+{{Property field/subobject | for_property = Has genre     | is_required = false }}
+{{Property field/subobject | for_property = Has tag       | is_required = false }}
+{{Property field/subobject | for_property = Is available  | is_required = false }}
+
+{{Subobject field/subobject | for_category = Chapter | is_required = false }}
+{{Subobject field/subobject | for_category = Review  | is_required = false }}
+
+[[Category:Work]]

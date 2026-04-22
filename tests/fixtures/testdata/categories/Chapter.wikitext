@@ -1,0 +1,8 @@
+{{Category
+| has_description = A chapter within a book. Used as a subobject type, not a top-level page.
+| display_label = Chapter
+}}
+
+{{Property field/subobject | for_property = Has chapter title   | is_required = true  }}
+{{Property field/subobject | for_property = Has sort order      | is_required = true  }}
+{{Property field/subobject | for_property = Has chapter summary | is_required = false }}
