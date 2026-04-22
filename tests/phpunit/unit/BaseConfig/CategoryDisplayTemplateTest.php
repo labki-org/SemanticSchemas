@@ -114,7 +114,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$this->assertStringNotContainsString(
 			'Special:FormEdit',
 			$content,
-			'display-header must not include an edit link — rendered inside subobject mini-tables where it does not apply'
+			'display-header must not include an edit link - rendered inside subobject mini-tables where it does not apply'
 		);
 	}
 
