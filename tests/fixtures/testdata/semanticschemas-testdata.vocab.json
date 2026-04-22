@@ -256,5 +256,8 @@
 			"contents": { "importFrom": "pages/Main_Page.wikitext" },
 			"options": { "replaceable": true }
 		}
-	]
+	],
+	"meta": {
+		"version": "1"
+	}
 }
