@@ -1,24 +1,42 @@
 <includeonly><div class="textbook-display" style="border: 2px solid #2e7d32; padding: 1em; margin: 1em 0; background: #f1f8e9;">
-<h2 style="margin-top: 0;">{{Property/value|prop=Property:Has title|page={{FULLPAGENAME}}}}<!-- --><small style="color: #555;"> &mdash; {{Property/value|prop=Property:Has subtitle|page={{FULLPAGENAME}}}}</small></h2>
-<p><strong>Subject:</strong> {{Property/value|prop=Property:Has subject|page={{FULLPAGENAME}}}} &middot; <strong>Edition:</strong> {{Property/value|prop=Property:Has edition|page={{FULLPAGENAME}}}}</p>
-<p><strong>By</strong> {{Property/value|prop=Property:Has author|page={{FULLPAGENAME}}}} &middot; <strong>Published</strong> {{Property/value|prop=Property:Has pubyear|page={{FULLPAGENAME}}}}</p>
+<h2 style="margin-top: 0;">{{{has_title|}}}{{#if:{{{has_subtitle|}}}|<small style="color: #555;"> &mdash; {{{has_subtitle|}}}</small>}}</h2>
+<p><strong>Subject:</strong> {{{has_subject|}}} &middot; <strong>Edition:</strong> {{{has_edition|}}}</p>
+<p><strong>By</strong> {{Property/Page | value={{{has_author|}}}}} &middot; <strong>Published</strong> {{{has_pubyear|}}}</p>
 
-<h3>All properties</h3>
-{| class="wikitable"
-{{Category/display-rows | category={{{category|Textbook}}} | page={{FULLPAGENAME}} }}
-|}
+<h3>Details</h3>
+{{Category/table-header | category={{{category|Textbook}}} | label=Details}}
+{{Category/property-row | prop=Has ISBN            | value={{{has_isbn|}}}}}
+{{Category/property-row | prop=Has genre           | value={{{has_genre|}}}}}
+{{Category/property-row | prop=Has tag             | value={{{has_tag|}}}}}
+{{Category/property-row | prop=Is available        | value={{{is_available|}}}}}
+{{Category/table-footer | category={{{category|Textbook}}} | subobjects=no | backlinks=no}}
 </div></includeonly><noinclude>
 Custom display template for Category:Textbook.
 
-Demonstrates Level 4 customization from docs/user-guide/customizing-display.md:
-Has display format=none + Has display template=TextbookDisplay on the
-Category:Textbook page delegates all rendering to this template.
+Demonstrates Level 3 customization from docs/user-guide/customizing-display.md:
+`Has display template=TextbookDisplay` on Category:Textbook makes the
+dispatcher forward every effective field as a named param and delegate
+rendering entirely to this template.
+
+Two patterns on display:
+
+* '''Direct param access''' for hero-card fields — `{{{has_title|}}}`
+  etc. resolve to the baked values with zero SMW queries. Page-typed
+  values like `has_author` are wrapped in `Property/Page` for the
+  wikilink (matching the dispatcher's Page-type default).
+* '''Explicit primitive composition''' for the `Details` table —
+  `Category/table-header` + one `Category/property-row` per non-hero
+  field + `Category/table-footer`. Same contract the auto-generated
+  dispatcher uses. Rows pass `prop=` instead of a hard-coded `label=`,
+  so `Category/property-row` resolves the site-wide display label via
+  `#show:Property:<name>|?Display label`. Tradeoff: one `#show` per
+  row, versus zero queries when the dispatcher bakes labels in — fine
+  for a handful of fields, noticeable beyond ~20.
 
 Parameters:
 * category - The category name (passed by the dispatcher). Defaults to
              "Textbook" for direct invocation.
-
-Uses Category/display-rows to render the full effective property table
-through the normal layered templates, after emitting a custom header
-and spotlight fields above.
+* has_title, has_subtitle, has_subject, has_edition, has_author,
+  has_pubyear, has_isbn, has_genre, has_tag, is_available — the
+  effective Textbook fields, forwarded by the dispatcher.
 </noinclude>

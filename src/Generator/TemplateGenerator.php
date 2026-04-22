@@ -437,7 +437,6 @@ class TemplateGenerator {
 			}
 
 			$label = $sub->getLabel();
-			$out[] = '=== ' . $label . ' ===';
 			$out[] = '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] [['
 				. $categoryPrefix . ':' . $subName . ']]';
 			$out = array_merge( $out, $projections );
@@ -446,6 +445,10 @@ class TemplateGenerator {
 			$out[] = ' | named args=yes';
 			$out[] = ' | link=none';
 			$out[] = ' | mainlabel=-';
+			// intro renders only when the #ask yields ≥1 result, so empty
+			// subobject types get no heading. Raw <h3> avoids MediaWiki's
+			// template-section [edit] link that wikitext === would trigger.
+			$out[] = ' | intro=<h3>' . $label . '</h3>';
 			if ( $hasSortOrder ) {
 				$out[] = ' | sort=Has sort order';
 				$out[] = ' | order=asc';

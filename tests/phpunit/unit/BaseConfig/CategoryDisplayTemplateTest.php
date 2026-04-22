@@ -190,6 +190,24 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$this->assertStringContainsString( '{{Category/table-footer', $content );
 	}
 
+	public function testPropertyRowLabelFallsBackToDisplayLabelLookup(): void {
+		$content = $this->loadTemplate( 'property-row' );
+
+		// When a custom display template passes prop= instead of a baked
+		// label=, property-row must look up the property's Display label
+		// so templates pick up the site-wide label without hard-coding it.
+		$this->assertStringContainsString(
+			'{{#if:{{{label|}}}|{{{label}}}|{{#show:Property:{{{prop|}}}|?Display label',
+			$content,
+			'property-row must prefer baked label=, fall back to #show on prop='
+		);
+		$this->assertStringContainsString(
+			'default={{{prop|}}}',
+			$content,
+			'property-row must fall back to the raw property name when no Display label is set'
+		);
+	}
+
 	/* =========================================================================
 	 * SIDEBOX FORMAT
 	 * ========================================================================= */
@@ -385,18 +403,22 @@ class CategoryDisplayTemplateTest extends TestCase {
 		);
 	}
 
-	public function testSubobjectsHeadingUsesHtmlTag(): void {
+	public function testSubobjectsHeadingRidesOnAskIntro(): void {
 		$content = $this->loadTemplate( 'subobjects' );
 
+		// Heading lives in the #ask's intro= param so SMW only renders it
+		// when at least one result exists — empty subobject types leave
+		// no orphan heading on the page. Raw <h3> (vs. wikitext ===) keeps
+		// MediaWiki from attaching a template-section [edit] link.
 		$this->assertStringContainsString(
-			'<h3>',
+			'intro=<h3>',
 			$content,
-			'subobjects must use an HTML <h3> tag (arraymap trims the leading newline wikitext === needs)'
+			'subobjects heading must live in the #ask intro= param so it only renders with ≥1 result'
 		);
 		$this->assertStringNotContainsString(
 			'=== {{#show:',
 			$content,
-			'subobjects must not use wikitext === headings (render as literal after arraymap trims newline)'
+			'subobjects must not use wikitext === headings (empty sections would leave an orphan heading)'
 		);
 	}
 

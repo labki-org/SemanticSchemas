@@ -130,8 +130,12 @@ format value. Your template receives every field as a named parameter:
 <div class="textbook-card">
   <h2>{{{has_title|}}} — {{{has_edition|}}}</h2>
   <p>{{Property/Page | value={{{has_author|}}} }}</p>
-  <p>ISBN: {{{has_isbn|}}}</p>
-  {{Category/property-row | label=Subject | value={{{has_subject|}}} }}
+
+  {{Category/table-header | category={{{category|Textbook}}} | label=Details}}
+  {{Category/property-row | prop=Has ISBN    | value={{{has_isbn|}}}}}
+  {{Category/property-row | prop=Has subject | value={{{has_subject|}}}}}
+  {{Category/table-footer | category={{{category|Textbook}}} | subobjects=no | backlinks=no}}
+
   {{Category/subobject-list | category=Chapter | page={{FULLPAGENAME}} }}
 </div>
 </includeonly>
@@ -190,12 +194,18 @@ or no backlinks exist.
 
 ```wikitext
 {{Category/table-header | category=Book | label=Book }}
-{{Category/property-row | label=Title  | value={{{has_title|}}} }}
-{{Category/property-row | label=Author | value={{Property/Page | value={{{has_author|}}} }} }}
+{{Category/property-row | label=Title   | value={{{has_title|}}} }}
+{{Category/property-row | prop=Has author | value={{Property/Page | value={{{has_author|}}} }} }}
 {{Category/backlink-row | prop=Has author    | label=Authored }}
 {{Category/backlink-row | prop=Has reviewer  | label=Reviewed }}
 {{Category/table-footer | category=Book | subobjects=no | backlinks=no }}
 ```
+
+`Category/property-row` takes either a baked `label=` (what the
+auto-generated dispatcher passes, zero queries) or a `prop=` (property
+name, one `#show:Property:<name>|?Display label` per row). Use `prop=`
+in hand-written templates to pick up the site-wide display label
+without hard-coding it.
 
 `Category/backlink-row` runs one `#ask` count + one `#ask` list per
 call (inherent to "who points to me").

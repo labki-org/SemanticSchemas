@@ -866,7 +866,6 @@ class TemplateGeneratorTest extends TestCase {
 		// Dispatcher emits a projected #ask per subobject type, bypassing the
 		// dynamic Category/subobjects discovery path. Category/table gets
 		// subobjects=no so it doesn't also invoke the nested block.
-		$this->assertStringContainsString( '=== Address ===', $dispatcher );
 		$this->assertStringContainsString(
 			'{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] [[Category:Address]]',
 			$dispatcher
@@ -876,6 +875,12 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '| template=Address/subobject-row', $dispatcher );
 		$this->assertStringContainsString( '| named args=yes', $dispatcher );
 		$this->assertStringContainsString( ' | subobjects=no', $dispatcher );
+		// Section heading rides on the #ask's intro= param so it only
+		// renders when results exist (no heading for empty subobject types)
+		// and uses raw HTML so MediaWiki doesn't attach a [edit] link that
+		// would send users to the auto-generated dispatcher template.
+		$this->assertStringContainsString( ' | intro=<h3>Address</h3>', $dispatcher );
+		$this->assertStringNotContainsString( '=== Address ===', $dispatcher );
 		// backlinks defaults to subobjects; dispatcher sets it explicitly.
 		// Category with no `Show backlinks for` gets backlinks=no — skips
 		// the Category/render-reverse call and its initial #show lookup.
