@@ -102,12 +102,8 @@ class PageCreator {
 	}
 
 	/* =====================================================================
-	 * PAGE EXISTENCE & READ
+	 * PAGE READ
 	 * ===================================================================== */
-
-	public function pageExists( Title $title ): bool {
-		return $title->exists();
-	}
 
 	public function getPageContent( Title $title ): ?string {
 		if ( !$title->exists() ) {

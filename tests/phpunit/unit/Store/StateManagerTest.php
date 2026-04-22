@@ -16,12 +16,10 @@ class StateManagerTest extends TestCase {
 
 	private function createStateManager(): StateManager {
 		$mockTitle = $this->createMock( Title::class );
+		$mockTitle->method( 'exists' )->willReturnCallback( fn ()=>$this->storedPageContent !== null );
 
 		$mockPageCreator = $this->createMock( PageCreator::class );
 		$mockPageCreator->method( 'makeTitle' )->willReturn( $mockTitle );
-		$mockPageCreator->method( 'pageExists' )->willReturnCallback( function () {
-			return $this->storedPageContent !== null;
-		} );
 		$mockPageCreator->method( 'getPageContent' )->willReturnCallback( function () {
 			return $this->storedPageContent;
 		} );

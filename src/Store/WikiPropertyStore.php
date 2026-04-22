@@ -38,7 +38,7 @@ class WikiPropertyStore {
 		$canonical = $this->canonicalize( $propertyName );
 
 		$title = $this->pageCreator->makeTitle( $canonical, SMW_NS_PROPERTY );
-		if ( !$title || !$this->pageCreator->pageExists( $title ) ) {
+		if ( !$title || !$title->exists() ) {
 			return null;
 		}
 

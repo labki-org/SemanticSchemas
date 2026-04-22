@@ -25,7 +25,7 @@ class StateManager {
 	 */
 	public function getState(): array {
 		$title = $this->pageCreator->makeTitle( self::STATE_PAGE, NS_MEDIAWIKI );
-		if ( $title === null || !$this->pageCreator->pageExists( $title ) ) {
+		if ( $title === null || !$title->exists() ) {
 			return $this->getDefaultState();
 		}
 

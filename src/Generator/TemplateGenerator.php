@@ -346,6 +346,6 @@ class TemplateGenerator {
 	public function semanticTemplateExists( string $categoryName ): bool {
 		$templateName = trim( $categoryName ) . '/semantic';
 		$title = $this->pageCreator->makeTitle( $templateName, NS_TEMPLATE );
-		return $title && $this->pageCreator->pageExists( $title );
+		return $title && $title->exists();
 	}
 }
