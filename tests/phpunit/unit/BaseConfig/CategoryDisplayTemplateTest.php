@@ -446,27 +446,30 @@ class CategoryDisplayTemplateTest extends TestCase {
 	 * TABLE / SIDEBOX: RENDER-REVERSE GATING
 	 * ========================================================================= */
 
-	public function testTableGatesRenderReverseOnSubobjectsParam(): void {
+	public function testTableGatesRenderReverseOnBacklinksFlagWithSubobjectsFallback(): void {
 		$content = $this->loadTemplate( 'table' );
 
 		// render-reverse hardcodes {{FULLPAGENAME}} for backlink lookups, so
-		// when Category/subobject-instance re-enters table with subobjects=no,
-		// an ungated render-reverse would duplicate the parent page's
-		// Backlinks section inside every subobject mini-table.
+		// when Category/<Name>/subobject-row re-enters table, an ungated
+		// render-reverse would duplicate the parent page's Backlinks section
+		// inside every subobject mini-table. Dispatcher's fast path passes
+		// subobjects=no (to suppress the nested Category/subobjects block)
+		// while still wanting backlinks, so gate on `backlinks` with
+		// `subobjects` as the default for backward compat.
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse',
+			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{Category/render-reverse',
 			$content,
-			'table must gate Category/render-reverse on subobjects=yes to keep backlinks out of subobject instances'
+			'table must gate Category/render-reverse on backlinks flag, defaulting to subobjects value'
 		);
 	}
 
-	public function testSideboxGatesRenderReverseOnSubobjectsParam(): void {
+	public function testSideboxGatesRenderReverseOnBacklinksFlagWithSubobjectsFallback(): void {
 		$content = $this->loadTemplate( 'sidebox' );
 
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse',
+			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{Category/render-reverse',
 			$content,
-			'sidebox must gate Category/render-reverse on subobjects=yes for the same reason as table'
+			'sidebox must gate Category/render-reverse on backlinks flag, defaulting to subobjects value'
 		);
 	}
 

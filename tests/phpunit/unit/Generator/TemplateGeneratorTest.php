@@ -271,8 +271,9 @@ class TemplateGeneratorTest extends TestCase {
 		// Visible property is baked; hidden property is skipped from display
 		// (but still present in the semantic template, where it's needed for storage).
 		$this->assertStringContainsString( ' | props=has_name', $result );
-		$this->assertStringNotContainsString( 'has_sort_order', strstr( $result, '{{Category/table' ) );
-		$this->assertStringContainsString( 'has_sort_order', strstr( $result, '{{Chapter/semantic', true ) . strstr( $result, '{{Chapter/semantic' ) );
+		$tableCall = strstr( $result, '{{Category/table' );
+		$this->assertStringNotContainsString( 'has_sort_order', $tableCall );
+		$this->assertStringContainsString( 'has_sort_order', $result );
 	}
 
 	public function testGenerateDispatcherTemplatePassesParameters(): void {
@@ -711,7 +712,7 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '[[Category:SemanticSchemas-managed]]', $dispatcher );
 	}
 
-	public function testDispatcherDoesNotContainSubobjectDisplay(): void {
+	public function testDispatcherInlinesSubobjectSectionsWhenResolverProvided(): void {
 		$subCategory = new CategoryModel( 'Address', [
 			'properties' => [
 				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
@@ -734,11 +735,86 @@ class TemplateGeneratorTest extends TestCase {
 		] );
 
 		$effective = $resolver->getEffectiveCategory( 'Person' );
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective, $resolver );
+
+		// Dispatcher emits a projected #ask per subobject type, bypassing the
+		// dynamic Category/subobjects discovery path. Category/table gets
+		// subobjects=no so it doesn't also invoke the nested block.
+		$this->assertStringContainsString( '=== Address ===', $dispatcher );
+		$this->assertStringContainsString(
+			'{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] [[Category:Address]]',
+			$dispatcher
+		);
+		$this->assertStringContainsString( '| ?Has street=has_street', $dispatcher );
+		$this->assertStringContainsString( '| ?Has city=has_city', $dispatcher );
+		$this->assertStringContainsString( '| template=Address/subobject-row', $dispatcher );
+		$this->assertStringContainsString( '| named args=yes', $dispatcher );
+		$this->assertStringContainsString( ' | subobjects=no', $dispatcher );
+	}
+
+	public function testDispatcherOmitsSubobjectSectionsWithoutResolver(): void {
+		$person = new CategoryModel( 'Person', [
+			'subobjects' => [
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
+			],
+		] );
+		$effective = new EffectiveCategoryModel( 'Person', $person->toArray() );
+
+		// No resolver → no inline subobject sections; Category/table's dynamic
+		// fallback handles them instead (Category/subobjects isn't suppressed).
 		$dispatcher = $this->generator->generateDispatcherTemplate( $effective );
 
-		// Dispatcher should NOT contain subobject display — that lives in the display template
 		$this->assertStringNotContainsString( '#ask', $dispatcher );
-		$this->assertStringNotContainsString( 'Address/subobject/row', $dispatcher );
+		$this->assertStringNotContainsString( '/subobject-row', $dispatcher );
+		$this->assertStringNotContainsString( ' | subobjects=no', $dispatcher );
+	}
+
+	public function testDispatcherSubobjectSectionOmitsSortWhenNoSortOrderField(): void {
+		$address = new CategoryModel( 'Address', [
+			'properties' => [
+				new FieldModel( 'Has street', true, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$person = new CategoryModel( 'Person', [
+			'subobjects' => [
+				new FieldModel( 'Address', true, FieldModel::TYPE_SUBOBJECT ),
+			],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Person' => $person,
+			'Address' => $address,
+		] );
+		$effective = $resolver->getEffectiveCategory( 'Person' );
+
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective, $resolver );
+
+		// Address has no Has sort order field — omit sort= to avoid SMW
+		// silently dropping subobjects without a sort value.
+		$this->assertStringNotContainsString( 'sort=Has sort order', $dispatcher );
+	}
+
+	public function testDispatcherSubobjectSectionIncludesSortWhenSortOrderPresent(): void {
+		$chapter = new CategoryModel( 'Chapter', [
+			'properties' => [
+				new FieldModel( 'Has chapter title', true, FieldModel::TYPE_PROPERTY ),
+				new FieldModel( 'Has sort order', false, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$book = new CategoryModel( 'Book', [
+			'subobjects' => [
+				new FieldModel( 'Chapter', true, FieldModel::TYPE_SUBOBJECT ),
+			],
+		] );
+		$resolver = new InheritanceResolver( [
+			'Book' => $book,
+			'Chapter' => $chapter,
+		] );
+		$effective = $resolver->getEffectiveCategory( 'Book' );
+
+		$dispatcher = $this->generator->generateDispatcherTemplate( $effective, $resolver );
+
+		$this->assertStringContainsString( ' | sort=Has sort order', $dispatcher );
+		$this->assertStringContainsString( ' | order=asc', $dispatcher );
 	}
 
 	/**
@@ -766,6 +842,37 @@ class TemplateGeneratorTest extends TestCase {
 		$this->assertStringContainsString( '@category=Address', $result );
 		$this->assertStringContainsString( 'Has street', $result );
 		$this->assertStringContainsString( 'Has city', $result );
+	}
+
+	/**
+	 * Helper: call the private generateSubobjectRowTemplate method via reflection.
+	 */
+	private function callGenerateSubobjectRowTemplate( EffectiveCategoryModel $sub ): string {
+		$method = new \ReflectionMethod( $this->generator, 'generateSubobjectRowTemplate' );
+		$method->setAccessible( true );
+		return $method->invoke( $this->generator, $sub );
+	}
+
+	public function testSubobjectRowTemplateWrapsCategoryTable(): void {
+		$chapter = new CategoryModel( 'Chapter', [
+			'properties' => [
+				new FieldModel( 'Has chapter title', true, FieldModel::TYPE_PROPERTY ),
+			],
+		] );
+		$resolver = new InheritanceResolver( [ 'Chapter' => $chapter ] );
+		$effective = $resolver->getEffectiveCategory( 'Chapter' );
+
+		$result = $this->callGenerateSubobjectRowTemplate( $effective );
+
+		$this->assertStringContainsString( '{{Category/table', $result );
+		$this->assertStringContainsString( ' | category=Chapter', $result );
+		$this->assertStringContainsString( ' | subobjects=no', $result );
+		$this->assertStringContainsString( ' | backlinks=no', $result );
+		$this->assertStringContainsString( ' | props=has_chapter_title', $result );
+		$this->assertStringContainsString(
+			' | val_has_chapter_title={{{has_chapter_title|}}}',
+			$result
+		);
 	}
 
 	public function testSubobjectTemplateIncludesInheritedProperties(): void {

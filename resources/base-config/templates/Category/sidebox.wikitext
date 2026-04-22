@@ -3,7 +3,7 @@
 {{#if:{{{props|}}}|{{#arraymap:{{{props|}}}|,|@@p@@|{{#if:{{{val_@@p@@|}}}|{{!}}-
 ! {{{label_@@p@@|@@p@@}}}
 {{!}} {{{val_@@p@@|}}}}}|\n}}|{{Category/display-rows | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}}}
-{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse | {{{category|}}} }}|}}
+{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{Category/render-reverse | {{{category|}}} }}|}}
 |}{{#ifeq:{{{subobjects|yes}}}|yes|
 {{Category/subobjects | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}|}}</includeonly><noinclude>
 Dynamic sidebox display template for SemanticSchemas categories.

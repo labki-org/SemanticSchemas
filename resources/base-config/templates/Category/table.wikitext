@@ -3,7 +3,7 @@
 {{#if:{{{props|}}}|{{#arraymap:{{{props|}}}|,|@@p@@|{{#if:{{{val_@@p@@|}}}|{{!}}-
 ! {{{label_@@p@@|@@p@@}}}
 {{!}} {{{val_@@p@@|}}}}}|\n}}|{{Category/display-rows | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}}}
-{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse | {{{category|}}} }}|}}
+{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes|{{Category/render-reverse | {{{category|}}} }}|}}
 |}{{#ifeq:{{{subobjects|yes}}}|yes|
 {{Category/subobjects | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}|}}</includeonly><noinclude>
 Dynamic table display template for SemanticSchemas categories.
@@ -19,11 +19,17 @@ Two property-row rendering paths:
   dispatcher templates use this.
 * '''Dynamic fallback''' — when `props` is absent, delegate to
   `Category/display-rows` which discovers properties via ancestor walk.
-  Used by `Category/subobject-instance` and hand-written custom-display
-  wikitext.
+  Used when composing Category/table from hand-written custom-display
+  wikitext without baked params.
 
-Render-reverse (backlinks) and subobjects remain on the dynamic path;
-they are gated behind separate property lists on the category.
+Two section-gating flags:
+
+* `subobjects=no` — suppress the bottom subobject block
+  (Category/subobjects). Dispatcher templates set this because they
+  emit subobject `#ask` sections inline with baked per-subcat projections.
+* `backlinks=no` — suppress the render-reverse backlinks row. Defaults
+  to the value of `subobjects` so legacy callers that pass
+  `subobjects=no` (expecting both to be off) keep working.
 
 Parameters:
 * category - The category name (without namespace prefix). Required.
@@ -34,10 +40,8 @@ Parameters:
 * val_<p>  - Per-property value, one per entry in `props`.
 * label_<p> - Per-property display label, one per entry in `props`.
 * page     - Target page to read property values from on the dynamic
-             path. Defaults to {{FULLPAGENAME}};
-             `Category/subobject-instance` passes a subobject fragment
-             here so the same template renders individual instances.
-* subobjects - Set to "no" to suppress the subobject and backlink
-             sections (used by `Category/subobject-instance` to prevent
-             recursion).
+             path. Defaults to {{FULLPAGENAME}}.
+* subobjects - "no" suppresses the nested Category/subobjects block.
+* backlinks - "no" suppresses the Category/render-reverse row.
+             Defaults to `{{{subobjects|yes}}}` for backward compat.
 </noinclude>

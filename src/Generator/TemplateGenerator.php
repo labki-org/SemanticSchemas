@@ -180,10 +180,17 @@ class TemplateGenerator {
 	 * Generate content for the dispatcher template.
 	 *
 	 * @param EffectiveCategoryModel $effective The fully merged category
+	 * @param ?InheritanceResolver $resolver Used to resolve effective
+	 *        property fields on this category's subobject-type children so
+	 *        the dispatcher can emit inline `#ask` sections that project
+	 *        values directly into per-subcat `/subobject-row` templates.
+	 *        When null, the dispatcher emits no inline subobject sections
+	 *        and Category/table's dynamic fallback handles them.
 	 * @return string
 	 */
 	public function generateDispatcherTemplate(
-		EffectiveCategoryModel $effective
+		EffectiveCategoryModel $effective,
+		?InheritanceResolver $resolver = null
 	): string {
 		$name = trim( $effective->getName() );
 		if ( $name === '' ) {
@@ -203,8 +210,13 @@ class TemplateGenerator {
 		$out = array_merge( $out, $this->generateTemplateCall( $name . '/semantic', $allFields ) );
 
 		/* Dynamic display — Category/table (or user override) handles properties
-		 * AND subobjects entirely in wikitext; no per-category generation needed. */
-		$out = array_merge( $out, $this->generateDynamicDisplay( $effective, $allFields ) );
+		 * in wikitext; subobject sections are emitted inline below when a
+		 * resolver is available. */
+		$out = array_merge( $out, $this->generateDynamicDisplay( $effective, $allFields, $resolver ) );
+
+		if ( $resolver !== null ) {
+			$out = array_merge( $out, $this->generateSubobjectSections( $effective, $resolver ) );
+		}
 
 		/* Category membership */
 		// FIXME: Temporary special-case hack to exclude Category:Category membership -
@@ -231,16 +243,22 @@ class TemplateGenerator {
 	 * label + value expression. The format template's fast path iterates
 	 * these without issuing SMW queries.
 	 *
+	 * When a resolver is passed, also sets `subobjects=no` on the format
+	 * template call so its Category/subobjects block is suppressed —
+	 * dispatcher emits per-subcat baked `#ask` sections inline instead.
+	 *
 	 * When the category has a custom display template, that is called
 	 * after the format template (or alone if format=none).
 	 *
 	 * @param EffectiveCategoryModel $effective
 	 * @param FieldModel[] $allFields Sorted effective fields
+	 * @param ?InheritanceResolver $resolver
 	 * @return string[]
 	 */
 	private function generateDynamicDisplay(
 		EffectiveCategoryModel $effective,
-		array $allFields
+		array $allFields,
+		?InheritanceResolver $resolver = null
 	): array {
 		$name = $effective->getName();
 		$format = $effective->getDisplayFormat() ?? 'table';
@@ -250,28 +268,10 @@ class TemplateGenerator {
 			$out[] = '{{Category/' . $format;
 			$out[] = ' | category=' . $name;
 			$out[] = ' | label=' . $effective->getLabel();
-
-			$paramNames = [];
-			$labelLines = [];
-			$valueLines = [];
-			foreach ( $allFields as $field ) {
-				$propName = $field->getName();
-				$prop = $this->propertyStore->readProperty( $propName );
-				if ( $prop instanceof PropertyModel && $prop->isHidden() ) {
-					continue;
-				}
-				$param = $field->getParameterName();
-				$paramNames[] = $param;
-				$labelLines[] = ' | label_' . $param . '='
-					. $this->resolvePropertyLabel( $propName );
-				$valueLines[] = ' | val_' . $param . '='
-					. $this->buildDisplayValueExpression( $propName, $param );
+			if ( $resolver !== null ) {
+				$out[] = ' | subobjects=no';
 			}
-			if ( $paramNames !== [] ) {
-				$out[] = ' | props=' . implode( ',', $paramNames );
-				$out = array_merge( $out, $labelLines, $valueLines );
-			}
-
+			$out = array_merge( $out, $this->buildBakedPropLines( $allFields ) );
 			$out[] = '}}';
 		}
 
@@ -282,6 +282,136 @@ class TemplateGenerator {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Build the `props=...` / `label_<p>=...` / `val_<p>=...` lines shared
+	 * by the dispatcher's format-template call and by each per-category
+	 * `/subobject-row` template. Skips fields whose property is marked
+	 * `Is hidden = true`.
+	 *
+	 * @param FieldModel[] $fields
+	 * @return string[]
+	 */
+	private function buildBakedPropLines( array $fields ): array {
+		$paramNames = [];
+		$labelLines = [];
+		$valueLines = [];
+		foreach ( $fields as $field ) {
+			$propName = $field->getName();
+			$prop = $this->propertyStore->readProperty( $propName );
+			if ( $prop instanceof PropertyModel && $prop->isHidden() ) {
+				continue;
+			}
+			$param = $field->getParameterName();
+			$paramNames[] = $param;
+			$labelLines[] = ' | label_' . $param . '=' . $this->resolvePropertyLabel( $propName );
+			$valueLines[] = ' | val_' . $param . '='
+				. $this->buildDisplayValueExpression( $propName, $param );
+		}
+		if ( $paramNames === [] ) {
+			return [];
+		}
+		return array_merge(
+			[ ' | props=' . implode( ',', $paramNames ) ],
+			$labelLines,
+			$valueLines
+		);
+	}
+
+	/**
+	 * Emit inline `#ask` sections for each subobject-type child of this
+	 * category. Each section projects the subcat's effective (visible)
+	 * property values as named template args into the subcat's
+	 * `/subobject-row` template, which renders one instance via
+	 * Category/table's fast path.
+	 *
+	 * Sort by `Has sort order` is only added when the subcat's effective
+	 * field list declares it — otherwise SMW silently drops subobjects
+	 * without a sort value.
+	 *
+	 * @return string[]
+	 */
+	private function generateSubobjectSections(
+		EffectiveCategoryModel $effective,
+		InheritanceResolver $resolver
+	): array {
+		$subFields = $effective->getSubobjectFields();
+		if ( $subFields === [] ) {
+			return [];
+		}
+
+		$out = [];
+		$categoryPrefix = $this->language->getFormattedNsText( NS_CATEGORY );
+
+		foreach ( $subFields as $subField ) {
+			$subName = $subField->getName();
+			if ( !$resolver->hasCategory( $subName ) ) {
+				continue;
+			}
+			$sub = $resolver->getEffectiveCategory( $subName );
+			$fields = $sub->getPropertyFields();
+			self::sortFieldsByName( $fields );
+
+			$hasSortOrder = false;
+			$projections = [];
+			foreach ( $fields as $f ) {
+				if ( $f->getName() === 'Has sort order' ) {
+					$hasSortOrder = true;
+				}
+				$prop = $this->propertyStore->readProperty( $f->getName() );
+				if ( $prop instanceof PropertyModel && $prop->isHidden() ) {
+					continue;
+				}
+				$projections[] = ' | ?' . $f->getName() . '=' . $f->getParameterName();
+			}
+
+			$label = $sub->getLabel();
+			$out[] = '=== ' . $label . ' ===';
+			$out[] = '{{#ask: [[-Has subobject::{{FULLPAGENAME}}]] [['
+				. $categoryPrefix . ':' . $subName . ']]';
+			$out = array_merge( $out, $projections );
+			$out[] = ' | format=template';
+			$out[] = ' | template=' . $subName . '/subobject-row';
+			$out[] = ' | named args=yes';
+			$out[] = ' | link=none';
+			$out[] = ' | mainlabel=-';
+			if ( $hasSortOrder ) {
+				$out[] = ' | sort=Has sort order';
+				$out[] = ' | order=asc';
+			}
+			$out[] = '}}';
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Generate the `/subobject-row` template for a category.
+	 *
+	 * Wraps Category/table with baked props from the effective model and
+	 * `subobjects=no | backlinks=no`. Values arrive as named params from
+	 * SMW's `format=template | ?Prop=alias | named args=yes` projection
+	 * used by generateSubobjectSections.
+	 */
+	private function generateSubobjectRowTemplate( EffectiveCategoryModel $sub ): string {
+		$name = $sub->getName();
+		$fields = $sub->getPropertyFields();
+		self::sortFieldsByName( $fields );
+
+		$out = [];
+		$out[] = '<noinclude>';
+		$out[] = '<!-- AUTO-GENERATED by SemanticSchemas - DO NOT EDIT MANUALLY -->';
+		$out[] = 'Subobject-row template for Category:' . $name;
+		$out[] = '</noinclude><includeonly>{{Category/table';
+		$out[] = ' | category=' . $name;
+		$out[] = ' | label=' . $sub->getLabel();
+		$out[] = ' | subobjects=no';
+		$out[] = ' | backlinks=no';
+		$out = array_merge( $out, $this->buildBakedPropLines( $fields ) );
+		$out[] = '}}</includeonly>';
+
+		return implode( "\n", $out );
 	}
 
 	/**
@@ -395,7 +525,7 @@ class TemplateGenerator {
 
 		/* Dispatcher */
 		try {
-			$content = $this->generateDispatcherTemplate( $effective );
+			$content = $this->generateDispatcherTemplate( $effective, $resolver );
 			$this->updateTemplate( $name, $content );
 		} catch ( \Exception $e ) {
 			$errors[] = "Error generating dispatcher template for $name: " . $e->getMessage();
@@ -407,6 +537,17 @@ class TemplateGenerator {
 			$this->updateTemplate( $name . '/subobject', $content );
 		} catch ( \Exception $e ) {
 			$errors[] = "Error generating subobject template for $name: " . $e->getMessage();
+		}
+
+		/* Subobject-row template — every category gets one; referenced by
+		 * parent categories' dispatchers when this category is used as a
+		 * subobject type. Cheap to emit even for categories that are only
+		 * ever top-level. */
+		try {
+			$content = $this->generateSubobjectRowTemplate( $effective );
+			$this->updateTemplate( $name . '/subobject-row', $content );
+		} catch ( \Exception $e ) {
+			$errors[] = "Error generating subobject-row template for $name: " . $e->getMessage();
 		}
 
 		return [
