@@ -180,6 +180,130 @@ through SMW lookups. Useful for prototyping a display, but pays
 ~5 queries per inheritance level + ~3 queries per property. Prefer
 the auto-generated `{{Book|…}}` dispatcher in production wikitext.
 
+## Worked example: tool inventory with required training
+
+Suppose a wiki tracks rooms full of equipment. Each piece of equipment
+has its own page (`[[Drill press]]`, `[[Laser cutter]]`) with a
+`[[Has training required::Power tool safety]]` annotation. Each room
+is a `Category:ToolRoom` page that lists which tools are present:
+
+```wikitext
+{{!-- Category:ToolRoom --}}
+{{Property field/subobject | for_property = Has tool | is_required = true }}
+{{Property field/subobject | for_property = Has capacity | is_required = false }}
+[[Has display format::table]]
+[[Category:SemanticSchemas-managed]]
+```
+
+The default display gives one row per field, with `Has tool` showing
+as a comma-separated list of wikilinks (because Page-typed fields use
+`Property/Page` automatically). That's serviceable but doesn't tell
+the safety officer what training a tool requires until they click in.
+
+You have two ways to enrich the rendering, depending on scope.
+
+### Path A — change one field's renderer
+
+Use this when the change is local to one field and applies wherever
+that field appears. The default table layout stays.
+
+Write a renderer template that takes the comma-separated value and
+expands each item with its training:
+
+```wikitext
+{{!-- Template:Property/ToolWithTraining --}}
+<includeonly>{{#arraymap:{{{value|}}}|,|@@t@@|
+'''[[@@t@@]]''' — training: {{Property/value|prop=Has training required|page=@@t@@}}
+|<br/>}}</includeonly>
+```
+
+Then point the field at it on the category page:
+
+```wikitext
+{{Property field/subobject
+ | for_property = Has tool
+ | is_required = true
+ | has_render_template = Property/ToolWithTraining
+}}
+```
+
+That's the entire change. The dispatcher regenerates with
+`val_has_tool={{Property/ToolWithTraining|value={{{has_tool|}}} }}`
+baked in; every other field still renders the default way. Cost per
+render is the same shape as before plus one `Property/value` lookup
+per tool listed (each is a `#show`).
+
+The same renderer is reusable: another category can attach
+`has_render_template = Property/ToolWithTraining` to its own
+`Has equipment` field and get identical behavior.
+
+### Path B — replace the entire ToolRoom display
+
+Use this when the layout itself is different — separate sections,
+custom HTML, conditional content based on multiple fields.
+
+```wikitext
+{{!-- Category:DangerousToolRoom --}}
+[[Subcategory of::Category:ToolRoom]]
+{{Property field/subobject | for_property = Has tool | is_required = true }}
+{{Property field/subobject | for_property = Has hazard level | is_required = true }}
+{{Property field/subobject | for_property = Has capacity | is_required = false }}
+[[Has display format::none]]
+[[Has display template::Template:DangerousToolRoom/display]]
+[[Category:SemanticSchemas-managed]]
+```
+
+Then write the display template. Every field arrives as a parameter,
+so own-page values cost zero queries:
+
+```wikitext
+{{!-- Template:DangerousToolRoom/display --}}
+<includeonly>
+<div style="border: 2px solid #c00; padding: 1em;">
+== {{PAGENAME}} — {{{has_hazard_level|}}} hazard ==
+
+=== Tools and required training ===
+{| class="wikitable"
+! Tool !! Required training !! Trained users
+{{#arraymap:{{{has_tool|}}}|,|@@t@@|{{!}}-
+{{!}} [[@@t@@]]
+{{!}} {{Property/value|prop=Has training required|page=@@t@@}}
+{{!}} <small>{{#ask:[[Has completed training::{{Property/value|prop=Has training required|page=@@t@@}}]]|format=count}} users</small>
+|\n}}
+|}
+
+=== Room properties ===
+{| class="wikitable"
+{{Category/property-row | label=Capacity | value={{{has_capacity|}}} }}
+{{Category/property-row | label=Hazard level | value={{{has_hazard_level|}}} }}
+|}
+
+{{Category/backlink-row | prop=Has location | label=Activities scheduled here }}
+</div>
+</includeonly>
+```
+
+Notice what each piece does:
+
+- `{{{has_tool|}}}` — the page's tool list, free (it's a template parameter).
+- `{{Property/value|prop=Has training required|page=@@t@@}}` — cross-page lookup for each tool, one `#show` each. Unavoidable since training data lives on tool pages.
+- `{{Category/property-row | … }}` — composes a standard row with the same look as the default layout. Hidden when value is empty.
+- `{{Category/backlink-row | … }}` — composes a backlink section for "what links here via Has location".
+
+Adding a fourth field's customization here means editing this one
+template — no chain of templates to copy through.
+
+### When to choose which
+
+| Path | Scope of change | Files to author |
+|------|-----------------|-----------------|
+| A — field renderer | One field's value expression | 1 template + 1 annotation on the existing field |
+| B — custom display | The whole category's layout | 1 template + 2 annotations (`Has display format::none`, `Has display template::…`) on the category |
+
+Path A composes — multiple fields can each have their own renderer,
+and the default table still hosts them. Reach for Path B when the
+layout itself diverges, not just one cell.
+
 ## Performance notes
 
 The auto-generated dispatcher's value lookups, label lookups, ancestor
