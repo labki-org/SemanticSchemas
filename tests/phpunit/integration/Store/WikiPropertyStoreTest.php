@@ -61,20 +61,29 @@ class WikiPropertyStoreTest extends SMWIntegrationTestCase {
 
 	/**
 	 * Regression: `readProperty()` must return the datatype that is currently
-	 * in the store, not whatever SMW's `PropertySpecificationLookup` happens
-	 * to have cached. Background: `DIProperty::findPropertyTypeID()` resolves
-	 * a user-defined property's type via `PropertySpecificationLookup->
-	 * getSpecification( $prop, _TYPE )`, which is backed by SMW's EntityCache
-	 * with a TTL_WEEK entry per subject. Field reports: after referencing
-	 * Property:X in a form before X existed and then creating X with
-	 * `Has type::Date`, form regeneration kept emitting a combobox (default
-	 * `_wpg`) until `?action=purge` on Property:X — the subject's `_TYPE`
-	 * entry had gone stale and nothing in the save path had cleared it.
+	 * in the store, not whatever SMW's `PropertySpecificationLookup` has
+	 * cached in-memory.
 	 *
-	 * This test simulates that stale state by writing an empty `_TYPE`
-	 * specification directly into the cache for the subject after the
-	 * property was created with a real type, then asserts that
-	 * `readProperty()` still returns the store's real datatype.
+	 * Mechanism from field diagnosis: `SpecificationLookup::getSpecification`
+	 * writes every result — including empty ones — into SMW's EntityCache,
+	 * which is an `Onoi\CompositeCache` whose first layer is an in-process
+	 * PHP array held by the service container. If `findPropertyTypeID` fires
+	 * while a property-page save is still in flight (the `_TYPE` write hasn't
+	 * committed yet), the lookup caches `[]` for that subject. The entry has
+	 * no effective TTL: it lives for the lifetime of the PHP process.
+	 *
+	 * On the reporter's VPS (Apache mod_php prefork, `MaxConnectionsPerChild
+	 * 0` → immortal workers), the poisoned `[]` sits in an Apache worker's
+	 * in-memory layer indefinitely. Subsequent `readProperty` calls on that
+	 * worker fall back to `smwgPDefaultType = _wpg`, so the form generator
+	 * emits a combobox for what should be a date/text/URL field. Graceful
+	 * Apache reload or `?action=purge` on the property page flushes the
+	 * layer and unsticks the wrong type. Local dev Docker reproduces neither
+	 * symptom because workers recycle between actions.
+	 *
+	 * The test mimics the end-state directly — write `[]` into the `_TYPE`
+	 * sub-key for a subject whose store actually has Date — so it fails the
+	 * same way regardless of how the poisoning happened upstream.
 	 */
 	public function testReadPropertyIgnoresStaleSpecificationLookupCache(): void {
 		$name = 'Has cache poisoned type ' . uniqid();
@@ -89,8 +98,7 @@ class WikiPropertyStoreTest extends SMWIntegrationTestCase {
 		$this->assertSame( 'Date', $fresh->getDatatype() );
 
 		// Poison SpecificationLookup's `_TYPE` sub-key for this subject with
-		// an empty array, mirroring the stale state observed in the field
-		// (where ChangePropagationDispatchJob/_TYPE listener never fired).
+		// an empty array, as a race with an in-flight save would produce.
 		// `DIProperty::findPropertyValueType()` treats an empty array as
 		// "no type" and falls back to `smwgPDefaultType` (`_wpg` → `Page`).
 		$entityCache = ServicesFactory::getInstance()->getEntityCache();
