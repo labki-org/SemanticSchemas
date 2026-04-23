@@ -6,6 +6,7 @@ use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\Title\Title;
+use SMW\Services\ServicesFactory;
 use Wikimedia\Rdbms\IConnectionProvider;
 
 /**
@@ -100,9 +101,23 @@ class WikiPropertyStore {
 
 		$out = [];
 
-		// Datatype comes from SMW's internal property type API, not semantic annotations
+		// Datatype comes from SMW's internal property type API, not semantic annotations.
+		//
+		// SMW's PropertySpecificationLookup caches the `_TYPE` lookup per
+		// subject in an EntityCache entry with TTL_WEEK, and the
+		// invalidation paths it relies on (ChangePropagationDispatchJob,
+		// PropertyChangeListener watchlist, ArticlePurge) do not fire for
+		// every state transition — a stale entry seeded before the property
+		// existed can survive a first-time type assignment. Callers then
+		// see the wrong form input widget (e.g. combobox for what should be
+		// a date field) until someone purges the property page. Force a
+		// fresh read; regenerating a property model is infrequent and
+		// explicit, so bypassing a week-long cache is cheap.
 		try {
 			$prop = \SMW\DIProperty::newFromUserLabel( $title->getText() );
+			ServicesFactory::getInstance()
+				->getPropertySpecificationLookup()
+				->invalidateCache( $subject );
 			$internalTypeId = $prop->findPropertyTypeID();
 			if ( $internalTypeId !== null ) {
 				$out['datatype'] = $this->convertSMWTypeIdToCanonical( $internalTypeId );
