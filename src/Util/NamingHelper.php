@@ -10,8 +10,6 @@ namespace MediaWiki\Extension\SemanticSchemas\Util;
  * This class consolidates naming logic that was previously duplicated across:
  * - FormGenerator
  * - TemplateGenerator
- * - DisplayStubGenerator
- * - DisplayRenderer
  *
  * Centralization Benefits:
  * -----------------------

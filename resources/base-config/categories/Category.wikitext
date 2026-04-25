@@ -27,9 +27,15 @@
 }}
 {{#subobject:
  |@category=Property field
- | For property = Property:Show backlinks for
+ | For property = Property:Has display template
  | Is required = false
  | Has sort order = 5
+}}
+{{#subobject:
+ |@category=Property field
+ | For property = Property:Show backlinks for
+ | Is required = false
+ | Has sort order = 6
 }}
 {{#subobject:
  |@category=Subobject field

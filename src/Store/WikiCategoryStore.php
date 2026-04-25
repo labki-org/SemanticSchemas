@@ -202,14 +202,14 @@ class WikiCategoryStore {
 
 	private function loadDisplayConfig( $semanticData ): array {
 		$format = $this->smwFetchOne( $semanticData, 'Has display format' );
-		$templateProp = $this->smwFetchOne( $semanticData, 'Has display template', 'property' );
+		$template = $this->smwFetchOne( $semanticData, 'Has display template', 'page' );
 
 		$out = [];
 		if ( $format !== null ) {
 			$out['format'] = strtolower( $format );
 		}
-		if ( $templateProp !== null ) {
-			$out['templateProperty'] = $templateProp;
+		if ( $template !== null ) {
+			$out['template'] = $template;
 		}
 
 		return $out;

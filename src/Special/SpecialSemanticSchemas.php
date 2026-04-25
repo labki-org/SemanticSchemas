@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Special;
 
-use MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator;
 use MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator;
 use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
@@ -51,7 +50,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private WikiPropertyStore $propertyStore;
 	private TemplateGenerator $templateGenerator;
 	private FormGenerator $formGenerator;
-	private DisplayStubGenerator $displayGenerator;
 	private OntologyInspector $inspector;
 	private StateManager $stateManager;
 	private PageHashComputer $hashComputer;
@@ -68,7 +66,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		WikiPropertyStore $propertyStore,
 		TemplateGenerator $templateGenerator,
 		FormGenerator $formGenerator,
-		DisplayStubGenerator $displayGenerator,
 		OntologyInspector $inspector,
 		StateManager $stateManager,
 		ObjectCacheFactory $objectCacheFactory
@@ -78,7 +75,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$this->propertyStore = $propertyStore;
 		$this->templateGenerator = $templateGenerator;
 		$this->formGenerator = $formGenerator;
-		$this->displayGenerator = $displayGenerator;
 		$this->inspector = $inspector;
 		$this->stateManager = $stateManager;
 		$this->hashComputer = new PageHashComputer();
@@ -279,12 +275,12 @@ class SpecialSemanticSchemas extends SpecialPage {
 				return;
 			}
 
-			$displayResult = $this->displayGenerator->generateIfAllowed( $effective, $resolver );
+			// Display templates are now dynamic (Category/table, Category/sidebox).
+			// Static display stubs are no longer generated for new categories.
 
 			// Log the operation
 			$this->logOperation( 'generate', "Form generated for $categoryName", [
 				'category' => $categoryName,
-				'displayStatus' => $displayResult['status'],
 			] );
 
 			// If triggered from "New page" action, redirect to Form: page
@@ -304,11 +300,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 					ENT_QUOTES
 				)
 			) );
-
-			// Show warning if display template was preserved
-			if ( $displayResult['status'] === 'preserved' ) {
-				$output->addHTML( Html::warningBox( $displayResult['message'] ) );
-			}
 
 		} catch ( \Exception $e ) {
 			$this->logOperation( 'generate', "Form generation failed for $categoryName: " . $e->getMessage(), [
@@ -609,10 +600,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		return Title::makeTitleSafe( $this->getFormNamespace(), $categoryName );
 	}
 
-	private function getDisplayTitle( string $categoryName ): ?Title {
-		return Title::makeTitleSafe( NS_TEMPLATE, $categoryName . '/display' );
-	}
-
 	/**
 	 * Render the hero section for the overview page.
 	 *
@@ -831,7 +818,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$html .= Html::element( 'th', [], 'Properties' );
 		$html .= Html::element( 'th', [], 'Semantic' );
 		$html .= Html::element( 'th', [], 'Form' );
-		$html .= Html::element( 'th', [], 'Display' );
 		$html .= Html::element( 'th', [], $this->msg( 'semanticschemas-status-modified-outside' )->text() );
 		$html .= Html::closeElement( 'tr' );
 		$html .= Html::closeElement( 'thead' );
@@ -859,14 +845,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 				$this->renderAvailabilityBadge(
 					$this->formGenerator->formExists( $name ),
 					$this->getFormTitle( $name )
-				)
-			);
-			$html .= Html::rawElement(
-				'td',
-				[],
-				$this->renderAvailabilityBadge(
-					$this->displayGenerator->displayStubExists( $name ),
-					$this->getDisplayTitle( $name )
 				)
 			);
 			$html .= Html::rawElement(
@@ -989,27 +967,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$form .= Html::closeElement( 'select' );
 		$form .= Html::closeElement( 'div' );
 
-		$form .= Html::openElement( 'div', [ 'class' => 'semanticschemas-form-group' ] );
-		$form .= Html::element( 'input', [
-			'type' => 'checkbox',
-			'name' => 'generate-display',
-			'value' => '1',
-			'id' => 'generate-display-check'
-		] );
-		$form .= Html::element(
-			'label',
-			[ 'for' => 'generate-display-check' ],
-			"Force update display templates (e.g. Template:Category/display)"
-		);
-		$form .= Html::element(
-			'p',
-			[
-				'class' => 'semanticschemas-form-help',
-			],
-			"Warning: This replaces any manual customizations to the display structure."
-		);
-		$form .= Html::closeElement( 'div' );
-
 		$form .= Html::hidden( 'action', 'generate' );
 		$form .= Html::hidden( 'token', $this->getUser()->getEditToken() );
 
@@ -1098,7 +1055,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	 * Process "Generate" POST:
 	 *   - Build inheritance graph from current categories.
 	 *   - For each category: compute effective category + ancestor chain.
-	 *   - Invoke TemplateGenerator, FormGenerator (with ancestors), DisplayStubGenerator.
+	 *   - Invoke TemplateGenerator and FormGenerator (with ancestors).
 	 */
 	private function processGenerate(): void {
 		$output = $this->getOutput();
@@ -1133,7 +1090,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 		try {
 			$categoryMap = $this->buildCategoryMap();
 			$resolver = new InheritanceResolver( $categoryMap );
-			$generateDisplay = $request->getBool( 'generate-display' );
 
 			$successCount = 0;
 			$totalCount = count( $categories );
@@ -1159,10 +1115,6 @@ class SpecialSemanticSchemas extends SpecialPage {
 						$category, $resolver
 					);
 					$this->formGenerator->generateAndSaveAllForms( $effective, $resolver );
-
-					if ( $generateDisplay ) {
-						$this->displayGenerator->generateOrUpdateDisplayStub( $effective, $resolver );
-					}
 
 					$successCount++;
 				} catch ( \Exception $e ) {

@@ -68,6 +68,9 @@ class CategoryModel {
 	private array $displayConfig;
 	private array $formConfig;
 
+	/** @var ?string Custom display template page name (e.g. "Template:MyDisplay") */
+	private ?string $displayTemplate = null;
+
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
 	 * ------------------------------------------------------------------------- */
@@ -133,6 +136,10 @@ class CategoryModel {
 			throw new InvalidArgumentException( "Category '{$name}': 'display' must be an array." );
 		}
 		$this->displayConfig = $display;
+
+		$tpl = $display['template'] ?? null;
+		$this->displayTemplate = ( $tpl !== null && trim( (string)$tpl ) !== '' )
+			? trim( (string)$tpl ) : null;
 
 		/* -------------------- Form Config -------------------- */
 
@@ -314,8 +321,8 @@ class CategoryModel {
 			$merged['format'] = trim( (string)$child['format'] );
 		}
 
-		if ( isset( $child['templateProperty'] ) ) {
-			$merged['templateProperty'] = $child['templateProperty'];
+		if ( isset( $child['template'] ) ) {
+			$merged['template'] = $child['template'];
 		}
 
 		return $merged;
@@ -375,5 +382,9 @@ class CategoryModel {
 		}
 
 		return $out;
+	}
+
+	public function getDisplayTemplate(): ?string {
+		return $this->displayTemplate;
 	}
 }

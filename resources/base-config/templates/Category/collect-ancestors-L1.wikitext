@@ -1,0 +1,3 @@
+<includeonly>Category:{{{1|}}}{{#arraymap:{{#show:Category:{{{1|}}}|?Subcategory of|link=none|sep=,}}|,|@@p@@|{{#ifeq:{{PAGENAME:@@p@@}}|SemanticSchemas-managed||{{!}}{{!}}{{Category/collect-ancestors-L2|{{PAGENAME:@@p@@}}}}}}|}}</includeonly><noinclude>
+Level 1 of ancestor collection. See Category/collect-ancestors.
+</noinclude>

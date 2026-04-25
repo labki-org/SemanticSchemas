@@ -13,13 +13,10 @@ use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
  *   - label               (string)
  *   - description         (string)
  *   - allowedValues       (string[])
- *   - subpropertyOf       (string|null)
- *   - hasTemplate         (string|null) - Template page name or PropertyType reference
  *   - allowedCategory     (string|null)
  *   - allowedNamespace    (string|null)
  *   - allowsMultipleValues (bool)
  *   - inputType            (string|null) - Explicit PageForms input type override
- *   - inverseLabel         (string|null) - Label describing the inverse relationship
  */
 class PropertyModel {
 
@@ -31,13 +28,11 @@ class PropertyModel {
 		'label' => [ 'Display label', 'text' ],
 		'description' => [ 'Has description', 'text' ],
 		'allowedValues' => [ 'Allows value', 'text[]' ],
-		'subpropertyOf' => [ 'Subproperty of', 'property' ],
 		'allowedCategory' => [ 'Allows value from category', 'category' ],
 		'allowedNamespace' => [ 'Allows value from namespace', 'text' ],
 		'allowsMultipleValues' => [ 'Allows multiple values', 'boolean' ],
-		'hasTemplate' => [ 'Has template', 'page' ],
 		'inputType' => [ 'Has input type', 'text' ],
-		'inverseLabel' => [ 'Inverse property label', 'text' ],
+		'hidden' => [ 'Is hidden', 'boolean' ],
 	];
 
 	private string $name;
@@ -49,13 +44,10 @@ class PropertyModel {
 	/** @var string[] */
 	private array $allowedValues;
 
-	private ?string $subpropertyOf;
-	private ?string $hasTemplate;
 	private ?string $allowedCategory;
 	private ?string $allowedNamespace;
 	private bool $allowsMultipleValues;
 	private ?string $inputType;
-	private ?string $inverseLabel;
 
 	private bool $hidden;
 
@@ -106,25 +98,6 @@ class PropertyModel {
 			)
 		);
 
-		/* -------------------- Subproperty -------------------- */
-		$subOf = $data['subpropertyOf'] ?? null;
-		$this->subpropertyOf = ( $subOf !== null && trim( $subOf ) !== '' )
-			? trim( $subOf )
-			: null;
-
-		/* -------------------- Template -------------------- */
-		// Read from new hasTemplate field
-		$template = $data['hasTemplate'] ?? null;
-
-		// Backward compatibility: read from old display['template'] if hasTemplate not set
-		if ( $template === null && isset( $data['display']['template'] ) ) {
-			$template = $data['display']['template'];
-		}
-
-		$this->hasTemplate = ( $template !== null && trim( $template ) !== '' )
-			? trim( $template )
-			: null;
-
 		/* -------------------- Autocomplete restrictions -------------------- */
 		$cat = $data['allowedCategory'] ?? null;
 		$this->allowedCategory = ( $cat !== null && trim( $cat ) !== '' )
@@ -143,11 +116,6 @@ class PropertyModel {
 		$it = $data['inputType'] ?? null;
 		$this->inputType = ( $it !== null && trim( (string)$it ) !== '' )
 			? trim( (string)$it ) : null;
-
-		/* -------------------- Backlink label -------------------- */
-		$invLabel = $data['inverseLabel'] ?? null;
-		$this->inverseLabel = ( $invLabel !== null && trim( (string)$invLabel ) !== '' )
-			? trim( (string)$invLabel ) : null;
 
 		/* -------------------- Hidden -------------------- */
 		$this->hidden = !empty( $data['hidden'] );
@@ -248,24 +216,6 @@ class PropertyModel {
 		);
 	}
 
-	public function getRenderTemplate(): string {
-		// Priority 1: Explicit custom template
-		if ( $this->hasTemplate !== null ) {
-			// Strip namespace prefix if present — wikitext {{Name}} already
-			// resolves in the Template namespace, and hardcoding the prefix
-			// breaks on non-English wikis.
-			return preg_replace( '/^Template:/', '', $this->hasTemplate );
-		}
-		// Priority 2: Datatype-specific template for Page type
-		if ( $this->isPageType() ) {
-			return 'Property/Page';
-		}
-		// Fallback: Default template
-		return 'Property/Default';
-	}
-
-	// Backward compatibility aliases
-
 	public function getAllowedCategory(): ?string {
 		return $this->allowedCategory;
 	}
@@ -282,10 +232,6 @@ class PropertyModel {
 		return $this->inputType;
 	}
 
-	public function getInverseLabel(): ?string {
-		return $this->inverseLabel;
-	}
-
 	public function isHidden(): bool {
 		return $this->hidden;
 	}
@@ -300,13 +246,10 @@ class PropertyModel {
 			'label' => $this->label,
 			'description' => $this->description,
 			'allowedValues' => $this->allowedValues,
-			'subpropertyOf' => $this->subpropertyOf,
-			'hasTemplate' => $this->hasTemplate,
 			'allowedCategory' => $this->allowedCategory,
 			'allowedNamespace' => $this->allowedNamespace,
 			'allowsMultipleValues' => $this->allowsMultipleValues,
 			'inputType' => $this->inputType,
-			'inverseLabel' => $this->inverseLabel,
 			'hidden' => $this->hidden ?: null,
 		];
 
