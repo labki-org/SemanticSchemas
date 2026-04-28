@@ -51,6 +51,80 @@ class FieldModelTest extends TestCase {
 		);
 	}
 
+	public function testRenderTemplateDefaultsToNull(): void {
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY );
+		$this->assertNull( $field->getRenderTemplate() );
+	}
+
+	public function testRenderTemplateStoredWhenProvided(): void {
+		$field = new FieldModel(
+			'Has email', false, FieldModel::TYPE_PROPERTY, 'Property/Email'
+		);
+		$this->assertSame( 'Property/Email', $field->getRenderTemplate() );
+	}
+
+	public function testRenderTemplateEmptyStringNormalizesToNull(): void {
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY, '' );
+		$this->assertNull( $field->getRenderTemplate() );
+	}
+
+	public function testJsonSerializeIncludesRenderTemplateWhenSet(): void {
+		$field = new FieldModel(
+			'Has email', false, FieldModel::TYPE_PROPERTY, 'Property/Email'
+		);
+		$this->assertSame(
+			[
+				'name' => 'Has email',
+				'required' => false,
+				'renderTemplate' => 'Property/Email',
+			],
+			$field->jsonSerialize()
+		);
+	}
+
+	public function testJsonSerializeOmitsRenderTemplateWhenNull(): void {
+		$field = new FieldModel( 'Has name', true, FieldModel::TYPE_PROPERTY );
+		$this->assertArrayNotHasKey( 'renderTemplate', $field->jsonSerialize() );
+	}
+
+	public function testSubobjectDisplayTemplateDefaultsToNull(): void {
+		$field = new FieldModel( 'Chapter', false, FieldModel::TYPE_SUBOBJECT );
+		$this->assertNull( $field->getSubobjectDisplayTemplate() );
+	}
+
+	public function testSubobjectDisplayTemplateStoredWhenProvided(): void {
+		$field = new FieldModel(
+			'Chapter', false, FieldModel::TYPE_SUBOBJECT, null, 'ChapterTable'
+		);
+		$this->assertSame( 'ChapterTable', $field->getSubobjectDisplayTemplate() );
+	}
+
+	public function testSubobjectDisplayTemplateEmptyStringNormalizesToNull(): void {
+		$field = new FieldModel(
+			'Chapter', false, FieldModel::TYPE_SUBOBJECT, null, '   '
+		);
+		$this->assertNull( $field->getSubobjectDisplayTemplate() );
+	}
+
+	public function testJsonSerializeIncludesSubobjectDisplayTemplateWhenSet(): void {
+		$field = new FieldModel(
+			'Chapter', false, FieldModel::TYPE_SUBOBJECT, null, 'ChapterTable'
+		);
+		$this->assertSame(
+			[
+				'name' => 'Chapter',
+				'required' => false,
+				'subobjectDisplayTemplate' => 'ChapterTable',
+			],
+			$field->jsonSerialize()
+		);
+	}
+
+	public function testJsonSerializeOmitsSubobjectDisplayTemplateWhenNull(): void {
+		$field = new FieldModel( 'Chapter', false, FieldModel::TYPE_SUBOBJECT );
+		$this->assertArrayNotHasKey( 'subobjectDisplayTemplate', $field->jsonSerialize() );
+	}
+
 	/* =========================================================================
 	 * filter()
 	 * ========================================================================= */

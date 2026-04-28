@@ -1,0 +1,9 @@
+{{Category
+| has_description = A single reader review. Used as a subobject type.
+| display_label = Review
+}}
+
+{{Property field/subobject | for_property = Has reviewer   | is_required = true  }}
+{{Property field/subobject | for_property = Has rating     | is_required = true  }}
+{{Property field/subobject | for_property = Has comment    | is_required = false }}
+{{Property field/subobject | for_property = Has sort order | is_required = false }}

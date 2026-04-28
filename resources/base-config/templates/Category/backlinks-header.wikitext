@@ -1,0 +1,6 @@
+<includeonly>! colspan="2" style="background-color: #eaecf0; text-align: center; font-size: 0.9em;" | Backlinks</includeonly><noinclude>
+Header cell for the Backlinks section of a category display table.
+One row, spans both columns. Kept as its own primitive so the markup
+lives in one place (used by the dispatcher's baked backlinks section
+and by Category/render-reverse's dynamic path).
+</noinclude>

@@ -19,10 +19,10 @@ For administrators and end users:
   - Subobject properties (metadata, required/optional properties)
   - Examples and best practices
 
-- **[Display Properties](user-guide/DISPLAY_PROPERTIES.md)** - Guide to property display configuration
-  - Custom display templates
-  - Display patterns and types
-  - Rendering priority order
+- **[Customizing Category Display](user-guide/customizing-display.md)** - How the layered template system renders category pages, and how to override at three levels
+  - Per-field value renderers via `Has render template`
+  - Fully custom displays via `Has display template`
+  - Reference for the `Property/`, `Category/property-row`, `Category/backlink-row`, `Category/subobject-list` primitives
 
 - **[Hierarchy Visualization Guide](user-guide/hierarchy-visualization.md)** - Complete guide to visualizing category inheritance
   - Using the Special page interface
@@ -89,7 +89,7 @@ For system administrators:
 - **Installing SemanticSchemas** → [Getting Started](getting-started/QUICKSTART.md#installation)
 - **Creating a category** → [Quick Start](getting-started/QUICKSTART.md#creating-your-first-ontology)
 - **Visualizing hierarchy** → [Hierarchy Visualization](user-guide/hierarchy-visualization.md)
-- **Customizing display** → [Display Properties](user-guide/DISPLAY_PROPERTIES.md)
+- **Customizing display** → [Customizing Category Display](user-guide/customizing-display.md)
 - **Exporting schema** → [Main README](../README.md#maintenance-scripts)
 - **Understanding architecture** → [Architecture Guide](developer/architecture.md)
 

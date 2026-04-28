@@ -1,0 +1,12 @@
+{{Textbook
+| has_title = Introduction to Algorithms
+| has_subtitle = Third Edition
+| has_author = Thomas Cormen
+| has_pubyear = 2009
+| has_isbn = 978-0-262-03384-8
+| has_subject = Computer Science
+| has_edition = 3
+| has_genre = Technical
+| has_tag = algorithms, reference
+| is_available = true
+}}

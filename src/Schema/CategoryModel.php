@@ -71,6 +71,9 @@ class CategoryModel {
 	/** @var ?string Custom display template page name (e.g. "Template:MyDisplay") */
 	private ?string $displayTemplate = null;
 
+	/** @var ?string Category-level default for rendering this category's instances as subobjects */
+	private ?string $subobjectDisplayTemplate = null;
+
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
 	 * ------------------------------------------------------------------------- */
@@ -140,6 +143,10 @@ class CategoryModel {
 		$tpl = $display['template'] ?? null;
 		$this->displayTemplate = ( $tpl !== null && trim( (string)$tpl ) !== '' )
 			? trim( (string)$tpl ) : null;
+
+		$subTpl = $display['subobjectTemplate'] ?? null;
+		$this->subobjectDisplayTemplate = ( $subTpl !== null && trim( (string)$subTpl ) !== '' )
+			? trim( (string)$subTpl ) : null;
 
 		/* -------------------- Form Config -------------------- */
 
@@ -325,6 +332,10 @@ class CategoryModel {
 			$merged['template'] = $child['template'];
 		}
 
+		if ( isset( $child['subobjectTemplate'] ) ) {
+			$merged['subobjectTemplate'] = $child['subobjectTemplate'];
+		}
+
 		return $merged;
 	}
 
@@ -386,5 +397,13 @@ class CategoryModel {
 
 	public function getDisplayTemplate(): ?string {
 		return $this->displayTemplate;
+	}
+
+	/**
+	 * Category-level default for rendering this category's instances
+	 * when they appear as subobjects on a parent page. Null when not set.
+	 */
+	public function getSubobjectDisplayTemplate(): ?string {
+		return $this->subobjectDisplayTemplate;
 	}
 }

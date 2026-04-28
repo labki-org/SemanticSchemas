@@ -33,6 +33,8 @@ class PropertyModel {
 		'allowsMultipleValues' => [ 'Allows multiple values', 'boolean' ],
 		'inputType' => [ 'Has input type', 'text' ],
 		'hidden' => [ 'Is hidden', 'boolean' ],
+		'inverseLabel' => [ 'Inverse property label', 'text' ],
+		'renderTemplate' => [ 'Has render template', 'template' ],
 	];
 
 	private string $name;
@@ -50,6 +52,8 @@ class PropertyModel {
 	private ?string $inputType;
 
 	private bool $hidden;
+	private string $inverseLabel;
+	private ?string $renderTemplate;
 
 	/* -------------------------------------------------------------------------
 	 * CONSTRUCTOR
@@ -119,6 +123,17 @@ class PropertyModel {
 
 		/* -------------------- Hidden -------------------- */
 		$this->hidden = !empty( $data['hidden'] );
+
+		/* -------------------- Inverse label -------------------- */
+		$this->inverseLabel = isset( $data['inverseLabel'] )
+			? trim( (string)$data['inverseLabel'] )
+			: '';
+
+		/* -------------------- Render template -------------------- */
+		$rt = $data['renderTemplate'] ?? null;
+		$this->renderTemplate = ( $rt !== null && trim( (string)$rt ) !== '' )
+			? trim( (string)$rt )
+			: null;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -236,6 +251,17 @@ class PropertyModel {
 		return $this->hidden;
 	}
 
+	public function getInverseLabel(): string {
+		return $this->inverseLabel;
+	}
+
+	/**
+	 * Property-level default for the value-render template. Null when not set.
+	 */
+	public function getRenderTemplate(): ?string {
+		return $this->renderTemplate;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * EXPORT
 	 * ---------------------------------------------------------------------- */
@@ -251,6 +277,8 @@ class PropertyModel {
 			'allowsMultipleValues' => $this->allowsMultipleValues,
 			'inputType' => $this->inputType,
 			'hidden' => $this->hidden ?: null,
+			'inverseLabel' => $this->inverseLabel !== '' ? $this->inverseLabel : null,
+			'renderTemplate' => $this->renderTemplate,
 		];
 
 		// Remove nulls + empty arrays, but preserve boolean false

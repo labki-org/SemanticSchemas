@@ -42,6 +42,16 @@
 			}
 		},
 		{
+			"page": "Property/value",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Property/value.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Category/display-header",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
@@ -72,6 +82,26 @@
 			}
 		},
 		{
+			"page": "Category/table-header",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/table-header.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/table-footer",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/table-footer.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Category/sidebox",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
@@ -82,50 +112,70 @@
 			}
 		},
 		{
-			"page": "Category/collect-ancestors",
+			"page": "Category/sidebox-header",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors.wikitext"
+				"importFrom": "templates/Category/sidebox-header.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L1",
+			"page": "Category/sidebox-footer",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L1.wikitext"
+				"importFrom": "templates/Category/sidebox-footer.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L2",
+			"page": "Category/ancestors",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L2.wikitext"
+				"importFrom": "templates/Category/ancestors.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L3",
+			"page": "Category/ancestors-L1",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L3.wikitext"
+				"importFrom": "templates/Category/ancestors-L1.wikitext"
 			},
 			"options": {
 				"replaceable": true
 			}
 		},
 		{
-			"page": "Category/collect-ancestors-L4",
+			"page": "Category/ancestors-L2",
 			"namespace": "NS_TEMPLATE",
 			"contents": {
-				"importFrom": "templates/Category/collect-ancestors-L4.wikitext"
+				"importFrom": "templates/Category/ancestors-L2.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/ancestors-L3",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/ancestors-L3.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/ancestors-L4",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/ancestors-L4.wikitext"
 			},
 			"options": {
 				"replaceable": true
@@ -156,6 +206,46 @@
 			"namespace": "NS_TEMPLATE",
 			"contents": {
 				"importFrom": "templates/Category/subobject-instance.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/property-row",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/property-row.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/backlink-row",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/backlink-row.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/backlinks-header",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/backlinks-header.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/subobject-list",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/subobject-list.wikitext"
 			},
 			"options": {
 				"replaceable": true
@@ -306,6 +396,16 @@
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
 				"importFrom": "properties/Has_display_template.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Has subobject display template",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_subobject_display_template.wikitext"
 			},
 			"options": {
 				"replaceable": true

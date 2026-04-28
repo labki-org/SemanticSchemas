@@ -1,0 +1,7 @@
+<includeonly>{{Category/table-footer | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} | subobjects={{{subobjects|yes}}} | backlinks={{{backlinks|{{{subobjects|yes}}}}}} | backlink_section={{{backlink_section|}}} }}</includeonly><noinclude>
+Closes a sidebox opened by `Category/sidebox-header`. Delegates to
+`Category/table-footer` — the close-frame + backlinks + subobjects
+logic is identical; this template exists as the sidebox counterpart
+to `sidebox-header` so the dispatcher can name the pair consistently.
+Parameters are forwarded verbatim (see `Category/table-footer`).
+</noinclude>

@@ -178,7 +178,7 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 - **[Getting Started](docs/getting-started/QUICKSTART.md)** - Create your first ontology
 - **[User Guide](docs/user-guide/)** - Complete guides for administrators
   - [Supported Properties](docs/user-guide/SUPPORTED_PROPERTIES.md)
-  - [Display Properties](docs/user-guide/DISPLAY_PROPERTIES.md)
+  - [Customizing Category Display](docs/user-guide/customizing-display.md)
   - [Hierarchy Visualization](docs/user-guide/hierarchy-visualization.md)
 - **[Developer Documentation](docs/developer/)** - For contributors and extenders
   - [Architecture Guide](docs/developer/architecture.md)

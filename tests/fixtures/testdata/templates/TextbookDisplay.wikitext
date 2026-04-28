@@ -1,0 +1,18 @@
+<includeonly><div class="textbook-display" style="border: 2px solid #2e7d32; padding: 1em; margin: 1em 0; background: #f1f8e9;">
+<h2 style="margin-top: 0;">{{{has_title|}}}{{#if:{{{has_subtitle|}}}|<small style="color: #555;"> &mdash; {{{has_subtitle|}}}</small>}}</h2>
+<p><strong>Subject:</strong> {{{has_subject|}}} &middot; <strong>Edition:</strong> {{{has_edition|}}}</p>
+<p><strong>By</strong> {{Property/Page | value={{{has_author|}}}}} &middot; <strong>Published</strong> {{{has_pubyear|}}}</p>
+
+<h3>Details</h3>
+{{Category/table-header | category={{{category|Textbook}}} | label=Details}}
+{{Category/property-row | prop=Has ISBN            | value={{{has_isbn|}}}}}
+{{Category/property-row | prop=Has genre           | value={{{has_genre|}}}}}
+{{Category/property-row | prop=Has tag             | value={{{has_tag|}}}}}
+{{Category/property-row | prop=Is available        | value={{{is_available|}}}}}
+{{Category/table-footer | category={{{category|Textbook}}} | subobjects=no | backlinks=no}}
+</div></includeonly><noinclude>
+Custom display template for Category:Textbook (Level 3 example; see
+docs/user-guide/customizing-display.md). Hero fields use direct
+`{{{has_*|}}}` param access; the Details table composes primitives
+with `prop=` for dynamic label resolution.
+</noinclude>

@@ -1,0 +1,8 @@
+{{Reviewer
+| has_full_name = Thomas H. Cormen
+| has_email = cormen@example.org
+| has_pubyear = 1956
+| has_internal_id = P-0004
+}}
+
+Computer scientist, co-author of ''Introduction to Algorithms''.

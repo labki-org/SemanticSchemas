@@ -1,0 +1,9 @@
+{{Person
+| has_full_name = John Ronald Reuel Tolkien
+| has_email = tolkien@example.org
+| has_website = https://www.tolkienestate.com
+| has_pubyear = 1892
+| has_internal_id = P-0001
+}}
+
+English writer, poet, and philologist, best known for ''The Hobbit'' and ''The Lord of the Rings''.

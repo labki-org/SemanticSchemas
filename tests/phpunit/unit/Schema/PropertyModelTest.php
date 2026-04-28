@@ -134,4 +134,44 @@ class PropertyModelTest extends TestCase {
 		$arr = $p->toArray();
 		$this->assertArrayNotHasKey( 'hidden', $arr );
 	}
+
+	/* =========================================================================
+	 * RENDER TEMPLATE
+	 * ========================================================================= */
+
+	public function testRenderTemplateDefaultsToNull(): void {
+		$p = new PropertyModel( 'Has email', [ 'datatype' => 'Email' ] );
+		$this->assertNull( $p->getRenderTemplate() );
+	}
+
+	public function testRenderTemplateStoredWhenProvided(): void {
+		$p = new PropertyModel( 'Has email', [
+			'datatype' => 'Email',
+			'renderTemplate' => 'Property/Email',
+		] );
+		$this->assertSame( 'Property/Email', $p->getRenderTemplate() );
+	}
+
+	public function testRenderTemplateEmptyStringNormalizesToNull(): void {
+		$p = new PropertyModel( 'Has email', [
+			'datatype' => 'Email',
+			'renderTemplate' => '   ',
+		] );
+		$this->assertNull( $p->getRenderTemplate() );
+	}
+
+	public function testToArrayIncludesRenderTemplateWhenSet(): void {
+		$p = new PropertyModel( 'Has email', [
+			'datatype' => 'Email',
+			'renderTemplate' => 'Property/Email',
+		] );
+		$arr = $p->toArray();
+		$this->assertSame( 'Property/Email', $arr['renderTemplate'] );
+	}
+
+	public function testToArrayOmitsRenderTemplateWhenNull(): void {
+		$p = new PropertyModel( 'Has email', [ 'datatype' => 'Email' ] );
+		$arr = $p->toArray();
+		$this->assertArrayNotHasKey( 'renderTemplate', $arr );
+	}
 }

@@ -1,0 +1,311 @@
+{
+	"description": "SemanticSchemas end-to-end test data — a Library/Books domain that exercises every extension feature (inheritance, subobjects, display formats, overrides).",
+	"import": [
+		{
+			"page": "Has title",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_title.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has subtitle",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_subtitle.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has ISBN",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_ISBN.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has author",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_author.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has pubyear",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_pubyear.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has genre",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_genre.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has tag",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_tag.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has journal",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_journal.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has DOI",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_DOI.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has subject",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_subject.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has edition",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_edition.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has review rating",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_review_rating.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has chapter title",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_chapter_title.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has chapter summary",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_chapter_summary.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has reviewer",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_reviewer.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has rating",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_rating.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has comment",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_comment.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has full name",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_full_name.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has email",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_email.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has website",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_website.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Has internal id",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Has_internal_id.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Is available",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": { "importFrom": "properties/Is_available.wikitext" },
+			"options": { "replaceable": true }
+		},
+
+		{
+			"page": "Work",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Work.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Book",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Book.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Textbook",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Textbook.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Article",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Article.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Reviewed",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Reviewed.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ReviewedBook",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/ReviewedBook.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Chapter",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Chapter.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Review",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Review.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Person",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Person.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Reviewer",
+			"namespace": "NS_CATEGORY",
+			"contents": { "importFrom": "categories/Reviewer.wikitext" },
+			"options": { "replaceable": true }
+		},
+
+		{
+			"page": "TextbookDisplay",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/TextbookDisplay.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Property/ObfuscatedEmail",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/Property/ObfuscatedEmail.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Property/Stars",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/Property/Stars.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterTable",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterTable.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterTable/open",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterTable.open.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterTable/row",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterTable.row.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterTable/close",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterTable.close.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterCards",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterCards.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "ChapterCards/row",
+			"namespace": "NS_TEMPLATE",
+			"contents": { "importFrom": "templates/ChapterCards.row.wikitext" },
+			"options": { "replaceable": true }
+		},
+
+		{
+			"page": "J. R. R. Tolkien",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/J._R._R._Tolkien.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Frank Herbert",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/Frank_Herbert.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Carl Sagan",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/Carl_Sagan.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Thomas Cormen",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/Thomas_Cormen.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "The Hobbit",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/The_Hobbit.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Dune",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/Dune.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Introduction to Algorithms",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/Introduction_to_Algorithms.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Cosmos as Context",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/Cosmos_as_Context.wikitext" },
+			"options": { "replaceable": true }
+		},
+		{
+			"page": "Main Page",
+			"namespace": "NS_MAIN",
+			"contents": { "importFrom": "pages/Main_Page.wikitext" },
+			"options": { "replaceable": true }
+		}
+	],
+	"meta": {
+		"version": "1"
+	}
+}

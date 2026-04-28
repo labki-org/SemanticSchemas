@@ -58,7 +58,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'display-rows' );
 
 		$this->assertStringContainsString(
-			'{{Category/collect-ancestors|{{{category|}}}}}',
+			'{{Category/ancestors|{{{category|}}}}}',
 			$content,
 			'display-rows must walk the ancestor chain to discover inherited properties'
 		);
@@ -71,6 +71,16 @@ class CategoryDisplayTemplateTest extends TestCase {
 			'{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}',
 			$content,
 			'display-rows must use #show to retrieve property values from the target page'
+		);
+	}
+
+	public function testDisplayRowsSkipsHiddenProperties(): void {
+		$content = $this->loadTemplate( 'display-rows' );
+
+		$this->assertStringContainsString(
+			'{{#ifeq:{{#show:@@prop@@|?Is hidden}}|true||',
+			$content,
+			'display-rows must skip rows for properties flagged Is hidden=true'
 		);
 	}
 
@@ -98,62 +108,138 @@ class CategoryDisplayTemplateTest extends TestCase {
 		);
 	}
 
-	public function testDisplayHeaderContainsEditLink(): void {
+	public function testDisplayHeaderHasNoEditLink(): void {
+		$content = $this->loadTemplate( 'display-header' );
+
+		$this->assertStringNotContainsString(
+			'Special:FormEdit',
+			$content,
+			'display-header must not include an edit link; rendered inside subobject tables where it does not apply'
+		);
+	}
+
+	public function testDisplayHeaderUsesBakedLabelWhenProvided(): void {
 		$content = $this->loadTemplate( 'display-header' );
 
 		$this->assertStringContainsString(
-			'Special:FormEdit/{{{category|}}}',
+			'{{#if:{{{label|}}}|{{{label}}}|',
 			$content,
-			'display-header must include an edit link via Special:FormEdit'
+			'display-header must short-circuit the Display-label lookup when the caller passes a baked label'
 		);
 	}
 
 	/* =========================================================================
 	 * TABLE FORMAT
-	 * Replaces: testContainsWikitableMarkup
+	 * Dispatcher fast path composes table-header + N property-row + table-footer
+	 * directly. Category/table itself is now the dynamic-discovery variant
+	 * used by subobject-instance and hand-written custom wikitext.
 	 * ========================================================================= */
 
-	public function testTableTemplateHasWikitableMarkup(): void {
-		$content = $this->loadTemplate( 'table' );
+	public function testTableHeaderOpensWikitableFrame(): void {
+		$content = $this->loadTemplate( 'table-header' );
 
 		$this->assertStringContainsString( '{| class="wikitable', $content );
-		$this->assertStringContainsString( '|}', $content );
+		$this->assertStringContainsString(
+			'{{Category/display-header',
+			$content,
+			'table-header must compose display-header for the title row'
+		);
 	}
 
-	public function testTableTemplateComposesSubTemplates(): void {
+	public function testTableHeaderForwardsBakedLabelToDisplayHeader(): void {
+		$content = $this->loadTemplate( 'table-header' );
+
+		$this->assertStringContainsString(
+			'label={{{label|}}}',
+			$content,
+			'table-header must forward baked label to display-header'
+		);
+	}
+
+	public function testTableFooterClosesFrameAndHandlesSubobjects(): void {
+		$content = $this->loadTemplate( 'table-footer' );
+
+		$this->assertStringContainsString( '|}', $content );
+		$this->assertStringContainsString(
+			'{{Category/subobjects',
+			$content,
+			'table-footer must optionally compose the subobjects block'
+		);
+		$this->assertStringContainsString(
+			'{{Category/render-reverse',
+			$content,
+			'table-footer must fall back to render-reverse when no backlink_section is baked'
+		);
+	}
+
+	public function testTableFooterAcceptsBakedBacklinkSection(): void {
+		$content = $this->loadTemplate( 'table-footer' );
+
+		$this->assertStringContainsString(
+			'{{{backlink_section|}}}',
+			$content,
+			'table-footer must accept a pre-baked backlink_section from the dispatcher'
+		);
+	}
+
+	public function testTableTemplateComposesHeaderFooterForDynamicPath(): void {
 		$content = $this->loadTemplate( 'table' );
 
-		$this->assertStringContainsString( '{{Category/display-header', $content );
+		$this->assertStringContainsString( '{{Category/table-header', $content );
 		$this->assertStringContainsString( '{{Category/display-rows', $content );
-		$this->assertStringContainsString( '{{Category/render-reverse', $content );
+		$this->assertStringContainsString( '{{Category/table-footer', $content );
+	}
+
+	public function testPropertyRowLabelFallsBackToDisplayLabelLookup(): void {
+		$content = $this->loadTemplate( 'property-row' );
+
+		// When a custom display template passes prop= instead of a baked
+		// label=, property-row must look up the property's Display label
+		// so templates pick up the site-wide label without hard-coding it.
+		$this->assertStringContainsString(
+			'{{#if:{{{label|}}}|{{{label}}}|{{#show:Property:{{{prop|}}}|?Display label',
+			$content,
+			'property-row must prefer baked label=, fall back to #show on prop='
+		);
+		$this->assertStringContainsString(
+			'default={{{prop|}}}',
+			$content,
+			'property-row must fall back to the raw property name when no Display label is set'
+		);
 	}
 
 	/* =========================================================================
 	 * SIDEBOX FORMAT
 	 * ========================================================================= */
 
-	public function testSideboxTemplateHasWikitableMarkup(): void {
-		$content = $this->loadTemplate( 'sidebox' );
-
-		$this->assertStringContainsString( '{| class="wikitable', $content );
-		$this->assertStringContainsString( '|}', $content );
-	}
-
-	public function testSideboxTemplateHasFloatStyling(): void {
-		$content = $this->loadTemplate( 'sidebox' );
+	public function testSideboxHeaderHasFloatStyling(): void {
+		$content = $this->loadTemplate( 'sidebox-header' );
 
 		$this->assertStringContainsString( 'float: right', $content,
-			'sidebox must float to the right' );
+			'sidebox-header must float to the right' );
 		$this->assertStringContainsString( 'width: 300px', $content,
-			'sidebox must have a fixed width' );
+			'sidebox-header must have a fixed width' );
 	}
 
-	public function testSideboxTemplateComposesSubTemplates(): void {
+	public function testSideboxHeaderOpensFrameAndComposesDisplayHeader(): void {
+		$content = $this->loadTemplate( 'sidebox-header' );
+
+		$this->assertStringContainsString( '{| class="wikitable', $content );
+		$this->assertStringContainsString( '{{Category/display-header', $content );
+	}
+
+	public function testSideboxFooterDelegatesToTableFooter(): void {
+		$content = $this->loadTemplate( 'sidebox-footer' );
+
+		$this->assertStringContainsString( '{{Category/table-footer', $content );
+	}
+
+	public function testSideboxTemplateComposesHeaderFooterForDynamicPath(): void {
 		$content = $this->loadTemplate( 'sidebox' );
 
-		$this->assertStringContainsString( '{{Category/display-header', $content );
+		$this->assertStringContainsString( '{{Category/sidebox-header', $content );
 		$this->assertStringContainsString( '{{Category/display-rows', $content );
-		$this->assertStringContainsString( '{{Category/render-reverse', $content );
+		$this->assertStringContainsString( '{{Category/sidebox-footer', $content );
 	}
 
 	/* =========================================================================
@@ -189,13 +275,13 @@ class CategoryDisplayTemplateTest extends TestCase {
 		);
 	}
 
-	public function testRenderReverseShowsBacklinksHeader(): void {
+	public function testRenderReverseComposesBacklinksHeaderPrimitive(): void {
 		$content = $this->loadTemplate( 'render-reverse' );
 
 		$this->assertStringContainsString(
-			'{{!}} Backlinks',
+			'{{Category/backlinks-header}}',
 			$content,
-			'render-reverse must show a Backlinks header'
+			'render-reverse must compose the Category/backlinks-header primitive'
 		);
 	}
 
@@ -227,7 +313,7 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$content = $this->loadTemplate( 'subobjects' );
 
 		$this->assertStringContainsString(
-			'[[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]]',
+			'[[-Has subobject::{{Category/ancestors|{{{category|}}}}}]] [[Category:Subobject field]]',
 			$content,
 			'subobjects must walk the ancestor chain and filter Subobject field subobjects'
 		);
@@ -315,18 +401,22 @@ class CategoryDisplayTemplateTest extends TestCase {
 		);
 	}
 
-	public function testSubobjectsHeadingUsesHtmlTag(): void {
+	public function testSubobjectsHeadingRidesOnAskIntro(): void {
 		$content = $this->loadTemplate( 'subobjects' );
 
+		// Heading lives in the #ask's intro= param so SMW only renders it
+		// when at least one result exists — empty subobject types leave
+		// no orphan heading on the page. Raw <h3> (vs. wikitext ===) keeps
+		// MediaWiki from attaching a template-section [edit] link.
 		$this->assertStringContainsString(
-			'<h3>',
+			'intro=<h3>',
 			$content,
-			'subobjects must use an HTML <h3> tag (arraymap trims the leading newline wikitext === needs)'
+			'subobjects heading must live in the #ask intro= param so it only renders with ≥1 result'
 		);
 		$this->assertStringNotContainsString(
 			'=== {{#show:',
 			$content,
-			'subobjects must not use wikitext === headings (render as literal after arraymap trims newline)'
+			'subobjects must not use wikitext === headings (empty sections would leave an orphan heading)'
 		);
 	}
 
@@ -381,27 +471,31 @@ class CategoryDisplayTemplateTest extends TestCase {
 	 * TABLE / SIDEBOX: RENDER-REVERSE GATING
 	 * ========================================================================= */
 
-	public function testTableGatesRenderReverseOnSubobjectsParam(): void {
-		$content = $this->loadTemplate( 'table' );
+	public function testTableFooterGatesRenderReverseOnBacklinksFlagWithSubobjectsFallback(): void {
+		$content = $this->loadTemplate( 'table-footer' );
 
 		// render-reverse hardcodes {{FULLPAGENAME}} for backlink lookups, so
-		// when Category/subobject-instance re-enters table with subobjects=no,
-		// an ungated render-reverse would duplicate the parent page's
-		// Backlinks section inside every subobject mini-table.
+		// when the dispatcher's subobject-row re-enters table-footer, an
+		// ungated render-reverse would duplicate the parent page's Backlinks
+		// section inside every subobject mini-table. Dispatcher's subobject
+		// path passes backlinks=no; its main path passes subobjects=no (to
+		// suppress the nested Category/subobjects block) while still wanting
+		// backlinks, so gate on `backlinks` with `subobjects` as the default.
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse',
+			'{{#ifeq:{{{backlinks|{{{subobjects|yes}}}}}}|yes'
+				. '|{{#if:{{{backlink_section|}}}|{{{backlink_section}}}|{{Category/render-reverse',
 			$content,
-			'table must gate Category/render-reverse on subobjects=yes to keep backlinks out of subobject instances'
+			'table-footer must gate backlinks block; backlink_section fast path before render-reverse fallback'
 		);
 	}
 
-	public function testSideboxGatesRenderReverseOnSubobjectsParam(): void {
-		$content = $this->loadTemplate( 'sidebox' );
+	public function testSideboxFooterForwardsBacklinksFlag(): void {
+		$content = $this->loadTemplate( 'sidebox-footer' );
 
 		$this->assertStringContainsString(
-			'{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse',
+			'backlinks={{{backlinks|{{{subobjects|yes}}}}}}',
 			$content,
-			'sidebox must gate Category/render-reverse on subobjects=yes for the same reason as table'
+			'sidebox-footer must forward backlinks flag (with subobjects fallback) to table-footer'
 		);
 	}
 
@@ -410,17 +504,17 @@ class CategoryDisplayTemplateTest extends TestCase {
 	 * ========================================================================= */
 
 	public function testCollectAncestorsWalksParentChain(): void {
-		$content = $this->loadTemplate( 'collect-ancestors' );
+		$content = $this->loadTemplate( 'ancestors' );
 
 		$this->assertStringContainsString(
 			'?Subcategory of',
 			$content,
-			'collect-ancestors must query ?Subcategory of to walk the category hierarchy'
+			'ancestors must query ?Subcategory of to walk the category hierarchy'
 		);
 		$this->assertStringContainsString(
-			'{{Category/collect-ancestors-L1',
+			'{{Category/ancestors-L1',
 			$content,
-			'collect-ancestors must delegate to L1 for deeper levels'
+			'ancestors must delegate to L1 for deeper levels'
 		);
 	}
 

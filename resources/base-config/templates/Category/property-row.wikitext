@@ -1,0 +1,18 @@
+<includeonly>{{#if:{{{value|}}}|{{!}}-
+! {{#if:{{{label|}}}|{{{label}}}|{{#show:Property:{{{prop|}}}|?Display label|default={{{prop|}}}}}}}
+{{!}} {{{value|}}}|}}</includeonly><noinclude>
+One property row inside a category display wikitable. Suppressed when
+`value` is empty so callers don't need to guard each row.
+
+Label resolution (in order):
+
+# '''`label`''' param — used verbatim when set. Auto-generated
+  dispatchers pass this so zero SMW queries fire per row.
+# '''`prop`''' param — when `label` is absent, looks up the property's
+  `Display label` via `#show`. Use in hand-written custom display
+  templates to pick up the site-wide label without hard-coding it.
+# '''property name''' — when neither display label is resolvable,
+  falls back to the raw property name.
+
+Parameters: `value`, and either `label` (baked) or `prop` (dynamic).
+</noinclude>

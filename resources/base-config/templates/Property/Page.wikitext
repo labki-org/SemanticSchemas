@@ -1,1 +1,1 @@
-<includeonly>{{#if:{{{value|}}}|{{#arraymap:{{{value|}}}|,|@@item@@|[[:@@item@@]]|,&#32;}}|}}</includeonly>
+<includeonly>{{#if:{{{value|}}}|{{#arraymap:{{{value|}}}|,|@@item@@|[[:@@item@@{{!}}{{PAGENAME:@@item@@}}]]|,&#32;}}|}}</includeonly>
