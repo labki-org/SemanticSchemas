@@ -6,7 +6,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\PropertyModel;
 use MediaWiki\Extension\SemanticSchemas\Util\NamingHelper;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
 use MediaWiki\Title\Title;
-use SMW\Services\ServicesFactory;
 use Wikimedia\Rdbms\IConnectionProvider;
 
 /**
@@ -98,26 +97,9 @@ class WikiPropertyStore {
 
 		$out = [];
 
-		// Datatype comes from SMW's internal property type API, not semantic annotations.
-		//
-		// SMW's PropertySpecificationLookup caches every `_TYPE` lookup
-		// (including empty results) in an EntityCache backed by a
-		// CompositeCache whose in-process layer lives for the PHP process's
-		// lifetime. On long-lived interpreters (Apache mod_php prefork with
-		// `MaxConnectionsPerChild 0`, PHP-FPM with high `pm.max_requests`),
-		// that layer accumulates state across requests. A `findPropertyTypeID`
-		// call racing with an in-flight property-page save caches `[]` for
-		// the subject, and subsequent reads on that worker fall back to
-		// `smwgPDefaultType` (`_wpg` → Page). The form generator then emits
-		// combobox inputs for properties whose store entry is actually Date,
-		// Text, URL, etc., until the worker is recycled or the property page
-		// is purged. Regenerating a property model is infrequent and
-		// explicit, so always force a fresh lookup.
+		// Datatype comes from SMW's internal property type API, not semantic annotations
 		try {
 			$prop = \SMW\DIProperty::newFromUserLabel( $title->getText() );
-			ServicesFactory::getInstance()
-				->getPropertySpecificationLookup()
-				->invalidateCache( $subject );
 			$internalTypeId = $prop->findPropertyTypeID();
 			if ( $internalTypeId !== null ) {
 				$out['datatype'] = $this->convertSMWTypeIdToCanonical( $internalTypeId );
