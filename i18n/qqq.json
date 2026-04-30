@@ -4,7 +4,10 @@
 			"Your Name"
 		]
 	},
+	"action-semanticschemas-manage": "{{Doc-action|semanticschemas-manage}}",
 	"createsemanticpage": "Display name for Special:CreateSemanticPage on Special:SpecialPages (MediaWiki convention)",
+	"right-semanticschemas-bypass-ratelimit": "{{Doc-right|semanticschemas-bypass-ratelimit}} Description of the right that allows users to bypass the per-hour rate limit on SemanticSchemas operations.",
+	"right-semanticschemas-manage": "{{Doc-right|semanticschemas-manage}} Description of the right required to use Special:SemanticSchemas (import, export, validate, generate).",
 	"semanticschemas": "{{name}}",
 	"semanticschemas-action-add-category": "Label for the 'Add category' action in the page tools menu",
 	"semanticschemas-action-generate-form": "Text shown in the action dropdown menu on Category pages to generate a form",

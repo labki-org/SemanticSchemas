@@ -60,6 +60,29 @@ These pages are defined in `resources/base-config/` and serve as the foundation 
 
 No additional configuration is required for basic usage. The extension works out of the box once the base configuration is installed.
 
+### Permissions
+
+Two user rights are registered by the extension and granted to the `sysop` group by default:
+
+| Right | Purpose |
+| --- | --- |
+| `semanticschemas-manage` | Required to access `Special:SemanticSchemas` (import, export, validate, generate). |
+| `semanticschemas-bypass-ratelimit` | Skip the per-hour rate limit on import/generate operations. |
+
+To delegate schema management to a non-sysop group without granting full sysop privileges, add to `LocalSettings.php`:
+
+```php
+$wgGroupPermissions['schema-editor']['semanticschemas-manage'] = true;
+// Optional — only if this group should also bypass rate limits:
+$wgGroupPermissions['schema-editor']['semanticschemas-bypass-ratelimit'] = true;
+```
+
+`Special:CreateSemanticPage` uses MediaWiki's standard `createpage` right and is available to anyone who can create pages.
+
+### Rate limit
+
+`$wgSemanticSchemasRateLimitPerHour` (default `20`) sets the maximum number of import/generate operations a user may perform per hour. Users with `semanticschemas-bypass-ratelimit` are exempt.
+
 ## Verification
 
 To verify the installation was successful:

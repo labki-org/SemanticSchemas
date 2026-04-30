@@ -4,7 +4,10 @@
 			"Your Name"
 		]
 	},
+	"action-semanticschemas-manage": "manage SemanticSchemas",
 	"createsemanticpage": "Create Semantic Page",
+	"right-semanticschemas-bypass-ratelimit": "Bypass SemanticSchemas operation rate limits",
+	"right-semanticschemas-manage": "Manage SemanticSchemas (import, export, generate, validate)",
 	"semanticschemas": "SemanticSchemas",
 	"semanticschemas-action-add-category": "Add category",
 	"semanticschemas-action-generate-form": "Generate form",

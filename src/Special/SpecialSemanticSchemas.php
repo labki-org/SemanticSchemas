@@ -35,11 +35,11 @@ use ObjectCacheFactory;
  * - Hash-based dirty detection identifies external modifications
  *
  * Security:
- * - Requires 'editinterface' permission
+ * - Requires 'semanticschemas-manage' right (granted to sysops by default)
  * - CSRF token validation on all form submissions (matchEditToken)
  * - Input sanitization via MediaWiki's request handling
  * - Rate limiting: max 20 operations per hour per user
- * - Sysops can bypass rate limits via 'protect' permission
+ * - Users with 'semanticschemas-bypass-ratelimit' right skip the rate limit
  * - All operations logged to MediaWiki log system (audit trail)
  */
 class SpecialSemanticSchemas extends SpecialPage {
@@ -73,7 +73,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		StateManager $stateManager,
 		ObjectCacheFactory $objectCacheFactory
 	) {
-		parent::__construct( 'SemanticSchemas', 'editinterface' );
+		parent::__construct( 'SemanticSchemas', 'semanticschemas-manage' );
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
 		$this->templateGenerator = $templateGenerator;
