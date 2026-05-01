@@ -63,8 +63,12 @@ class CategoryPageHooks {
 				}
 			}
 
-			// "Generate artifacts" — requires the dedicated generate right.
-			if ( $user->isAllowed( 'semanticschemas-generate' ) ) {
+			// "Generate artifacts" — requires the dedicated generate right
+			// and the standard edit right. The edit check matches the server-
+			// side gate in SpecialSemanticSchemas::userCanGenerate(), so we
+			// don't surface a button the user can't actually use on private
+			// wikis where 'edit' is restricted.
+			if ( $user->isAllowed( 'semanticschemas-generate' ) && $user->isAllowed( 'edit' ) ) {
 				$links['actions']['s2-generate-form'] = [
 					'text' => wfMessage( 'semanticschemas-action-generate-form' )->text(),
 					'href' => SpecialPage::getTitleFor( 'SemanticSchemas' )->getLocalURL( [

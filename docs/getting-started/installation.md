@@ -72,6 +72,8 @@ The extension registers three user rights:
 
 The defaults follow the MediaWiki "soft security" model: anyone logged in can view and generate, since generation produces artifacts that are revertible like any other page edit.
 
+**Note for private wikis:** generation also requires the standard MediaWiki `edit` right, in addition to `semanticschemas-generate`. The extension writes templates and forms via a SemanticSchemas system user, and the explicit `edit` check ensures that nothing this special page can do is something the user couldn't do directly. If you've revoked `edit` from the `user` group on your wiki, those users will not be able to generate even if they hold `semanticschemas-generate`.
+
 If you want tighter control over generation — for example because regenerate-all rewrites templates and forms across the wiki and is harder to audit than individual edits — you can restrict it to a dedicated group:
 
 ```php

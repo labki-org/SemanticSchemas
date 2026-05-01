@@ -41,6 +41,8 @@ The extension registers three rights:
 | `semanticschemas-generate` | `user` | Regenerate templates, forms, and display pages. Because this rewrites artifacts wiki-wide, you may want to scope it to a smaller group. |
 | `semanticschemas-bypass-ratelimit` | `sysop` | Skip the rate limit on generate operations. |
 
+Generation additionally requires the standard MediaWiki `edit` right, so users on a private wiki who lack `edit` cannot trigger writes regardless of `semanticschemas-generate`. See [installation.md](docs/getting-started/installation.md#permissions) for the full rationale.
+
 To restrict generation to a dedicated group while keeping viewing open:
 
 ```php

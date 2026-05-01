@@ -36,9 +36,11 @@ use ObjectCacheFactory;
  *
  * Security:
  * - Page access requires 'semanticschemas-view' (granted to 'user' by default)
- * - Generate actions require 'semanticschemas-generate' (granted to 'user' by default,
- *   can be restricted to a custom group since generation is a global action that
- *   rewrites templates/forms across the wiki)
+ * - Generate actions require BOTH 'semanticschemas-generate' AND the standard
+ *   'edit' right. This preserves the invariant that nothing routed through
+ *   this special page can write pages a user couldn't write directly — the
+ *   underlying PageCreator falls back to a system user, so without an 'edit'
+ *   check a private wiki could be manipulated by a logged-in non-editor.
  * - CSRF token validation on all form submissions (matchEditToken)
  * - Input sanitization via MediaWiki's request handling
  * - Rate limiting: max 20 operations per hour per user
@@ -90,16 +92,20 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 	/**
 	 * Block the request and render a permission-error box unless the user has
-	 * the 'semanticschemas-generate' right.
+	 * both the 'semanticschemas-generate' right and the standard 'edit' right.
 	 *
-	 * Generation rewrites templates and forms wiki-wide, so it is gated
-	 * separately from the read-only views.
+	 * The 'edit' check enforces the invariant that nothing this special page
+	 * does can write pages a user couldn't write directly. Without it, a user
+	 * granted 'semanticschemas-generate' on a private wiki where 'edit' is
+	 * locked down to a smaller group would be able to trigger artifact writes
+	 * through the SemanticSchemas system user (PageCreator's fallback identity).
 	 *
 	 * @return bool True if the user is allowed; false (and an error is rendered)
 	 *              if not.
 	 */
 	private function userCanGenerate(): bool {
-		if ( $this->getUser()->isAllowed( 'semanticschemas-generate' ) ) {
+		$user = $this->getUser();
+		if ( $user->isAllowed( 'semanticschemas-generate' ) && $user->isAllowed( 'edit' ) ) {
 			return true;
 		}
 

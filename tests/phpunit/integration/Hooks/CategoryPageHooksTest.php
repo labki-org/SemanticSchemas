@@ -98,9 +98,9 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 			'Users without semanticschemas-generate should not see Generate Form action' );
 	}
 
-	public function testGenerateFormActionShownWithGenerateRight(): void {
+	public function testGenerateFormActionShownWithGenerateAndEditRights(): void {
 		$user = static::getTestUser()->getUser();
-		$this->overrideUserPermissions( $user, [ 'read', 'semanticschemas-generate' ] );
+		$this->overrideUserPermissions( $user, [ 'read', 'edit', 'semanticschemas-generate' ] );
 		$skinMock = $this->createSkinMock( $user, $this->title );
 
 		$this->savePage( $this->title, '[[Has required property::Property:A]]' );
@@ -111,6 +111,22 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 
 		$this->assertArrayHasKey( 'actions', $links );
 		$this->assertArrayHasKey( 's2-generate-form', $links['actions'] );
+	}
+
+	public function testGenerateFormActionHiddenWhenUserLacksEditOnPrivateWiki(): void {
+		$user = static::getTestUser()->getUser();
+		// Has the schema right but no 'edit' — the private-wiki case.
+		$this->overrideUserPermissions( $user, [ 'read', 'semanticschemas-generate' ] );
+		$skinMock = $this->createSkinMock( $user, $this->title );
+
+		$this->savePage( $this->title, '[[Has required property::Property:A]]' );
+
+		$links = [];
+		$hooks = $this->makeHooks();
+		$hooks->onSkinTemplateNavigation__Universal( $skinMock, $links );
+
+		$this->assertArrayNotHasKey( 's2-generate-form', $links['actions'] ?? [],
+			'Generate Form should be hidden for users without the edit right' );
 	}
 
 	public function testNewPageActionShownWhenFormExists(): void {

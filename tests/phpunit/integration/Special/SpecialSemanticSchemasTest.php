@@ -161,6 +161,39 @@ class SpecialSemanticSchemasTest extends MediaWikiIntegrationTestCase {
 		);
 	}
 
+	public function testGenerateBlockedOnPrivateWikiWithoutEditRight(): void {
+		$this->seedSentinelProperty();
+
+		// Private-wiki scenario: user has the schema right, but the wiki has
+		// revoked 'edit' from the default group. Generation must still be
+		// blocked, since otherwise the SemanticSchemas system user would
+		// write artifacts on behalf of a non-editor.
+		$this->setGroupPermissions( '*', 'edit', false );
+		$this->setGroupPermissions( 'user', 'edit', false );
+
+		$page = $this->getServiceContainer()
+			->getSpecialPageFactory()
+			->getPage( 'SemanticSchemas' );
+
+		$context = new RequestContext();
+		$context->setUser( static::getTestUser()->getUser() );
+		$context->setTitle( $page->getPageTitle() );
+		$page->setContext( $context );
+		$page->execute( 'generate' );
+
+		$html = $context->getOutput()->getHTML();
+		$this->assertStringNotContainsString(
+			'semski-generate-form',
+			$html,
+			'Generate form must not render for users without the edit right'
+		);
+		$this->assertStringContainsString(
+			'permission',
+			strtolower( $html ),
+			'A permission-denied notice should be shown'
+		);
+	}
+
 	public function testRevokingGenerateFromUserAndGrantingToCustomGroupExercisesGate(): void {
 		$this->seedSentinelProperty();
 		$this->setGroupPermissions( 'user', 'semanticschemas-generate', false );
