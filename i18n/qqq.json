@@ -4,7 +4,12 @@
 			"Your Name"
 		]
 	},
+	"action-semanticschemas-generate": "Action verb shown in permission-error messages when a user tries to regenerate SemanticSchemas artifacts without the 'semanticschemas-generate' right.",
+	"action-semanticschemas-view": "Action verb shown in permission-error messages when a user tries to access Special:SemanticSchemas without the 'semanticschemas-view' right.",
 	"createsemanticpage": "Display name for Special:CreateSemanticPage on Special:SpecialPages (MediaWiki convention)",
+	"right-semanticschemas-bypass-ratelimit": "Description of the 'semanticschemas-bypass-ratelimit' user right, shown on Special:ListGroupRights. The right allows users to bypass the rate limit on SemanticSchemas operations.",
+	"right-semanticschemas-generate": "Description of the 'semanticschemas-generate' user right, shown on Special:ListGroupRights. The right is required to regenerate templates, forms, and display pages from the schema.",
+	"right-semanticschemas-view": "Description of the 'semanticschemas-view' user right, shown on Special:ListGroupRights. The right is required to access Special:SemanticSchemas (overview, validate, hierarchy tabs).",
 	"semanticschemas": "{{name}}",
 	"semanticschemas-action-add-category": "Label for the 'Add category' action in the page tools menu",
 	"semanticschemas-action-generate-form": "Text shown in the action dropdown menu on Category pages to generate a form",

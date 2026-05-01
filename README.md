@@ -31,6 +31,27 @@ Quick start:
 
 No configuration is required for basic usage. The extension works out of the box once installed.
 
+### Permissions
+
+The extension registers three rights:
+
+| Right | Default | Purpose |
+| --- | --- | --- |
+| `semanticschemas-view` | `user` | Access `Special:SemanticSchemas` (overview, validate, hierarchy tabs). |
+| `semanticschemas-generate` | `user` | Regenerate templates, forms, and display pages. Because this rewrites artifacts wiki-wide, you may want to scope it to a smaller group. |
+| `semanticschemas-bypass-ratelimit` | `sysop` | Skip the rate limit on generate operations. |
+
+Generation additionally requires the standard MediaWiki `edit` right, so users on a private wiki who lack `edit` cannot trigger writes regardless of `semanticschemas-generate`. See [installation.md](docs/getting-started/installation.md#permissions) for the full rationale.
+
+To restrict generation to a dedicated group while keeping viewing open:
+
+```php
+$wgGroupPermissions['user']['semanticschemas-generate'] = false;
+$wgGroupPermissions['schema-editor']['semanticschemas-generate'] = true;
+```
+
+`Special:CreateSemanticPage` uses the standard MediaWiki `createpage` right and needs no extra configuration.
+
 ## Usage
 
 ### Special Page

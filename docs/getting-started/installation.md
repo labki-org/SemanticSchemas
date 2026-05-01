@@ -60,6 +60,39 @@ These pages are defined in `resources/base-config/` and serve as the foundation 
 
 No additional configuration is required for basic usage. The extension works out of the box once the base configuration is installed.
 
+### Permissions
+
+The extension registers three user rights:
+
+| Right | Default group | Purpose |
+| --- | --- | --- |
+| `semanticschemas-view` | `user` | Access `Special:SemanticSchemas` (overview, validate, hierarchy tabs). |
+| `semanticschemas-generate` | `user` | Regenerate templates, forms, and display pages from the schema. |
+| `semanticschemas-bypass-ratelimit` | `sysop` | Skip the rate limit on generate operations. |
+
+The defaults follow the MediaWiki "soft security" model: anyone logged in can view and generate, since generation produces artifacts that are revertible like any other page edit.
+
+**Note for private wikis:** generation also requires the standard MediaWiki `edit` right, in addition to `semanticschemas-generate`. The extension writes templates and forms via a SemanticSchemas system user, and the explicit `edit` check ensures that nothing this special page can do is something the user couldn't do directly. If you've revoked `edit` from the `user` group on your wiki, those users will not be able to generate even if they hold `semanticschemas-generate`.
+
+If you want tighter control over generation — for example because regenerate-all rewrites templates and forms across the wiki and is harder to audit than individual edits — you can restrict it to a dedicated group:
+
+```php
+// Take generate away from the default 'user' group
+$wgGroupPermissions['user']['semanticschemas-generate'] = false;
+
+// Grant it to a custom group instead
+$wgGroupPermissions['schema-editor']['semanticschemas-generate'] = true;
+
+// Optional — let that group skip the rate limit too
+$wgGroupPermissions['schema-editor']['semanticschemas-bypass-ratelimit'] = true;
+```
+
+`Special:CreateSemanticPage` uses MediaWiki's standard `createpage` right and is available to anyone who can create pages.
+
+### Rate limit
+
+`$wgSemanticSchemasRateLimitPerHour` (default `20`) caps how frequently a user can run generate operations. Users with `semanticschemas-bypass-ratelimit` are exempt.
+
 ## Verification
 
 To verify the installation was successful:
