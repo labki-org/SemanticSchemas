@@ -977,22 +977,16 @@ class SpecialSemanticSchemas extends SpecialPage {
 
 		$output->setPageTitle( $this->msg( 'semanticschemas-generate-title' )->text() );
 
+		if ( !$this->userCanGenerate() ) {
+			return;
+		}
+
 		if ( $request->wasPosted() && $request->getVal( 'action' ) === 'generate' ) {
-			if ( !$this->userCanGenerate() ) {
-				return;
-			}
 			if ( !$this->getUser()->matchEditToken( $request->getVal( 'token' ) ) ) {
 				$output->addHTML( Html::errorBox( 'Invalid edit token' ) );
 				return;
 			}
 			$this->processGenerate();
-			return;
-		}
-
-		if ( !$this->getUser()->isAllowed( 'semanticschemas-generate' ) ) {
-			$output->addHTML( Html::errorBox(
-				$this->msg( 'semanticschemas-permission-denied' )->parse()
-			) );
 			return;
 		}
 

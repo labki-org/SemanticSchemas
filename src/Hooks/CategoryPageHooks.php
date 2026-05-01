@@ -64,7 +64,6 @@ class CategoryPageHooks {
 			}
 
 			// "Generate artifacts" — requires the dedicated generate right.
-			// Defaults to 'user' but admins can restrict via $wgGroupPermissions.
 			if ( $user->isAllowed( 'semanticschemas-generate' ) ) {
 				$links['actions']['s2-generate-form'] = [
 					'text' => wfMessage( 'semanticschemas-action-generate-form' )->text(),

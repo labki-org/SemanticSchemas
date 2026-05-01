@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Special;
 
+use MediaWiki\Extension\SemanticSchemas\Store\PageCreator;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
 use MediaWikiIntegrationTestCase;
@@ -113,7 +114,6 @@ class SpecialSemanticSchemasTest extends MediaWikiIntegrationTestCase {
 	public function testGenerateTabBlocksUsersWithoutGenerateRight(): void {
 		$this->seedSentinelProperty();
 
-		// Keep view, drop generate, so the user reaches the tab but cannot run it.
 		$this->setGroupPermissions( '*', 'semanticschemas-generate', false );
 		$this->setGroupPermissions( 'user', 'semanticschemas-generate', false );
 
@@ -161,21 +161,37 @@ class SpecialSemanticSchemasTest extends MediaWikiIntegrationTestCase {
 		);
 	}
 
-	public function testRestrictingGenerateToCustomGroupBlocksDefaultUsers(): void {
-		// Take the right away from 'user' and grant it to a dedicated group.
+	public function testRevokingGenerateFromUserAndGrantingToCustomGroupExercisesGate(): void {
+		$this->seedSentinelProperty();
 		$this->setGroupPermissions( 'user', 'semanticschemas-generate', false );
 		$this->setGroupPermissions( 'schema-editor', 'semanticschemas-generate', true );
 
-		$plain = static::getTestUser()->getUser();
-		$editor = static::getTestUser( [ 'schema-editor' ] )->getUser();
+		$page = $this->getServiceContainer()
+			->getSpecialPageFactory()
+			->getPage( 'SemanticSchemas' );
 
-		$this->assertFalse(
-			$plain->isAllowed( 'semanticschemas-generate' ),
-			'Plain user should lose generate when right is revoked from "user"'
+		// Plain user: hits the tab, sees permission-denied and no form.
+		$plainContext = new RequestContext();
+		$plainContext->setUser( static::getTestUser()->getUser() );
+		$plainContext->setTitle( $page->getPageTitle() );
+		$page->setContext( $plainContext );
+		$page->execute( 'generate' );
+		$this->assertStringNotContainsString(
+			'semski-generate-form',
+			$plainContext->getOutput()->getHTML(),
+			'Plain user should not see the generate form after the right is revoked from "user"'
 		);
-		$this->assertTrue(
-			$editor->isAllowed( 'semanticschemas-generate' ),
-			'Members of schema-editor should retain generate'
+
+		// schema-editor user: gets the form.
+		$editorContext = new RequestContext();
+		$editorContext->setUser( static::getTestUser( [ 'schema-editor' ] )->getUser() );
+		$editorContext->setTitle( $page->getPageTitle() );
+		$page->setContext( $editorContext );
+		$page->execute( 'generate' );
+		$this->assertStringContainsString(
+			'semski-generate-form',
+			$editorContext->getOutput()->getHTML(),
+			'Members of schema-editor should see the generate form'
 		);
 	}
 
@@ -187,11 +203,12 @@ class SpecialSemanticSchemasTest extends MediaWikiIntegrationTestCase {
 	private function seedSentinelProperty(): void {
 		$title = Title::makeTitleSafe( SMW_NS_PROPERTY, 'Has type' );
 		if ( $title && !$title->exists() ) {
-			$page = $this->getServiceContainer()->getWikiPageFactory()->newFromTitle( $title );
-			$content = $page->getContentHandler()->makeContent( '[[Has type::Text]]', $title );
-			$page->doUserEditContent(
-				$content,
-				static::getTestSysop()->getUser(),
+			$pageCreator = new PageCreator(
+				$this->getServiceContainer()->getWikiPageFactory()
+			);
+			$pageCreator->createOrUpdatePage(
+				$title,
+				'[[Has type::Text]]',
 				'Test fixture: seed sentinel property'
 			);
 		}
