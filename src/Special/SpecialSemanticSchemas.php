@@ -34,11 +34,16 @@ use ObjectCacheFactory;
  * - Hash-based dirty detection identifies external modifications
  *
  * Security:
- * - Requires 'editinterface' permission
+ * - Page access requires 'semanticschemas-view' (granted to 'user' by default)
+ * - Generate actions require BOTH 'semanticschemas-generate' AND the standard
+ *   'edit' right. This preserves the invariant that nothing routed through
+ *   this special page can write pages a user couldn't write directly — the
+ *   underlying PageCreator falls back to a system user, so without an 'edit'
+ *   check a private wiki could be manipulated by a logged-in non-editor.
  * - CSRF token validation on all form submissions (matchEditToken)
  * - Input sanitization via MediaWiki's request handling
  * - Rate limiting: max 20 operations per hour per user
- * - Sysops can bypass rate limits via 'protect' permission
+ * - Users with 'semanticschemas-bypass-ratelimit' right skip the rate limit
  * - All operations logged to MediaWiki log system (audit trail)
  */
 class SpecialSemanticSchemas extends SpecialPage {
@@ -70,7 +75,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		StateManager $stateManager,
 		ObjectCacheFactory $objectCacheFactory
 	) {
-		parent::__construct( 'SemanticSchemas', 'editinterface' );
+		parent::__construct( 'SemanticSchemas', 'semanticschemas-view' );
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
 		$this->templateGenerator = $templateGenerator;
@@ -82,12 +87,37 @@ class SpecialSemanticSchemas extends SpecialPage {
 	}
 
 	/**
+	 * Block the request and render a permission-error box unless the user has
+	 * both the 'semanticschemas-generate' right and the standard 'edit' right.
+	 *
+	 * The 'edit' check enforces the invariant that nothing this special page
+	 * does can write pages a user couldn't write directly. Without it, a user
+	 * granted 'semanticschemas-generate' on a private wiki where 'edit' is
+	 * locked down to a smaller group would be able to trigger artifact writes
+	 * through the SemanticSchemas system user (PageCreator's fallback identity).
+	 *
+	 * @return bool True if the user is allowed; false (and an error is rendered)
+	 *              if not.
+	 */
+	private function userCanGenerate(): bool {
+		$user = $this->getUser();
+		if ( $user->isAllowed( 'semanticschemas-generate' ) && $user->isAllowed( 'edit' ) ) {
+			return true;
+		}
+
+		$this->getOutput()->addHTML( Html::errorBox(
+			$this->msg( 'semanticschemas-permission-denied' )->parse()
+		) );
+		return false;
+	}
+
+	/**
 	 * Check rate limiting for expensive operations.
 	 *
-	 * Limits users to a maximum number of import/generate operations per hour
+	 * Limits users to a maximum number of generate operations per hour
 	 * to prevent abuse and server overload.
 	 *
-	 * @param string $operation Operation name (import, generate, etc.)
+	 * @param string $operation Operation name (generate, etc.)
 	 * @return bool True if rate limit exceeded
 	 */
 	private function checkRateLimit( string $operation ): bool {
@@ -211,6 +241,10 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function handleGenerateFormAction(): void {
 		$request = $this->getRequest();
 		$output = $this->getOutput();
+
+		if ( !$this->userCanGenerate() ) {
+			return;
+		}
 
 		$categoryName = trim( $request->getVal( 'category', '' ) );
 
@@ -926,6 +960,10 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$request = $this->getRequest();
 
 		$output->setPageTitle( $this->msg( 'semanticschemas-generate-title' )->text() );
+
+		if ( !$this->userCanGenerate() ) {
+			return;
+		}
 
 		if ( $request->wasPosted() && $request->getVal( 'action' ) === 'generate' ) {
 			if ( !$this->getUser()->matchEditToken( $request->getVal( 'token' ) ) ) {

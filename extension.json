@@ -178,6 +178,20 @@
 	"LogActionsHandlers": {
 		"semanticschemas/generate": "LogFormatter"
 	},
+	"AvailableRights": [
+		"semanticschemas-view",
+		"semanticschemas-generate",
+		"semanticschemas-bypass-ratelimit"
+	],
+	"GroupPermissions": {
+		"user": {
+			"semanticschemas-view": true,
+			"semanticschemas-generate": true
+		},
+		"sysop": {
+			"semanticschemas-bypass-ratelimit": true
+		}
+	},
 	"config": {
 		"SemanticSchemasRequireApiAuth": {
 			"value": false,
