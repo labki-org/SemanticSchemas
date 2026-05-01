@@ -83,7 +83,7 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		$this->assertArrayHasKey( 's2-generate-form', $links['actions'] );
 	}
 
-	public function testGenerateFormActionRequiresEditinterfacePermission(): void {
+	public function testGenerateFormActionHiddenWithoutGenerateRight(): void {
 		$user = static::getTestUser()->getUser();
 		$this->overrideUserPermissions( $user, [ 'read', 'createpage' ] );
 		$skinMock = $this->createSkinMock( $user, $this->title );
@@ -95,12 +95,12 @@ class CategoryPageHooksTest extends MediaWikiIntegrationTestCase {
 		$hooks->onSkinTemplateNavigation__Universal( $skinMock, $links );
 
 		$this->assertArrayNotHasKey( 's2-generate-form', $links['actions'] ?? [],
-			'Users without editinterface should not see Generate Form action' );
+			'Users without semanticschemas-generate should not see Generate Form action' );
 	}
 
-	public function testUserWithEditinterfaceSeesGenerateFormAction(): void {
+	public function testGenerateFormActionShownWithGenerateRight(): void {
 		$user = static::getTestUser()->getUser();
-		$this->overrideUserPermissions( $user, [ 'read', 'editinterface' ] );
+		$this->overrideUserPermissions( $user, [ 'read', 'semanticschemas-generate' ] );
 		$skinMock = $this->createSkinMock( $user, $this->title );
 
 		$this->savePage( $this->title, '[[Has required property::Property:A]]' );

@@ -180,12 +180,16 @@
 		"semanticschemas/generate": "LogFormatter"
 	},
 	"AvailableRights": [
-		"semanticschemas-manage",
+		"semanticschemas-view",
+		"semanticschemas-generate",
 		"semanticschemas-bypass-ratelimit"
 	],
 	"GroupPermissions": {
+		"user": {
+			"semanticschemas-view": true,
+			"semanticschemas-generate": true
+		},
 		"sysop": {
-			"semanticschemas-manage": true,
 			"semanticschemas-bypass-ratelimit": true
 		}
 	},

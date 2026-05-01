@@ -4,10 +4,12 @@
 			"Your Name"
 		]
 	},
-	"action-semanticschemas-manage": "manage SemanticSchemas",
+	"action-semanticschemas-generate": "regenerate SemanticSchemas artifacts",
+	"action-semanticschemas-view": "view SemanticSchemas",
 	"createsemanticpage": "Create Semantic Page",
 	"right-semanticschemas-bypass-ratelimit": "Bypass SemanticSchemas operation rate limits",
-	"right-semanticschemas-manage": "Manage SemanticSchemas (import, export, generate, validate)",
+	"right-semanticschemas-generate": "Regenerate templates, forms, and display pages from the schema",
+	"right-semanticschemas-view": "View Special:SemanticSchemas (overview, validate, hierarchy)",
 	"semanticschemas": "SemanticSchemas",
 	"semanticschemas-action-add-category": "Add category",
 	"semanticschemas-action-generate-form": "Generate form",

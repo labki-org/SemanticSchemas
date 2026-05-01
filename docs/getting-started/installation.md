@@ -62,18 +62,26 @@ No additional configuration is required for basic usage. The extension works out
 
 ### Permissions
 
-Two user rights are registered by the extension and granted to the `sysop` group by default:
+The extension registers three user rights:
 
-| Right | Purpose |
-| --- | --- |
-| `semanticschemas-manage` | Required to access `Special:SemanticSchemas` (import, export, validate, generate). |
-| `semanticschemas-bypass-ratelimit` | Skip the per-hour rate limit on import/generate operations. |
+| Right | Default group | Purpose |
+| --- | --- | --- |
+| `semanticschemas-view` | `user` | Access `Special:SemanticSchemas` (overview, validate, hierarchy tabs). |
+| `semanticschemas-generate` | `user` | Regenerate templates, forms, and display pages from the schema. |
+| `semanticschemas-bypass-ratelimit` | `sysop` | Skip the rate limit on generate operations. |
 
-To delegate schema management to a non-sysop group without granting full sysop privileges, add to `LocalSettings.php`:
+The defaults follow the MediaWiki "soft security" model: anyone logged in can view and generate, since generation produces artifacts that are revertible like any other page edit.
+
+If you want tighter control over generation — for example because regenerate-all rewrites templates and forms across the wiki and is harder to audit than individual edits — you can restrict it to a dedicated group:
 
 ```php
-$wgGroupPermissions['schema-editor']['semanticschemas-manage'] = true;
-// Optional — only if this group should also bypass rate limits:
+// Take generate away from the default 'user' group
+$wgGroupPermissions['user']['semanticschemas-generate'] = false;
+
+// Grant it to a custom group instead
+$wgGroupPermissions['schema-editor']['semanticschemas-generate'] = true;
+
+// Optional — let that group skip the rate limit too
 $wgGroupPermissions['schema-editor']['semanticschemas-bypass-ratelimit'] = true;
 ```
 
@@ -81,7 +89,7 @@ $wgGroupPermissions['schema-editor']['semanticschemas-bypass-ratelimit'] = true;
 
 ### Rate limit
 
-`$wgSemanticSchemasRateLimitPerHour` (default `20`) sets the maximum number of import/generate operations a user may perform per hour. Users with `semanticschemas-bypass-ratelimit` are exempt.
+`$wgSemanticSchemasRateLimitPerHour` (default `20`) caps how frequently a user can run generate operations. Users with `semanticschemas-bypass-ratelimit` are exempt.
 
 ## Verification
 

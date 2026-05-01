@@ -35,7 +35,10 @@ use ObjectCacheFactory;
  * - Hash-based dirty detection identifies external modifications
  *
  * Security:
- * - Requires 'semanticschemas-manage' right (granted to sysops by default)
+ * - Page access requires 'semanticschemas-view' (granted to 'user' by default)
+ * - Generate actions require 'semanticschemas-generate' (granted to 'user' by default,
+ *   can be restricted to a custom group since generation is a global action that
+ *   rewrites templates/forms across the wiki)
  * - CSRF token validation on all form submissions (matchEditToken)
  * - Input sanitization via MediaWiki's request handling
  * - Rate limiting: max 20 operations per hour per user
@@ -73,7 +76,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 		StateManager $stateManager,
 		ObjectCacheFactory $objectCacheFactory
 	) {
-		parent::__construct( 'SemanticSchemas', 'semanticschemas-manage' );
+		parent::__construct( 'SemanticSchemas', 'semanticschemas-view' );
 		$this->categoryStore = $categoryStore;
 		$this->propertyStore = $propertyStore;
 		$this->templateGenerator = $templateGenerator;
@@ -86,12 +89,33 @@ class SpecialSemanticSchemas extends SpecialPage {
 	}
 
 	/**
+	 * Block the request and render a permission-error box unless the user has
+	 * the 'semanticschemas-generate' right.
+	 *
+	 * Generation rewrites templates and forms wiki-wide, so it is gated
+	 * separately from the read-only views.
+	 *
+	 * @return bool True if the user is allowed; false (and an error is rendered)
+	 *              if not.
+	 */
+	private function userCanGenerate(): bool {
+		if ( $this->getUser()->isAllowed( 'semanticschemas-generate' ) ) {
+			return true;
+		}
+
+		$this->getOutput()->addHTML( Html::errorBox(
+			$this->msg( 'semanticschemas-permission-denied' )->parse()
+		) );
+		return false;
+	}
+
+	/**
 	 * Check rate limiting for expensive operations.
 	 *
-	 * Limits users to a maximum number of import/generate operations per hour
+	 * Limits users to a maximum number of generate operations per hour
 	 * to prevent abuse and server overload.
 	 *
-	 * @param string $operation Operation name (import, generate, etc.)
+	 * @param string $operation Operation name (generate, etc.)
 	 * @return bool True if rate limit exceeded
 	 */
 	private function checkRateLimit( string $operation ): bool {
@@ -215,6 +239,10 @@ class SpecialSemanticSchemas extends SpecialPage {
 	private function handleGenerateFormAction(): void {
 		$request = $this->getRequest();
 		$output = $this->getOutput();
+
+		if ( !$this->userCanGenerate() ) {
+			return;
+		}
 
 		$categoryName = trim( $request->getVal( 'category', '' ) );
 
@@ -950,11 +978,21 @@ class SpecialSemanticSchemas extends SpecialPage {
 		$output->setPageTitle( $this->msg( 'semanticschemas-generate-title' )->text() );
 
 		if ( $request->wasPosted() && $request->getVal( 'action' ) === 'generate' ) {
+			if ( !$this->userCanGenerate() ) {
+				return;
+			}
 			if ( !$this->getUser()->matchEditToken( $request->getVal( 'token' ) ) ) {
 				$output->addHTML( Html::errorBox( 'Invalid edit token' ) );
 				return;
 			}
 			$this->processGenerate();
+			return;
+		}
+
+		if ( !$this->getUser()->isAllowed( 'semanticschemas-generate' ) ) {
+			$output->addHTML( Html::errorBox(
+				$this->msg( 'semanticschemas-permission-denied' )->parse()
+			) );
 			return;
 		}
 
