@@ -74,13 +74,6 @@ This creates:
 - `Template:Person/display` - Display stub (edit freely)
 - `Form:Person` - PageForms form
 
-### Step 4: Export Your Schema
-
-1. Go to `Special:SemanticSchemas/export`
-2. Select format (JSON or YAML)
-3. Click "Generate Schema"
-4. Download file
-
 ## Working with Multiple Inheritance
 
 Create a category with multiple parents:
@@ -100,56 +93,10 @@ A graduate student.
 
 GraduateStudent will inherit all properties from both Person and LabMember, plus add its own required property "Has advisor".
 
-## Schema Import/Export Workflow
-
-All import/export operations are performed through the Special:SemanticSchemas page:
-
-1. **Export current state:**
-   - Go to `Special:SemanticSchemas/export`
-   - Select JSON or YAML format
-   - Click "Generate Schema" and download the file
-
-2. **Edit schema file:**
-   ```json
-   {
-     "schemaVersion": "1.0",
-     "categories": {
-       "Person": {
-         "parents": [],
-         "properties": {
-           "required": ["Has full name"],
-           "optional": ["Has email"]
-         }
-       }
-     },
-     "properties": {
-       "Has full name": {
-         "datatype": "Text",
-         "label": "Full name"
-       }
-     }
-   }
-   ```
-
-3. **Validate before import:**
-   - Go to `Special:SemanticSchemas/validate`
-   - Click "Run Validation" to check for issues
-
-4. **Dry run to preview:**
-   - Go to `Special:SemanticSchemas/import`
-   - Paste or upload your schema
-   - Check "Dry run (preview only)"
-   - Click "Import Schema" to see what would change
-
-5. **Import for real:**
-   - Uncheck the dry run option
-   - Click "Import Schema" to apply changes
-
 ## Common Tasks
 
 ### Add a New Property to Existing Category
 
-**Option 1: Edit Category Page**
 Add to the category page:
 ```
 [[Has required property::Property:Has phone]]
@@ -159,11 +106,6 @@ Then regenerate artifacts:
 ```bash
 php extensions/SemanticSchemas/maintenance/regenerateArtifacts.php --category=Person
 ```
-
-**Option 2: Via Schema**
-1. Export schema
-2. Add property to category's required/optional list
-3. Import schema back
 
 ### Validate Your Ontology
 
@@ -200,14 +142,12 @@ The display template (`Template:Person/display`) is generated as a stub but **ne
 
 ## Tips and Best Practices
 
-1. **Always export before major changes** - Keep backups of your schema
-2. **Use validation frequently** - Catch issues early
-3. **Use dry-run for imports** - Preview before applying
-4. **Don't edit semantic/dispatcher templates** - They're auto-generated
-5. **Customize display templates freely** - They're yours to edit
-6. **Use meaningful property names** - Start with "Has " for consistency
-7. **Document your properties** - Add descriptions on Property pages
-8. **Test inheritance carefully** - Multiple parents can be complex
+- **Use validation frequently** - Catch issues early
+- **Don't edit semantic/dispatcher templates** - They're auto-generated
+- **Customize display templates freely** - They're yours to edit
+- **Use meaningful property names** - Start with "Has " for consistency
+- **Document your properties** - Add descriptions on Property pages
+- **Test inheritance carefully** - Multiple parents can be complex
 
 ## Troubleshooting
 
@@ -219,11 +159,6 @@ The display template (`Template:Person/display`) is generated as a stub but **ne
 - Run regenerateArtifacts.php
 - Check write permissions
 - Verify SMW is working
-
-**Import fails:**
-- Validate schema first
-- Check for circular dependencies
-- Ensure all referenced items exist
 
 **Display looks broken:**
 - Edit Template:Category/display
@@ -237,66 +172,4 @@ The display template (`Template:Person/display`) is generated as a stub but **ne
 - Review [Architecture Guide](../developer/architecture.md) for technical architecture
 - MediaWiki logs: `debug.log`
 - Extension logs: Look for "SemanticSchemas:" prefix
-
-## Example Schema
-
-See a complete working example:
-
-```json
-{
-  "schemaVersion": "1.0",
-  "categories": {
-    "Person": {
-      "parents": [],
-      "label": "Person",
-      "description": "An individual",
-      "properties": {
-        "required": ["Has full name"],
-        "optional": ["Has email", "Has phone"]
-      },
-      "display": {
-        "header": ["Has full name"],
-        "sections": [
-          {
-            "name": "Contact",
-            "properties": ["Has email", "Has phone"]
-          }
-        ]
-      },
-      "forms": {
-        "sections": [
-          {
-            "name": "Basic Info",
-            "properties": ["Has full name", "Has email"]
-          }
-        ]
-      }
-    },
-    "GraduateStudent": {
-      "parents": ["Person"],
-      "properties": {
-        "required": ["Has advisor"],
-        "optional": ["Has cohort year"]
-      }
-    }
-  },
-  "properties": {
-    "Has full name": {
-      "datatype": "Text",
-      "label": "Full name",
-      "description": "Person's full name"
-    },
-    "Has email": {
-      "datatype": "Email",
-      "label": "Email",
-      "description": "Primary email"
-    },
-    "Has advisor": {
-      "datatype": "Page",
-      "label": "Advisor",
-      "allowedCategory": "Person"
-    }
-  }
-}
-```
 

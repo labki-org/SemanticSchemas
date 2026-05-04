@@ -5,8 +5,7 @@ SemanticSchemas is a MediaWiki extension that treats Categories and Properties a
 - Schema management for categories, properties, and repeatable subobjects
 - Automatic template and form generation
 - Multiple inheritance support
-- Import/export functionality for schemas in JSON/YAML formats
-- Validation and diff tools
+- Validation tools
 
 ## Requirements
 
@@ -59,11 +58,8 @@ $wgGroupPermissions['schema-editor']['semanticschemas-generate'] = true;
 Access the main interface at `Special:SemanticSchemas` which provides:
 
 - **Overview**: View all categories and their status
-- **Export**: Export your ontology schema to JSON or YAML
-- **Import**: Import a schema from file or text
 - **Validate**: Check schema consistency
 - **Generate**: Regenerate templates and forms
-- **Diff**: Compare schema file with current wiki state
 - **Hierarchy**: Visualize category inheritance trees and inherited properties
 
 ### Category Hierarchy Visualization
@@ -83,10 +79,8 @@ The visualization shows:
 
 ### Schema Operations
 
-Export, import, and validation operations are available through the **Special:SemanticSchemas** page in the wiki interface:
+Validation and generation operations are available through the **Special:SemanticSchemas** page in the wiki interface:
 
-- **Export**: Navigate to Special:SemanticSchemas → Export tab
-- **Import**: Navigate to Special:SemanticSchemas → Import tab
 - **Validate**: Navigate to Special:SemanticSchemas → Validate tab
 - **Generate**: Navigate to Special:SemanticSchemas → Generate tab
 

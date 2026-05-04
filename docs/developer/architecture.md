@@ -8,7 +8,7 @@ SemanticSchemas is a MediaWiki extension that provides schema-driven ontology ma
 
 ### Core Principles
 
-1. **Schema as Source of Truth**: Schema definitions (YAML/JSON) define the ontology structure
+1. **Schema as Source of Truth**: Schema definitions define the ontology structure
 2. **Generated Artifacts**: Wiki pages are automatically generated from schema
 3. **Separation of Concerns**: Data storage (semantic), presentation (display), and editing (forms) are separated
 4. **Inheritance Support**: Categories support multiple inheritance via C3 linearization
@@ -70,17 +70,13 @@ Core schema models and operations.
 - **CategoryModel**: Immutable category definition with properties and metadata
 - **PropertyModel**: Immutable property definition with datatype and constraints (enhanced validation)
 - **InheritanceResolver**: C3 linearization for multiple inheritance
-- **SchemaImporter**: Imports schema into wiki with topological sorting
-- **SchemaExporter**: Exports current wiki state to schema with error recovery
 - **SchemaValidator**: Validates schema with severity levels (errors + warnings)
-- **SchemaComparer**: Compares two schemas and generates diffs
 
 Key Features:
 - C3 linearization for consistent inheritance
 - Comprehensive validation with actionable errors and warnings
 - Severity-based validation (errors vs warnings)
 - Custom validation hooks for extensions
-- Import/export with dry-run support and error recovery
 - Gzip compression support for large schemas
 - File size limits for security (10MB default)
 - Enhanced datatype validation with warnings for unknown types
@@ -95,9 +91,7 @@ Administrative UI for schema management.
 
 Features:
 - Overview dashboard with status indicators
-- Export to JSON/YAML with operation logging
-- Import from file or text with progress indicators
-- Validation and diff tools
+- Validation tools
 - Template/form generation with per-category progress
 - Sync state tracking
 - Rate limiting (20 operations/hour, bypassable by sysops)
@@ -130,34 +124,6 @@ Shared utilities and helpers.
   - Name validation
 
 ## Data Flow
-
-### Import Flow
-
-```
-YAML/JSON Schema
-    ↓
-SchemaValidator (validate)
-    ↓
-SchemaImporter (topological sort)
-    ↓
-WikiCategoryStore / WikiPropertyStore (write pages)
-    ↓
-TemplateGenerator / FormGenerator / DisplayStubGenerator (generate artifacts)
-    ↓
-StateManager (update state)
-```
-
-### Export Flow
-
-```
-Wiki Pages (Category/Property)
-    ↓
-WikiCategoryStore / WikiPropertyStore (read pages)
-    ↓
-SchemaExporter (build schema)
-    ↓
-YAML/JSON Schema
-```
 
 ### Render Flow
 
@@ -222,7 +188,7 @@ Sections are inherited and merged by name. Child sections override parent sectio
 
 SemanticSchemas tracks two types of state:
 
-1. **Dirty Flag**: Set when schema is imported but artifacts not yet generated
+1. **Dirty Flag**: Set when schema is declared but artifacts not yet generated
 2. **Page Hashes**: SHA256 hashes of generated content to detect external modifications
 
 State is stored in `MediaWiki:SemanticSchemasState.json`.
@@ -303,12 +269,10 @@ Recommended test coverage:
 - **NamingHelper**: Property name transformations
 - **InheritanceResolver**: C3 linearization with various hierarchies
 - **SchemaValidator**: Validation logic for all error cases
-- **SchemaComparer**: Diff generation accuracy
 - **PropertyInputMapper**: Datatype to input type mappings
 
 ### Integration Test Scenarios
 
-- Full import/export round-trip
 - Template generation and rendering
 - Inheritance resolution with complex hierarchies
 - State tracking and dirty detection
@@ -340,10 +304,6 @@ Extend `PropertyInputMapper::getInputType()` for new SMW datatypes.
 
 - PHP 8.0+ (uses `str_starts_with()`, typed properties)
 - MediaWiki 1.39+
-
-### External Libraries
-
-- **symfony/yaml**: YAML parsing and serialization
 
 ## File Organization
 
@@ -384,19 +344,11 @@ Changes to naming (property→parameter) must:
 3. Update documentation
 4. Consider migration path for existing wikis
 
-## Known Limitations
-
-1. **No Transaction Support**: Import/export is not atomic (future enhancement)
-2. **Synchronous Operations**: Large imports block request (consider job queue)
-3. **No Undo**: Template regeneration is destructive for semantic/dispatcher templates
-4. **Single Schema Version**: No schema migration support yet
-
 ## Future Enhancements
 
 See inline TODO comments in code for specific improvement opportunities:
 
 - Extract shared parameter normalization to NamingHelper (done!)
-- Add transaction support for atomic imports
 - Implement async job queue for large operations
 - Add schema version migration support
 - Extract SpecialSemanticSchemas table rendering to separate class
@@ -413,7 +365,6 @@ When contributing to SemanticSchemas:
 4. Add validation for new schema fields
 5. Ensure backward compatibility or document breaking changes
 6. Add error logging for failure cases
-7. Test with both JSON and YAML schema formats
 
 ## License
 

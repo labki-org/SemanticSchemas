@@ -7,14 +7,11 @@ namespace MediaWiki\Extension\SemanticSchemas\Schema;
  * ----------------
  * Validates category + property definitions for SemanticSchemas.
  *
- * This class performs comprehensive validation of schema structure before
- * import to catch errors early and provide helpful error messages.
- *
  * Validation Levels:
  * -----------------
  * Two severity levels are supported:
- * - **ERROR**: Schema violations that will cause import failure or runtime errors
- * - **WARNING**: Issues that may indicate problems but won't prevent import
+ * - **ERROR**: Schema violations that will cause runtime errors
+ * - **WARNING**: Issues that may indicate problems but won't cause errors
  *
  * Validates:
  *   - required top-level fields (schemaVersion, categories, properties)

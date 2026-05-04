@@ -18,7 +18,7 @@ docker compose exec wiki php maintenance/runJobs.php --wait
 
 ### Common Use Cases
 
-After importing a schema or making changes, you may need to run jobs to:
+After making changes, you may need to run jobs to:
 
 - Refresh Semantic MediaWiki data
 - Update category links
