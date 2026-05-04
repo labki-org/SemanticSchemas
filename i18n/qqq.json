@@ -112,7 +112,7 @@
 	"semanticschemas-status-in-sync": "Status message when schema and wiki artifacts are synchronized",
 	"semanticschemas-status-modified-outside": "Status message when a page was modified outside SemanticSchemas",
 	"semanticschemas-status-out-of-sync": "Status message when schema and wiki artifacts are not synchronized",
-	"semanticschemas-status-schema-changed": "Status message when the schema source has changed since last geneation",
+	"semanticschemas-status-schema-changed": "Status message when the schema source has changed since last generation",
 	"semanticschemas-tab-create-subtext": "Short description shown under the Create tab label",
 	"semanticschemas-tab-diff-subtext": "Short description shown under the Diff tab label",
 	"semanticschemas-tab-generate-subtext": "Short description shown under the Generate tab label",

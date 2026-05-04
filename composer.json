@@ -1,7 +1,7 @@
 {
 	"name": "mediawiki/semantic-schemas",
 	"type": "mediawiki-extension",
-	"description": "Manages MediaWiki Categories and Properties as an ontology backbone with schema export/import and automatic template/form generation",
+	"description": "Manages MediaWiki Categories and Properties as an ontology backbone with automatic template/form generation",
 	"keywords": [
 		"MediaWiki",
 		"SemanticMediaWiki",

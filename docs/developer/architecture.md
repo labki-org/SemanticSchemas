@@ -269,7 +269,6 @@ Recommended test coverage:
 - **NamingHelper**: Property name transformations
 - **InheritanceResolver**: C3 linearization with various hierarchies
 - **SchemaValidator**: Validation logic for all error cases
-- **SchemaComparer**: Diff generation accuracy
 - **PropertyInputMapper**: Datatype to input type mappings
 
 ### Integration Test Scenarios
