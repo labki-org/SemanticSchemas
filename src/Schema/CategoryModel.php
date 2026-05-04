@@ -345,10 +345,6 @@ class CategoryModel {
 		return $merged;
 	}
 
-	/* -------------------------------------------------------------------------
-	 * EXPORT
-	 * ------------------------------------------------------------------------- */
-
 	public function toArray(): array {
 		$out = [
 			'parents' => $this->parents,

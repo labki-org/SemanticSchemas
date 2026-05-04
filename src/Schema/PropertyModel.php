@@ -236,10 +236,6 @@ class PropertyModel {
 		return $this->hidden;
 	}
 
-	/* -------------------------------------------------------------------------
-	 * EXPORT
-	 * ---------------------------------------------------------------------- */
-
 	public function toArray(): array {
 		$data = [
 			'datatype' => $this->datatype,

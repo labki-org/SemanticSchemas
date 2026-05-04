@@ -70,7 +70,7 @@ For system administrators:
 
 ### For Administrators
 
-- [Schema Management](../README.md#usage) - Export/Import schemas
+- [Schema Management](../README.md#usage)
 - [Validation](../README.md#validate) - Check schema consistency
 - [Template Generation](../README.md#generate) - Regenerate templates and forms
 - [Schema Comparison](../README.md#diff) - Compare schema versions
@@ -90,7 +90,7 @@ For system administrators:
 - **Creating a category** → [Quick Start](getting-started/QUICKSTART.md#creating-your-first-ontology)
 - **Visualizing hierarchy** → [Hierarchy Visualization](user-guide/hierarchy-visualization.md)
 - **Customizing display** → [Display Properties](user-guide/DISPLAY_PROPERTIES.md)
-- **Exporting schema** → [Main README](../README.md#maintenance-scripts)
+- **Maintenance** → [Main README](../README.md#maintenance-scripts)
 - **Understanding architecture** → [Architecture Guide](developer/architecture.md)
 
 ### By Audience
