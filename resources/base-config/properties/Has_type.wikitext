@@ -19,5 +19,6 @@
 [[Allows value::External identifier]]
 [[Allows value::Reference]]
 [[Allows value::Keyword]]
+[[Allows value::Geographic coordinate]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]
