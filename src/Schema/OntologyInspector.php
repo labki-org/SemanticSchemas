@@ -13,9 +13,6 @@ use MediaWiki\Extension\SemanticSchemas\Store\WikiPropertyStore;
  * Minimal runtime helper used by:
  *   - Overview tab (statistics)
  *   - Validate tab (schema validation + hash-based dirty detection)
- *
- * All external schema import/export responsibilities are handled by
- * legacy code and will move to a separate extension.
  */
 class OntologyInspector {
 

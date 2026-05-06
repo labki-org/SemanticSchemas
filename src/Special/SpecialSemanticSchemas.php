@@ -146,9 +146,7 @@ class SpecialSemanticSchemas extends SpecialPage {
 	/**
 	 * Log an administrative operation to MediaWiki logs.
 	 *
-	 * Creates audit trail for import/export/generate operations.
-	 *
-	 * @param string $action Action performed (import, export, generate)
+	 * @param string $action Action performed
 	 * @param string $details Additional details about the operation
 	 * @param array $params Structured parameters for the log entry
 	 */

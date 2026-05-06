@@ -454,10 +454,6 @@ class CategoryModelTest extends TestCase {
 		$this->assertNotContains( 'Has email', $required );
 	}
 
-	/* =========================================================================
-	 * EXPORT
-	 * ========================================================================= */
-
 	public function testToArrayOmitsEmptySubobjects(): void {
 		$model = new CategoryModel( 'TestCategory' );
 		$arr = $model->toArray();

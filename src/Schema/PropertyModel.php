@@ -262,10 +262,6 @@ class PropertyModel {
 		return $this->renderTemplate;
 	}
 
-	/* -------------------------------------------------------------------------
-	 * EXPORT
-	 * ---------------------------------------------------------------------- */
-
 	public function toArray(): array {
 		$data = [
 			'datatype' => $this->datatype,
