@@ -160,7 +160,6 @@
 				"SemanticSchemas.WikiPropertyStore",
 				"SemanticSchemas.TemplateGenerator",
 				"SemanticSchemas.FormGenerator",
-				"SemanticSchemas.DisplayStubGenerator",
 				"SemanticSchemas.OntologyInspector",
 				"SemanticSchemas.StateManager",
 				"ObjectCacheFactory"

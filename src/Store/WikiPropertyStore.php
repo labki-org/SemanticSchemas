@@ -48,13 +48,10 @@ class WikiPropertyStore {
 			'label' => NamingHelper::generatePropertyLabel( $canonical ),
 			'description' => '',
 			'allowedValues' => [],
-			'subpropertyOf' => null,
 			'allowedCategory' => null,
 			'allowedNamespace' => null,
 			'allowsMultipleValues' => false,
-			'hasTemplate' => null,
 			'inputType' => null,
-			'inverseLabel' => null,
 			'hidden' => false,
 		];
 
@@ -112,11 +109,6 @@ class WikiPropertyStore {
 		}
 
 		$out += $this->smwLoadProperties( $sdata, PropertyModel::SMW_PROPERTIES );
-
-		// hasTemplate also sets templateSource for backward compat
-		if ( !empty( $out['hasTemplate'] ) ) {
-			$out['templateSource'] = $out['hasTemplate'];
-		}
 
 		return array_filter(
 			$out,

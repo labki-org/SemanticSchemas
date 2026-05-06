@@ -42,6 +42,126 @@
 			}
 		},
 		{
+			"page": "Category/display-header",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/display-header.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/display-rows",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/display-rows.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/table",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/table.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/sidebox",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/sidebox.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/collect-ancestors",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/collect-ancestors.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/collect-ancestors-L1",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/collect-ancestors-L1.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/collect-ancestors-L2",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/collect-ancestors-L2.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/collect-ancestors-L3",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/collect-ancestors-L3.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/collect-ancestors-L4",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/collect-ancestors-L4.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/render-reverse",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/render-reverse.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/subobjects",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/subobjects.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Category/subobject-instance",
+			"namespace": "NS_TEMPLATE",
+			"contents": {
+				"importFrom": "templates/Category/subobject-instance.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
 			"page": "Allows multiple values",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
@@ -172,10 +292,20 @@
 			}
 		},
 		{
-			"page": "Has template",
+			"page": "Has render template",
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
-				"importFrom": "properties/Has_template.wikitext"
+				"importFrom": "properties/Has_render_template.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Has display template",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Has_display_template.wikitext"
 			},
 			"options": {
 				"replaceable": true
@@ -196,6 +326,16 @@
 			"namespace": "SMW_NS_PROPERTY",
 			"contents": {
 				"importFrom": "properties/Inverse_property_label.wikitext"
+			},
+			"options": {
+				"replaceable": true
+			}
+		},
+		{
+			"page": "Is hidden",
+			"namespace": "SMW_NS_PROPERTY",
+			"contents": {
+				"importFrom": "properties/Is_hidden.wikitext"
 			},
 			"options": {
 				"replaceable": true

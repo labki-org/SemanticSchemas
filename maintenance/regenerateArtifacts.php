@@ -24,24 +24,16 @@ class RegenerateArtifacts extends Maintenance {
 		parent::__construct();
 		$this->addDescription( 'Regenerate templates and forms for categories' );
 		$this->addOption( 'category', 'Regenerate artifacts for a specific category', false, true );
-		$this->addOption(
-			'generate-display',
-			'Generate or update display templates (includes parent displays)',
-			false,
-			false
-		);
 		$this->requireExtension( 'SemanticSchemas' );
 	}
 
 	public function execute() {
 		$categoryName = $this->getOption( 'category' );
-		$generateDisplay = $this->hasOption( 'generate-display' );
 
 		$services = $this->getServiceContainer();
 		$categoryStore = SemanticSchemasServices::getWikiCategoryStore( $services );
 		$templateGenerator = SemanticSchemasServices::getTemplateGenerator( $services );
 		$formGenerator = SemanticSchemasServices::getFormGenerator( $services );
-		$displayGenerator = SemanticSchemasServices::getDisplayStubGenerator( $services );
 
 		// Build category map and resolver once for all categories
 		$allCategories = $categoryStore->getAllCategories();
@@ -60,8 +52,7 @@ class RegenerateArtifacts extends Maintenance {
 			}
 
 			$this->regenerateCategory(
-				$category, $resolver, $templateGenerator, $formGenerator,
-				$displayGenerator, $generateDisplay
+				$category, $resolver, $templateGenerator, $formGenerator
 			);
 		} else {
 			// Regenerate for all categories
@@ -71,8 +62,7 @@ class RegenerateArtifacts extends Maintenance {
 
 			foreach ( $allCategories as $category ) {
 				$this->regenerateCategory(
-					$category, $resolver, $templateGenerator, $formGenerator,
-					$displayGenerator, $generateDisplay
+					$category, $resolver, $templateGenerator, $formGenerator
 				);
 			}
 		}
@@ -87,12 +77,9 @@ class RegenerateArtifacts extends Maintenance {
 	 * @param InheritanceResolver $resolver
 	 * @param \MediaWiki\Extension\SemanticSchemas\Generator\TemplateGenerator $templateGenerator
 	 * @param \MediaWiki\Extension\SemanticSchemas\Generator\FormGenerator $formGenerator
-	 * @param \MediaWiki\Extension\SemanticSchemas\Generator\DisplayStubGenerator $displayGenerator
-	 * @param bool $generateDisplay
 	 */
 	private function regenerateCategory(
-		$category, $resolver, $templateGenerator, $formGenerator,
-		$displayGenerator, $generateDisplay
+		$category, $resolver, $templateGenerator, $formGenerator
 	) {
 		$name = $category->getName();
 		$this->output( "Processing: $name\n" );
@@ -119,17 +106,6 @@ class RegenerateArtifacts extends Maintenance {
 			$this->output( "  ✓ Generated composite form\n" );
 		} else {
 			$this->output( "  ✗ Composite form generation failed\n" );
-		}
-
-		if ( $generateDisplay ) {
-			$displayResult = $displayGenerator->generateOrUpdateDisplayStub( $effective, $resolver );
-			if ( !empty( $displayResult['error'] ) ) {
-				$this->output( "  ✗ Display template failed: {$displayResult['error']}\n" );
-			} elseif ( $displayResult['created'] ) {
-				$this->output( "  ✓ Generated display template stub\n" );
-			} elseif ( $displayResult['updated'] ) {
-				$this->output( "  ✓ Updated display template\n" );
-			}
 		}
 
 		$this->output( "\n" );

@@ -1,10 +1,10 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Text]]
-[[Has description::How to lay out the page (table, sidebox, or sections).]]
+[[Has description::How to lay out the page (table or sidebox).]]
 [[Display label::Display format]]
+[[Allows value::none]]
 [[Allows value::table]]
 [[Allows value::sidebox]]
-[[Allows value::sections]]
 [[Has input type::radiobutton]]
 <!-- SemanticSchemas End -->
 [[Category:SemanticSchemas-managed-property]]

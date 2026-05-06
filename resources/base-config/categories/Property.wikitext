@@ -51,7 +51,7 @@
 }}
 {{#subobject:
  |@category=Property field
- | For property = Property:Has template
+ | For property = Property:Has render template
  | Is required = false
  | Has sort order = 9
 }}
