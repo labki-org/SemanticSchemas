@@ -40,6 +40,22 @@ class PropertyInputMapper {
 		'Geographic coordinate' => 'text',
 	];
 
+	/**
+	 * Wiki-configured datatype → input type overrides, applied only at the
+	 * datatype-fallback step. Higher-priority rules (explicit override,
+	 * multi-values, enum, autocomplete, page type) still win.
+	 *
+	 * @var array<string,string>
+	 */
+	private array $datatypeOverrides;
+
+	/**
+	 * @param array<string,string> $datatypeOverrides
+	 */
+	public function __construct( array $datatypeOverrides = [] ) {
+		$this->datatypeOverrides = $datatypeOverrides;
+	}
+
 	/* =====================================================================
 	 * HIGH-LEVEL INPUT TYPE LOGIC
 	 * ===================================================================== */
@@ -74,8 +90,12 @@ class PropertyInputMapper {
 			return 'combobox';
 		}
 
-		// (5) Fallback to datatype mapping
+		// (5) Fallback to datatype mapping (configured overrides win
+		//     over the built-in DATATYPE_MAP defaults).
 		$datatype = $property->getDatatype();
+		if ( isset( $this->datatypeOverrides[$datatype] ) ) {
+			return $this->datatypeOverrides[$datatype];
+		}
 		return self::DATATYPE_MAP[$datatype] ?? 'text';
 	}
 

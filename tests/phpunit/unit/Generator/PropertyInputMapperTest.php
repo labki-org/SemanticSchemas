@@ -139,4 +139,47 @@ class PropertyInputMapperTest extends TestCase {
 		$this->assertStringContainsString( 'values from category=Person', $definition );
 		$this->assertStringContainsString( 'autocomplete=on', $definition );
 	}
+
+	/* =========================================================================
+	 * DATATYPE-LEVEL OVERRIDES (config-driven)
+	 * ========================================================================= */
+
+	public function testDatatypeOverrideReplacesDatatypeFallback(): void {
+		$mapper = new PropertyInputMapper( [ 'Date' => 'datetime-tz' ] );
+		$p = new PropertyModel( 'Has start date', [ 'datatype' => 'Date' ] );
+		$this->assertSame( 'datetime-tz', $mapper->getInputType( $p ) );
+	}
+
+	public function testExplicitInputTypeStillBeatsDatatypeOverride(): void {
+		$mapper = new PropertyInputMapper( [ 'Date' => 'datetime-tz' ] );
+		$p = new PropertyModel( 'Has start date', [
+			'datatype' => 'Date',
+			'inputType' => 'text',
+		] );
+		$this->assertSame( 'text', $mapper->getInputType( $p ) );
+	}
+
+	public function testDatatypeOverrideIgnoredWhenMultiValues(): void {
+		$mapper = new PropertyInputMapper( [ 'Date' => 'datetime-tz' ] );
+		$p = new PropertyModel( 'Has many dates', [
+			'datatype' => 'Date',
+			'allowsMultipleValues' => true,
+		] );
+		$this->assertSame( 'tokens', $mapper->getInputType( $p ) );
+	}
+
+	public function testDatatypeOverrideIgnoredWhenEnum(): void {
+		$mapper = new PropertyInputMapper( [ 'Text' => 'fancy-text' ] );
+		$p = new PropertyModel( 'Has level', [
+			'datatype' => 'Text',
+			'allowedValues' => [ 'low', 'medium', 'high' ],
+		] );
+		$this->assertSame( 'dropdown', $mapper->getInputType( $p ) );
+	}
+
+	public function testEmptyOverridesMapPreservesBuiltInDefaults(): void {
+		$mapper = new PropertyInputMapper( [] );
+		$p = new PropertyModel( 'Has test', [ 'datatype' => 'Date' ] );
+		$this->assertSame( 'datepicker', $mapper->getInputType( $p ) );
+	}
 }

@@ -69,7 +69,9 @@ return [
 	'SemanticSchemas.PropertyInputMapper' => static function (
 		MediaWikiServices $services
 	): PropertyInputMapper {
-		return new PropertyInputMapper();
+		$overrides = $services->getMainConfig()
+			->get( 'SemanticSchemasDatatypeInputOverrides' );
+		return new PropertyInputMapper( is_array( $overrides ) ? $overrides : [] );
 	},
 
 	'SemanticSchemas.SchemaValidator' => static function (

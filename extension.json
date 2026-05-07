@@ -201,6 +201,10 @@
 		"SemanticSchemasRateLimitPerHour": {
 			"value": 20,
 			"description": "Maximum number of generate operations allowed per hour per user"
+		},
+		"SemanticSchemasDatatypeInputOverrides": {
+			"value": {},
+			"description": "Map of SMW datatype → PageForms input type, applied at the datatype-fallback step. Per-property `has_input_type` and the multi-values/enum/autocomplete/page-type rules still take precedence. Example: {\"Date\": \"datetime-tz\"}."
 		}
 	},
 	"manifest_version": 2
