@@ -1,7 +1,11 @@
 <includeonly>|-
-! colspan="2" style="background-color: var(--labki-bg-subtle, #eaecf0); text-align: center;" | {{#if:{{{label|}}}|{{{label}}}|{{#show:Category:{{{category|}}}|?Display label|default={{{category|}}}}}}}</includeonly><noinclude>
+! colspan="2" class="source-semanticschemas-section-header" | {{#if:{{{label|}}}|{{{label}}}|{{#show:Category:{{{category|}}}|?Display label|default={{{category|}}}}}}}</includeonly><noinclude>
 Renders the header row for a SemanticSchemas category display table.
 Shows the category's display label (or name as fallback).
+
+Visual styling (background, alignment) lives in
+`resources/ext.semanticschemas.basecontent.css` keyed off the
+`source-semanticschemas-section-header` class.
 
 Parameters:
 * category - The category name (without namespace prefix). Required.

@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 class CategoryDisplayTemplateTest extends TestCase {
 
 	private const TEMPLATE_DIR = __DIR__ . '/../../../../resources/base-config/templates/Category';
+	private const BASECONTENT_CSS = __DIR__ . '/../../../../resources/ext.semanticschemas.basecontent.css';
 
 	/* =========================================================================
 	 * DISPLAY-ROWS: EMPTY VALUE HIDING
@@ -212,13 +213,36 @@ class CategoryDisplayTemplateTest extends TestCase {
 	 * SIDEBOX FORMAT
 	 * ========================================================================= */
 
-	public function testSideboxHeaderHasFloatStyling(): void {
+	public function testSideboxHeaderAppliesSideboxClass(): void {
 		$content = $this->loadTemplate( 'sidebox-header' );
 
-		$this->assertStringContainsString( 'float: right', $content,
-			'sidebox-header must float to the right' );
-		$this->assertStringContainsString( 'width: 300px', $content,
-			'sidebox-header must have a fixed width' );
+		// Functional contract: the table opener carries the SS sidebox
+		// class so the basecontent stylesheet can theme it. Visual rules
+		// (float, width, …) are asserted against the CSS file below.
+		$this->assertStringContainsString(
+			'class="wikitable source-semanticschemas-sidebox"',
+			$content,
+			'sidebox-header must apply the source-semanticschemas-sidebox class'
+		);
+		$this->assertStringNotContainsString(
+			'style="',
+			$content,
+			'sidebox-header must not carry inline style; theming lives in basecontent CSS'
+		);
+	}
+
+	public function testSideboxStylesProvideFloatingSidebarLayout(): void {
+		$css = $this->loadBasecontentCss();
+
+		$block = $this->extractCssBlock( $css, '.source-semanticschemas-sidebox' );
+		$this->assertNotNull(
+			$block,
+			'basecontent CSS must define a .source-semanticschemas-sidebox rule'
+		);
+		$this->assertStringContainsString( 'float: right', $block,
+			'sidebox must float to the right' );
+		$this->assertStringContainsString( 'width: 300px', $block,
+			'sidebox must have a fixed width' );
 	}
 
 	public function testSideboxHeaderOpensFrameAndComposesDisplayHeader(): void {
@@ -526,5 +550,29 @@ class CategoryDisplayTemplateTest extends TestCase {
 		$path = self::TEMPLATE_DIR . '/' . $name . '.wikitext';
 		$this->assertFileExists( $path );
 		return file_get_contents( $path );
+	}
+
+	private function loadBasecontentCss(): string {
+		$this->assertFileExists( self::BASECONTENT_CSS );
+		return file_get_contents( self::BASECONTENT_CSS );
+	}
+
+	/**
+	 * Extracts the declaration block (between the matching `{` and `}`)
+	 * for the first rule whose selector contains `$selector`. Returns
+	 * null if no such rule is found. Naive but sufficient for our small,
+	 * hand-written stylesheet — no nested braces, no @-blocks involved.
+	 */
+	private function extractCssBlock( string $css, string $selector ): ?string {
+		$pos = strpos( $css, $selector );
+		if ( $pos === false ) {
+			return null;
+		}
+		$open = strpos( $css, '{', $pos );
+		$close = strpos( $css, '}', $open );
+		if ( $open === false || $close === false ) {
+			return null;
+		}
+		return substr( $css, $open + 1, $close - $open - 1 );
 	}
 }
