@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::The title of a work.]]
+[[Display label::Title]]
+<!-- SemanticSchemas End -->

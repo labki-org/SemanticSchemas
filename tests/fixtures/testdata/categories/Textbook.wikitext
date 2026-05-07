@@ -1,0 +1,11 @@
+{{Category
+| has_description = A textbook — a book used for teaching a subject. Uses a custom display layout.
+| display_label = Textbook
+| has_display_format = none
+| has_display_template = TextbookDisplay
+}}
+
+{{Property field/subobject | for_property = Has subject | is_required = true  }}
+{{Property field/subobject | for_property = Has edition | is_required = false }}
+
+[[Category:Book]]

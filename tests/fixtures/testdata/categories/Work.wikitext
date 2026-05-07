@@ -1,0 +1,10 @@
+{{Category
+| has_description = Abstract parent for any published work. Defines common fields inherited by Book, Article, etc.
+| display_label = Work
+| has_display_format = table
+}}
+
+{{Property field/subobject | for_property = Has title       | is_required = true  }}
+{{Property field/subobject | for_property = Has subtitle    | is_required = false }}
+{{Property field/subobject | for_property = Has description | is_required = false }}
+{{Property field/subobject | for_property = Has pubyear     | is_required = false }}

@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Number]]
+[[Has description::Numeric rating for a review (1-5).]]
+[[Display label::Rating]]
+[[Has render template::Template:Property/Stars]]
+<!-- SemanticSchemas End -->

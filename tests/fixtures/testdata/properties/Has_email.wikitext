@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Email]]
+[[Has description::Email address.]]
+[[Display label::Email]]
+[[Has render template::Template:Property/Email]]
+<!-- SemanticSchemas End -->

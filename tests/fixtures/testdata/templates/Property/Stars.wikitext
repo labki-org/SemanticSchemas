@@ -1,0 +1,17 @@
+<includeonly>{{#switch:{{{value|0}}}
+| 0 =
+| 1 = ★☆☆☆☆ (1/5)
+| 2 = ★★☆☆☆ (2/5)
+| 3 = ★★★☆☆ (3/5)
+| 4 = ★★★★☆ (4/5)
+| 5 = ★★★★★ (5/5)
+| #default = {{{value|}}}/5
+}}</includeonly><noinclude>
+Value renderer for 1-5 ratings. Emits filled/empty Unicode stars with
+the numeric value in parentheses. Set at the property level on
+`Has rating` so every review inherits this rendering automatically —
+you'll see it in the Review subobject rows on [[Dune]].
+
+Parameters:
+* value - Integer rating 0-5 (other values fall through to `N/5`).
+</noinclude>

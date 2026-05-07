@@ -1,0 +1,15 @@
+<includeonly>{| class="wikitable source-semanticschemas-sidebox"
+{{Category/display-header | category={{{category|}}} | label={{{label|}}} }}</includeonly><noinclude>
+Opens the top half of a SemanticSchemas category sidebox: the `{|`
+frame plus the heading row. Pairs with `Category/sidebox-footer`.
+See `Category/table-header` for the broader composition pattern.
+
+Visual styling (float, width, background, border, shadow) lives in
+`resources/ext.semanticschemas.basecontent.css` keyed off the
+`source-semanticschemas-sidebox` class, so skins theme the sidebox
+through the cascade and Codex tokens supply dark-mode support.
+
+Parameters:
+* category - The category name. Required.
+* label    - Optional baked display label.
+</noinclude>

@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Number]]
+[[Has description::Edition number.]]
+[[Display label::Edition]]
+<!-- SemanticSchemas End -->

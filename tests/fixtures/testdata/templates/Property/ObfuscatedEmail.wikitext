@@ -1,0 +1,15 @@
+<includeonly>{{#if: {{{value|}}} | <span class="obfuscated-email" style="color: #666; font-style: italic;">{{{value}}}</span> <small>(contact via wiki)</small> }}</includeonly><noinclude>
+Value renderer used by `Category:Reviewer` to display email addresses
+as plain italic text instead of the live `mailto:` link emitted by
+`Property/Email`. Same raw value, visibly different rendering — the
+difference is what the Level 2 override demonstrates (field-level
+template beats the `Has email` property-level default).
+
+Tolkien (Category:Person, inherits the property-level default):
+renders as a blue clickable `mailto:tolkien@example.org`.
+Sagan (Category:Reviewer, field-level override):
+renders as gray italic `sagan@example.org (contact via wiki)`.
+
+Parameters:
+* value - Raw email address.
+</noinclude>

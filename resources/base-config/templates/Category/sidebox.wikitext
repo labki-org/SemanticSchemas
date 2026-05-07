@@ -1,17 +1,16 @@
-<includeonly>{| class="wikitable source-semanticschemas-sidebox" style="float: right; clear: right; margin: 0 0 1em 1em; width: 300px; background: #f8f9fa; border: 1px solid #a2a9b1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"
-{{Category/display-header | category={{{category|}}} }}
+<includeonly>{{Category/sidebox-header | category={{{category|}}} | label={{{label|}}} }}
 {{Category/display-rows | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}
-{{#ifeq:{{{subobjects|yes}}}|yes|{{Category/render-reverse | {{{category|}}} }}|}}
-|}{{#ifeq:{{{subobjects|yes}}}|yes|
-{{Category/subobjects | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} }}|}}</includeonly><noinclude>
-Dynamic sidebox display template for SemanticSchemas categories.
-
-Composes display-header, display-rows, render-reverse, and subobjects
-into a floating sidebar layout.
+{{Category/sidebox-footer | category={{{category|}}} | page={{{page|{{FULLPAGENAME}}}}} | subobjects={{{subobjects|yes}}} | backlinks={{{backlinks|{{{subobjects|yes}}}}}} }}</includeonly><noinclude>
+Dynamic-discovery sidebox display: composes `sidebox-header`,
+`display-rows`, and `sidebox-footer` into a floating sidebar layout.
+See `Category/table` for the broader composition pattern — this
+template is identical apart from the outer chrome.
 
 Parameters:
-* category - The category name (without namespace prefix)
-* page - Target page to read property values from. Defaults to
-         {{FULLPAGENAME}}.
-* subobjects - Set to "no" to suppress the subobject sections.
+* category   - The category name. Required.
+* label      - Optional display label.
+* page       - Target page for the dynamic row lookup. Defaults to
+               {{FULLPAGENAME}}.
+* subobjects - "no" to suppress the nested subobjects block.
+* backlinks  - "no" to suppress the backlinks row.
 </noinclude>

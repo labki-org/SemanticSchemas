@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::International Standard Book Number.]]
+[[Display label::ISBN]]
+<!-- SemanticSchemas End -->

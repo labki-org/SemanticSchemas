@@ -1,0 +1,7 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Page]]
+[[Allows value from namespace::Template]]
+[[Has description::Custom template for rendering an entire subobject section. Set on a Subobject field declaration inside a category to override the default per-subobject table layout — the dispatcher emits a single call to this template (with category= and page= params) in place of the built-in #ask pipeline, so the template can aggregate all subobjects into one table, card grid, timeline, or any layout you want.]]
+[[Display label::Subobject display template]]
+<!-- SemanticSchemas End -->
+[[Category:SemanticSchemas-managed-property]]

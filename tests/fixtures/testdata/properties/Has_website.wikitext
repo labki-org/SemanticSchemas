@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::URL]]
+[[Has description::Personal or organizational website.]]
+[[Display label::Website]]
+<!-- SemanticSchemas End -->

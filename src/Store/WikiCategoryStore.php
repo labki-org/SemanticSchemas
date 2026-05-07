@@ -203,6 +203,9 @@ class WikiCategoryStore {
 	private function loadDisplayConfig( $semanticData ): array {
 		$format = $this->smwFetchOne( $semanticData, 'Has display format' );
 		$template = $this->smwFetchOne( $semanticData, 'Has display template', 'page' );
+		$subobjectTemplate = $this->smwFetchOne(
+			$semanticData, 'Has subobject display template', 'template'
+		);
 
 		$out = [];
 		if ( $format !== null ) {
@@ -210,6 +213,9 @@ class WikiCategoryStore {
 		}
 		if ( $template !== null ) {
 			$out['template'] = $template;
+		}
+		if ( $subobjectTemplate !== null ) {
+			$out['subobjectTemplate'] = $subobjectTemplate;
 		}
 
 		return $out;

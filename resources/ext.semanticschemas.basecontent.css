@@ -1,0 +1,49 @@
+/**
+ * SemanticSchemas — base-content styles
+ * =====================================
+ * Class-based styles for the wiki-content templates installed by
+ * `resources/base-config/templates/Category/*` (sidebox frame, section
+ * headers, backlinks header).
+ *
+ * Uses Codex design tokens with hex fallbacks: skins that ship Codex CSS
+ * (Vector 2022, Minerva, Citizen, …) get correct colors in light AND
+ * dark mode automatically; legacy skins fall back to the original light
+ * hex values so nothing renders worse than before.
+ *
+ * Loaded on every page via BeforePageDisplay because these templates can
+ * be transcluded outside the Category namespace (e.g. dispatcher-baked
+ * displays on content pages). The module is style-only and ~500 bytes,
+ * so the load.php cost is negligible.
+ */
+
+/* ---------------------------------------------------------------
+ * Sidebox frame — floating sidebar opened by Category/sidebox-header.
+ * --------------------------------------------------------------- */
+.source-semanticschemas-sidebox {
+	float: right;
+	clear: right;
+	margin: 0 0 1em 1em;
+	width: 300px;
+	background-color: var( --background-color-neutral-subtle, #f8f9fa );
+	border: 1px solid var( --border-color-base, #a2a9b1 );
+	box-shadow: 0 4px 12px rgba( 0, 0, 0, 0.05 );
+}
+
+/* ---------------------------------------------------------------
+ * Section header row — used by Category/display-header at the top
+ * of both full-width tables and sideboxes.
+ * --------------------------------------------------------------- */
+.source-semanticschemas-section-header {
+	background-color: var( --background-color-neutral-subtle, #eaecf0 );
+	text-align: center;
+}
+
+/* ---------------------------------------------------------------
+ * Backlinks header row — Category/backlinks-header. Same look as
+ * the section header, but slightly smaller text.
+ * --------------------------------------------------------------- */
+.source-semanticschemas-backlinks-header {
+	background-color: var( --background-color-neutral-subtle, #eaecf0 );
+	text-align: center;
+	font-size: 0.9em;
+}

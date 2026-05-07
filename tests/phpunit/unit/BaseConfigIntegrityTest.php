@@ -155,6 +155,13 @@ class BaseConfigIntegrityTest extends TestCase {
 		$cases = [];
 		foreach ( glob( "$dir/*.wikitext" ) as $path ) {
 			$filename = basename( $path );
+			// Render templates follow the Property/<Type> naming convention
+			// (capitalized leading letter). Lowercase files under Property/
+			// are general primitives — e.g. Property/value is a wrapper
+			// around #show and takes `prop` + `page`, not `value`.
+			if ( !ctype_upper( $filename[0] ) ) {
+				continue;
+			}
 			$cases[$filename] = [ $filename, file_get_contents( $path ) ];
 		}
 		return $cases;

@@ -1,0 +1,20 @@
+<includeonly>{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[Category:{{{category|}}}]]
+ | link=none
+ | format=template
+ | template={{{category|}}}/subobject-row
+ | named args=yes
+ | sort=Has sort order
+ | order=asc
+}}</includeonly><noinclude>
+All subobjects of a single category on a page, dispatched through the
+auto-generated `<category>/subobject-row` template so each row uses
+the dispatcher's baked-params fast path. One `#ask` regardless of
+subobject count.
+
+Differs from Category/subobjects: takes one explicit subobject
+category and skips the ancestor walk. Use when you want one specific
+subobject type in a custom display; use Category/subobjects when you
+want all subobject types auto-discovered from the inheritance chain.
+
+Parameters: `category`, `page` (defaults to {{FULLPAGENAME}}).
+</noinclude>

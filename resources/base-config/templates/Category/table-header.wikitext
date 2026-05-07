@@ -1,0 +1,12 @@
+<includeonly>{| class="wikitable source-semanticschemas"
+{{Category/display-header | category={{{category|}}} | label={{{label|}}} }}</includeonly><noinclude>
+Opens the top half of a SemanticSchemas category display wikitable:
+the `{|` frame plus the heading row (via `Category/display-header`).
+Pairs with `Category/table-footer` to bracket a sequence of
+`Category/property-row` (and optionally `Category/backlink-row`) calls.
+
+Parameters:
+* category - The category name (without namespace prefix). Required.
+* label    - Optional baked display label. Forwarded to
+             `Category/display-header`.
+</noinclude>

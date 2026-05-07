@@ -1,6 +1,6 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Page]]
-[[Has description::Custom template for rendering a category's page layout. Called after the display format template, or alone when format is set to none.]]
+[[Has description::Custom template for rendering a category's page layout. When set, this overrides the display format — the standard Category/table or Category/sidebox call is suppressed and only this template is rendered.]]
 [[Display label::Category display template]]
 [[Allows value from namespace::Template]]
 <!-- SemanticSchemas End -->
