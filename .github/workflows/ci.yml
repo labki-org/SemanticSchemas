@@ -204,12 +204,18 @@ jobs:
         run: php ~/mediawiki/extensions/SemanticMediaWiki/maintenance/setupStore.php
 
       - name: Run integration tests
+        env:
+          MW_BRANCH: ${{ matrix.mw }}
         run: |
           # MW 1.46 removed tests/phpunit/phpunit.php; use PHPUnit directly there.
+          # Its bootstrap needs the generated phpunit.xml, whose template is
+          # export-ignored from the tarball, so fetch it for this branch.
           if [ -f ~/mediawiki/tests/phpunit/phpunit.php ]; then
             PHPUNIT=(php ~/mediawiki/tests/phpunit/phpunit.php)
           else
             PHPUNIT=(php ~/mediawiki/vendor/bin/phpunit)
+            curl -sfL "https://raw.githubusercontent.com/wikimedia/mediawiki/${MW_BRANCH}/phpunit.xml.template" \
+              -o ~/mediawiki/phpunit.xml.template
             (cd ~/mediawiki && php tests/phpunit/generatePHPUnitConfig.php)
           fi
           cd ~/mediawiki
