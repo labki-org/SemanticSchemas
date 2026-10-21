@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\SemanticSchemas\Tests;
 
+use MediaWiki\Deferred\DeferredUpdates;
 use SMW\MediaWiki\Deferred\CallableUpdate;
 use SMW\Services\ServicesFactory as SMWServicesFactory;
 
@@ -9,11 +10,14 @@ class SMWIntegrationTestCase extends \MediaWikiIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		// SMW registers hooks dynamically via HookContainer::register(), but
+		// SMW < 7 registers hooks dynamically via HookContainer::register(), but
 		// MediaWikiIntegrationTestCase resets the hook container between tests.
-		// Re-register so semantic data gets processed on page save.
-		$smwHooks = new \SMW\MediaWiki\Hooks();
-		$smwHooks->register();
+		// Re-register so semantic data gets processed on page save. SMW 7
+		// declares its hooks in extension.json, which survive the reset.
+		if ( class_exists( \SMW\MediaWiki\Hooks::class ) ) {
+			$smwHooks = new \SMW\MediaWiki\Hooks();
+			$smwHooks->register();
+		}
 
 		// Make SMW store updates synchronous (same as SMW's own test suite).
 		$GLOBALS['smwgEnabledDeferredUpdate'] = false;
@@ -32,7 +36,7 @@ class SMWIntegrationTestCase extends \MediaWikiIntegrationTestCase {
 	 */
 	public function runSMWUpdates(): void {
 		CallableUpdate::clearPendingUpdates();
-		\DeferredUpdates::clearPendingUpdates();
+		DeferredUpdates::clearPendingUpdates();
 
 		// Clear SMW's in-memory cache so reads fetch fresh data from DB
 		$store = \SMW\StoreFactory::getStore();
