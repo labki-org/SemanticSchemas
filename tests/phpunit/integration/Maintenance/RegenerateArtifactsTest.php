@@ -3,7 +3,9 @@
 namespace MediaWiki\Extension\SemanticSchemas\Tests\Integration\Maintenance;
 
 use MediaWiki\Extension\SemanticSchemas\Maintenance\RegenerateArtifacts;
+use MediaWiki\Maintenance\Maintenance;
 use MediaWikiIntegrationTestCase;
+use Wikimedia\TestingAccessWrapper;
 
 require_once __DIR__ . '/../../../../maintenance/regenerateArtifacts.php';
 
@@ -33,6 +35,12 @@ class RegenerateArtifactsTest extends MediaWikiIntegrationTestCase {
 	public function testHandlesMissingCategory(): void {
 		$maintenance = new RegenerateArtifacts();
 		$maintenance->setName( 'regenerateArtifacts' );
+		// MW 1.46+ only turns fatalError() into a throw when isTesting is
+		// set (MaintenanceBaseTestCase does this); otherwise it exit()s and
+		// takes the whole PHPUnit run down with it.
+		if ( property_exists( Maintenance::class, 'isTesting' ) ) {
+			TestingAccessWrapper::newFromObject( $maintenance )->isTesting = true;
+		}
 		$maintenance->loadParamsAndArgs(
 			null, [ 'category' => 'NonExistentCategory12345' ]
 		);
