@@ -212,7 +212,7 @@ jobs:
             PHPUNIT=(php ~/mediawiki/vendor/bin/phpunit)
           fi
           cd ~/mediawiki
-          "${PHPUNIT[@]}" \
+          MW_INSTALL_PATH="$HOME/mediawiki" "${PHPUNIT[@]}" \
             --configuration "$GITHUB_WORKSPACE/SemanticSchemas/tests/phpunit/integration.xml" \
             --exclude-group Broken \
             --testdox
