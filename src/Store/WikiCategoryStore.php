@@ -7,7 +7,6 @@ use MediaWiki\Extension\SemanticSchemas\Schema\CategoryModel;
 use MediaWiki\Extension\SemanticSchemas\Schema\FieldModel;
 use MediaWiki\Extension\SemanticSchemas\Util\Constants;
 use MediaWiki\Extension\SemanticSchemas\Util\SMWDataExtractor;
-use MediaWiki\MainConfigNames;
 use MediaWiki\Title\Title;
 use Wikimedia\Rdbms\IConnectionProvider;
 use Wikimedia\Rdbms\RawSQLExpression;
@@ -112,10 +111,11 @@ class WikiCategoryStore {
 		$mwMinor = (int)explode( '.', MW_VERSION )[1];
 		$oldQuery = true;
 		if ( $mwMinor >= 44 ) {
-			$migrationStage = $this->mainConfig->get(
-				MainConfigNames::CategoryLinksSchemaMigrationStage
-			);
-			$oldQuery = $migrationStage & SCHEMA_COMPAT_READ_OLD;
+			// MW 1.46 removed the setting (and its MainConfigNames constant):
+			// the linktarget schema is the only one, so read by name and
+			// treat its absence as "new schema".
+			$oldQuery = $this->mainConfig->has( 'CategoryLinksSchemaMigrationStage' )
+				&& ( $this->mainConfig->get( 'CategoryLinksSchemaMigrationStage' ) & SCHEMA_COMPAT_READ_OLD );
 		}
 
 		$subQuery = $dbr->newSelectQueryBuilder()

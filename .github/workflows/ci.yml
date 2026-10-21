@@ -131,6 +131,10 @@ jobs:
             php: '8.3'
             smw: '6.0'
             pf: '6.0'
+          - mw: REL1_46
+            php: '8.3'
+            smw: '7.3'
+            pf: '6.0'
 
     services:
       db:
