@@ -210,6 +210,7 @@ jobs:
             PHPUNIT=(php ~/mediawiki/tests/phpunit/phpunit.php)
           else
             PHPUNIT=(php ~/mediawiki/vendor/bin/phpunit)
+            (cd ~/mediawiki && php tests/phpunit/generatePHPUnitConfig.php)
           fi
           cd ~/mediawiki
           MW_INSTALL_PATH="$HOME/mediawiki" "${PHPUNIT[@]}" \
