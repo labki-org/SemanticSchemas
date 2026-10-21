@@ -205,7 +205,14 @@ jobs:
 
       - name: Run integration tests
         run: |
-          php ~/mediawiki/tests/phpunit/phpunit.php \
+          # MW 1.46 removed tests/phpunit/phpunit.php; use PHPUnit directly there.
+          if [ -f ~/mediawiki/tests/phpunit/phpunit.php ]; then
+            PHPUNIT=(php ~/mediawiki/tests/phpunit/phpunit.php)
+          else
+            PHPUNIT=(php ~/mediawiki/vendor/bin/phpunit)
+          fi
+          cd ~/mediawiki
+          "${PHPUNIT[@]}" \
             --configuration "$GITHUB_WORKSPACE/SemanticSchemas/tests/phpunit/integration.xml" \
             --exclude-group Broken \
             --testdox
