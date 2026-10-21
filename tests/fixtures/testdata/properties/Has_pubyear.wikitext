@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Number]]
+[[Has description::Year of publication.]]
+[[Display label::Published]]
+<!-- SemanticSchemas End -->

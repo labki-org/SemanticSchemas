@@ -178,42 +178,13 @@ Property pages support the following semantic properties to define their schema:
 
 ### Display Configuration
 
-#### `Property:Has display template`
-- **Type:** Text
-- **Purpose:** Custom HTML/wikitext template for displaying the property value
-- **Placeholders:**
-  - `{{{value}}}` - The property value
-  - `{{{property}}}` - The property name
-  - `{{{page}}}` - The current page title
-- **Example:**
-  ```wiki
-  [[Has display template::<div class="custom-style">{{{value}}}</div>]]
-  ```
-
-#### `Property:Has display type`
-- **Type:** Text
-- **Purpose:** Built-in display type for rendering
-- **Allowed Values:** Email, URL, Image, Boolean, or any property name (for pattern lookup)
-- **Built-in behaviors:**
-  - `Email`: Renders as `[mailto:value value]`
-  - `URL`: Renders as `[value Website]`
-  - `Image`: Renders as `[[File:value|thumb|200px]]`
-  - `Boolean`: Renders as "Yes" or "No"
-- **Example:**
-  ```wiki
-  [[Has display type::Email]]
-  ```
-
-#### `Property:Has display pattern`
-- **Type:** Page (Property namespace)
-- **Purpose:** References another property to reuse its display template
-- **Use case:** Create reusable display patterns
-- **Example:**
-  ```wiki
-  [[Has display pattern::Property:Email]]
-  ```
-
-**Note:** Display configuration follows priority order: Template → Pattern → Type → Default. See [Display Properties Documentation](DISPLAY_PROPERTIES.md) for details.
+How a property's value is rendered is controlled per-field on the
+**owning category's `Property field` declaration**, not on the property
+itself. Set `has_render_template` on the field subobject to point at a
+shipped value renderer (`Property/Page`, `Property/Email`,
+`Property/Link`) or a custom one. See
+[Customizing Category Display](customizing-display.md) for the full
+walkthrough.
 
 ### Complete Property Example
 
@@ -225,7 +196,6 @@ Property:Has email
 [[Display label::Email Address]]
 [[Has description::Primary email address for contact]]
 [[Allows multiple values::false]]
-[[Has display type::Email]]
 <!-- SemanticSchemas End -->
 ```
 
@@ -321,9 +291,6 @@ Subobject:Publication
 | `Subproperty of` | Property | No | No | Parent property |
 | `Allows value from category` | Text | No | No | Category restriction for Page type |
 | `Allows value from namespace` | Text | No | No | Autocomplete namespace filter |
-| `Has display template` | Text | No | No | Custom display template |
-| `Has display type` | Text | No | No | Built-in display type |
-| `Has display pattern` | Property | No | No | Reference to pattern property |
 
 ### Subobjects
 
@@ -359,28 +326,19 @@ This ensures that:
 - **Properties:** Support single inheritance via `Subproperty of`
 - **Subobjects:** No inheritance support
 
-### Display Format Priority
-
-For properties, display configuration is applied in this priority order:
-
-1. **Display Template** (highest priority) - Custom template defined on the property
-2. **Display Pattern** - Template from referenced property
-3. **Display Type** - Built-in rendering or pattern property lookup
-4. **Default** (lowest priority) - HTML-escaped plain text
-
 ### Best Practices
 
 1. **Use descriptive labels:** Always set `Display label` for user-facing names
 2. **Document everything:** Use `Has description` to explain purpose
 3. **Leverage inheritance:** Use parent categories to share common properties
-4. **Create patterns:** Use `Has display pattern` for reusable display templates
-5. **Validate constraints:** Use enumeration values or category restrictions for data quality
+4. **Validate constraints:** Use enumeration values or category restrictions for data quality
+5. **Customize rendering at the field level:** When a property needs special rendering (`mailto:` link, external URL, etc.), set `has_render_template` on the `Property field` subobject — see [Customizing Category Display](customizing-display.md).
 
 ---
 
 ## Related Documentation
 
-- [Display Properties](DISPLAY_PROPERTIES.md) - Detailed guide to display configuration
+- [Customizing Category Display](customizing-display.md) - Layered template system, override levels, primitive reference
 - [Quick Reference](../reference/quick-reference.md) - Common commands and workflows
 - [Main README](../../README.md) - Installation and basic usage
 

@@ -1,0 +1,10 @@
+<includeonly>{{#ifexpr: {{#ask: [[{{PAGENAME:{{{prop|}}}}}::{{FULLPAGENAME}}]] | format=count }} > 0 |{{!}}-
+! {{{label|{{PAGENAME:{{{prop|}}}}}}}}
+{{!}} {{#ask: [[{{PAGENAME:{{{prop|}}}}}::{{FULLPAGENAME}}]] | format=list }}|}}</includeonly><noinclude>
+One backlink row — pages pointing to the current page via a given
+property. Suppressed when no pages link via that property. Costs one
+`#ask` count + one `#ask` list per call.
+
+Parameters: `prop` (property page, namespaced or bare), `label`
+(defaults to the property page name).
+</noinclude>

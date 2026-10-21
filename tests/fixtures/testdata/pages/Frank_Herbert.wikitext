@@ -1,0 +1,8 @@
+{{Person
+| has_full_name = Franklin Patrick Herbert Jr.
+| has_email = herbert@example.org
+| has_pubyear = 1920
+| has_internal_id = P-0002
+}}
+
+American science-fiction author, best known for the ''Dune'' novels.

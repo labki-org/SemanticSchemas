@@ -1,0 +1,6 @@
+{{Category
+| has_description = Mixin category that adds an aggregate review rating. Combined with Book via ReviewedBook for multiple inheritance.
+| display_label = Reviewed
+}}
+
+{{Property field/subobject | for_property = Has review rating | is_required = false }}

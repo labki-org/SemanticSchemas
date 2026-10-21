@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::An optional subtitle.]]
+[[Display label::Subtitle]]
+<!-- SemanticSchemas End -->

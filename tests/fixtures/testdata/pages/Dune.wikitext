@@ -1,0 +1,39 @@
+{{ReviewedBook
+| has_title = Dune
+| has_author = Frank Herbert
+| has_pubyear = 1965
+| has_isbn = 978-0-441-17271-9
+| has_genre = Science
+| has_tag = scifi, epic
+| is_available = true
+| has_review_rating = 5
+}}
+
+{{Chapter/subobject
+| has_chapter_title = Book One: Dune
+| has_sort_order = 1
+| has_chapter_summary = Paul Atreides arrives on Arrakis with his family.
+}}
+{{Chapter/subobject
+| has_chapter_title = Book Two: Muad'Dib
+| has_sort_order = 2
+| has_chapter_summary = Paul and Jessica live among the Fremen.
+}}
+{{Chapter/subobject
+| has_chapter_title = Book Three: The Prophet
+| has_sort_order = 3
+| has_chapter_summary = The final confrontation with House Harkonnen.
+}}
+
+{{Review/subobject
+| has_reviewer = Carl Sagan
+| has_rating = 5
+| has_comment = A masterpiece that reshapes the genre.
+| has_sort_order = 1
+}}
+{{Review/subobject
+| has_reviewer = Thomas Cormen
+| has_rating = 4
+| has_comment = Dense but rewarding.
+| has_sort_order = 2
+}}

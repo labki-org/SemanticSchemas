@@ -1,17 +1,23 @@
-<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Property field]] | mainlabel=- | ?For property= | format=plainlist | link=none | sep=, }}|,|@@prop@@|{{#if:{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
+<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/ancestors|{{{category|}}}}}]] [[Category:Property field]] | mainlabel=- | ?For property= | format=plainlist | link=none | sep=, }}|,|@@prop@@|{{#ifeq:{{#show:@@prop@@|?Is hidden}}|true||{{#if:{{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}|{{!}}-
 ! {{#show:@@prop@@|?Display label|default={{PAGENAME:@@prop@@}}}}
-{{!}} {{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}}}|\n}}</includeonly><noinclude>
-Renders property value rows for a SemanticSchemas category display.
+{{!}} {{#show:{{{page|{{FULLPAGENAME}}}}}|?{{PAGENAME:@@prop@@}}}}}}}}|\n}}</includeonly><noinclude>
+Renders property value rows via dynamic SMW discovery — walks the
+ancestor chain via `Category/ancestors`, resolves the effective
+property-field list through an inverse `#ask`, then `#show`s each
+property's label and value on the target page. Properties flagged
+`Is hidden = true` on their property page are skipped.
 
-Discovers all properties (including inherited) by walking the ancestor
-chain via Category/collect-ancestors, querying Property field subobjects
-on each ancestor category, then rendering a table row for each property
-whose value is non-empty on the target page.
+This is the dynamic-discovery path. Auto-generated category dispatcher
+templates bypass this and iterate a baked property list inline in
+`Category/table` / `Category/sidebox`, skipping the queries entirely.
+This template is still used by:
+
+* `Category/subobject-instance` (rendering one subobject fragment at a
+  time — no baked values available for the fragment's properties).
+* Hand-written custom-display wikitext that composes the primitives.
 
 Parameters:
-* category - The category name (without namespace prefix)
-* page - The page (or subobject fragment, e.g. "ParentPage#_hash")
-         to read property values from. Defaults to {{FULLPAGENAME}},
-         making this template usable both for the current page and
-         for rendering subobject instances via Category/subobject-instance.
+* category - The category name (without namespace prefix).
+* page     - The page (or subobject fragment, e.g. "ParentPage#_hash") to
+             read property values from. Defaults to {{FULLPAGENAME}}.
 </noinclude>

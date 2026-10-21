@@ -1,0 +1,10 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Genre classification.]]
+[[Display label::Genre]]
+[[Allows value::Fiction]]
+[[Allows value::Non-fiction]]
+[[Allows value::Biography]]
+[[Allows value::Science]]
+[[Allows value::Technical]]
+<!-- SemanticSchemas End -->

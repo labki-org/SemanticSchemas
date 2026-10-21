@@ -1,0 +1,9 @@
+<includeonly>
+|}</includeonly><noinclude>
+Closes the `ChapterTable` frame. Invoked by SMW's `outrotemplate=`
+once per `ChapterTable` call — but only when the surrounding `#ask`
+yields ≥1 result. Pair with `ChapterTable/open`.
+
+The leading newline inside `<includeonly>` puts `|}` at line start so
+MediaWiki's wikitable parser recognises it as the table close.
+</noinclude>

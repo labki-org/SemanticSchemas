@@ -1,0 +1,26 @@
+{{Book
+| has_title = The Hobbit
+| has_subtitle = or, There and Back Again
+| has_author = J. R. R. Tolkien
+| has_pubyear = 1937
+| has_isbn = 978-0-618-00221-3
+| has_genre = Fiction
+| has_tag = fantasy, classic, adventure
+| is_available = true
+}}
+
+{{Chapter/subobject
+| has_chapter_title = An Unexpected Party
+| has_sort_order = 1
+| has_chapter_summary = Bilbo Baggins is visited by the wizard Gandalf and thirteen dwarves.
+}}
+{{Chapter/subobject
+| has_chapter_title = Roast Mutton
+| has_sort_order = 2
+| has_chapter_summary = The company encounters three trolls.
+}}
+{{Chapter/subobject
+| has_chapter_title = Riddles in the Dark
+| has_sort_order = 3
+| has_chapter_summary = Bilbo meets Gollum and finds a mysterious ring.
+}}

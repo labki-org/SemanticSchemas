@@ -1,0 +1,12 @@
+<includeonly>
+<div class="chapter-card source-semanticschemas" style="border-left: 4px solid #2e7d32; padding: 0.5em 1em; margin: 0.5em 0; background: #f1f8e9;">
+'''Chapter {{{order|?}}}: {{{title|}}}'''
+
+<em>{{{summary|}}}</em>
+</div></includeonly><noinclude>
+Per-card row template for `ChapterCards`. Receives projected subobject
+values as named args via SMW's `format=template | named args=yes`. The
+leading newline inside `<includeonly>` is load-bearing — SMW
+concatenates row-template invocations with no separator, and MediaWiki's
+block-level `<div>` parser needs each card to start at line-start.
+</noinclude>

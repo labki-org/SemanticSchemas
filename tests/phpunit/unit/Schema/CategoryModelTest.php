@@ -269,6 +269,36 @@ class CategoryModelTest extends TestCase {
 		$this->assertSame( 'Template:ChildDisplay', $merged->getDisplayTemplate() );
 	}
 
+	public function testSubobjectDisplayTemplateDefaultsToNull(): void {
+		$model = new CategoryModel( 'Chapter' );
+		$this->assertNull( $model->getSubobjectDisplayTemplate() );
+	}
+
+	public function testSubobjectDisplayTemplateSetFromConstructorData(): void {
+		$model = new CategoryModel( 'Chapter', [
+			'display' => [ 'subobjectTemplate' => 'ChapterTable' ],
+		] );
+		$this->assertSame( 'ChapterTable', $model->getSubobjectDisplayTemplate() );
+	}
+
+	public function testSubobjectDisplayTemplateSurvivesToArrayRoundTrip(): void {
+		$model = new CategoryModel( 'Chapter', [
+			'display' => [ 'subobjectTemplate' => 'ChapterTable' ],
+		] );
+		$rebuilt = new CategoryModel( 'Chapter', $model->toArray() );
+		$this->assertSame( 'ChapterTable', $rebuilt->getSubobjectDisplayTemplate() );
+	}
+
+	public function testSubobjectDisplayTemplateInheritedThroughMerge(): void {
+		$parent = new CategoryModel( 'Parent', [
+			'display' => [ 'subobjectTemplate' => 'ParentSubTable' ],
+		] );
+		$child = new CategoryModel( 'Child', [ 'parents' => [ 'Parent' ] ] );
+
+		$merged = $child->mergeWithParent( $parent );
+		$this->assertSame( 'ParentSubTable', $merged->getSubobjectDisplayTemplate() );
+	}
+
 	/* =========================================================================
 	 * FORM CONFIG
 	 * ========================================================================= */

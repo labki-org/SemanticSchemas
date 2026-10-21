@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Boolean]]
+[[Has description::Whether the work is currently available.]]
+[[Display label::Available]]
+<!-- SemanticSchemas End -->

@@ -31,6 +31,13 @@ if ( !is_dir( $mwPath ) ) {
 $bootstrap = $mwPath . '/tests/phpunit/bootstrap.integration.php';
 
 if ( !file_exists( $bootstrap ) ) {
+	// MW 1.46 dropped bootstrap.integration.php; the unified bootstrap.php
+	// loads settings when told the run includes integration tests.
+	putenv( 'MEDIAWIKI_HAS_INTEGRATION_TESTS=1' );
+	$bootstrap = $mwPath . '/tests/phpunit/bootstrap.php';
+}
+
+if ( !file_exists( $bootstrap ) ) {
 	echo "ERROR: Could not find MediaWiki test bootstrap at: $bootstrap\n";
 	echo "Set MW_INSTALL_PATH to your MediaWiki installation directory.\n";
 	exit( 1 );

@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::URL]]
+[[Has description::Digital Object Identifier.]]
+[[Display label::DOI]]
+<!-- SemanticSchemas End -->

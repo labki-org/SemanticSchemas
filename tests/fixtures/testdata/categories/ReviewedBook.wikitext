@@ -1,0 +1,10 @@
+{{Category
+| has_description = A book with an aggregate review rating. Demonstrates multiple inheritance (Book + Reviewed) plus a field-level subobject-display-template override: chapters on a ReviewedBook render as ChapterCards instead of the shared ChapterTable default.
+| display_label = Reviewed book
+| has_display_format = table
+}}
+
+{{Subobject field/subobject | for_category = Chapter | is_required = false | has_subobject_display_template = ChapterCards }}
+
+[[Category:Book]]
+[[Category:Reviewed]]

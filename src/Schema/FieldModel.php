@@ -52,8 +52,16 @@ class FieldModel implements JsonSerializable {
 	private string $name;
 	private bool $required;
 	private string $fieldType;
+	private ?string $renderTemplate;
+	private ?string $subobjectDisplayTemplate;
 
-	public function __construct( string $name, bool $required, string $fieldType ) {
+	public function __construct(
+		string $name,
+		bool $required,
+		string $fieldType,
+		?string $renderTemplate = null,
+		?string $subobjectDisplayTemplate = null
+	) {
 		if ( !isset( self::FIELD_CONFIG[$fieldType] ) ) {
 			throw new InvalidArgumentException(
 				"Invalid field type '$fieldType'. Must be one of: "
@@ -63,13 +71,19 @@ class FieldModel implements JsonSerializable {
 		$this->name = $name;
 		$this->required = $required;
 		$this->fieldType = $fieldType;
+		$this->renderTemplate = ( $renderTemplate !== null && trim( $renderTemplate ) !== '' )
+			? trim( $renderTemplate )
+			: null;
+		$this->subobjectDisplayTemplate = (
+			$subobjectDisplayTemplate !== null && trim( $subobjectDisplayTemplate ) !== ''
+		)
+			? trim( $subobjectDisplayTemplate )
+			: null;
 	}
 
 	/**
 	 * Construct a FieldModel from an SMW subobject's semantic data.
-	 *
-	 * Reads the reference property, required flag, and sort order
-	 * from the subobject. Returns null if the reference property is missing.
+	 * Returns null if the reference property is missing.
 	 *
 	 * @param \SMW\SemanticData $subData A single subobject's semantic data
 	 * @param string $fieldType One of TYPE_PROPERTY or TYPE_SUBOBJECT
@@ -88,9 +102,15 @@ class FieldModel implements JsonSerializable {
 		$required = self::smwFetchBoolean( $subData, 'Is required' );
 		$sortRaw = self::smwFetchOne( $subData, 'Has sort order' );
 		$sort = (int)( $sortRaw ?? 0 );
+		$renderTemplate = self::smwFetchOne( $subData, 'Has render template', 'template' );
+		$subobjectDisplayTemplate = self::smwFetchOne(
+			$subData, 'Has subobject display template', 'template'
+		);
 
 		return [
-			'field' => new self( $ref, $required, $fieldType ),
+			'field' => new self(
+				$ref, $required, $fieldType, $renderTemplate, $subobjectDisplayTemplate
+			),
 			'sort' => $sort,
 		];
 	}
@@ -162,16 +182,40 @@ class FieldModel implements JsonSerializable {
 		return NamingHelper::propertyToParameter( $this->name );
 	}
 
+	/**
+	 * Per-field override for the value-render template. Null when not set.
+	 */
+	public function getRenderTemplate(): ?string {
+		return $this->renderTemplate;
+	}
+
+	/**
+	 * Per-parent override for the subobject-section display template
+	 * (only meaningful on TYPE_SUBOBJECT fields). Null when not set.
+	 */
+	public function getSubobjectDisplayTemplate(): ?string {
+		return $this->subobjectDisplayTemplate;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * SERIALIZATION
 	 * ---------------------------------------------------------------------- */
 
-	/** @return array{name:string, required:bool} */
+	/**
+	 * @return array{name:string, required:bool, renderTemplate?:string, subobjectDisplayTemplate?:string}
+	 */
 	public function jsonSerialize(): array {
-		return [
+		$out = [
 			'name' => $this->name,
 			'required' => $this->required,
 		];
+		if ( $this->renderTemplate !== null ) {
+			$out['renderTemplate'] = $this->renderTemplate;
+		}
+		if ( $this->subobjectDisplayTemplate !== null ) {
+			$out['subobjectDisplayTemplate'] = $this->subobjectDisplayTemplate;
+		}
+		return $out;
 	}
 
 }

@@ -1,19 +1,17 @@
 <includeonly>{{#ifexpr: 0{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|+{{#ask:[[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]]|format=count}}|}} > 0 |
 {{!}}-
-! colspan="2" style="background-color: #eaecf0; text-align: center; font-size: 0.9em;" {{!}} Backlinks
-{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|{{#ifexpr: {{#ask: [[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]] | format=count }} > 0 |{{!}}-
-! {{#show:@@prop@@|?Inverse property label|default={{PAGENAME:@@prop@@}}}}
-{{!}} {{#ask: [[{{PAGENAME:@@prop@@}}::{{FULLPAGENAME}}]] | format=list }}}}|\n}}}}</includeonly><noinclude>
-Renders backlink rows for properties declared via "Show backlinks for" on the category.
+{{Category/backlinks-header}}
+{{#arraymap:{{#show:Category:{{{1|}}}|?Show backlinks for|link=none|sep=,}}|,|@@prop@@|{{Category/backlink-row | prop=@@prop@@ | label={{#show:@@prop@@|?Inverse property label|default={{PAGENAME:@@prop@@}}}} }}|\n}}}}</includeonly><noinclude>
+Dynamic-discovery backlinks block. Discovers the category's
+`Show backlinks for` list via `#show` and renders one
+`Category/backlink-row` per property. Skipped entirely when no
+property has incoming links.
 
-Reads the category's Show backlinks for property to get the opt-in list of
-properties. Only shows the Backlinks header when at least one property has
-actual backlink results (aggregate count check across all properties).
+Auto-generated dispatchers bypass this path — they pre-build the
+entire backlinks block with labels baked at generation time and
+forward it via `backlink_section=` on `Category/table` /
+`Category/sidebox`. Call this template directly only from
+hand-written custom displays that want runtime discovery.
 
-For each property with results, renders a conditional row with an #ask query
-that finds all pages linking to the current page via that property.
-
-Label is the property's Inverse property label, falling back to property name.
-
-Parameter 1: category name (without namespace prefix)
+Parameter 1: category name (without namespace prefix).
 </noinclude>

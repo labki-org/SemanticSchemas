@@ -36,6 +36,9 @@
 				"SemanticSchemas.WikiCategoryStore"
 			]
 		},
+		"ContentStylesHooks": {
+			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\ContentStylesHooks"
+		},
 		"SetupHooks": {
 			"class": "MediaWiki\\Extension\\SemanticSchemas\\Hooks\\SemanticSchemasSetupHooks"
 		},
@@ -47,7 +50,8 @@
 		"SetupAfterCache": "SetupHooks",
 		"ParserFirstCallInit": "ParserHooks",
 		"SkinTemplateNavigation::Universal": "CategoryPageHooks",
-		"ArticleViewFooter": "CategoryPageHooks"
+		"ArticleViewFooter": "CategoryPageHooks",
+		"BeforePageDisplay": "ContentStylesHooks"
 	},
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\SemanticSchemas\\": "src/"
@@ -59,6 +63,17 @@
 		"ext.semanticschemas.styles": {
 			"styles": [
 				"resources/ext.semanticschemas.styles.css"
+			],
+			"localBasePath": "",
+			"remoteExtPath": "SemanticSchemas",
+			"targets": [
+				"desktop",
+				"mobile"
+			]
+		},
+		"ext.semanticschemas.basecontent": {
+			"styles": [
+				"resources/ext.semanticschemas.basecontent.css"
 			],
 			"localBasePath": "",
 			"remoteExtPath": "SemanticSchemas",

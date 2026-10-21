@@ -1,0 +1,6 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Short summary of a chapter.]]
+[[Display label::Summary]]
+[[Has input type::textarea]]
+<!-- SemanticSchemas End -->

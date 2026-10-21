@@ -1,0 +1,5 @@
+<!-- SemanticSchemas Start -->
+[[Has type::Text]]
+[[Has description::Primary subject area of a textbook.]]
+[[Display label::Subject]]
+<!-- SemanticSchemas End -->

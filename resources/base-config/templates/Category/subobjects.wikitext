@@ -1,5 +1,5 @@
-<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/collect-ancestors|{{{category|}}}}}]] [[Category:Subobject field]] | mainlabel=- | ?For category= | format=plainlist | link=none | sep=, }}|,|@@subcat@@|<h3>{{#show:@@subcat@@|?Display label|default={{PAGENAME:@@subcat@@}}}}</h3>
-{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[@@subcat@@]]
+<includeonly>{{#arraymap:{{#ask: [[-Has subobject::{{Category/ancestors|{{{category|}}}}}]] [[Category:Subobject field]] | mainlabel=- | ?For category= | format=plainlist | link=none | sep=, }}|,|@@subcat@@|{{#ask: [[-Has subobject::{{{page|{{FULLPAGENAME}}}}}]] [[@@subcat@@]]
+ | intro=<h3>{{#show:@@subcat@@|?Display label|default={{PAGENAME:@@subcat@@}}}}</h3>
  | link=none
  | format=template
  | template=Category/subobject-instance
@@ -8,9 +8,12 @@
  | order=asc
 }}|\n}}</includeonly><noinclude>
 Renders subobject sections for a category. For each subobject type
-declared on the category (or any ancestor, via Category/collect-ancestors),
-emits a heading and an #ask that renders each instance through
+declared on the category (or any ancestor, via Category/ancestors),
+fires an #ask that renders each instance through
 Category/subobject-instance (which itself reuses Category/table).
+The section heading is in the #ask's `intro=` param so it only
+renders when at least one instance exists — empty subobject types
+leave no trace on the rendered page.
 
 Subobject types are discovered from Subobject field declarations on the
 ancestor chain: {{#ask: [[-Has subobject::<ancestors>]] [[Category:Subobject field]] | ?For category}}.

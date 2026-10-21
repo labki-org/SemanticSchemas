@@ -166,10 +166,11 @@ trait SMWDataExtractor {
 	 *   - 'text'      — returns the page text (no namespace check)
 	 *   - 'property'  — requires SMW_NS_PROPERTY
 	 *   - 'category'  — requires NS_CATEGORY
+	 *   - 'template'  — requires NS_TEMPLATE; returns unprefixed name
 	 *   - 'page'      — returns prefixed text (no namespace check)
 	 *
 	 * @param SMWDataItem $di
-	 * @param string $type Value type: 'text', 'property', 'category', 'page'
+	 * @param string $type Value type: 'text', 'property', 'category', 'template', 'page'
 	 * @return string|null The extracted value, or null if the DataItem type or namespace doesn't match
 	 */
 	protected static function smwExtractValue( $di, string $type ): ?string {
@@ -195,6 +196,9 @@ trait SMWDataExtractor {
 
 				case 'category':
 					return $t->getNamespace() === NS_CATEGORY ? $text : null;
+
+				case 'template':
+					return $t->getNamespace() === NS_TEMPLATE ? $text : null;
 
 				case 'page':
 					return $t->getPrefixedText();

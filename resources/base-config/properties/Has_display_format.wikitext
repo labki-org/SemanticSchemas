@@ -1,6 +1,6 @@
 <!-- SemanticSchemas Start -->
 [[Has type::Text]]
-[[Has description::How to lay out the page (table or sidebox).]]
+[[Has description::How to lay out the page (table or sidebox). Ignored when Has display template is set — the custom template takes precedence.]]
 [[Display label::Display format]]
 [[Allows value::none]]
 [[Allows value::table]]
